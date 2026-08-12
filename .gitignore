@@ -1,0 +1,92 @@
+# ─── YEREL ÇALIŞMA DOKÜMANLARI — GitHub'a GİTMEZ ─────────────
+# Kullanıcı isteği (13.08.2026): plan ve notlar yerelde kalır.
+# ⚠ Bunlar git'te olmadığı için YEDEKLENMİYOR — disk giderse kaybolur.
+#   Ayrı bir yere (OneDrive/USB) kopyasını al.
+PLAN.md
+CLAUDE.md
+LITERATUR.md
+
+# ─── SIRLAR — ASLA COMMIT EDİLMEZ ────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+secrets/
+**/credentials*.json
+
+# ─── VERİ VE MODELLER (büyük dosyalar) ──────────────────────
+# İçerik yok sayılır ama dizin yapısı .gitkeep ile korunur
+data/videos/*
+data/datasets/*
+data/clips/*
+data/annotations/*
+models/*
+!**/.gitkeep
+*.pt
+*.onnx
+*.engine
+*.trt
+*.pth
+*.safetensors
+*.mp4
+*.avi
+*.mkv
+*.mov
+
+# ─── PYTHON ──────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+
+# ─── NODE / FRONTEND ────────────────────────────────────────
+node_modules/
+frontend/dist/
+frontend/.vite/
+*.local
+npm-debug.log*
+yarn-error.log*
+
+# ─── DOCKER / VOLUMES ───────────────────────────────────────
+docker-volumes/
+postgres-data/
+valkey-data/
+garage-data/
+grafana-data/
+prometheus-data/
+
+# ─── IDE / OS ───────────────────────────────────────────────
+.vscode/*
+!.vscode/settings.json.example
+.idea/
+*.swp
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ─── LOG VE GEÇİCİ ──────────────────────────────────────────
+logs/
+*.log
+tmp/
+temp/
+*.tmp
+
+# ─── ÖLÇÜM ÇIKTILARI ────────────────────────────────────────
+# benchmarks/ KLASÖRÜ COMMIT EDİLİR — rapor malzemesi
+benchmarks/**/*.raw
+benchmarks/**/*.pkl
