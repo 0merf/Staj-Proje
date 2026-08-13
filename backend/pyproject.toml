@@ -110,6 +110,13 @@ select = [
 ignore = [
     "S101",     # assert — testlerde normal
     "E501",     # satır uzunluğu — formatter hallediyor
+
+    # Bu proje Türkçe dokümante edilmiştir. RUF001/002/003 kuralları
+    # Türkçe harfleri (ı, ş, ğ, İ) "belirsiz unicode" sayıp yüzlerce
+    # yanlış pozitif üretiyor. Kural kodla değil, dille ilgili.
+    "RUF001",   # dizgede belirsiz karakter
+    "RUF002",   # docstring'de belirsiz karakter
+    "RUF003",   # yorumda belirsiz karakter
 ]
 
 [tool.ruff.lint.per-file-ignores]

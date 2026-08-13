@@ -33,6 +33,67 @@ ama **belirti / sebep / çözüm** üçlüsü mutlaka olsun.
 
 <!-- Yeni kayıtlar buraya, en yenisi en üstte -->
 
+### P-04 · Ruff, Türkçe harfleri "belirsiz unicode" sayıp 108 yanlış pozitif üretti
+
+**Tarih:** 13.08.2026 · **Faz:** 0 · **Kaybedilen süre:** ~5 dk
+
+**Belirti:** `ruff check src` 110 hata döndürdü. Kod yeni yazılmıştı ve
+çalışıyordu.
+
+**Kök sebep:** RUF001/RUF002/RUF003 kuralları, görsel olarak ASCII'ye
+benzeyen unicode karakterleri "homoglif saldırısı" riski olarak işaretler.
+Türkçe `ı` (noktasız i), `ş`, `ğ`, `İ` harfleri bu kapsama giriyor.
+108 hatanın tamamı Türkçe docstring ve yorumlardan kaynaklanıyordu.
+
+**Çözüm:** Bu üç kural `pyproject.toml`'da gerekçesiyle birlikte kapatıldı.
+Kalan 2 gerçek hata (`RUF100` kullanılmayan `noqa`, import sıralaması)
+`--fix` ile düzeltildi.
+
+**Öğrenilen ders:** Lint kuralları dil-agnostik değildir. Yanlış pozitifleri
+tek tek `noqa` ile susturmak yerine kuralın **neden** yanlış olduğunu anlayıp
+merkezi olarak, gerekçe yazarak kapatmak doğru yaklaşım. Aksi halde 108 tane
+`# noqa` satırı kodu okunamaz hale getirirdi.
+
+---
+
+### P-03 · Sağlık kontrolü, sağlıklı servisleri "ölü" raporladı (Windows IPv6 tuzağı)
+
+**Tarih:** 13.08.2026 · **Faz:** 0 · **Kaybedilen süre:** ~20 dk
+
+**Belirti:** `/api/v1/system/health` uç noktası 503 döndürüyor; Valkey ve
+PostgreSQL "erişilemiyor" görünüyordu. Ancak `docker compose ps` her ikisini
+de `healthy` gösteriyor, `valkey-cli PING` ve `psql` elle çalışıyordu.
+
+**Araştırma:** Aynı bağlantıları uygulama dışında bir Python betiğiyle
+denedim — **çalıştılar**, ama Valkey PING'i **2491 ms** sürdü. Sağlık
+kontrolündeki zaman aşımı 3 sn'ydi; yani kontrol kıl payı düşüyordu.
+Asıl soru "neden bağlanamıyor" değil, "neden 2.5 saniye sürüyor" oldu.
+
+**Kök sebep:** İki karar birleşince ortaya çıkan bir etkileşim:
+1. `docker-compose.yml` portları güvenlik gereği **yalnızca IPv4**'e
+   bağlıyor (`127.0.0.1:6379:6379`).
+2. `.env` dosyasında adres `localhost` yazıyordu.
+
+Windows'ta `localhost` **önce `::1` (IPv6)** olarak çözülür. Servis IPv6
+dinlemediği için bağlantı zaman aşımına uğrar, ardından IPv4'e düşülür.
+Bu geri düşüş ~2 saniye sürüyor — her istekte.
+
+**Çözüm:** İki yönlü:
+- `.env` ve `config.py` içindeki tüm **servis adresleri** `localhost` yerine
+  `127.0.0.1` yapıldı. (`ALLOWED_ORIGINS` bilerek `localhost` kaldı —
+  tarayıcı Origin başlığını öyle gönderiyor.)
+- Sağlık kontrolü zaman aşımı 3 sn → 5 sn (soğuk başlangıç payı).
+
+**Sonuç:** Valkey gecikmesi **2491 ms → 525 ms**. Tüm servisler sağlıklı.
+
+**Öğrenilen ders:** "Bağlanamıyor" ile "yavaş bağlanıyor" farklı problemlerdir
+ve zaman aşımı ikisini aynı hataya dönüştürür. Zaman aşımını büyütmek
+semptomu gizlerdi; asıl kazanç kök sebebi bulmaktı. Ayrıca bu, güvenlik
+kararının (portları IPv4-localhost'a kısıtlamak) beklenmedik bir performans
+yan etkisi yaratmasının güzel bir örneği — **rapora bu şekilde yazılacak.**
+
+---
+
 ### P-02 · MediaMTX yönetim API'si 401 döndürüyor
 
 **Tarih:** 13.08.2026 · **Faz:** 0 · **Kaybedilen süre:** ~10 dk
