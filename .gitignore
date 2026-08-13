@@ -22,6 +22,10 @@ data/videos/*
 data/datasets/*
 data/clips/*
 data/annotations/*
+# ham indirilen veri setleri (VIRAT, Oxford, PETS…)
+data/_sources/*
+# ffmpeg concat listeleri gibi geçici dosyalar
+data/_tmp/*
 models/*
 !**/.gitkeep
 *.pt

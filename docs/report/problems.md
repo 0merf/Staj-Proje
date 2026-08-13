@@ -33,6 +33,43 @@ ama **belirti / sebep / çözüm** üçlüsü mutlaka olsun.
 
 <!-- Yeni kayıtlar buraya, en yenisi en üstte -->
 
+### P-05 · `.gitignore` satır içi yorum desteklemiyor — 5565 JPEG commit'e girdi
+
+**Tarih:** 13.08.2026 · **Faz:** 0 · **Kaybedilen süre:** ~10 dk
+
+**Belirti:** Veri setleri `data/_sources/` altına taşındıktan sonra
+`git add -A` çalıştırıldığında 5565 PETS2009 JPEG dosyası stage'e girdi.
+`.gitignore`'a kural eklenmişti ama işe yaramıyordu.
+
+**Araştırma:** İlk hipotez "kural yanlış yazılmış" idi. `git check-ignore -v`
+ile bakınca kuralın **hiçbir dosyayla eşleşmediği** görüldü.
+
+**Kök sebep:** Kural şöyle yazılmıştı:
+
+```gitignore
+data/_sources/*      # ham indirilen veri setleri
+```
+
+**`.gitignore` satır içi yorum desteklemez.** `#` yalnızca satırın
+**başındayken** yorum başlatır. Ortadaki `#` desenin bir parçası sayılır;
+git `data/_sources/*      # ham indirilen veri setleri` diye tuhaf bir
+desen arar ve hiçbir şey eşleşmez. Sessizce başarısız olur — hata vermez.
+
+**Çözüm:** Yorumlar kendi satırlarına alındı:
+
+```gitignore
+# ham indirilen veri setleri (VIRAT, Oxford, PETS…)
+data/_sources/*
+```
+
+**Öğrenilen ders:** Yeni bir `.gitignore` kuralı yazınca **her zaman
+`git check-ignore -v <dosya>` ile doğrula.** Sessizce çalışmayan kural,
+hata veren kuraldan çok daha tehlikelidir — bu vakada 800 MB'lık veri
+seti fark edilmeden depoya gidebilirdi. Commit öncesi
+`git diff --cached --name-only` kontrolü de rutin hâline getirildi.
+
+---
+
 ### P-04 · Ruff, Türkçe harfleri "belirsiz unicode" sayıp 108 yanlış pozitif üretti
 
 **Tarih:** 13.08.2026 · **Faz:** 0 · **Kaybedilen süre:** ~5 dk
