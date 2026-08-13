@@ -84,9 +84,20 @@ def build_detector(
     raise ValueError(f"Bilinmeyen dedektör arka ucu: {backend}")
 
 
-def _serialize(detections: list[Detection], *, motion: float, gate: str) -> str:
+def _serialize(
+    detections: list[Detection], *, motion: float, gate: str, width: int, height: int
+) -> str:
+    """Sonucu JSON'a çevirir.
+
+    Kaynak kare boyutu (`w`, `h`) mutlaka gönderilir: kutular piksel
+    koordinatındadır ve tarayıcı bunları kendi görüntü alanına
+    ölçeklemek zorundadır. Kameralar farklı çözünürlükte olabilir
+    (örn. cam-12 960×720), sabit bir varsayım yanlış çizime yol açar.
+    """
     return json.dumps(
         {
+            "w": width,
+            "h": height,
             "motion": round(motion, 5),
             "gate": gate,
             "count": len(detections),
@@ -197,7 +208,11 @@ class InferenceWorker:
         now_monotonic = time.monotonic()
         for message, detections in zip(batch, results, strict=True):
             payload = _serialize(
-                detections, motion=message.motion_ratio, gate=message.gate_reason
+                detections,
+                motion=message.motion_ratio,
+                gate=message.gate_reason,
+                width=message.ref.width,
+                height=message.ref.height,
             )
             self._results.publish(
                 message.camera,

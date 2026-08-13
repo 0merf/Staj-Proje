@@ -53,6 +53,15 @@
                  color:var(--dim);text-transform:uppercase;letter-spacing:.7px}
   .cam .frame{aspect-ratio:16/9;background:#05070b;position:relative}
   .cam iframe{width:100%;height:100%;border:0;display:block}
+  /* Kutular VİDEONUN ÜSTÜNE çizilir — sunucu videoya dokunmaz.
+     pointer-events:none olmalı ki oynatıcı kontrolleri tıklanabilsin. */
+  .cam canvas.ov{position:absolute;inset:0;width:100%;height:100%;
+                 pointer-events:none;z-index:2}
+  .cam .badge{position:absolute;top:8px;left:8px;z-index:3;
+              background:rgba(5,7,11,.78);border:1px solid var(--line);
+              border-radius:6px;padding:3px 8px;font-family:var(--mono);
+              font-size:11px;color:var(--fg)}
+  .cam .badge.hot{border-color:var(--ok);color:var(--ok)}
   .cam .off{position:absolute;inset:0;display:flex;flex-direction:column;
             align-items:center;justify-content:center;gap:7px;
             color:var(--dim);font-size:13px;text-align:center;padding:18px}
@@ -142,6 +151,8 @@ function createCard (cam, container) {
     dot: root.querySelector('.dot'),
     meta: root.querySelector('.bar span[title]'),
     frame: root.querySelector('.frame'),
+    canvas: null,
+    badge: null,
     playing: false,
   };
   cards.set(cam.name, entry);
@@ -210,7 +221,103 @@ function startPlay (cam) {
   if (!entry || entry.playing) return;
   entry.playing = true;
   entry.frame.innerHTML =
-    `<iframe src="${cfg.urls.webrtc}/${cam.name}" allow="autoplay"></iframe>`;
+    `<iframe src="${cfg.urls.webrtc}/${cam.name}" allow="autoplay"></iframe>` +
+    `<canvas class="ov"></canvas><div class="badge">bekleniyor…</div>`;
+  entry.canvas = entry.frame.querySelector('canvas.ov');
+  entry.badge = entry.frame.querySelector('.badge');
+}
+
+// ══════════════════════════════════════════════════════════════
+//  KİLOMETRE TAŞI 1 — canlı kutular
+//
+//  ⚠ Video ve kutular AYRI kanaldan gelir:
+//     · video  : WHEP/WebRTC → <iframe>
+//     · kutular: WebSocket JSON → <canvas>
+//  Sunucu videoya HİÇ dokunmaz. Böylece NVENC oturum limitine
+//  takılmıyoruz ve GPU tamamen YZ'ye kalıyor (PLAN.md §9.2).
+// ══════════════════════════════════════════════════════════════
+
+const latest = new Map();   // cam -> son sonuç
+let ws = null, wsState = 'kapalı', wsFrames = 0;
+
+function connectWs () {
+  ws = new WebSocket(`ws://${location.host}/ws/live`);
+  wsState = 'bağlanıyor';
+
+  ws.onopen = () => {
+    wsState = 'bağlı';
+    ws.send(JSON.stringify({ type: 'subscribe', cameras: [] }));  // hepsi
+  };
+  ws.onmessage = (event) => {
+    const msg = JSON.parse(event.data);
+    if (msg.type !== 'frame') return;
+    wsFrames++;
+    latest.set(msg.cam, msg);
+  };
+  ws.onclose = () => {
+    wsState = 'kapalı — yeniden bağlanılıyor';
+    setTimeout(connectWs, 2000);
+  };
+  ws.onerror = () => { wsState = 'hata'; };
+}
+
+// Çizim döngüsü React state'inden BAĞIMSIZ çalışır.
+// Her sonuçta yeniden render tetiklemek 20 kamerada saniyede ~100
+// güncelleme demek olurdu; rAF ile ekran tazeleme hızına bağlıyoruz.
+function drawLoop () {
+  for (const [name, entry] of cards) {
+    if (!entry.playing || !entry.canvas) continue;
+    const result = latest.get(name);
+    const canvas = entry.canvas;
+    const rect = canvas.getBoundingClientRect();
+    if (canvas.width !== rect.width || canvas.height !== rect.height) {
+      canvas.width = Math.max(1, Math.round(rect.width));
+      canvas.height = Math.max(1, Math.round(rect.height));
+    }
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!result) continue;
+
+    // Kaynak kare piksellerinden görüntü alanına ölçekle.
+    // Kameralar farklı çözünürlükte olabilir (cam-12: 960×720).
+    const sx = canvas.width / (result.w || 1280);
+    const sy = canvas.height / (result.h || 720);
+
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#3fb950';
+    ctx.fillStyle = '#3fb950';
+    ctx.font = '600 11px ui-monospace,Consolas,monospace';
+
+    for (const det of result.detections || []) {
+      const [x1, y1, x2, y2] = det.bbox;
+      const x = x1 * sx, y = y1 * sy, w = (x2 - x1) * sx, h = (y2 - y1) * sy;
+      ctx.strokeRect(x, y, w, h);
+      const label = `${(det.conf * 100).toFixed(0)}%`;
+      const tw = ctx.measureText(label).width + 8;
+      ctx.fillRect(x, Math.max(0, y - 15), tw, 15);
+      ctx.fillStyle = '#06111f';
+      ctx.fillText(label, x + 4, Math.max(11, y - 4));
+      ctx.fillStyle = '#3fb950';
+
+      // İskelet noktaları (poz modeli kullanılırsa dolu gelir)
+      if (det.kp) {
+        for (const [kx, ky, kc] of det.kp) {
+          if (kc < 0.3) continue;
+          ctx.beginPath();
+          ctx.arc(kx * sx, ky * sy, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+
+    if (entry.badge) {
+      const age = ((Date.now() / 1000) - (result.ts || 0));
+      entry.badge.textContent = `${result.count} kişi`;
+      entry.badge.className = 'badge' + (result.count > 0 ? ' hot' : '');
+      void age;
+    }
+  }
+  requestAnimationFrame(drawLoop);
 }
 
 function serviceCard (s) {
@@ -272,11 +379,16 @@ async function refresh () {
 
   $('stamp').textContent =
     (data.healthy ? '● tüm servisler sağlıklı' : '● bazı servisler sorunlu') +
+    ` · WS ${wsState} (${wsFrames} kare)` +
     ' · ' + new Date().toLocaleTimeString('tr-TR');
 }
 
 refresh();
 setInterval(refresh, 5000);
+
+// KT1: WebSocket + canvas çizim döngüsü
+connectWs();
+requestAnimationFrame(drawLoop);
 </script>
 </body>
 </html>

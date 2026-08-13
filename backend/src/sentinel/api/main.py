@@ -17,6 +17,8 @@ from fastapi.responses import FileResponse, JSONResponse
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 from sentinel.api import cameras, health, webcam
+from sentinel.api.ws import live as ws_live
+from sentinel.api.ws.manager import broadcaster
 from sentinel.config import settings
 from sentinel.logging import configure_logging, get_logger
 
@@ -35,7 +37,11 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         camera_count=settings.camera_count,
         target_fps=settings.target_fps,
     )
+    # Sonuç yayıncısı: inference.results akışını TEK okuyucu takip eder,
+    # WebSocket istemcilerine dağıtır (api/ws/manager.py)
+    await broadcaster.start()
     yield
+    await broadcaster.stop()
     log.info("sentinel_kapatiliyor")
 
 
@@ -68,6 +74,15 @@ async def system_health() -> JSONResponse:
     """Tüm altyapı servislerinin gerçek sağlık durumu."""
     result = await health.check_all()
     return JSONResponse(result, status_code=200 if result["healthy"] else 503)
+
+
+app.include_router(ws_live.router)
+
+
+@app.get("/api/v1/system/ws-stats", tags=["system"])
+async def ws_stats() -> dict[str, Any]:
+    """WebSocket yayıncı istatistikleri."""
+    return broadcaster.stats()
 
 
 @app.get("/api/v1/cameras", tags=["cameras"])
