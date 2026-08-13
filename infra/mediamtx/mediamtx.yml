@@ -1,0 +1,121 @@
+# ══════════════════════════════════════════════════════════════
+#  MediaMTX — SENTINEL kamera çiftliği
+#
+#  İki iş yapar:
+#   1) Video dosyalarından 20 sahte RTSP kamerası üretir
+#   2) Tarayıcıya WHEP/WebRTC ile düşük gecikmeli yayın verir
+#      → YENİDEN KODLAMA YAPMAZ, sadece kapsayıcı değiştirir.
+#        (NVENC oturum limiti + GPU tasarrufu — PLAN.md §3.3)
+# ══════════════════════════════════════════════════════════════
+
+logLevel: info
+logDestinations: [stdout]
+
+# ─── KİMLİK DOĞRULAMA ─────────────────────────────────────────
+# MediaMTX v1.x varsayılan olarak api/metrics erişimini KAPALI tutar
+# (iyi bir güvenlik varsayılanı). Yönetim erişimini yalnızca yerel
+# ağlara açıyoruz — dış dünyaya asla.
+authInternalUsers:
+  # Yayın ve izleme: iç ağdan serbest (worker'lar ve tarayıcı)
+  - user: any
+    ips: []
+    permissions:
+      - action: publish
+      - action: read
+      - action: playback
+
+  # Yönetim API'si ve metrikler: SADECE localhost + Docker özel ağları
+  - user: any
+    ips: ["127.0.0.1/32", "::1/128", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+    permissions:
+      - action: api
+      - action: metrics
+
+# ─── YÖNETİM API'Sİ ───────────────────────────────────────────
+api: yes
+apiAddress: :9997
+
+# ─── PROMETHEUS METRİKLERİ ────────────────────────────────────
+metrics: yes
+metricsAddress: :9998
+
+# ─── RTSP (worker'ların okuduğu protokol) ────────────────────
+rtsp: yes
+rtspAddress: :8554
+
+# ─── WEBRTC / WHEP (tarayıcının izlediği protokol) ───────────
+webrtc: yes
+webrtcAddress: :8889
+webrtcLocalUDPAddress: :8189
+
+# ─── KULLANILMAYAN PROTOKOLLER — kapalı (saldırı yüzeyi azaltma) ──
+hls: no
+rtmp: no
+srt: no
+
+# ─── VARSAYILAN YOL AYARLARI ──────────────────────────────────
+pathDefaults:
+  # Kaynak yalnızca birisi bağlandığında başlar (CPU tasarrufu)
+  runOnDemandRestart: yes
+  runOnDemandStartTimeout: 20s
+  runOnDemandCloseAfter: 30s
+
+paths:
+
+  # ══════════════════════════════════════════════════════════
+  #  SENTETİK TEST KAMERALARI — video dosyası GEREKTİRMEZ
+  #  Amaç: veri setleri inmeden boru hattını test edebilmek
+  # ══════════════════════════════════════════════════════════
+
+  # Hareketli desen — Kademe 0 hareket filtresi bunu GEÇİRMELİ
+  cam-test-motion:
+    runOnDemand: >
+      ffmpeg -re -f lavfi -i testsrc2=size=1280x720:rate=25
+      -c:v libx264 -preset ultrafast -tune zerolatency
+      -pix_fmt yuv420p -g 50 -an
+      -f rtsp rtsp://127.0.0.1:$RTSP_PORT/$MTX_PATH
+
+  # Yoğun kaotik hareket — batch/yük testi için
+  cam-test-chaos:
+    runOnDemand: >
+      ffmpeg -re -f lavfi -i life=size=1280x720:rate=25:mold=10:ratio=0.1
+      -c:v libx264 -preset ultrafast -tune zerolatency
+      -pix_fmt yuv420p -g 50 -an
+      -f rtsp rtsp://127.0.0.1:$RTSP_PORT/$MTX_PATH
+
+  # Tamamen durağan — Kademe 0 hareket filtresi bunu ~%100 ELEMELİ
+  # (PLAN.md §5.1 doğrulaması: filtre gerçekten yük düşürüyor mu?)
+  cam-test-static:
+    runOnDemand: >
+      ffmpeg -re -f lavfi -i color=c=gray:size=1280x720:rate=25
+      -c:v libx264 -preset ultrafast -tune zerolatency
+      -pix_fmt yuv420p -g 50 -an
+      -f rtsp rtsp://127.0.0.1:$RTSP_PORT/$MTX_PATH
+
+  # ══════════════════════════════════════════════════════════
+  #  KAMERA ÇİFTLİĞİ — data/videos/cam-NN.mp4 dosyalarından
+  #
+  #  Regex ile 20 yol tek tanımda: cam-01 … cam-20
+  #  Dosya adı yol adıyla eşleşmeli:  cam-07  →  /videos/cam-07.mp4
+  #
+  #  -c copy    : yeniden kodlama YOK (CPU tasarrufu — 20 akış × encode
+  #               olsaydı CPU'yu decode'a bırakmazdık)
+  #  -stream_loop -1 : sonsuz döngü
+  #  -fflags +genpts : döngüde zaman damgası kopukluğunu önler
+  # ══════════════════════════════════════════════════════════
+
+  "~^cam-(0[1-9]|1[0-9]|20)$":
+    runOnDemand: >
+      ffmpeg -re -stream_loop -1 -fflags +genpts -i /videos/$MTX_PATH.mp4
+      -c copy -an
+      -f rtsp rtsp://127.0.0.1:$RTSP_PORT/$MTX_PATH
+
+  # ══════════════════════════════════════════════════════════
+  #  KAMERA 21 — laptop webcam (canlı demo)
+  #  Windows'ta çalıştığı için host tarafından yayınlanır:
+  #    scripts/publish_webcam.ps1
+  #  Bu yol sadece yayını KABUL eder (runOnDemand yok).
+  # ══════════════════════════════════════════════════════════
+  cam-21-live:
+    # Yayın bekleniyor — kaynak tanımlanmadı (publisher push edecek)
+    source: publisher

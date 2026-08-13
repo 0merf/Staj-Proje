@@ -1,0 +1,172 @@
+# ══════════════════════════════════════════════════════════════
+#  SENTINEL — Geliştirme Altyapısı
+#
+#  Kullanım:
+#    docker compose up -d              # temel altyapı
+#    docker compose --profile storage up -d   # + Garage (Hafta 4)
+#    docker compose ps                 # durum
+#    docker compose logs -f <servis>
+#    docker compose down               # durdur  (-v = verileri de sil)
+#
+#  ⚠ GÜVENLİK: Tüm portlar 127.0.0.1'e bağlıdır — dış ağa AÇIK DEĞİL.
+#    Python YZ worker'ları Windows'ta native çalıştığı için localhost
+#    erişimi gereklidir. Üretimde bu portlar tamamen kapatılır
+#    (PLAN.md §11.1 / G16).
+# ══════════════════════════════════════════════════════════════
+
+name: sentinel
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+
+  # ─── VALKEY — mesaj kuyruğu (Streams) + canlı durum önbelleği ───
+  valkey:
+    image: valkey/valkey:8-alpine
+    container_name: sentinel-valkey
+    restart: unless-stopped
+    command: >
+      valkey-server /etc/valkey/valkey.conf
+      --requirepass ${VALKEY_PASSWORD:?VALKEY_PASSWORD gerekli}
+    volumes:
+      - ./infra/valkey/valkey.conf:/etc/valkey/valkey.conf:ro
+    ports:
+      - "127.0.0.1:${VALKEY_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli -a \"$$VALKEY_PASSWORD\" ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    environment:
+      VALKEY_PASSWORD: ${VALKEY_PASSWORD}
+    networks: [sentinel]
+    logging: *default-logging
+
+  # ─── POSTGRESQL + TIMESCALEDB — olaylar, metrikler, denetim ───
+  postgres:
+    image: timescale/timescaledb:latest-pg17
+    container_name: sentinel-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-sentinel}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD gerekli}
+      POSTGRES_DB: ${POSTGRES_DB:-sentinel}
+      # Zaman dilimi — olay zaman damgaları için kritik
+      TZ: ${TZ:-Europe/Istanbul}
+      PGTZ: ${TZ:-Europe/Istanbul}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sentinel} -d ${POSTGRES_DB:-sentinel}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks: [sentinel]
+    logging: *default-logging
+
+  # ─── MEDIAMTX — kamera çiftliği (RTSP) + tarayıcıya WebRTC/WHEP ───
+  #  Yeniden kodlama YAPMAZ; sadece kapsayıcı değiştirir (PLAN.md §3.3)
+  mediamtx:
+    image: bluenviron/mediamtx:latest-ffmpeg
+    container_name: sentinel-mediamtx
+    restart: unless-stopped
+    volumes:
+      - ./infra/mediamtx/mediamtx.yml:/mediamtx.yml:ro
+      - ./data/videos:/videos:ro
+    ports:
+      - "127.0.0.1:${MEDIAMTX_RTSP_PORT:-8554}:8554"      # RTSP
+      - "127.0.0.1:${MEDIAMTX_WEBRTC_PORT:-8889}:8889"    # WebRTC / WHEP
+      - "127.0.0.1:8189:8189/udp"                          # WebRTC ICE
+      - "127.0.0.1:${MEDIAMTX_API_PORT:-9997}:9997"       # yönetim API
+      - "127.0.0.1:9998:9998"                              # Prometheus metrikleri
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O- http://localhost:9997/v3/paths/list > /dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks: [sentinel]
+    logging: *default-logging
+
+  # ─── PROMETHEUS — metrik toplama ───
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: sentinel-prometheus
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=15d"
+      - "--web.enable-lifecycle"
+    volumes:
+      - ./infra/observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "127.0.0.1:${PROMETHEUS_PORT:-9090}:9090"
+    extra_hosts:
+      # Windows'ta native çalışan Python worker'larına ulaşmak için
+      - "host.docker.internal:host-gateway"
+    networks: [sentinel]
+    logging: *default-logging
+
+  # ─── GRAFANA — paneller ───
+  grafana:
+    image: grafana/grafana:latest
+    container_name: sentinel-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD gerekli}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./infra/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "127.0.0.1:${GRAFANA_PORT:-3000}:3000"
+    depends_on:
+      - prometheus
+    networks: [sentinel]
+    logging: *default-logging
+
+  # ─── GARAGE — S3 uyumlu klip arşivi ───
+  #  ⚠ Tek seferlik "layout" kurulumu gerektirir → Hafta 4'e ertelendi.
+  #    Klipler Gün 19'a kadar gerekmiyor; o zamana dek STORAGE_BACKEND=localfs.
+  #    Başlatmak için:  docker compose --profile storage up -d
+  #    Ardından:        pwsh infra/garage/init.ps1
+  garage:
+    image: dxflrs/garage:v2.0.0
+    container_name: sentinel-garage
+    restart: unless-stopped
+    profiles: ["storage"]
+    volumes:
+      - ./infra/garage/garage.toml:/etc/garage.toml:ro
+      - garage-meta:/var/lib/garage/meta
+      - garage-data:/var/lib/garage/data
+    ports:
+      - "127.0.0.1:3900:3900"   # S3 API
+      - "127.0.0.1:3903:3903"   # yönetim API
+    networks: [sentinel]
+    logging: *default-logging
+
+networks:
+  sentinel:
+    name: sentinel-net
+    driver: bridge
+
+volumes:
+  postgres-data:
+  prometheus-data:
+  grafana-data:
+  garage-meta:
+  garage-data:

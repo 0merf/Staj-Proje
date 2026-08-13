@@ -1,0 +1,138 @@
+[project]
+name = "sentinel"
+version = "0.1.0"
+description = "SENTINEL — Çok kameralı akıllı gözetim sistemi"
+requires-python = ">=3.13"
+
+# ─── ÇEKİRDEK BAĞIMLILIKLAR ───────────────────────────────────
+# Faz 0-2 için yeterli. Ağır ML paketleri 'gpu' extra'sında (aşağıda),
+# çünkü PyTorch'un CUDA yapısı ayrı bir indeks gerektirir ve
+# Gün 4'e (ilk YOLO çalıştırması) kadar ihtiyacımız yok.
+dependencies = [
+    # Web katmanı
+    "fastapi>=0.136",
+    "uvicorn[standard]>=0.34",
+    "python-multipart>=0.0.20",
+    "websockets>=14",
+
+    # Konfigürasyon ve doğrulama
+    "pydantic>=2.10",
+    "pydantic-settings>=2.7",
+
+    # Veritabanı
+    "sqlalchemy[asyncio]>=2.0.36",
+    "asyncpg>=0.30",
+    "alembic>=1.14",
+
+    # Valkey — redis-py protokol uyumludur, Valkey ile değişmeden çalışır
+    "redis>=5.2",
+
+    # Video ve görüntü işleme
+    "av>=13.1",              # PyAV — shell'e çıkmaz, komut enjeksiyonu riski yok
+    "opencv-python>=4.10",   # MOG2 hareket filtresi + YuNet yüz tespiti
+    "numpy>=2.1",
+
+    # Güvenlik (PLAN.md §11.1)
+    "argon2-cffi>=23.1",     # G01 — parola hash'i (MD5/SHA DEĞİL)
+    "pyjwt>=2.10",           # G02
+    "cryptography>=44",
+
+    # Depolama (S3 / Garage)
+    "boto3>=1.35",
+
+    # Gözlemlenebilirlik
+    "structlog>=24.4",
+    "prometheus-client>=0.21",
+
+    # Analitik (hafif — ağır ML değil)
+    "scikit-learn>=1.6",     # IsolationForest — kamera normal profili
+    "scipy>=1.15",
+
+    # Yardımcılar
+    "orjson>=3.10",
+    "httpx>=0.28",
+    "typer>=0.15",           # worker başlatma CLI'ı
+]
+
+# ─── GPU / ML BAĞIMLILIKLARI ─────────────────────────────────
+#  Kurulum:  uv sync --extra gpu
+#  ⚠ PyTorch'un CUDA yapısı ayrı indeksten gelir. Doğru CUDA sürümü
+#    Gün 4'te donanım üzerinde doğrulanacak (LITERATUR.md §O / S01).
+[project.optional-dependencies]
+gpu = [
+    "torch>=2.6",
+    "torchvision>=0.21",
+    "ultralytics>=8.3",      # YOLO26 / YOLO11   ⚠ Lisans: AGPL-3.0
+    "onnxruntime-gpu>=1.20",
+    "lightgbm>=4.5",         # tırmanma skoru taban modeli
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.25",
+    "pytest-cov>=6.0",
+    "ruff>=0.9",
+    "mypy>=1.14",
+    "pip-audit>=2.7",        # G24 — bağımlılık güvenlik taraması
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sentinel"]
+
+[tool.uv]
+package = true
+
+# ─── RUFF (lint + format) ────────────────────────────────────
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # isort
+    "N",        # pep8-naming
+    "UP",       # pyupgrade
+    "B",        # bugbear
+    "C4",       # comprehensions
+    "SIM",      # simplify
+    "ASYNC",    # asenkron hataları
+    "S",        # bandit — GÜVENLİK (shell=True, sabit sır, zayıf hash…)
+    "RUF",
+]
+ignore = [
+    "S101",     # assert — testlerde normal
+    "E501",     # satır uzunluğu — formatter hallediyor
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S", "N"]
+
+# ─── MYPY ─────────────────────────────────────────────────────
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_unused_configs = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["cv2.*", "av.*", "ultralytics.*", "sklearn.*", "lightgbm.*", "boto3.*", "botocore.*"]
+ignore_missing_imports = true
+
+# ─── PYTEST ───────────────────────────────────────────────────
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-q --strict-markers"
+markers = [
+    "integration: altyapı gerektirir (docker compose up)",
+    "gpu: GPU gerektirir",
+    "slow: uzun süren test",
+]
