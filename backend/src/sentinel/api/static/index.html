@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="tr">
 <head>
 <meta charset="utf-8">
@@ -57,11 +57,12 @@
             align-items:center;justify-content:center;gap:7px;
             color:var(--dim);font-size:13px;text-align:center;padding:18px}
   .cam .off b{color:var(--fg);font-weight:600}
-  .cam .off button.play{background:var(--accent);color:#06111f;border:0;
+  .cam .off button.stop{background:var(--bad) !important;color:#fff !important}
+  .cam .off button.play,.cam .off button.stop{background:var(--accent);color:#06111f;border:0;
        border-radius:8px;padding:9px 20px;font-size:14px;font-weight:600;
        cursor:pointer}
-  .cam .off button.play:hover{filter:brightness(1.12)}
-  .cam .off button.play:disabled{background:var(--panel2);color:var(--dim);
+  .cam .off button.play:hover,.cam .off button.stop:hover{filter:brightness(1.12)}
+  .cam .off button.play:disabled,.cam .off button.stop:disabled{background:var(--panel2);color:var(--dim);
        cursor:not-allowed}
 
   .links{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
@@ -148,6 +149,7 @@ function createCard (cam, container) {
 }
 
 function renderIdle (entry, cam) {
+  if (cam.kind === 'webcam') { renderWebcam(entry, cam); return; }
   entry.frame.innerHTML = `
     <div class="off">
       <button class="play">▶ İzle</button>
@@ -157,6 +159,50 @@ function renderIdle (entry, cam) {
           : 'ilk izleyicide başlar'}</span>
     </div>`;
   entry.frame.querySelector('button.play').onclick = () => startPlay(cam);
+}
+
+// ─── Webcam: panelden aç/kapat ──────────────────────────────
+// Kamera KENDİLİĞİNDEN açılmaz; yalnızca bu düğmeyle başlar.
+async function renderWebcam (entry, cam) {
+  let st = { running: false };
+  try { st = await (await fetch('/api/v1/cameras/webcam')).json(); } catch { /* API yok */ }
+
+  if (st.running && cam.ready) {
+    if (!entry.playing) {
+      entry.playing = true;
+      entry.frame.innerHTML =
+        `<iframe src="${cfg.urls.webrtc}/${cam.name}" allow="autoplay"></iframe>`;
+    }
+    return;
+  }
+
+  entry.playing = false;
+  entry.frame.innerHTML = `
+    <div class="off">
+      <button class="${st.running ? 'stop' : 'play'}">
+        ${st.running ? '⏹ Kamerayı kapat' : '📷 Kamerayı aç'}
+      </button>
+      <span>${st.running
+        ? 'yayın başlıyor, birkaç saniye…'
+        : 'Laptop webcam — yalnızca sen açtığında çalışır'}</span>
+      <span class="wc-msg" style="font-size:12px;color:var(--warn)"></span>
+    </div>`;
+
+  const btn = entry.frame.querySelector('button');
+  const msg = entry.frame.querySelector('.wc-msg');
+  btn.onclick = async () => {
+    btn.disabled = true;
+    btn.textContent = st.running ? 'kapatılıyor…' : 'açılıyor…';
+    try {
+      const path = st.running ? 'stop' : 'start';
+      const res = await fetch(`/api/v1/cameras/webcam/${path}`, { method: 'POST' });
+      const body = await res.json();
+      if (body.reason) msg.textContent = body.reason;
+    } catch (e) {
+      msg.textContent = 'İstek başarısız: ' + e;
+    }
+    setTimeout(() => renderWebcam(entry, cam), 1200);
+  };
 }
 
 function startPlay (cam) {
@@ -190,6 +236,8 @@ async function refreshCameras () {
       entry = createCard(cam, container);
       renderIdle(entry, cam);
     }
+    // Webcam kartı kendi durumunu yönetir (aç/kapat düğmesi)
+    if (cam.kind === 'webcam' && !entry.playing) renderWebcam(entry, cam);
     // Yalnızca durum göstergesini güncelle — oynayan iframe'e DOKUNMA
     entry.dot.className = 'dot ' + (cam.ready ? 'ok' : 'idle');
     entry.meta.title = cam.label + (cam.readers ? ` · ${cam.readers} izleyici` : '');

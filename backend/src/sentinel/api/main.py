@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
-from sentinel.api import cameras, health
+from sentinel.api import cameras, health, webcam
 from sentinel.config import settings
 from sentinel.logging import configure_logging, get_logger
 
@@ -79,6 +79,32 @@ async def list_cameras() -> dict[str, Any]:
     listeyi kamera çiftliği manifestinden alıp durumla birleştirir.
     """
     return await cameras.list_cameras()
+
+
+@app.get("/api/v1/cameras/webcam", tags=["cameras"])
+async def webcam_status() -> dict[str, Any]:
+    """Webcam yayını çalışıyor mu?"""
+    return webcam.controller.status()
+
+
+@app.post("/api/v1/cameras/webcam/start", tags=["cameras"])
+async def webcam_start(device: int = 0) -> JSONResponse:
+    """Webcam yayınını başlatır (cam-21-live).
+
+    ⚠ Kamera yalnızca bu çağrıyla açılır — kendiliğinden açılmaz.
+    Faz 1'de `operator+` rolü ve denetim kaydı zorunlu olacak (G19).
+    """
+    try:
+        result = webcam.controller.start(device)
+    except (ValueError, FileNotFoundError) as exc:
+        return JSONResponse({"started": False, "reason": str(exc)}, status_code=400)
+    return JSONResponse(result, status_code=200 if result.get("started") else 409)
+
+
+@app.post("/api/v1/cameras/webcam/stop", tags=["cameras"])
+async def webcam_stop() -> dict[str, Any]:
+    """Webcam yayınını durdurur."""
+    return webcam.controller.stop()
 
 
 @app.get("/api/v1/system/live", tags=["system"])
