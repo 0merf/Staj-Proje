@@ -28,6 +28,9 @@ data/_sources/*
 data/_tmp/*
 models/*
 !**/.gitkeep
+# Ağırlıkların SHA256 kaydı git'te DURMALI — tekrarlanabilirlik ve
+# bütünlük doğrulaması için (G26). Dosyaların kendisi değil, sadece kayıt.
+!models/checksums.json
 *.pt
 *.onnx
 *.engine
