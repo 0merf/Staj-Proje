@@ -117,6 +117,56 @@ async function loadConfig () {
   return cfg;
 }
 
+// ─── Kamera kartları ────────────────────────────────────────
+// ⚠ Kartlar BİR KEZ oluşturulur, sonra yalnızca durum alanları
+//   güncellenir. innerHTML'i her yenilemede yeniden yazmak, oynayan
+//   <iframe>'i yok edip yeniden yaratır ve video baştan başlar.
+const cards = new Map();   // name -> {root, dot, meta, frame, playing}
+
+function createCard (cam, container) {
+  const root = document.createElement('div');
+  root.className = 'cam';
+  root.innerHTML = `
+    <div class="bar">
+      <span class="dot idle"></span>
+      <span title="${cam.label}">${cam.name}</span>
+      <span class="tag">${cam.kind === 'farm' ? 'dosya'
+                        : cam.kind === 'synthetic' ? 'sentetik'
+                        : cam.kind === 'webcam' ? 'webcam' : cam.kind}</span>
+    </div>
+    <div class="frame"></div>`;
+  container.appendChild(root);
+  const entry = {
+    root,
+    dot: root.querySelector('.dot'),
+    meta: root.querySelector('.bar span[title]'),
+    frame: root.querySelector('.frame'),
+    playing: false,
+  };
+  cards.set(cam.name, entry);
+  return entry;
+}
+
+function renderIdle (entry, cam) {
+  entry.frame.innerHTML = `
+    <div class="off">
+      <button class="play">▶ İzle</button>
+      <span>${cam.label}</span>
+      <span style="font-size:12px">${cam.duration_s
+          ? Math.round(cam.duration_s) + ' sn · döngüde'
+          : 'ilk izleyicide başlar'}</span>
+    </div>`;
+  entry.frame.querySelector('button.play').onclick = () => startPlay(cam);
+}
+
+function startPlay (cam) {
+  const entry = cards.get(cam.name);
+  if (!entry || entry.playing) return;
+  entry.playing = true;
+  entry.frame.innerHTML =
+    `<iframe src="${cfg.urls.webrtc}/${cam.name}" allow="autoplay"></iframe>`;
+}
+
 function serviceCard (s) {
   const ok = s.healthy;
   return `<div class="card ${ok ? '' : 'bad'}">
@@ -130,71 +180,47 @@ function serviceCard (s) {
   </div>`;
 }
 
-// Hangi kameraların oynatıcısı açık — yenilemede kaybolmasın diye dışarıda
-const playing = new Set();
+async function refreshCameras () {
+  const data = await (await fetch('/api/v1/cameras')).json();
+  const container = $('cameras');
 
-function cameraCard (p, webrtcBase) {
-  const live = p.ready;
-  const kind = p.name.startsWith('cam-test') ? 'sentetik'
-             : p.name === 'cam-21-live'      ? 'webcam'
-             : 'dosya';
-  const on = playing.has(p.name);
+  for (const cam of data.cameras) {
+    let entry = cards.get(cam.name);
+    if (!entry) {
+      entry = createCard(cam, container);
+      renderIdle(entry, cam);
+    }
+    // Yalnızca durum göstergesini güncelle — oynayan iframe'e DOKUNMA
+    entry.dot.className = 'dot ' + (cam.ready ? 'ok' : 'idle');
+    entry.meta.title = cam.label + (cam.readers ? ` · ${cam.readers} izleyici` : '');
+  }
 
-  // ⚠ 23 WebRTC bağlantısını aynı anda açmak hem tarayıcıyı hem sunucuyu
-  //   boğar. Gerçek operatör arayüzü de böyle çalışacak: grid'de hafif
-  //   önizleme, tıklayınca tam akış (PLAN.md §10.2).
-  const body = on
-    ? `<iframe src="${webrtcBase}/${p.name}" allow="autoplay"></iframe>`
-    : `<div class="off">
-         <button class="play" data-cam="${p.name}" ${live ? '' : 'disabled'}>▶ İzle</button>
-         <span>${live ? 'yayında' : (kind === 'dosya'
-              ? 'data/videos/' + p.name + '.mp4 bekleniyor'
-              : 'ilk izleyicide başlar')}</span>
-       </div>`;
-
-  return `<div class="cam">
-    <div class="bar">
-      <span class="dot ${live ? 'ok' : 'idle'}"></span>
-      <span>${p.name}</span>
-      <span class="tag">${kind}</span>
-    </div>
-    <div class="frame">${body}</div>
-  </div>`;
-}
-
-function wirePlayButtons () {
-  document.querySelectorAll('button.play').forEach(btn => {
-    btn.onclick = () => { playing.add(btn.dataset.cam); refresh(); };
-  });
+  const playingCount = [...cards.values()].filter(e => e.playing).length;
+  $('camnote').innerHTML =
+    `<b>${data.total}</b> kamera tanımlı · <b>${data.ready}</b> yayında · ` +
+    `<b>${playingCount}</b> oynatıcı açık.<br>` +
+    `Yayınlar <b>istek üzerine</b> başlar (runOnDemand) — 23 akışı sürekli ` +
+    `açık tutmak boşuna CPU harcar. Kartlar bir kez oluşturulur; yenilemede ` +
+    `yalnızca durum güncellenir, oynayan video kesilmez.`;
 }
 
 async function refresh () {
-  const conf = await loadConfig();
+  await loadConfig();
+
   let data;
   try {
     data = await (await fetch('/api/v1/system/health')).json();
-  } catch (e) {
-    $('stamp').textContent = 'API erişilemiyor';
+  } catch {
+    $('stamp').textContent = '● API erişilemiyor';
     return;
   }
-
   $('services').innerHTML = data.services.map(serviceCard).join('');
 
-  const mtx = data.services.find(s => s.name === 'MediaMTX');
-  const paths = mtx?.extra?.paths ?? [];
-  const shown = paths.filter(p => !p.name.startsWith('~'));
-  $('cameras').innerHTML = shown.length
-    ? shown.map(p => cameraCard(p, conf.urls.webrtc)).join('')
-    : '<div class="card"><div class="detail">MediaMTX erişilemiyor</div></div>';
-
-  wirePlayButtons();
-
-  const liveCount = shown.filter(p => p.ready).length;
-  $('camnote').innerHTML =
-    `<b>${liveCount}/${shown.length}</b> yol yayında · <b>${playing.size}</b> oynatıcı açık. ` +
-    `Video akışları <b>tıklayınca</b> başlar — 23 WebRTC bağlantısını aynı anda açmak ` +
-    `hem tarayıcıyı hem sunucuyu boğar. Operatör arayüzü de aynı mantıkla çalışacak: ` +
-    `grid'de hafif önizleme, seçilen kamerada tam akış.`;
+  try {
+    await refreshCameras();
+  } catch (e) {
+    $('camnote').textContent = 'Kamera listesi alınamadı: ' + e;
+  }
 
   $('stamp').textContent =
     (data.healthy ? '● tüm servisler sağlıklı' : '● bazı servisler sorunlu') +

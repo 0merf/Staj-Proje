@@ -33,6 +33,60 @@ ama **belirti / sebep / çözüm** üçlüsü mutlaka olsun.
 
 <!-- Yeni kayıtlar buraya, en yenisi en üstte -->
 
+### P-09 · NVDEC, CPU'dan YAVAŞ çıktı — ve decode zaten darboğaz değilmiş
+
+**Tarih:** 13.08.2026 · **Faz:** 0 / Gün 3 · **Sonuç:** Mimari karar değişti
+
+**Bağlam:** P-07'de "CPU çözme yetmiyor, NVDEC'e geçmeliyiz" sonucuna
+varmıştım. `PLAN.md` §2.4 de bunu varsayıyordu. Gün 3'ün ana işi buydu.
+
+**Ölçüm (RTX 3070 Laptop + i7-12700H, 720p H.264 yerel dosya):**
+
+| Yöntem | Sadece çözme | Çözme + BGR dizi |
+|---|---|---|
+| CPU tek iş parçacığı | 1044 FPS | **240.6 FPS** |
+| CPU çoklu iş parçacığı | 2943 FPS | — |
+| **NVDEC (cuda hwaccel)** | 1246 FPS | **175.1 FPS** ⬅ daha yavaş |
+
+**İki sürpriz:**
+
+**1. NVDEC daha yavaş.** Sebepleri:
+- Her kare için GPU→CPU bellek transferi gerekiyor (biz kareyi CPU'da
+  işleyeceğiz — hareket filtresi OpenCV'de).
+- NVDEC `nv12` formatında verir; `bgr24`'e dönüşüm yine CPU'da yapılıyor.
+- 720p küçük bir çözünürlük; çekirdek başlatma gecikmesi baskın hâle geliyor.
+- Laptop GPU'sunda tek NVDEC birimi var; yüksek çözünürlükte parlar,
+  720p'de değil.
+
+**2. Decode zaten darboğaz değilmiş.**
+
+```
+Gereken : 20 kamera × 25 FPS            = 500 FPS
+Mevcut  : 240.6 FPS/çekirdek × 14 çekirdek ≈ 3368 FPS
+Kullanım: ~2.1 çekirdek  (14 çekirdeğin %15'i)
+```
+
+**Asıl maliyet renk dönüşümüymüş:** çözme tek başına 1037 FPS, `bgr24`
+dizisine çevirince 240 FPS. Yani sürenin **%77'si** H.264 çözmede değil,
+YUV→BGR dönüşümünde geçiyor. Denenen alternatif (küçültmeyi swscale'e
+yaptırmak, `frame.reformat(320,180)`) 0.92× ile **daha yavaş** çıktı —
+maliyet hedef çözünürlükten değil kaynak çözünürlüğünden geliyor.
+
+**Karar:** **NVDEC KULLANILMAYACAK.** CPU çözme hem daha hızlı hem daha
+basit. Ek fayda: GPU tamamen YZ modellerine kalıyor, VRAM'de decode
+tamponu tutulmuyor.
+
+**Öğrenilen ders:** "GPU her zaman daha hızlıdır" bir efsanedir. Donanım
+hızlandırma, veri GPU'da kalıyorsa kazandırır; her kareyi geri indireceksen
+transfer maliyeti kazancı yer. Ayrıca *sezgiye dayalı optimizasyon planı*
+(NVDEC'e geçmek) ölçümle çürütüldü ve **bir günlük iş iptal edildi** —
+ölçmeseydik boşa harcanacaktı.
+
+**Rapora:** Bu iki kayıt (P-07 hatalı teşhis + P-09 düzeltme) birlikte,
+"ölç, varsayma" ilkesinin en somut örneği olarak sunulacak.
+
+---
+
 ### P-08 · Kameralar tarayıcıda oynamadı — WebRTC B-frame kabul etmiyor
 
 **Tarih:** 13.08.2026 · **Faz:** 0 · **Kaybedilen süre:** ~10 dk + 9 dk yeniden kodlama
@@ -75,9 +129,26 @@ farkı bulmak yeterlidir.
 
 ---
 
-### P-07 · Ölçüm, mimarinin gerçek darboğazını değiştirdi: YZ değil, video çözme
+### P-07 · ⛔ HATALI TEŞHİS — "decode darboğazı" diye bir şey yokmuş
 
-**Tarih:** 13.08.2026 · **Faz:** 0 · **Durum:** ⚠️ Açık — Gün 3'te çözülecek
+> **DÜZELTME (13.08.2026, Gün 3):** Aşağıdaki teşhis **yanlıştı.** Doğru
+> ölçüm P-09'da. Kaydı silmiyorum çünkü *nasıl yanlış teşhis konduğu*
+> raporun en öğretici parçalarından biri.
+>
+> **Hata neydi:** RTSP akışından ölçüm aldım. MediaMTX akışı **gerçek
+> zamanlı 25 FPS** hızında yayınlıyor — daha hızlı okumak fiziksel olarak
+> mümkün değil. Ben bu **hız sınırını (rate limit)** decode kapasitesinin
+> tavanı **(throughput limit)** sandım.
+>
+> Doğru ölçüm yerel dosyadan yapılmalıydı: orada decode 1037 FPS çıkıyor,
+> 23 FPS değil. Gerçek ihtiyaç 20 kamera için ~2.1 çekirdek; elimizde 14 var.
+> **Darboğaz yok.**
+>
+> **Ders:** Bir bileşenin kapasitesini ölçerken, ölçüm düzeneğinin kendisi
+> sınırlayıcı olmamalı. Gerçek zamanlı bir kaynaktan "en fazla ne kadar
+> hızlı işleyebiliriz" sorusu cevaplanamaz.
+
+**Tarih:** 13.08.2026 · **Faz:** 0 · **Durum:** ❌ Geçersiz — bkz. P-09
 
 **Belirti:** Kademe 0 ölçümünde beklenmedik bir sayı görüldü:
 `decode_amplification = 6.94`. Yani 100 kare *işlemek* için 694 kare

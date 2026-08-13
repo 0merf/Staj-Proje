@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
-from sentinel.api import health
+from sentinel.api import cameras, health
 from sentinel.config import settings
 from sentinel.logging import configure_logging, get_logger
 
@@ -68,6 +68,17 @@ async def system_health() -> JSONResponse:
     """Tüm altyapı servislerinin gerçek sağlık durumu."""
     result = await health.check_all()
     return JSONResponse(result, status_code=200 if result["healthy"] else 503)
+
+
+@app.get("/api/v1/cameras", tags=["cameras"])
+async def list_cameras() -> dict[str, Any]:
+    """Tanımlı tüm kameralar + anlık yayın durumu.
+
+    Not: MediaMTX yalnızca AKTİF yolları listeler; regex ile tanımlı
+    cam-02…cam-20 biri bağlanana kadar görünmez. Bu uç nokta tanımlı
+    listeyi kamera çiftliği manifestinden alıp durumla birleştirir.
+    """
+    return await cameras.list_cameras()
 
 
 @app.get("/api/v1/system/live", tags=["system"])

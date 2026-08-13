@@ -1,0 +1,15 @@
+{
+  "measured_at": "2026-08-13T14:39:46",
+  "video": "cam-01.mp4",
+  "video_info": "1280×720 h264",
+  "frames": 400,
+  "fps": {
+    "CPU tek iş parçacığı (çözme)": 1071.6,
+    "CPU tek iş parçacığı (çözme+bgr)": 248.7,
+    "CPU çoklu iş parçacığı (çözme)": 2856.9,
+    "CPU çoklu iş parçacığı (çözme+bgr)": 401.7,
+    "NVDEC (çözme)": 1141.5,
+    "NVDEC (çözme+bgr)": 171.8
+  },
+  "cores_needed_for_20_cams": 2.01
+}
