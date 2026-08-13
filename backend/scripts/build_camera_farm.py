@@ -148,6 +148,11 @@ def encode_args(out_rel: str) -> list[str]:
         "-crf", "23",
         "-r", str(TARGET_FPS),
         "-g", str(TARGET_FPS * 2),  # 2 sn GOP — WebRTC'de hızlı başlangıç
+        # ⚠ B-frame KAPALI olmalı. WebRTC'nin H.264 profili B-frame
+        #   desteklemez; MediaMTX bağlantıyı "doesn't support H264 streams
+        #   with B-frames" diyerek kapatır. libx264 varsayılanı B-frame
+        #   ÜRETİR. Bkz. docs/report/problems.md · P-08
+        "-bf", "0",
         "-pix_fmt", "yuv420p",
         "-an",  # ses yok
         "-movflags", "+faststart",

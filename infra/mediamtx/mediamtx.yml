@@ -73,7 +73,7 @@ paths:
       ffmpeg -re -f lavfi -i testsrc2=size=1280x720:rate=25
       -c:v libx264 -preset ultrafast -tune zerolatency
       -pix_fmt yuv420p -g 50 -an
-      -f rtsp rtsp://127.0.0.1:$RTSP_PORT/$MTX_PATH
+      -rtsp_transport tcp -f rtsp rtsp://127.0.0.1:$RTSP_PORT/$MTX_PATH
 
   # Yoğun kaotik hareket — batch/yük testi için
   cam-test-chaos:
@@ -81,7 +81,7 @@ paths:
       ffmpeg -re -f lavfi -i life=size=1280x720:rate=25:mold=10:ratio=0.1
       -c:v libx264 -preset ultrafast -tune zerolatency
       -pix_fmt yuv420p -g 50 -an
-      -f rtsp rtsp://127.0.0.1:$RTSP_PORT/$MTX_PATH
+      -rtsp_transport tcp -f rtsp rtsp://127.0.0.1:$RTSP_PORT/$MTX_PATH
 
   # Tamamen durağan — Kademe 0 hareket filtresi bunu ~%100 ELEMELİ
   # (PLAN.md §5.1 doğrulaması: filtre gerçekten yük düşürüyor mu?)
@@ -90,7 +90,7 @@ paths:
       ffmpeg -re -f lavfi -i color=c=gray:size=1280x720:rate=25
       -c:v libx264 -preset ultrafast -tune zerolatency
       -pix_fmt yuv420p -g 50 -an
-      -f rtsp rtsp://127.0.0.1:$RTSP_PORT/$MTX_PATH
+      -rtsp_transport tcp -f rtsp rtsp://127.0.0.1:$RTSP_PORT/$MTX_PATH
 
   # ══════════════════════════════════════════════════════════
   #  KAMERA ÇİFTLİĞİ — data/videos/cam-NN.mp4 dosyalarından
@@ -108,7 +108,7 @@ paths:
     runOnDemand: >
       ffmpeg -re -stream_loop -1 -fflags +genpts -i /videos/$MTX_PATH.mp4
       -c copy -an
-      -f rtsp rtsp://127.0.0.1:$RTSP_PORT/$MTX_PATH
+      -rtsp_transport tcp -f rtsp rtsp://127.0.0.1:$RTSP_PORT/$MTX_PATH
 
   # ══════════════════════════════════════════════════════════
   #  KAMERA 21 — laptop webcam (canlı demo)

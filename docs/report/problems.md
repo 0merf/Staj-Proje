@@ -33,6 +33,48 @@ ama **belirti / sebep / çözüm** üçlüsü mutlaka olsun.
 
 <!-- Yeni kayıtlar buraya, en yenisi en üstte -->
 
+### P-08 · Kameralar tarayıcıda oynamadı — WebRTC B-frame kabul etmiyor
+
+**Tarih:** 13.08.2026 · **Faz:** 0 · **Kaybedilen süre:** ~10 dk + 9 dk yeniden kodlama
+
+**Belirti:** 20 kameranın tamamı MediaMTX'te `ready=True` görünüyor,
+`ffprobe` ile RTSP'den kare alınabiliyor, ama tarayıcıda hiçbiri oynamıyor:
+*"Error: stream not found, retrying in some seconds"* ya da sonsuz dönen
+yükleme animasyonu. Sentetik test kameraları (`cam-test-*`) ise sorunsuz
+çalışıyor.
+
+**Araştırma:** "Sentetikler çalışıyor, dosyadan gelenler çalışmıyor" ayrımı
+kritik ipucuydu — sorun MediaMTX'te değil, **videoların kendisinde** olmalıydı.
+MediaMTX logları tek satırda cevabı verdi:
+
+```
+[WebRTC] [session ab21e276] closed:
+    WebRTC doesn't support H264 streams with B-frames
+```
+
+**Kök sebep:** `libx264` varsayılan olarak **B-frame** (bidirectional
+predicted frame — hem önceki hem sonraki kareye bakarak tahmin yapan kare)
+üretir. Sıkıştırmayı iyileştirir ama **WebRTC'nin H.264 profili B-frame
+desteklemez.**
+
+Sentetik kameraların çalışmasının sebebi tesadüftü: onları üretirken
+`-tune zerolatency` kullanmıştım ve bu ayar yan etki olarak B-frame'i
+kapatıyor. Kamera çiftliği betiğinde ise `-tune` yoktu.
+
+**Çözüm:** Kodlama parametrelerine `-bf 0` eklendi ve 20 kamera yeniden
+üretildi. Ayrıca ffmpeg'in MediaMTX'e yayınlarken kullandığı komuta
+`-rtsp_transport tcp` eklendi — loglardaki *"27 RTP packets lost"* ve
+*"invalid FU-A packet"* uyarıları, 20 eşzamanlı UDP oturumundaki paket
+kaybından geliyordu.
+
+**Öğrenilen ders:** Bir kodlayıcının varsayılanları hedef protokolün
+kısıtlarını bilmez. WebRTC için H.264 üretirken en az üç kısıt var:
+B-frame yok, kısa GOP, `yuv420p`. Ayrıca "bir grup çalışıyor, diğeri
+çalışmıyor" durumu en değerli hata ayıklama ipucudur — aradaki **tek**
+farkı bulmak yeterlidir.
+
+---
+
 ### P-07 · Ölçüm, mimarinin gerçek darboğazını değiştirdi: YZ değil, video çözme
 
 **Tarih:** 13.08.2026 · **Faz:** 0 · **Durum:** ⚠️ Açık — Gün 3'te çözülecek
