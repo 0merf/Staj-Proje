@@ -93,7 +93,15 @@ class MotionGate:
         """
         started = cv2.getTickCount()
 
-        small = cv2.resize(frame_bgr, self._size, interpolation=cv2.INTER_AREA)
+        # INTER_LINEAR bilinçli bir seçim. 720p→320×180 küçültmede ölçülen
+        # maliyetler (i7-12700H, tek iş parçacığı):
+        #     INTER_AREA    0.967 ms   ← en kaliteli, ama MOG2'den bile pahalı
+        #     INTER_LINEAR  0.136 ms   ← seçilen: 7× hızlı, hâlâ yumuşatıyor
+        #     INTER_NEAREST 0.047 ms   ← en hızlı, ama örtüşme (aliasing) yapıp
+        #                                gürültüyü hareket sanabilir
+        # Hareketin *varlığını* aramak için INTER_AREA'nın alan ortalaması
+        # gereksiz bir lüks. Bkz. benchmarks/ ve docs/report/problems.md · P-06
+        small = cv2.resize(frame_bgr, self._size, interpolation=cv2.INTER_LINEAR)
         mask = self._bg.apply(small)
         mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, self._kernel)
         ratio = float(cv2.countNonZero(mask)) / mask.size

@@ -1,0 +1,576 @@
+{
+  "measured_at": "2026-08-13T13:48:42",
+  "config": {
+    "threshold": 0.005,
+    "refresh_interval_s": 5,
+    "target_fps": 4.0,
+    "frames_per_camera": 60
+  },
+  "results": [
+    {
+      "camera": "cam-test-motion",
+      "frames_sampled": 60,
+      "frames_decoded": 414,
+      "decode_amplification": 6.9,
+      "wall_seconds": 19.72,
+      "effective_fps": 3.04,
+      "reasons": {
+        "warmup": 30,
+        "motion": 30
+      },
+      "filtered_pct": 0.0,
+      "passed_pct": 100.0,
+      "gate_ms": {
+        "mean": 1.659,
+        "p95": 2.455,
+        "max": 4.392
+      },
+      "foreground_ratio": {
+        "mean": 0.04813,
+        "max": 1.0
+      },
+      "loop_ms_mean": 326.79
+    },
+    {
+      "camera": "cam-test-chaos",
+      "frames_sampled": 60,
+      "frames_decoded": 414,
+      "decode_amplification": 6.9,
+      "wall_seconds": 20.02,
+      "effective_fps": 3.0,
+      "reasons": {
+        "warmup": 30,
+        "idle": 29,
+        "refresh": 1
+      },
+      "filtered_pct": 96.7,
+      "passed_pct": 3.3,
+      "gate_ms": {
+        "mean": 1.527,
+        "p95": 2.082,
+        "max": 4.755
+      },
+      "foreground_ratio": {
+        "mean": 0.01667,
+        "max": 1.0
+      },
+      "loop_ms_mean": 331.79
+    },
+    {
+      "camera": "cam-test-static",
+      "frames_sampled": 60,
+      "frames_decoded": 414,
+      "decode_amplification": 6.9,
+      "wall_seconds": 19.98,
+      "effective_fps": 3.0,
+      "reasons": {
+        "warmup": 30,
+        "idle": 29,
+        "refresh": 1
+      },
+      "filtered_pct": 96.7,
+      "passed_pct": 3.3,
+      "gate_ms": {
+        "mean": 1.283,
+        "p95": 2.02,
+        "max": 2.516
+      },
+      "foreground_ratio": {
+        "mean": 0.01667,
+        "max": 1.0
+      },
+      "loop_ms_mean": 331.49
+    },
+    {
+      "camera": "cam-01",
+      "frames_sampled": 60,
+      "frames_decoded": 414,
+      "decode_amplification": 6.9,
+      "wall_seconds": 19.32,
+      "effective_fps": 3.11,
+      "reasons": {
+        "warmup": 30,
+        "idle": 29,
+        "refresh": 1
+      },
+      "filtered_pct": 96.7,
+      "passed_pct": 3.3,
+      "gate_ms": {
+        "mean": 1.357,
+        "p95": 1.88,
+        "max": 3.661
+      },
+      "foreground_ratio": {
+        "mean": 0.01791,
+        "max": 1.0
+      },
+      "loop_ms_mean": 320.41
+    },
+    {
+      "camera": "cam-02",
+      "frames_sampled": 60,
+      "frames_decoded": 414,
+      "decode_amplification": 6.9,
+      "wall_seconds": 18.78,
+      "effective_fps": 3.2,
+      "reasons": {
+        "warmup": 30,
+        "idle": 17,
+        "motion": 13
+      },
+      "filtered_pct": 56.7,
+      "passed_pct": 43.3,
+      "gate_ms": {
+        "mean": 1.289,
+        "p95": 1.887,
+        "max": 2.057
+      },
+      "foreground_ratio": {
+        "mean": 0.01997,
+        "max": 1.0
+      },
+      "loop_ms_mean": 311.46
+    },
+    {
+      "camera": "cam-03",
+      "frames_sampled": 60,
+      "frames_decoded": 414,
+      "decode_amplification": 6.9,
+      "wall_seconds": 18.79,
+      "effective_fps": 3.19,
+      "reasons": {
+        "warmup": 30,
+        "idle": 29,
+        "refresh": 1
+      },
+      "filtered_pct": 96.7,
+      "passed_pct": 3.3,
+      "gate_ms": {
+        "mean": 1.694,
+        "p95": 2.956,
+        "max": 7.037
+      },
+      "foreground_ratio": {
+        "mean": 0.01824,
+        "max": 1.0
+      },
+      "loop_ms_mean": 311.16
+    },
+    {
+      "camera": "cam-04",
+      "frames_sampled": 60,
+      "frames_decoded": 414,
+      "decode_amplification": 6.9,
+      "wall_seconds": 19.41,
+      "effective_fps": 3.09,
+      "reasons": {
+        "warmup": 30,
+        "idle": 14,
+        "motion": 16
+      },
+      "filtered_pct": 46.7,
+      "passed_pct": 53.3,
+      "gate_ms": {
+        "mean": 1.363,
+        "p95": 2.044,
+        "max": 2.239
+      },
+      "foreground_ratio": {
+        "mean": 0.02128,
+        "max": 1.0
+      },
+      "loop_ms_mean": 321.92
+    },
+    {
+      "camera": "cam-05",
+      "frames_sampled": 60,
+      "frames_decoded": 414,
+      "decode_amplification": 6.9,
+      "wall_seconds": 19.03,
+      "effective_fps": 3.15,
+      "reasons": {
+        "warmup": 30,
+        "motion": 24,
+        "idle": 6
+      },
+      "filtered_pct": 20.0,
+      "passed_pct": 80.0,
+      "gate_ms": {
+        "mean": 1.365,
+        "p95": 2.01,
+        "max": 2.627
+      },
+      "foreground_ratio": {
+        "mean": 0.02498,
+        "max": 1.0
+      },
+      "loop_ms_mean": 315.63
+    },
+    {
+      "camera": "cam-06",
+      "frames_sampled": 60,
+      "frames_decoded": 409,
+      "decode_amplification": 6.82,
+      "wall_seconds": 19.25,
+      "effective_fps": 3.12,
+      "reasons": {
+        "warmup": 30,
+        "idle": 29,
+        "refresh": 1
+      },
+      "filtered_pct": 96.7,
+      "passed_pct": 3.3,
+      "gate_ms": {
+        "mean": 1.231,
+        "p95": 1.847,
+        "max": 2.345
+      },
+      "foreground_ratio": {
+        "mean": 0.0169,
+        "max": 1.0
+      },
+      "loop_ms_mean": 319.41
+    },
+    {
+      "camera": "cam-07",
+      "frames_sampled": 60,
+      "frames_decoded": 414,
+      "decode_amplification": 6.9,
+      "wall_seconds": 18.79,
+      "effective_fps": 3.19,
+      "reasons": {
+        "warmup": 30,
+        "motion": 19,
+        "idle": 11
+      },
+      "filtered_pct": 36.7,
+      "passed_pct": 63.3,
+      "gate_ms": {
+        "mean": 1.222,
+        "p95": 1.762,
+        "max": 2.078
+      },
+      "foreground_ratio": {
+        "mean": 0.02434,
+        "max": 1.0
+      },
+      "loop_ms_mean": 311.73
+    },
+    {
+      "camera": "cam-08",
+      "frames_sampled": 60,
+      "frames_decoded": 414,
+      "decode_amplification": 6.9,
+      "wall_seconds": 18.78,
+      "effective_fps": 3.2,
+      "reasons": {
+        "warmup": 30,
+        "idle": 25,
+        "refresh": 1,
+        "motion": 4
+      },
+      "filtered_pct": 83.3,
+      "passed_pct": 16.7,
+      "gate_ms": {
+        "mean": 1.441,
+        "p95": 2.356,
+        "max": 2.672
+      },
+      "foreground_ratio": {
+        "mean": 0.02235,
+        "max": 1.0
+      },
+      "loop_ms_mean": 311.32
+    },
+    {
+      "camera": "cam-09",
+      "frames_sampled": 60,
+      "frames_decoded": 414,
+      "decode_amplification": 6.9,
+      "wall_seconds": 20.0,
+      "effective_fps": 3.0,
+      "reasons": {
+        "warmup": 30,
+        "motion": 30
+      },
+      "filtered_pct": 0.0,
+      "passed_pct": 100.0,
+      "gate_ms": {
+        "mean": 1.718,
+        "p95": 2.55,
+        "max": 3.249
+      },
+      "foreground_ratio": {
+        "mean": 0.06729,
+        "max": 1.0
+      },
+      "loop_ms_mean": 331.49
+    },
+    {
+      "camera": "cam-10",
+      "frames_sampled": 60,
+      "frames_decoded": 414,
+      "decode_amplification": 6.9,
+      "wall_seconds": 18.77,
+      "effective_fps": 3.2,
+      "reasons": {
+        "warmup": 30,
+        "motion": 30
+      },
+      "filtered_pct": 0.0,
+      "passed_pct": 100.0,
+      "gate_ms": {
+        "mean": 1.82,
+        "p95": 3.122,
+        "max": 7.025
+      },
+      "foreground_ratio": {
+        "mean": 0.03042,
+        "max": 1.0
+      },
+      "loop_ms_mean": 310.84
+    },
+    {
+      "camera": "cam-11",
+      "frames_sampled": 60,
+      "frames_decoded": 414,
+      "decode_amplification": 6.9,
+      "wall_seconds": 18.76,
+      "effective_fps": 3.2,
+      "reasons": {
+        "warmup": 30,
+        "idle": 22,
+        "motion": 8
+      },
+      "filtered_pct": 73.3,
+      "passed_pct": 26.7,
+      "gate_ms": {
+        "mean": 1.367,
+        "p95": 2.078,
+        "max": 2.189
+      },
+      "foreground_ratio": {
+        "mean": 0.01949,
+        "max": 1.0
+      },
+      "loop_ms_mean": 311.15
+    },
+    {
+      "camera": "cam-12",
+      "frames_sampled": 60,
+      "frames_decoded": 414,
+      "decode_amplification": 6.9,
+      "wall_seconds": 19.2,
+      "effective_fps": 3.12,
+      "reasons": {
+        "warmup": 30,
+        "motion": 30
+      },
+      "filtered_pct": 0.0,
+      "passed_pct": 100.0,
+      "gate_ms": {
+        "mean": 1.691,
+        "p95": 3.052,
+        "max": 4.458
+      },
+      "foreground_ratio": {
+        "mean": 0.02666,
+        "max": 1.0
+      },
+      "loop_ms_mean": 318.09
+    },
+    {
+      "camera": "cam-13",
+      "frames_sampled": 60,
+      "frames_decoded": 414,
+      "decode_amplification": 6.9,
+      "wall_seconds": 18.76,
+      "effective_fps": 3.2,
+      "reasons": {
+        "warmup": 30,
+        "motion": 30
+      },
+      "filtered_pct": 0.0,
+      "passed_pct": 100.0,
+      "gate_ms": {
+        "mean": 1.384,
+        "p95": 1.99,
+        "max": 2.652
+      },
+      "foreground_ratio": {
+        "mean": 0.04414,
+        "max": 1.0
+      },
+      "loop_ms_mean": 311.22
+    },
+    {
+      "camera": "cam-14",
+      "frames_sampled": 60,
+      "frames_decoded": 414,
+      "decode_amplification": 6.9,
+      "wall_seconds": 18.76,
+      "effective_fps": 3.2,
+      "reasons": {
+        "warmup": 30,
+        "motion": 30
+      },
+      "filtered_pct": 0.0,
+      "passed_pct": 100.0,
+      "gate_ms": {
+        "mean": 1.651,
+        "p95": 2.264,
+        "max": 3.703
+      },
+      "foreground_ratio": {
+        "mean": 0.05439,
+        "max": 1.0
+      },
+      "loop_ms_mean": 310.87
+    },
+    {
+      "camera": "cam-15",
+      "frames_sampled": 60,
+      "frames_decoded": 414,
+      "decode_amplification": 6.9,
+      "wall_seconds": 18.76,
+      "effective_fps": 3.2,
+      "reasons": {
+        "warmup": 30,
+        "motion": 30
+      },
+      "filtered_pct": 0.0,
+      "passed_pct": 100.0,
+      "gate_ms": {
+        "mean": 1.501,
+        "p95": 2.026,
+        "max": 9.761
+      },
+      "foreground_ratio": {
+        "mean": 0.04582,
+        "max": 1.0
+      },
+      "loop_ms_mean": 310.96
+    },
+    {
+      "camera": "cam-16",
+      "frames_sampled": 60,
+      "frames_decoded": 414,
+      "decode_amplification": 6.9,
+      "wall_seconds": 18.76,
+      "effective_fps": 3.2,
+      "reasons": {
+        "warmup": 30,
+        "motion": 30
+      },
+      "filtered_pct": 0.0,
+      "passed_pct": 100.0,
+      "gate_ms": {
+        "mean": 1.874,
+        "p95": 3.171,
+        "max": 6.041
+      },
+      "foreground_ratio": {
+        "mean": 0.05762,
+        "max": 1.0
+      },
+      "loop_ms_mean": 310.67
+    },
+    {
+      "camera": "cam-17",
+      "frames_sampled": 60,
+      "frames_decoded": 414,
+      "decode_amplification": 6.9,
+      "wall_seconds": 18.62,
+      "effective_fps": 3.22,
+      "reasons": {
+        "warmup": 30,
+        "idle": 7,
+        "motion": 23
+      },
+      "filtered_pct": 23.3,
+      "passed_pct": 76.7,
+      "gate_ms": {
+        "mean": 1.792,
+        "p95": 3.204,
+        "max": 3.567
+      },
+      "foreground_ratio": {
+        "mean": 0.23747,
+        "max": 1.0
+      },
+      "loop_ms_mean": 308.4
+    },
+    {
+      "camera": "cam-18",
+      "frames_sampled": 60,
+      "frames_decoded": 414,
+      "decode_amplification": 6.9,
+      "wall_seconds": 18.76,
+      "effective_fps": 3.2,
+      "reasons": {
+        "warmup": 30,
+        "motion": 30
+      },
+      "filtered_pct": 0.0,
+      "passed_pct": 100.0,
+      "gate_ms": {
+        "mean": 2.238,
+        "p95": 3.579,
+        "max": 4.82
+      },
+      "foreground_ratio": {
+        "mean": 0.27223,
+        "max": 1.0
+      },
+      "loop_ms_mean": 310.32
+    },
+    {
+      "camera": "cam-19",
+      "frames_sampled": 60,
+      "frames_decoded": 414,
+      "decode_amplification": 6.9,
+      "wall_seconds": 19.42,
+      "effective_fps": 3.09,
+      "reasons": {
+        "warmup": 30,
+        "motion": 30
+      },
+      "filtered_pct": 0.0,
+      "passed_pct": 100.0,
+      "gate_ms": {
+        "mean": 2.04,
+        "p95": 2.798,
+        "max": 3.613
+      },
+      "foreground_ratio": {
+        "mean": 0.26008,
+        "max": 1.0
+      },
+      "loop_ms_mean": 321.52
+    },
+    {
+      "camera": "cam-20",
+      "frames_sampled": 60,
+      "frames_decoded": 414,
+      "decode_amplification": 6.9,
+      "wall_seconds": 19.98,
+      "effective_fps": 3.0,
+      "reasons": {
+        "warmup": 30,
+        "motion": 30
+      },
+      "filtered_pct": 0.0,
+      "passed_pct": 100.0,
+      "gate_ms": {
+        "mean": 2.128,
+        "p95": 3.313,
+        "max": 7.523
+      },
+      "foreground_ratio": {
+        "mean": 0.27898,
+        "max": 1.0
+      },
+      "loop_ms_mean": 330.79
+    }
+  ]
+}

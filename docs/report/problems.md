@@ -33,6 +33,84 @@ ama **belirti / sebep / çözüm** üçlüsü mutlaka olsun.
 
 <!-- Yeni kayıtlar buraya, en yenisi en üstte -->
 
+### P-07 · Ölçüm, mimarinin gerçek darboğazını değiştirdi: YZ değil, video çözme
+
+**Tarih:** 13.08.2026 · **Faz:** 0 · **Durum:** ⚠️ Açık — Gün 3'te çözülecek
+
+**Belirti:** Kademe 0 ölçümünde beklenmedik bir sayı görüldü:
+`decode_amplification = 6.94`. Yani 100 kare *işlemek* için 694 kare
+*çözülüyor*. Ayrıca hedef 4 FPS iken gerçekleşen 3.2 FPS'te kalıyordu.
+
+**Kök sebep:** H.264 kareler arası kodlamalıdır — 7. kareyi çözmek için
+önceki 6 kareyi de çözmek gerekir. "25 FPS'ten 4 FPS'e örnekleme yapıyoruz"
+demek, **decode maliyetinden kaçtığımız anlamına gelmez.** Örnekleme yalnızca
+pahalı YZ modellerine giden kare sayısını azaltır.
+
+**Ölçülen gerçek:** Tek 720p akış, tek iş parçacığında **~23 FPS** hızla
+çözülüyor. Akışın kendisi 25 FPS. Yani **bir kamera ≈ bir CPU çekirdeği**,
+üstelik %8 geride kalarak.
+
+**Etkisi:** Donanım i7-12700H (14 fiziksel / 20 mantıksal çekirdek).
+CPU çözme ile 20 kamera **matematiksel olarak sığmıyor** — çözme için
+20×25 = 500 FPS gerekiyor, elimizde ~14×23 ≈ 320 FPS var. Üstelik
+YZ modelleri, analitik ve API için hiç çekirdek kalmıyor.
+
+**Planlanan çözüm (Gün 3):**
+1. **NVDEC** — GPU donanımsal çözücü. RTX 3070'in NVDEC birimi CPU'dan
+   bağımsız çalışır ve oturum sınırı yoktur. PyAV üzerinden
+   `hwaccel="cuda"` ile denenecek.
+2. Başarısız olursa: kaynak videoların GOP'unu kısaltıp anahtar-kare
+   atlama (`skip_frame`), ya da kamera başına çözünürlüğü düşürme.
+3. Her iki durumda da **gerçek sayı ölçülüp raporlanacak** — hedef
+   tutmazsa "X kamerada Y FPS" olarak dürüstçe yazılacak (PLAN.md §16 / R2).
+
+**Öğrenilen ders:** Planlama aşamasında GPU bütçesini titizlikle hesaplamış
+(PLAN.md §2.3) ama **decode bütçesini varsaymıştım.** Sistemin darboğazı
+tahmin ettiğim yerde değildi. Bu tam olarak "önce ölç" ilkesinin neden
+var olduğunun kanıtı — ve raporun en güçlü bölümlerinden biri olacak.
+
+---
+
+### P-06 · Hareket filtresi tahminimin 16 katı yavaş çıktı — suçlu MOG2 değildi
+
+**Tarih:** 13.08.2026 · **Faz:** 0 · **Kaybedilen süre:** ~15 dk (kazanç: 3.2× hız)
+
+**Belirti:** PLAN.md §5'te Kademe 0 maliyeti **~0.3 ms/kare** olarak
+tahmin edilmişti. İlk ölçümde **4.797 ms** çıktı — 16 kat fazla.
+20 kamera × 4 FPS'te bu, saniyede 384 ms CPU demek.
+
+**Araştırma:** "MOG2 yavaşmış" diye kabul etmek yerine adımları tek tek
+ölçtüm (720p girdi, i7-12700H, tek iş parçacığı):
+
+| Adım | Süre |
+|---|---|
+| `resize` **INTER_AREA** → 320×180 | **0.967 ms** ← suçlu |
+| `resize` INTER_LINEAR → 320×180 | 0.136 ms |
+| `resize` INTER_NEAREST → 320×180 | 0.047 ms |
+| `MOG2.apply` (320×180) | 0.702 ms |
+| `morphologyEx` OPEN | 0.022 ms |
+| `countNonZero` | 0.002 ms |
+
+**Kök sebep:** Suçlu arka plan çıkarma modeli değil, **küçültme
+enterpolasyonu**ydu. `INTER_AREA` her çıktı pikseli için kaynak bölgenin
+alan ortalamasını alır — görüntü kalitesi için mükemmel, ama biz
+hareketin *varlığını* arıyoruz, güzel bir küçük resim değil.
+
+**Çözüm:** `INTER_LINEAR`. `INTER_NEAREST` daha da hızlı ama örtüşme
+(aliasing) yapıp sensör gürültüsünü hareket sanabilir; `INTER_LINEAR`
+hem 7× hızlı hem yumuşatmayı koruyor.
+
+**Sonuç:** 4.797 ms → **1.495 ms** (3.2× hızlanma), eleme doğruluğu aynı
+(`cam-test-static` %95.7 → %96.0).
+
+**Öğrenilen ders:** "Yavaş" bir fonksiyonu optimize etmeden önce **hangi
+satırın** yavaş olduğunu ölç. Sezgim MOG2'yi işaret ediyordu; ölçüm
+`cv2.resize`'ı gösterdi. Ayrıca bir kütüphane varsayılanı ("en kaliteli
+enterpolasyon") her zaman senin kullanım senaryon için doğru varsayılan
+değildir.
+
+---
+
 ### P-05 · `.gitignore` satır içi yorum desteklemiyor — 5565 JPEG commit'e girdi
 
 **Tarih:** 13.08.2026 · **Faz:** 0 · **Kaybedilen süre:** ~10 dk
