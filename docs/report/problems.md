@@ -33,6 +33,67 @@ ama **belirti / sebep / çözüm** üçlüsü mutlaka olsun.
 
 <!-- Yeni kayıtlar buraya, en yenisi en üstte -->
 
+### P-10 · Slot havuzu bozulması ve ardından tüketici kilitlenmesi
+
+**Tarih:** 13.08.2026 · **Faz:** 0 / Gün 3 · **Kaybedilen süre:** ~25 dk
+
+İki ayrı hata, biri diğerinin düzeltmesinden doğdu. İkisi de dağıtık
+sistemlerin klasik tuzakları.
+
+#### Hata A — Slot çift serbest bırakma
+
+**Belirti:** Boru hattı çalışıyordu ama istatistikte imkânsız bir sayı
+vardı: `boş slot 230/128`. Havuzda 128 slot var, boş listede 230 giriş.
+
+**Kök sebep:** Havuz sahibi worker açılışta boş slot listesini sıfırlıyor
+(`0..127`), ama **Valkey Stream'i temizlemiyordu.** Önceki çalışmadan
+kalan ~205 mesaj akışta duruyordu. Yeni tüketici bu eski mesajları okuyup
+"işledim" diyerek slotlarını havuza geri veriyordu — oysa o slotlar zaten
+listedeydi.
+
+**Neden tehlikeli:** Liste bozulunca iki farklı kamera **aynı slotu**
+alabilir. İkisi de aynı belleğe yazar, biri diğerinin karesini ezer.
+Sonuç: kamera 5'in ekranında kamera 12'nin görüntüsü — ve bunu hata
+ayıklamak kâbustur, çünkü kod doğru görünür.
+
+**Çözüm:** Havuz sahibi açılışta **önce akışı siler, sonra slotları
+dağıtır.** Sıra önemli.
+
+#### Hata B — Tüketici grubu kilitlenmesi
+
+**Belirti:** A'yı düzelttikten sonra tüketici **0 kare** aldı. Worker ise
+128 kare yayınlayıp tıkandı: `boş slot 0/128`.
+
+**Kök sebep:** Tüketici grubu `id="$"` ile oluşturuluyordu — Valkey'de bu
+"yalnızca bundan sonraki mesajlar" demek. Olaylar şöyle sıralandı:
+
+1. Worker akışı sildi, 128 kare yayınladı, boş slot kalmadı → durdu
+2. Tüketici 8 saniye sonra başladı, grubu `"$"` ile açtı → *"şu andan
+   sonrası"*, yani mevcut 128 mesaj kapsam dışı
+3. Tüketici okuyacak mesaj bulamadı → slot serbest bırakmadı
+4. Worker slot bulamadı → yeni mesaj üretemedi
+5. **Karşılıklı bekleme.** Klasik kilitlenme.
+
+**Çözüm:** Grup `id="0"` ile oluşturuluyor — akışın başından. Mantık
+basit: *akışta duran her mesaj işlenmemiş iştir.* `"$"` yalnızca canlı
+telemetri gibi "geçmiş önemsiz" senaryolarda doğrudur; iş kuyruğunda değil.
+
+**Doğrulama (20 kamera, 40 saniye):**
+```
+20/20 kamera · 65.5 FPS alınıyor · 2062 yayınlanıyor
+Tüketici     : 2202 kare · 55.0 FPS
+Veri kontrolü: 2202/2202 karede gerçek piksel
+Boş slot     : 128/128  ← havuz bütünlüğü korunuyor
+```
+
+**Öğrenilen ders:** Kaynak havuzlarında **sahiplik ve temizlik sırası**
+kritiktir; yeniden başlatma senaryosu ilk günden düşünülmeli. Ayrıca bir
+hatayı düzeltirken ikincisini yaratmak, iki bileşenin varsayımlarının
+uyuşmadığını gösterir — burada üretici "akışı sildim" varsayıyordu,
+tüketici "akışta ne varsa yenidir" varsayıyordu.
+
+---
+
 ### P-09 · NVDEC, CPU'dan YAVAŞ çıktı — ve decode zaten darboğaz değilmiş
 
 **Tarih:** 13.08.2026 · **Faz:** 0 / Gün 3 · **Sonuç:** Mimari karar değişti
