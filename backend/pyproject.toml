@@ -87,6 +87,22 @@ packages = ["src/sentinel"]
 [tool.uv]
 package = true
 
+# ─── PyTorch CUDA indeksi ─────────────────────────────────────
+# PyPI'daki torch wheel'i Windows'ta CPU-ONLY gelir. CUDA yapısı
+# PyTorch'un kendi indeksinden alınmalı.
+#
+# Neden cu128: RTX 3070 Ampere (sm_86) mimarisi; cu126/128/129'un üçü de
+# çalışır. cu128 en geniş test edilmiş ve sürücü 610.88 ile uyumlu.
+# Doğrulama: uv run python -c "import torch; print(torch.cuda.is_available())"
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu128" }
+torchvision = { index = "pytorch-cu128" }
+
 # ─── RUFF (lint + format) ────────────────────────────────────
 [tool.ruff]
 line-length = 100

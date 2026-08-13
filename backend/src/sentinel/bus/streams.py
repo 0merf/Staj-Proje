@@ -223,4 +223,53 @@ class FrameStream:
         return self._stream
 
 
-__all__ = ["FrameMessage", "FrameStream", "SlotAllocator", "connect"]
+class ResultStream:
+    """`inference.results` akışı — tespit sonuçları.
+
+    Kare akışının aksine burada gerçek veri (JSON) taşınır: kutular,
+    iskelet noktaları, güven skorları. Kare başına ~1-3 KB. Paylaşımlı
+    belleğe gerek yok; bu veri zaten küçük ve serileştirilmiş olması
+    gerekiyor (analitik ve API katmanı okuyacak).
+    """
+
+    __slots__ = ("_client", "_maxlen", "_stream")
+
+    def __init__(
+        self,
+        client: Redis,
+        *,
+        stream: str | None = None,
+        maxlen: int | None = None,
+    ) -> None:
+        self._client = client
+        self._stream = stream or settings.stream_results
+        self._maxlen = maxlen or settings.stream_results_maxlen
+
+    def publish(self, camera: str, payload: str, *, sequence: int, captured_at: float) -> str:
+        return str(
+            self._client.xadd(
+                self._stream,
+                {
+                    "cam": camera,
+                    "seq": str(sequence),
+                    "ts": f"{captured_at:.6f}",
+                    "data": payload,
+                },
+                maxlen=self._maxlen,
+                approximate=True,
+            )
+        )
+
+    def reset(self) -> None:
+        self._client.delete(self._stream)
+
+    @property
+    def depth(self) -> int:
+        return int(self._client.xlen(self._stream))  # type: ignore[arg-type]
+
+    @property
+    def name(self) -> str:
+        return self._stream
+
+
+__all__ = ["FrameMessage", "FrameStream", "ResultStream", "SlotAllocator", "connect"]

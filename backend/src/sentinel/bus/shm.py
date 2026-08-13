@@ -105,11 +105,28 @@ class FramePool:
 
         try:
             if create:
-                # Aynı isimde artık bir blok kalmışsa (çökme sonrası) temizle
-                with contextlib.suppress(FileNotFoundError):
-                    stale = shared_memory.SharedMemory(name=name)
-                    stale.close()
-                    stale.unlink()
+                # Aynı isimde blok kalmış olabilir. İki sebep olur:
+                #  (a) önceki süreç çökmüş ve blok sızmış,
+                #  (b) başka bir worker hâlâ çalışıyor.
+                # Windows'ta `unlink()` bloğu bir başka süreç tutuyorsa
+                # serbest bırakmaz — POSIX'ten farklı davranır. Bu yüzden
+                # önce bağlanıp boyutunu kontrol ediyoruz: uyuyorsa yeniden
+                # kullanıyoruz, uymuyorsa açık bir hata veriyoruz.
+                try:
+                    existing = shared_memory.SharedMemory(name=name)
+                except FileNotFoundError:
+                    existing = None
+                if existing is not None:
+                    if existing.size >= total:
+                        self._shm = existing
+                        self._owner = False  # bloğu biz yaratmadık, silmeyelim
+                        self._buffer = np.ndarray(
+                            (total,), dtype=np.uint8, buffer=self._shm.buf
+                        )
+                        return
+                    existing.close()
+                    with contextlib.suppress(FileNotFoundError, PermissionError):
+                        existing.unlink()
                 self._shm = shared_memory.SharedMemory(name=name, create=True, size=total)
             else:
                 self._shm = shared_memory.SharedMemory(name=name)

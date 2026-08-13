@@ -95,6 +95,17 @@ class Settings(BaseSettings):
     motion_threshold: float = 0.005
     motion_refresh_interval_s: int = 5
 
+    # ─── Modeller ─────────────────────────────────────────────
+    detector_backend: str = "yolo26"  # yolo26 | yolo11 | rtmdet
+    detector_model_path: str = "models/yolo26s.pt"
+    detector_conf_threshold: float = 0.35
+    pose_model_path: str = "models/yolo26s-pose.pt"
+    face_detector_path: str = "models/yunet.onnx"
+    emotion_model_path: str = "models/emotieff.onnx"
+    tracker: str = "botsort"
+    use_tensorrt: bool = True
+    use_fp16: bool = True
+
     # ─── KVKK ─────────────────────────────────────────────────
     privacy_blur_default: bool = True
     store_face_crops: bool = False
@@ -133,6 +144,23 @@ class Settings(BaseSettings):
     @property
     def grafana_url(self) -> str:
         return f"http://127.0.0.1:{self.grafana_port}"
+
+    def resolve_path(self, value: str) -> Path:
+        """Göreli yolları proje köküne göre çözer.
+
+        `.env`'de `models/yolo26s.pt` yazıyor. Worker'lar `backend/`
+        dizininden çalıştığı için göreli yol yanlış yeri gösterirdi.
+        """
+        path = Path(value)
+        return path if path.is_absolute() else PROJECT_ROOT / path
+
+    @property
+    def detector_weights(self) -> Path:
+        return self.resolve_path(self.detector_model_path)
+
+    @property
+    def pose_weights(self) -> Path:
+        return self.resolve_path(self.pose_model_path)
 
     @property
     def effective_database_url(self) -> str:

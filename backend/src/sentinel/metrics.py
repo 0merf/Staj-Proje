@@ -1,4 +1,4 @@
-"""Prometheus metrikleri.
+﻿"""Prometheus metrikleri.
 
 Tanım listesi PLAN.md §13.1'dedir. Buradaki her metriğin bir amacı var;
 "her ihtimale karşı" metrik toplamıyoruz — her biri bir soruyu cevaplıyor.
@@ -60,6 +60,38 @@ camera_fps = Gauge(
     ["cam"],
 )
 
+# ─── Çıkarım katmanı ──────────────────────────────────────────
+
+inference_duration = Histogram(
+    "sentinel_inference_duration_seconds",
+    "Kare başına model çıkarım süresi (batch içinde amortize)",
+    ["stage"],  # detect | pose | emotion | action
+    buckets=(0.001, 0.002, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5),
+)
+
+batch_size = Histogram(
+    "sentinel_batch_size",
+    "GPU'ya verilen batch boyutu — büyük batch daha verimli",
+    buckets=(1, 2, 4, 6, 8, 12, 16, 24, 32),
+)
+
+detections_found = Counter(
+    "sentinel_detections_total",
+    "Tespit edilen kişi sayısı",
+    ["cam"],
+)
+
+end_to_end_latency = Histogram(
+    "sentinel_end_to_end_latency_seconds",
+    "Kare yakalanmasından sonucun yazılmasına kadar geçen süre (K3 kriteri)",
+    buckets=(0.05, 0.1, 0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 5.0),
+)
+
+gpu_memory_used = Gauge(
+    "sentinel_gpu_memory_used_bytes",
+    "Kullanılan VRAM",
+)
+
 # ─── Boru hattı sağlığı ───────────────────────────────────────
 
 queue_depth = Gauge(
@@ -86,13 +118,18 @@ def serve_metrics(port: int) -> None:
 
 
 __all__ = [
+    "batch_size",
     "camera_fps",
     "camera_up",
     "decode_duration",
+    "detections_found",
+    "end_to_end_latency",
     "frames_dropped",
     "frames_published",
     "frames_received",
     "gate_duration",
+    "gpu_memory_used",
+    "inference_duration",
     "motion_gate_ratio",
     "queue_depth",
     "serve_metrics",

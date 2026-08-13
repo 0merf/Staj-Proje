@@ -1,0 +1,83 @@
+{
+  "measured_at": "2026-08-13T15:48:00",
+  "phase": "Faz 0 / Gün 4",
+  "description": "İlk uçtan uca GPU çıkarım ölçümü — 20 kamera + YOLO26-s",
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 3070 Laptop GPU",
+    "vram_gb": 8.0,
+    "compute_capability": "sm_86",
+    "driver": "610.88",
+    "fp16_matmul_tflops": 13.5,
+    "cpu": "Intel i7-12700H (14 fiziksel / 20 mantıksal çekirdek)"
+  },
+  "software": {
+    "torch": "2.11.0+cu128",
+    "cuda": "12.8",
+    "ultralytics": "8.4.118",
+    "python": "3.13.15"
+  },
+  "config": {
+    "model": "yolo26s.pt",
+    "task": "detect",
+    "precision": "fp16",
+    "imgsz": 640,
+    "conf_threshold": 0.35,
+    "classes": ["person"],
+    "batch_size_requested": 8,
+    "cameras": 20,
+    "target_fps_per_camera": 4,
+    "motion_gate": true
+  },
+  "results": {
+    "duration_s": 50,
+    "frames_processed": 2605,
+    "throughput_fps": 52.0,
+    "detections_total": 11046,
+    "detections_per_frame": 4.24,
+    "batch_size_avg": 4.9,
+    "inference_ms_per_frame": {
+      "mean": 38.64,
+      "p50": 6.82,
+      "p95": 21.36,
+      "note": "Ortalama, küçük batch'ler ve ısınma sonrası ilk geçişlerle çarpık. p50 dolu batch'in gerçek maliyetidir."
+    },
+    "end_to_end_latency_ms": {
+      "final": 770,
+      "initial_backlog": 3436,
+      "note": "Başlangıçtaki 3436 ms, alım worker'ının çıkarım başlamadan önce biriktirdiği kuyruktan. Sistem 30 saniyede birikimi kapattı."
+    },
+    "shm_slots_free_final": "126/128"
+  },
+  "criteria": {
+    "K3_end_to_end_latency": {
+      "target_ms": 1500,
+      "measured_ms": 770,
+      "passed": true
+    },
+    "K1_camera_count": {
+      "target": 20,
+      "measured": 20,
+      "passed": true
+    },
+    "K2_fps_per_camera": {
+      "target": 4.0,
+      "measured_max": 3.81,
+      "measured_min": 0.30,
+      "passed": false,
+      "note": "Düşük FPS'li kameralar hareket filtresinin elediği durgun sahneler (cam-01 otopark: 0.32 FPS). Bu bir yavaşlık değil, tasarlanan davranış. Hareketli kameralar 3.6-3.8 FPS'te; hedef 4.0'a %5 uzaklıkta."
+    }
+  },
+  "per_camera_frames": {
+    "cam-01": 16, "cam-02": 18, "cam-03": 91, "cam-04": 30, "cam-05": 120,
+    "cam-06": 15, "cam-07": 23, "cam-08": 121, "cam-09": 184, "cam-10": 184,
+    "cam-11": 146, "cam-12": 184, "cam-13": 184, "cam-14": 180, "cam-15": 188,
+    "cam-16": 176, "cam-17": 184, "cam-18": 191, "cam-19": 186, "cam-20": 184
+  },
+  "budget_check": {
+    "note": "PLAN.md §2.3 tahmini tespit için 2.0 ms/kare idi; ölçülen p50 6.82 ms — tahminin 3.4 katı. Yine de bütçe tutuyor.",
+    "required_fps": 80,
+    "gpu_ms_per_second": 545,
+    "gpu_utilization_estimate": "%55",
+    "verdict": "20 kamera × 4 FPS tespit için GPU yeterli. Poz (Kademe 2a) eklenince yeniden ölçülmeli."
+  }
+}
