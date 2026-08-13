@@ -1,4 +1,4 @@
-# SENTINEL — tüm worker ve API süreçlerini durdurur.
+﻿# SENTINEL — tüm worker ve API süreçlerini durdurur.
 #
 # Neden gerekli: worker'lar `uv run python -m sentinel...` ile başlatılıyor.
 # Bu bir sarmalayıcı süreç yaratıyor; komut satırı eşleştirmesi yalnızca

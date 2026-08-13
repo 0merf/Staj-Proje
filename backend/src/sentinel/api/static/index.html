@@ -49,8 +49,13 @@
        border-radius:10px;overflow:hidden}
   .cam .bar{display:flex;align-items:center;gap:8px;
             padding:9px 13px;border-bottom:1px solid var(--line);font-size:13px}
-  .cam .bar .tag{margin-left:auto;font-family:var(--mono);font-size:10px;
+  .cam .bar .tag{font-family:var(--mono);font-size:10px;
                  color:var(--dim);text-transform:uppercase;letter-spacing:.7px}
+  .cam .bar .close{margin-left:auto;background:transparent;border:1px solid var(--line);
+       color:var(--dim);border-radius:6px;padding:2px 9px;font-size:12px;
+       cursor:pointer;line-height:1.4}
+  .cam .bar .close:hover{border-color:var(--bad);color:var(--bad)}
+  .cam .bar .close.hidden{display:none}
   .cam .frame{aspect-ratio:16/9;background:#05070b;position:relative}
   .cam iframe{width:100%;height:100%;border:0;display:block}
   /* Kutular VİDEONUN ÜSTÜNE çizilir — sunucu videoya dokunmaz.
@@ -62,6 +67,7 @@
               border-radius:6px;padding:3px 8px;font-family:var(--mono);
               font-size:11px;color:var(--fg)}
   .cam .badge.hot{border-color:var(--ok);color:var(--ok)}
+  .cam .badge.warn{border-color:var(--warn);color:var(--warn)}
   .cam .off{position:absolute;inset:0;display:flex;flex-direction:column;
             align-items:center;justify-content:center;gap:7px;
             color:var(--dim);font-size:13px;text-align:center;padding:18px}
@@ -143,6 +149,7 @@ function createCard (cam, container) {
       <span class="tag">${cam.kind === 'farm' ? 'dosya'
                         : cam.kind === 'synthetic' ? 'sentetik'
                         : cam.kind === 'webcam' ? 'webcam' : cam.kind}</span>
+      <button class="close hidden" title="Kapat">✕ kapat</button>
     </div>
     <div class="frame"></div>`;
   container.appendChild(root);
@@ -150,13 +157,32 @@ function createCard (cam, container) {
     root,
     dot: root.querySelector('.dot'),
     meta: root.querySelector('.bar span[title]'),
+    close: root.querySelector('button.close'),
     frame: root.querySelector('.frame'),
     canvas: null,
     badge: null,
     playing: false,
   };
+  // Kapat düğmesi her kamerada var. Webcam'de ek olarak yayıncı
+  // sürecini de durdurur — kamera ışığı sönsün.
+  entry.close.onclick = () => stopPlay(cam);
   cards.set(cam.name, entry);
   return entry;
+}
+
+async function stopPlay (cam) {
+  const entry = cards.get(cam.name);
+  if (!entry) return;
+  if (cam.kind === 'webcam') {
+    // Sadece oynatıcıyı kapatmak yetmez; kamera hâlâ açık kalır.
+    await fetch('/api/v1/cameras/webcam/stop', { method: 'POST' }).catch(() => {});
+  }
+  entry.playing = false;
+  entry.canvas = null;
+  entry.badge = null;
+  entry.close.classList.add('hidden');
+  latest.delete(cam.name);
+  renderIdle(entry, cam);
 }
 
 function renderIdle (entry, cam) {
@@ -222,9 +248,10 @@ function startPlay (cam) {
   entry.playing = true;
   entry.frame.innerHTML =
     `<iframe src="${cfg.urls.webrtc}/${cam.name}" allow="autoplay"></iframe>` +
-    `<canvas class="ov"></canvas><div class="badge">bekleniyor…</div>`;
+    `<canvas class="ov"></canvas><div class="badge">analiz bekleniyor…</div>`;
   entry.canvas = entry.frame.querySelector('canvas.ov');
   entry.badge = entry.frame.querySelector('.badge');
+  entry.close.classList.remove('hidden');
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -238,7 +265,8 @@ function startPlay (cam) {
 // ══════════════════════════════════════════════════════════════
 
 const latest = new Map();   // cam -> son sonuç
-let ws = null, wsState = 'kapalı', wsFrames = 0;
+let ws = null, wsState = 'kapalı', wsFrames = 0, lastFrameAt = 0;
+const STALE_MS = 4000;      // bu süre sonuç gelmezse "durdu" say
 
 function connectWs () {
   ws = new WebSocket(`ws://${location.host}/ws/live`);
@@ -252,7 +280,11 @@ function connectWs () {
     const msg = JSON.parse(event.data);
     if (msg.type !== 'frame') return;
     wsFrames++;
+    // ⚠ msg.ts sunucunun MONOTONİK saatidir — Date.now() ile
+    //   karşılaştırılamaz. Tazelik için tarayıcının kendi saatini kullan.
+    msg._rx = performance.now();
     latest.set(msg.cam, msg);
+    lastFrameAt = msg._rx;
   };
   ws.onclose = () => {
     wsState = 'kapalı — yeniden bağlanılıyor';
@@ -276,7 +308,15 @@ function drawLoop () {
     }
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (!result) continue;
+
+    const stale = !result || (performance.now() - result._rx) > STALE_MS;
+    if (stale && entry.badge) {
+      // Sessizce donmak yerine SEBEBİNİ söyle. "bekleniyor…" yazısının
+      // sonsuza dek asılı kalması, sistemin bozuk olduğu izlenimi verir.
+      entry.badge.textContent = result ? 'analiz durdu' : 'analiz bekleniyor';
+      entry.badge.className = 'badge warn';
+    }
+    if (!result || stale) continue;
 
     // Kaynak kare piksellerinden görüntü alanına ölçekle.
     // Kameralar farklı çözünürlükte olabilir (cam-12: 960×720).
@@ -351,12 +391,19 @@ async function refreshCameras () {
   }
 
   const playingCount = [...cards.values()].filter(e => e.playing).length;
+  const pipelineStale = wsFrames === 0 || (performance.now() - lastFrameAt) > STALE_MS;
+  const pipelineNote = pipelineStale
+    ? `<br><b style="color:var(--warn)">⚠ Analiz sonucu gelmiyor.</b> ` +
+      `Kutuların görünmesi için ingest ve inference worker'ları çalışmalı:<br>` +
+      `<code>uv run python -m sentinel.ingest.worker --all --owner</code><br>` +
+      `<code>uv run python -m sentinel.inference.worker --batch-size 8</code>`
+    : `<br>Analiz akıyor: <b>${wsFrames}</b> sonuç alındı.`;
   $('camnote').innerHTML =
     `<b>${data.total}</b> kamera tanımlı · <b>${data.ready}</b> yayında · ` +
     `<b>${playingCount}</b> oynatıcı açık.<br>` +
     `Yayınlar <b>istek üzerine</b> başlar (runOnDemand) — 23 akışı sürekli ` +
     `açık tutmak boşuna CPU harcar. Kartlar bir kez oluşturulur; yenilemede ` +
-    `yalnızca durum güncellenir, oynayan video kesilmez.`;
+    `yalnızca durum güncellenir, oynayan video kesilmez.` + pipelineNote;
 }
 
 async function refresh () {

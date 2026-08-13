@@ -104,7 +104,12 @@ def publish(device: int, fps: int, width: int, height: int, url: str) -> int:
         "tune": "zerolatency",
         # ⚠ B-frame KAPALI — WebRTC desteklemiyor (problems.md P-08)
         "bf": "0",
-        "g": str(fps * 2),
+        # 1 saniyelik GOP. 2 saniye olduğunda WebRTC ilk anahtar kareyi
+        # 2 sn bekliyordu; gecikme hissi buradan geliyordu.
+        "g": str(fps),
+        # Düşük gecikme için kodlayıcıyı ileriye bakmaktan alıkoy.
+        # Lookahead sıkıştırmayı iyileştirir ama kareyi tamponda bekletir.
+        "x264-params": "sync-lookahead=0:rc-lookahead=0:sliced-threads=1",
     }
 
     signal.signal(signal.SIGINT, _handle_signal)
@@ -123,6 +128,22 @@ def publish(device: int, fps: int, width: int, height: int, url: str) -> int:
             if not ok:
                 print("Kameradan kare gelmedi, duruluyor.", file=sys.stderr)
                 break
+
+            # Geriden gelme (lag) önleme: kodlama bir kareden uzun sürdüyse
+            # sürücünün tamponunda kareler birikmiştir. Onları çöz(me)den
+            # atıyoruz — `grab()` kareyi alır ama decode etmez, çok ucuz.
+            # Amaç her zaman EN GÜNCEL kareyi yayınlamak.
+            if time.monotonic() > next_frame_at + interval:
+                drained = 0
+                while time.monotonic() > next_frame_at + interval and drained < 5:
+                    if not cap.grab():
+                        break
+                    next_frame_at += interval
+                    drained += 1
+                if drained:
+                    ok, frame = cap.retrieve()
+                    if not ok:
+                        continue
 
             av_frame = av.VideoFrame.from_ndarray(frame, format="bgr24")
             av_frame.pts = sent
