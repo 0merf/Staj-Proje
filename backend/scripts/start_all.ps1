@@ -20,7 +20,7 @@ param(
     [switch]$SkipDocker
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 $root = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $backend = Join-Path $root "backend"
 $logs = Join-Path $env:TEMP "sentinel"
@@ -40,7 +40,7 @@ function Start-Component {
 if (-not $SkipDocker) {
     Write-Host "`n[1/4] Docker altyapısı"
     Push-Location $root
-    docker compose up -d 2>&1 | Out-Null
+    docker compose up -d | Out-Null
     Pop-Location
     $up = (docker compose --project-directory $root ps --format "{{.Service}}" 2>$null | Measure-Object).Count
     Write-Host "  $up servis ayakta"
