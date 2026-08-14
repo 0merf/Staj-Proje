@@ -33,6 +33,71 @@ ama **belirti / sebep / çözüm** üçlüsü mutlaka olsun.
 
 <!-- Yeni kayıtlar buraya, en yenisi en üstte -->
 
+### P-12 · Kutular geriden geliyordu — derin kuyruk gerçek zamanlılığın düşmanı
+
+**Tarih:** 14.08.2026 · **Faz:** 1 / Gün 5 · **Kazanç:** gecikme 11× azaldı
+
+**Belirti:** Kutular ekranda görünüyordu ama **kişinin arkasından**
+geliyorlardı; yürüyen biri kutunun dışına çıkıyor, kutu boşluğu
+gösteriyordu.
+
+**İki ayrı sebep vardı — karıştırmamak önemli:**
+
+#### Sebep 1 — Boru hattı gecikmesi (çözüldü)
+
+Ölçüm: `frames.ready` kuyruğu **sürekli doluydu** (206/200) ve paylaşımlı
+bellek havuzunun 128 slotu da kullanımdaydı.
+
+Hesap basit: 128 kare kuyrukta bekliyor, sistem saniyede ~70 kare
+işliyor → kuyruğun sonundaki kare işlendiğinde **1.8 saniye eskimiş**
+oluyor. Model doğru çalışıyor ama *geçmişe* bakıyor.
+
+**Kök sebep bir tasarım hatası:** tamponu büyük tutmak "kare kaybetmeyelim"
+diye iyi bir fikir gibi görünüyor. Gerçek zamanlı bir sistemde tam tersi:
+**kuyrukta bekleyen kare değersizleşir.** 2 saniye önceki kareyi mükemmel
+analiz etmenin operasyonel değeri yoktur.
+
+**Çözüm:** Tamponlar küçültüldü.
+```
+SHM_SLOT_COUNT        128 -> 48
+STREAM_FRAMES_MAXLEN  200 -> 64
+```
+Fazla kare artık kuyrukta beklemek yerine **atılıyor**. Bu bilinçli bir
+takas: bütünlük yerine tazelik (PLAN.md §4.3).
+
+**Sonuç:**
+
+| | Önce | Sonra |
+|---|---|---|
+| Uçtan uca gecikme (p50) | ~770 ms | **68 ms** |
+| Boş slot | 0/128 (tıkalı) | 47/48 (rahat) |
+| İşlem hızı | 52 FPS | 52 FPS (değişmedi) |
+
+**11 kat iyileşme, üretim hızından hiçbir şey kaybetmeden.**
+
+#### Sebep 2 — Tespitler arası donma (Gün 6'da çözülecek)
+
+Kalan sorun: video **25 FPS** akıyor, tespit ise kamera başına
+**~3 FPS** yapılıyor (kademeli işleme gereği — her kareye YOLO
+çalıştırmak 20 kamerada imkânsız).
+
+Ölçüm: iki tespit arasında ortalama **334 ms** (p50 279, p95 863) geçiyor.
+Yürüyen bir insan bu sürede 30-50 piksel yol alıyor. Kutu son bilinen
+konumda **donuk** kalıyor, kişi ondan çıkıyor.
+
+**Çözüm (Gün 6):** Nesne takibi (BoT-SORT) her kişiye kalıcı bir kimlik
+ve **hız vektörü** verecek. Tarayıcı iki tespit arasında kutuyu bu hızla
+**ara değerleyecek** (interpolasyon). Gerçek güvenlik yazılımları da
+tam olarak böyle çalışır — 25 FPS tespit yapmazlar, 3 FPS tespit yapıp
+aradaki kareleri tahmin ederler.
+
+**Öğrenilen ders:** "Kutular geç geliyor" tek bir belirti gibi görünüyordu
+ama arkasında iki bağımsız sebep vardı: biri **kuyruk tasarımı**, diğeri
+**örnekleme hızı**. Ölçmeden tek bir çözüme koşsaydık yanlış olanı
+düzeltmiş olabilirdik.
+
+---
+
 ### P-11 · Kendi güvenlik kontrolüm kendi panelimi engelledi
 
 **Tarih:** 14.08.2026 · **Faz:** 1 / Gün 5 · **Kaybedilen süre:** ~15 dk
