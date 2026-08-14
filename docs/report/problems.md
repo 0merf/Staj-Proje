@@ -33,6 +33,70 @@ ama **belirti / sebep / çözüm** üçlüsü mutlaka olsun.
 
 <!-- Yeni kayıtlar buraya, en yenisi en üstte -->
 
+### P-11 · Kendi güvenlik kontrolüm kendi panelimi engelledi
+
+**Tarih:** 14.08.2026 · **Faz:** 1 / Gün 5 · **Kaybedilen süre:** ~15 dk
+
+**Belirti:** Panelde tüm kameralarda "analiz bekleniyor" yazıyordu, hiç
+kutu çizilmiyordu. Oysa:
+- Alım ve çıkarım worker'ları çalışıyor, GPU aktif
+- `inference.results` akışına saniyede ~70 sonuç yazılıyor
+- **Test betiği `scripts/test_websocket.py` sorunsuz 57 FPS alıyordu**
+
+Son madde kritikti: WebSocket sunucusu çalışıyordu ama tarayıcı veri
+alamıyordu. İkisi arasındaki fark neydi?
+
+**Kök sebep:** `Origin` başlığı.
+
+| İstemci | Gönderdiği Origin | Sonuç |
+|---|---|---|
+| Test betiği | `http://localhost:5173` | ✅ beyaz listede |
+| **Tarayıcı (panel)** | `http://127.0.0.1:8001` | ❌ **listede yok** |
+
+Panel, API ile **aynı sunucudan** servis ediliyor. Dolayısıyla tarayıcı
+`Origin: http://127.0.0.1:8001` gönderiyor. Beyaz listede ise yalnızca
+React geliştirme sunucusunun adresleri vardı (`:5173`, `:3000`).
+
+Yani G06 güvenlik kontrolü **doğru çalışıyordu** — sadece izin verilmesi
+gereken bir istemciyi de reddediyordu. Kendi panelimi kendi güvenlik
+duvarıma çarptırmışım.
+
+**Çözüm:** Beyaz listeye elle adres eklemek yerine **aynı köken (same
+origin) kontrolü** eklendi: `Origin` başlığı `Host` başlığıyla eşleşiyorsa
+bağlantı kabul edilir. Bu tanımı gereği güvenlidir — aynı köken
+politikasının koruduğu şey zaten tam olarak budur.
+
+Neden beyaz listeye elle eklemedim: adres değişince (farklı port, farklı
+makine, ters proxy arkası) sessizce kırılırdı. Same-origin kontrolü
+adresten bağımsız çalışır.
+
+**Doğrulama — birim testi yazıldı:**
+
+```
+[OK] ayni kaynak - PANEL           -> True
+[OK] ayni kaynak - localhost       -> True
+[OK] beyaz liste - React dev       -> True
+[OK] kotu niyetli site             -> False
+[OK] farkli port                   -> False
+[OK] Origin yok                    -> False
+```
+
+Tarayıcının gönderdiği başlıkla yapılan testte: **8 saniyede 498 kare,
+1790 tespit, 20 kamera.**
+
+**Öğrenilen ders:** Güvenlik kontrolü eklerken **meşru istemcileri de
+test et.** "Kötü niyetli istek reddediliyor mu?" sorusunun yanına
+"iyi niyetli istek geçiyor mu?" sorusu da konmalı. İlk yazdığım testte
+yalnızca reddedilme senaryolarını kontrol etmiştim; kabul senaryosunu
+gerçek tarayıcı başlığıyla değil, kendi seçtiğim Origin ile test etmiştim.
+
+Bu ayrıca "sessiz başarısızlık" örneği: sistem hata vermedi, log'a
+`ws_origin_reddedildi` yazdı ama panelde yalnızca "bekleniyor" göründü.
+Bu yüzden panele artık **sebep gösteren** bir uyarı eklendi (P-10 ile
+birlikte).
+
+---
+
 ### P-10 · Slot havuzu bozulması ve ardından tüketici kilitlenmesi
 
 **Tarih:** 13.08.2026 · **Faz:** 0 / Gün 3 · **Kaybedilen süre:** ~25 dk

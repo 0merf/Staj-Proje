@@ -47,8 +47,31 @@ MAX_SUBSCRIPTIONS = 64
 IDLE_TIMEOUT_S = 120.0
 
 
-def origin_allowed(origin: str | None) -> bool:
-    """`Origin` başlığını beyaz listeye karşı doğrular.
+def _same_origin(origin: str, host_header: str | None) -> bool:
+    """İstek, sayfayı sunan sunucunun kendisinden mi geliyor?
+
+    Panel API ile aynı sunucudan servis ediliyor. Bu durumda `Origin`
+    başlığı `Host` başlığıyla aynıdır ve bağlantı **tanımı gereği**
+    güvenilirdir — aynı köken politikasının koruduğu şey zaten budur.
+
+    Bu kontrol olmadan beyaz listeye kendi adresimizi elle eklemek
+    gerekirdi; adres değişince (farklı port, farklı makine) sessizce
+    kırılırdı. Bkz. docs/report/problems.md · P-11
+    """
+    if not host_header:
+        return False
+    candidate = urlsplit(origin)
+    # Host başlığı "127.0.0.1:8001" biçiminde, şema içermez
+    origin_authority = candidate.netloc.lower()
+    return origin_authority == host_header.strip().lower()
+
+
+def origin_allowed(origin: str | None, host_header: str | None = None) -> bool:
+    """`Origin` başlığını doğrular.
+
+    İki koşuldan biri sağlanmalı:
+      1. Aynı köken (panel API ile aynı sunucudan geliyor), veya
+      2. Beyaz listede (ayrı geliştirme sunucusundan gelen React SPA)
 
     Karşılaştırma şema+host+port düzeyinde yapılır; yol ve sorgu
     dikkate alınmaz. Origin başlığı yoksa reddedilir — tarayıcı her
@@ -60,6 +83,10 @@ def origin_allowed(origin: str | None) -> bool:
         candidate = urlsplit(origin)
     except ValueError:
         return False
+
+    if _same_origin(origin, host_header):
+        return True
+
     for allowed in settings.origins:
         reference = urlsplit(allowed)
         if (candidate.scheme, candidate.hostname, candidate.port) == (
@@ -116,9 +143,10 @@ async def _receiver(client: Client) -> None:
 @router.websocket("/ws/live")
 async def live_feed(websocket: WebSocket) -> None:
     origin = websocket.headers.get("origin")
-    if not origin_allowed(origin):
+    host_header = websocket.headers.get("host")
+    if not origin_allowed(origin, host_header):
         # Bağlantıyı KABUL ETMEDEN reddet — el sıkışma tamamlanmasın
-        log.warning("ws_origin_reddedildi", origin=origin or "(yok)")
+        log.warning("ws_origin_reddedildi", origin=origin or "(yok)", host=host_header)
         await websocket.close(code=CLOSE_POLICY_VIOLATION, reason="origin not allowed")
         return
 
