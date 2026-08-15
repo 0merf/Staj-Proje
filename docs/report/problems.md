@@ -33,6 +33,61 @@ ama **belirti / sebep / çözüm** üçlüsü mutlaka olsun.
 
 <!-- Yeni kayıtlar buraya, en yenisi en üstte -->
 
+### P-13 · Takip eklendi, tespitlerin %21'i kayboldu
+
+**Tarih:** 15.08.2026 · **Faz:** 1 / Gün 6 · **Tür:** gerileme (regression)
+
+**Belirti:** BoT-SORT takibi devreye alındıktan sonra panelde **bariz
+görünen kişiler kutuya alınmıyordu** ve kutular eskisinden daha geç
+beliriyordu. Takipten önce çalışan bir şey, takipten sonra bozuldu.
+
+**Kök sebep:** ByteTrack ailesindeki takipçiler yeni bir izi **hemen
+çıktı vermez.** Bir iz "onaylanmış" (`is_activated`) sayılması için
+**ikinci bir karede tekrar eşleşmesi** gerekir. Mantık şu: tek karelik
+yanlış pozitiflerden kalıcı iz üretmemek.
+
+Normal video hızında (25-30 FPS) bu gecikme ~35 ms, fark edilmez.
+Ama bizde tespit **kamera başına ~3 FPS** yapılıyor (kademeli işleme
+gereği), dolayısıyla:
+
+- Yeni beliren her kişi **~330 ms geç** görünüyor
+- Kadrajdan hızla geçen kişiler **hiç görünmüyor** (iki tespit süresi
+  boyunca kalmıyorlar)
+
+Ölçüm: tespitlerin **%21'i** bu şekilde düşüyordu.
+
+**Tasarım hatası neydi:** Takip katmanını dedektörün *arkasına* değil
+*önüne* koymuşum gibi davranmışım — takipçinin çıktısını tek gerçek
+kaynak saymışım. Oysa takip, tespiti **zenginleştiren** bir katman
+olmalı, **filtreleyen** değil.
+
+**Çözüm:** Takipçiyle eşleşmemiş tespitler artık **kimliksiz olarak**
+geçiriliyor (`track_id = -1`, mesajda `id` alanı hiç yok). Kutu anında
+görünüyor, kimlik bir sonraki karede geliyor.
+
+Panelde kimliksiz kutular **kesikli çizgiyle** gösteriliyor — operatör
+"bu tespit henüz doğrulanmadı" bilgisini görüyor ama kişi ekrandan
+kaybolmuyor.
+
+**Sonuç:**
+
+| | Takipten önce | Takip (hatalı) | Düzeltme sonrası |
+|---|---|---|---|
+| Kare başına tespit | 4.24 | ~3.5 | **4.88** |
+| Kayıp tespit | — | %21 | **%0** |
+
+**Öğrenilen ders:** Bir katman eklerken *"eskiden çalışan ne bozuldu?"*
+diye sormak gerekiyor. Yeni özelliğin doğru çalışması yetmez; mevcut
+davranışı bozmaması da gerekir. Kullanıcının "eskiden herkesi çiziyordu,
+şimdi çizmiyor" geri bildirimi olmasa bu, saldırganlık modülü yanlış
+sonuç verene kadar fark edilmeyebilirdi.
+
+Ayrıca: bir kütüphanenin varsayılan davranışı (iz onayı) kendi
+bağlamında doğru, bizim bağlamımızda (düşük kare hızı) yanlış. Kütüphane
+varsayımlarını kendi çalışma koşullarınla karşılaştırmak gerekiyor.
+
+---
+
 ### P-12 · Kutular geriden geliyordu — derin kuyruk gerçek zamanlılığın düşmanı
 
 **Tarih:** 14.08.2026 · **Faz:** 1 / Gün 5 · **Kazanç:** gecikme 11× azaldı

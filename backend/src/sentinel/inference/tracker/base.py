@@ -51,7 +51,11 @@ class Track:
 
     def to_dict(self) -> dict[str, Any]:
         data = self.detection.to_dict()
-        data["id"] = self.track_id
+        # track_id < 0 = henuz onaylanmamis tespit (bkz. botsort.py).
+        # Kimlik alanini hic gondermiyoruz; tarayici kimliksiz kutuyu
+        # farkli cizecek.
+        if self.track_id >= 0:
+            data["id"] = self.track_id
         # Hızı tam sayıya yuvarlıyoruz: mesaj boyutu 20 kamerada önemli
         data["v"] = [round(self.velocity_x), round(self.velocity_y)]
         data["age"] = self.age

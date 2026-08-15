@@ -349,11 +349,16 @@ function drawLoop () {
       const x = (x1 + dx) * sx, y = (y1 + dy) * sy;
       const w = (x2 - x1) * sx, h = (y2 - y1) * sy;
 
-      // Hareket eden izler daha parlak — duranlar sönük
+      // Kimliksiz kutu = takipçi henüz onaylamadı (ilk kez görüldü).
+      // Kesikli çizgiyle gösteriyoruz: tespit var, kimlik bir sonraki
+      // karede gelecek. Gizlemek yanlış olurdu — kişi orada.
+      const confirmed = det.id != null;
       const moving = det.v && (Math.abs(det.v[0]) + Math.abs(det.v[1])) > 15;
-      ctx.strokeStyle = moving ? '#3fb950' : '#4d8f5c';
+      ctx.setLineDash(confirmed ? [] : [5, 4]);
+      ctx.strokeStyle = !confirmed ? '#8b98ad' : (moving ? '#3fb950' : '#4d8f5c');
       ctx.fillStyle = ctx.strokeStyle;
       ctx.strokeRect(x, y, w, h);
+      ctx.setLineDash([]);
 
       // Etiket: iz kimliği + güven. Kimlik, kişinin kareler boyunca
       // AYNI kişi olduğunu gösteriyor — takibin gözle görülür kanıtı.

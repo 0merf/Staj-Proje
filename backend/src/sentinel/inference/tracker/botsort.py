@@ -97,6 +97,7 @@ class BotSortTracker:
         self._history: dict[str, dict[int, _History]] = {}
         self._total_tracks = 0
         self._id_switches = 0
+        self._unconfirmed = 0
         self._seen_ids: dict[str, set[int]] = {}
 
     # ─── Tracker protokolü ───────────────────────────────────
@@ -118,14 +119,14 @@ class BotSortTracker:
         batch = DetectionBatch.from_detections(detections)
         # BoT-SORT (N, 8) döndürür: x1 y1 x2 y2 track_id conf cls det_idx
         raw = tracker.update(batch, img=None)
-        if raw is None or len(raw) == 0:
-            return []
 
         tracks: list[Track] = []
         history = self._history[camera]
         seen = self._seen_ids[camera]
+        matched_indices: set[int] = set()
 
-        for row in np.asarray(raw):
+        rows = np.asarray(raw) if raw is not None and len(raw) else np.empty((0, 8))
+        for row in rows:
             x1, y1, x2, y2 = (float(v) for v in row[:4])
             track_id = int(row[4])
             confidence = float(row[5])
@@ -141,6 +142,7 @@ class BotSortTracker:
             keypoints = None
             if 0 <= det_index < len(detections):
                 keypoints = detections[det_index].keypoints
+                matched_indices.add(det_index)
 
             vx, vy = self._update_velocity(history, track_id, (x1, y1, x2, y2), timestamp)
 
@@ -162,7 +164,23 @@ class BotSortTracker:
                 )
             )
 
-        self._prune(history, {t.track_id for t in tracks})
+        # ─── ONAYLANMAMIŞ TESPİTLERİ KAYBETME ────────────────
+        # BoT-SORT yeni bir izi hemen çıktı vermez: iz "onaylanmış"
+        # sayılması için İKİNCİ bir karede tekrar eşleşmesi gerekir.
+        # Tespit ~3 FPS olduğu için bu ~330 ms gecikme demek; kısa süre
+        # görünen kişiler ise hiç görünmez.
+        #
+        # Bu kabul edilemez: takip, tespiti ZENGİNLEŞTİRMELİ, filtrelememeli.
+        # Eşleşmemiş tespitleri kimliksiz (id=None) olarak geçiriyoruz.
+        # Kutu anında görünüyor, kimlik bir sonraki karede geliyor.
+        # (docs/report/problems.md · P-13)
+        for index, detection in enumerate(detections):
+            if index in matched_indices:
+                continue
+            tracks.append(Track(track_id=-1, detection=detection))
+            self._unconfirmed += 1
+
+        self._prune(history, {t.track_id for t in tracks if t.track_id >= 0})
         return tracks
 
     def reset(self, camera: str | None = None) -> None:
@@ -181,6 +199,7 @@ class BotSortTracker:
             "cameras": len(self._trackers),
             "total_tracks": self._total_tracks,
             "active_tracks": sum(len(h) for h in self._history.values()),
+            "unconfirmed_passthrough": self._unconfirmed,
         }
 
     # ─── Hız hesabı ──────────────────────────────────────────
