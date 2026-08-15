@@ -267,6 +267,10 @@ function startPlay (cam) {
 const latest = new Map();   // cam -> son sonuç
 let ws = null, wsState = 'kapalı', wsFrames = 0, lastFrameAt = 0;
 const STALE_MS = 4000;      // bu süre sonuç gelmezse "durdu" say
+// Hız vektörüyle en fazla ne kadar ileri tahmin yapılsın. Tespit
+// aralığı ~330 ms; 600 ms tampon bir-iki kaçırılan tespiti tolere eder.
+// Daha uzun tahmin, kişi yön değiştirdiğinde kutuyu yanlış yere taşır.
+const MAX_EXTRAPOLATE_MS = 600;
 
 function connectWs () {
   ws = new WebSocket(`ws://${location.host}/ws/live`);
@@ -323,28 +327,51 @@ function drawLoop () {
     const sx = canvas.width / (result.w || 1280);
     const sy = canvas.height / (result.h || 720);
 
+    // ─── KUTU İNTERPOLASYONU ────────────────────────────────
+    // Video 25 FPS, tespit ~3 FPS. Aradaki ~330 ms boyunca kutu donuk
+    // kalırsa yürüyen kişi kutudan çıkar. Takipçinin verdiği hız
+    // vektörüyle kutunun ŞU ANKİ konumunu tahmin ediyoruz.
+    //
+    // Ekstrapolasyon sınırlı: hız bilgisi eskidikçe tahmin güvenilmez
+    // hale gelir. MAX_EXTRAPOLATE_MS'ten sonra kutu olduğu yerde kalır
+    // (yanlış yerde kutu göstermektense donuk göstermek yeğdir).
+    const ageS = Math.min((performance.now() - result._rx) / 1000, MAX_EXTRAPOLATE_MS / 1000);
+
     ctx.lineWidth = 2;
-    ctx.strokeStyle = '#3fb950';
-    ctx.fillStyle = '#3fb950';
     ctx.font = '600 11px ui-monospace,Consolas,monospace';
 
     for (const det of result.detections || []) {
       const [x1, y1, x2, y2] = det.bbox;
-      const x = x1 * sx, y = y1 * sy, w = (x2 - x1) * sx, h = (y2 - y1) * sy;
+      // v = [vx, vy] piksel/saniye — takipçiden geliyor
+      const dx = (det.v ? det.v[0] : 0) * ageS;
+      const dy = (det.v ? det.v[1] : 0) * ageS;
+
+      const x = (x1 + dx) * sx, y = (y1 + dy) * sy;
+      const w = (x2 - x1) * sx, h = (y2 - y1) * sy;
+
+      // Hareket eden izler daha parlak — duranlar sönük
+      const moving = det.v && (Math.abs(det.v[0]) + Math.abs(det.v[1])) > 15;
+      ctx.strokeStyle = moving ? '#3fb950' : '#4d8f5c';
+      ctx.fillStyle = ctx.strokeStyle;
       ctx.strokeRect(x, y, w, h);
-      const label = `${(det.conf * 100).toFixed(0)}%`;
+
+      // Etiket: iz kimliği + güven. Kimlik, kişinin kareler boyunca
+      // AYNI kişi olduğunu gösteriyor — takibin gözle görülür kanıtı.
+      const label = det.id != null
+        ? `#${det.id} ${(det.conf * 100).toFixed(0)}%`
+        : `${(det.conf * 100).toFixed(0)}%`;
       const tw = ctx.measureText(label).width + 8;
       ctx.fillRect(x, Math.max(0, y - 15), tw, 15);
       ctx.fillStyle = '#06111f';
       ctx.fillText(label, x + 4, Math.max(11, y - 4));
-      ctx.fillStyle = '#3fb950';
+      ctx.fillStyle = ctx.strokeStyle;
 
       // İskelet noktaları (poz modeli kullanılırsa dolu gelir)
       if (det.kp) {
         for (const [kx, ky, kc] of det.kp) {
           if (kc < 0.3) continue;
           ctx.beginPath();
-          ctx.arc(kx * sx, ky * sy, 2.5, 0, Math.PI * 2);
+          ctx.arc((kx + dx) * sx, (ky + dy) * sy, 2.5, 0, Math.PI * 2);
           ctx.fill();
         }
       }

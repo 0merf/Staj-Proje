@@ -41,7 +41,9 @@ from sentinel import metrics
 from sentinel.bus.shm import DEFAULT_SLOT_BYTES, FramePool, FramePoolError
 from sentinel.bus.streams import FrameStream, ResultStream, SlotAllocator, connect
 from sentinel.config import settings
-from sentinel.inference.detector.base import Detection, Detector
+from sentinel.inference.detector.base import Detector
+from sentinel.inference.tracker.base import Track
+from sentinel.inference.tracker.botsort import BotSortTracker
 from sentinel.logging import configure_logging, get_logger
 
 log = get_logger(__name__)
@@ -85,7 +87,7 @@ def build_detector(
 
 
 def _serialize(
-    detections: list[Detection], *, motion: float, gate: str, width: int, height: int
+    tracks: list[Track], *, motion: float, gate: str, width: int, height: int
 ) -> str:
     """Sonucu JSON'a çevirir.
 
@@ -93,6 +95,9 @@ def _serialize(
     koordinatındadır ve tarayıcı bunları kendi görüntü alanına
     ölçeklemek zorundadır. Kameralar farklı çözünürlükte olabilir
     (örn. cam-12 960×720), sabit bir varsayım yanlış çizime yol açar.
+
+    Her iz kimliği (`id`) ve hız vektörü (`v`) taşır — tarayıcı iki
+    tespit arasında kutunun konumunu bunlarla tahmin eder.
     """
     return json.dumps(
         {
@@ -100,8 +105,8 @@ def _serialize(
             "h": height,
             "motion": round(motion, 5),
             "gate": gate,
-            "count": len(detections),
-            "detections": [d.to_dict() for d in detections],
+            "count": len(tracks),
+            "detections": [t.to_dict() for t in tracks],
         },
         separators=(",", ":"),
     )
@@ -122,6 +127,8 @@ class InferenceWorker:
         self._worker_id = worker_id
         self._batch_size = batch_size
         self._block_ms = block_ms
+        # Kamera başına ayrı takipçi durumu (bkz. tracker/botsort.py)
+        self._tracker = BotSortTracker(frame_rate=int(settings.target_fps))
 
         self._client = connect()
         self._frames = FrameStream(self._client)
@@ -143,6 +150,7 @@ class InferenceWorker:
         self.by_camera: Counter[str] = Counter()
         self.batch_sizes: deque[int] = deque(maxlen=200)
         self.infer_ms: deque[float] = deque(maxlen=500)
+        self.track_ms: deque[float] = deque(maxlen=500)
         self.e2e_ms: deque[float] = deque(maxlen=500)
 
     def warmup(self) -> None:
@@ -205,8 +213,21 @@ class InferenceWorker:
         metrics.inference_duration.labels(stage="detect").observe(infer_s / len(batch))
         metrics.batch_size.observe(len(batch))
 
+        # ─── KADEME 1b: takip ───────────────────────────────
+        # Tespitler kimliksizdir. Takipçi her kişiye kalıcı bir kimlik
+        # ve hız vektörü verir. Kamera bazlı sıralı işlenmeli — batch
+        # içindeki mesajlar zaten akış sırasında geliyor.
+        t1 = time.perf_counter()
+        tracked: list[list[Track]] = [
+            self._tracker.update(m.camera, d, m.captured_at)
+            for m, d in zip(batch, results, strict=True)
+        ]
+        track_s = time.perf_counter() - t1
+        metrics.inference_duration.labels(stage="track").observe(track_s / len(batch))
+        self.track_ms.append(track_s / len(batch) * 1000.0)
+
         now_monotonic = time.monotonic()
-        for message, detections in zip(batch, results, strict=True):
+        for message, detections in zip(batch, tracked, strict=True):
             payload = _serialize(
                 detections,
                 motion=message.motion_ratio,
@@ -249,12 +270,14 @@ class InferenceWorker:
     def summary(self, elapsed: float) -> str:
         fps = self.processed / elapsed if elapsed > 0 else 0
         avg_ms = statistics.fmean(self.infer_ms) if self.infer_ms else 0
+        avg_track = statistics.fmean(self.track_ms) if self.track_ms else 0
         avg_batch = statistics.fmean(self.batch_sizes) if self.batch_sizes else 0
         avg_e2e = statistics.fmean(self.e2e_ms) if self.e2e_ms else 0
+        active = self._tracker.stats["active_tracks"]
         return (
             f"{self.processed:>6} kare · {fps:5.1f} FPS · "
-            f"{avg_ms:5.1f} ms/kare · batch {avg_batch:4.1f} · "
-            f"{self.detections_total:>5} tespit · "
+            f"tespit {avg_ms:5.1f} ms · takip {avg_track:4.2f} ms · "
+            f"batch {avg_batch:4.1f} · {active:>3} aktif iz · "
             f"gecikme {avg_e2e:5.0f} ms · "
             f"boş slot {self._allocator.available}/{settings.shm_slot_count}"
         )

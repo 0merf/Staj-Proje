@@ -65,6 +65,10 @@ gpu = [
     "ultralytics>=8.3",      # YOLO26 / YOLO11   ⚠ Lisans: AGPL-3.0
     "onnxruntime-gpu>=1.20",
     "lightgbm>=4.5",         # tırmanma skoru taban modeli
+    # BoT-SORT'un eşleştirme adımı (Macar algoritması) bunu kullanır.
+    # Ultralytics eksikse çalışma anında kendisi kurmaya çalışıyor —
+    # tekrarlanabilirlik ve tedarik zinciri güvenliği için açıkça pinliyoruz.
+    "lap>=0.5",
 ]
 
 [dependency-groups]
