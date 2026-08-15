@@ -1,0 +1,361 @@
+{
+  "measured_at": "2026-08-15T15:35:39",
+  "phase": "Faz 1 / Gün 7",
+  "description": "Poz tahmini (Kademe 2a) maliyet + doğruluk ölçümü; tek-model / iki-kademe mimari kararı",
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 3070 Laptop GPU",
+    "vram_gb": 8.0
+  },
+  "software": {
+    "torch": "2.11.0+cu128",
+    "cuda": "12.8"
+  },
+  "config": {
+    "imgsz": 640,
+    "precision": "fp16",
+    "conf_threshold": 0.35,
+    "cameras": [
+      "cam-09",
+      "cam-11",
+      "cam-13",
+      "cam-15",
+      "cam-18",
+      "cam-20"
+    ],
+    "frames_total": 96,
+    "repeats": 5,
+    "source": "yerel dosya (RTSP değil — P-07)",
+    "headline_statistic": "p50 (ortalama, ilk koşan modelin havuz büyütmesiyle çarpık)"
+  },
+  "speed": [
+    {
+      "label": "A) KADEME 1 — sadece tespit",
+      "weights": "yolo26s.pt",
+      "task": "detect",
+      "model_vram_mb": 726.0,
+      "by_batch": [
+        {
+          "batch_size": 1,
+          "frames": 480,
+          "ms_per_frame": {
+            "p50": 16.612,
+            "mean": 26.691,
+            "p95": 21.834,
+            "min": 12.812,
+            "max": 2348.575
+          },
+          "throughput_fps": 60.2,
+          "detections_per_frame": 4.51
+        },
+        {
+          "batch_size": 2,
+          "frames": 480,
+          "ms_per_frame": {
+            "p50": 9.722,
+            "mean": 19.903,
+            "p95": 20.033,
+            "min": 7.588,
+            "max": 1150.346
+          },
+          "throughput_fps": 102.9,
+          "detections_per_frame": 4.52
+        },
+        {
+          "batch_size": 4,
+          "frames": 480,
+          "ms_per_frame": {
+            "p50": 5.899,
+            "mean": 15.718,
+            "p95": 17.974,
+            "min": 4.542,
+            "max": 552.118
+          },
+          "throughput_fps": 169.5,
+          "detections_per_frame": 4.52
+        },
+        {
+          "batch_size": 8,
+          "frames": 480,
+          "ms_per_frame": {
+            "p50": 4.693,
+            "mean": 14.503,
+            "p95": 34.779,
+            "min": 3.441,
+            "max": 283.61
+          },
+          "throughput_fps": 213.1,
+          "detections_per_frame": 4.51
+        },
+        {
+          "batch_size": 16,
+          "frames": 480,
+          "ms_per_frame": {
+            "p50": 4.485,
+            "mean": 13.687,
+            "p95": 136.614,
+            "min": 3.292,
+            "max": 140.483
+          },
+          "throughput_fps": 223.0,
+          "detections_per_frame": 4.5
+        }
+      ]
+    },
+    {
+      "label": "A) tek geçiş — tespit + poz birlikte",
+      "weights": "yolo26s-pose.pt",
+      "task": "pose",
+      "model_vram_mb": 628.0,
+      "by_batch": [
+        {
+          "batch_size": 1,
+          "frames": 480,
+          "ms_per_frame": {
+            "p50": 18.369,
+            "mean": 18.96,
+            "p95": 23.23,
+            "min": 13.428,
+            "max": 50.291
+          },
+          "throughput_fps": 54.4,
+          "detections_per_frame": 1.73
+        },
+        {
+          "batch_size": 2,
+          "frames": 480,
+          "ms_per_frame": {
+            "p50": 10.705,
+            "mean": 10.943,
+            "p95": 13.566,
+            "min": 7.924,
+            "max": 23.568
+          },
+          "throughput_fps": 93.4,
+          "detections_per_frame": 1.73
+        },
+        {
+          "batch_size": 4,
+          "frames": 480,
+          "ms_per_frame": {
+            "p50": 6.496,
+            "mean": 6.668,
+            "p95": 8.484,
+            "min": 5.007,
+            "max": 12.946
+          },
+          "throughput_fps": 153.9,
+          "detections_per_frame": 1.73
+        },
+        {
+          "batch_size": 8,
+          "frames": 480,
+          "ms_per_frame": {
+            "p50": 4.828,
+            "mean": 4.828,
+            "p95": 6.05,
+            "min": 3.392,
+            "max": 7.902
+          },
+          "throughput_fps": 207.1,
+          "detections_per_frame": 1.73
+        },
+        {
+          "batch_size": 16,
+          "frames": 480,
+          "ms_per_frame": {
+            "p50": 4.697,
+            "mean": 4.536,
+            "p95": 5.65,
+            "min": 3.537,
+            "max": 5.67
+          },
+          "throughput_fps": 212.9,
+          "detections_per_frame": 1.74
+        }
+      ]
+    }
+  ],
+  "recall": {
+    "by_model": {
+      "detect": {
+        "weights": "yolo26s.pt",
+        "by_conf": {
+          "0.35": {
+            "detections": 428,
+            "per_frame": 4.46,
+            "mean_confidence": 0.782
+          },
+          "0.25": {
+            "detections": 471,
+            "per_frame": 4.91,
+            "mean_confidence": 0.738
+          },
+          "0.15": {
+            "detections": 518,
+            "per_frame": 5.4,
+            "mean_confidence": 0.689
+          },
+          "0.05": {
+            "detections": 700,
+            "per_frame": 7.29,
+            "mean_confidence": 0.533
+          }
+        },
+        "box_area_px2": {
+          "p10": 2490,
+          "p25": 3445,
+          "p50": 6362,
+          "p75": 12627,
+          "p90": 18487
+        }
+      },
+      "pose": {
+        "weights": "yolo26s-pose.pt",
+        "by_conf": {
+          "0.35": {
+            "detections": 185,
+            "per_frame": 1.93,
+            "mean_confidence": 0.762
+          },
+          "0.25": {
+            "detections": 198,
+            "per_frame": 2.06,
+            "mean_confidence": 0.731
+          },
+          "0.15": {
+            "detections": 233,
+            "per_frame": 2.43,
+            "mean_confidence": 0.652
+          },
+          "0.05": {
+            "detections": 268,
+            "per_frame": 2.79,
+            "mean_confidence": 0.579
+          }
+        },
+        "box_area_px2": {
+          "p10": 8185,
+          "p25": 10266,
+          "p50": 13238,
+          "p75": 17378,
+          "p90": 34213
+        }
+      }
+    },
+    "conf_sweep": [
+      0.35,
+      0.25,
+      0.15,
+      0.05
+    ],
+    "recall_ratio_at_default_conf": 0.433,
+    "recall_ratio_pose_best_effort": 0.626,
+    "conclusion": "Poz modeli eşik düşürülse bile tespit modelinin bulduğu kişi sayısına yaklaşamıyor; kaybettikleri KÜÇÜK kutular (uzaktaki kişiler). Bu bir eşik kalibrasyonu sorunu değil, eğitim verisi farkı: COCO keypoint etiketleri yalnızca eklemleri seçilebilecek kadar büyük kişilere verilir."
+  },
+  "topdown": {
+    "persons_total": 428,
+    "persons_per_frame": 4.46,
+    "crop_padding": 0.15,
+    "plan_assumption_ms_per_person": 1.0,
+    "by_config": [
+      {
+        "crop_size": 192,
+        "crop_batch": 8,
+        "ms_per_crop": {
+          "p50": 2.836,
+          "mean": 2.926,
+          "p95": 3.599,
+          "min": 2.18,
+          "max": 4.426
+        },
+        "ms_per_frame_projected": 12.644,
+        "skeleton_hit_rate": 0.884
+      },
+      {
+        "crop_size": 192,
+        "crop_batch": 16,
+        "ms_per_crop": {
+          "p50": 1.805,
+          "mean": 1.817,
+          "p95": 2.133,
+          "min": 1.511,
+          "max": 2.377
+        },
+        "ms_per_frame_projected": 8.047,
+        "skeleton_hit_rate": 0.885
+      },
+      {
+        "crop_size": 192,
+        "crop_batch": 32,
+        "ms_per_crop": {
+          "p50": 1.301,
+          "mean": 1.342,
+          "p95": 1.681,
+          "min": 1.095,
+          "max": 2.419
+        },
+        "ms_per_frame_projected": 5.8,
+        "skeleton_hit_rate": 0.882
+      },
+      {
+        "crop_size": 256,
+        "crop_batch": 8,
+        "ms_per_crop": {
+          "p50": 2.955,
+          "mean": 3.078,
+          "p95": 3.785,
+          "min": 2.283,
+          "max": 7.645
+        },
+        "ms_per_frame_projected": 13.174,
+        "skeleton_hit_rate": 0.915
+      },
+      {
+        "crop_size": 256,
+        "crop_batch": 16,
+        "ms_per_crop": {
+          "p50": 1.943,
+          "mean": 1.979,
+          "p95": 2.405,
+          "min": 1.615,
+          "max": 2.888
+        },
+        "ms_per_frame_projected": 8.663,
+        "skeleton_hit_rate": 0.913
+      },
+      {
+        "crop_size": 256,
+        "crop_batch": 32,
+        "ms_per_crop": {
+          "p50": 1.463,
+          "mean": 1.496,
+          "p95": 1.743,
+          "min": 1.248,
+          "max": 2.033
+        },
+        "ms_per_frame_projected": 6.523,
+        "skeleton_hit_rate": 0.913
+      }
+    ]
+  },
+  "verdict": {
+    "detect_only_ms_per_frame_p50": 4.485,
+    "single_pass_pose_ms_per_frame_p50": 4.697,
+    "single_pass_pose_recall_ratio": 0.433,
+    "two_stage": {
+      "detect_ms": 4.485,
+      "pose_crops_ms": 5.8,
+      "total_ms": 10.285,
+      "config": "kırpıntı 192px · batch 32",
+      "plan_estimate_ms": 8.945
+    },
+    "gpu_load_pct_at_measured_throughput": {
+      "frames_per_second": 52.0,
+      "detect_only": 23.3,
+      "single_pass_pose": 24.4,
+      "two_stage": 53.5
+    },
+    "decision": "iki_kademe",
+    "rationale": "Tam karede iki modelin maliyeti pratikte AYNI (4.70 vs 4.49 ms) — aynı omurgayı paylaşıyorlar, fark koşular arası gürültü kadar. Ama aynı işi yapmıyorlar: poz modeli, tespit modelinin bulduğu kişilerin yalnızca %43'ini buluyor ve kaybettikleri küçük/uzak kutular. Dedektörü poz modeliyle DEĞİŞTİRMEK sessiz tespit kaybı demektir (P-13 ile aynı sınıf gerileme). Bu yüzden Kademe 1 (tespit) yerinde kalır, poz ayrı bir kademe olarak kişi kırpıntılarına uygulanır; ödenen bedel kare başına ölçülen ek maliyettir."
+  }
+}

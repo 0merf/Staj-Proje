@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
@@ -125,7 +125,9 @@ class UltralyticsDetector:
     # ─── İç işler ────────────────────────────────────────────
 
     def _predict(self, images: list[np.ndarray], conf: float) -> list[Any]:
-        return self._model.predict(  # type: ignore[no-any-return]
+        # cast: Ultralytics predict() birlesik (union) bir tip donduruyor;
+        # stream=False oldugu icin pratikte her zaman liste gelir.
+        return cast("list[Any]", self._model.predict(
             images,
             imgsz=self._imgsz,
             conf=conf,
@@ -134,7 +136,7 @@ class UltralyticsDetector:
             device=self._device,
             verbose=False,
             stream=False,
-        )
+        ))
 
     def _convert(self, result: Any) -> list[Detection]:
         """Ultralytics sonucunu bizim Detection listemize çevirir."""

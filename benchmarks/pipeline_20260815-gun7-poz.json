@@ -1,0 +1,121 @@
+{
+  "measured_at": "2026-08-15T16:05:00",
+  "phase": "Faz 1 / Gün 7",
+  "description": "KADEME 2a (poz) devreye alındıktan sonra 20 kameralık uçtan uca boru hattı ölçümü",
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 3070 Laptop GPU",
+    "vram_gb": 8.0,
+    "cpu": "Intel i7-12700H (14 fiziksel / 20 mantıksal çekirdek)"
+  },
+  "software": {
+    "torch": "2.11.0+cu128",
+    "cuda": "12.8",
+    "ultralytics": "8.4.118",
+    "python": "3.13.15"
+  },
+  "config": {
+    "detector": "yolo26s.pt",
+    "pose": "yolo26s-pose.pt (top-down, kişi kırpıntısı)",
+    "precision": "fp16",
+    "imgsz": 640,
+    "pose_crop_size": 192,
+    "pose_crop_batch": 64,
+    "pose_crop_padding": 0.15,
+    "frame_batch_size": 8,
+    "cameras": 20,
+    "shm_slot_count": 48,
+    "duration_s": 200
+  },
+  "note_on_statistics": [
+    "Tüm süreler p50'dir, ortalama DEĞİL. Worker her başladığında kuyrukta",
+    "birikmiş kareleri bulur; ilk 40-60 saniyedeki birikim kapatma sıçramaları",
+    "ortalamayı kalıcı olarak bozar. FPS de kümülatif değil ARALIK hızıdır —",
+    "kümülatif FPS, başlangıçtaki düşük hızı saatlerce taşır.",
+    "Bu iki değişiklik Gün 7'de worker'ın raporlamasına eklendi."
+  ],
+  "results": {
+    "throughput_fps_steady": 37.0,
+    "throughput_fps_observed_range": [20.6, 37.1],
+    "throughput_variance_note": [
+      "Akış hızı koşular arasında 20-37 FPS aralığında oynuyor; kare başına",
+      "maliyet ise sabit (~16 ms). 16 ms/kare tam kullanımda 62 FPS demek,",
+      "yani boru hattında ÖLÇÜLMEMİŞ ölü zaman var. Şüpheliler: Valkey",
+      "XREADGROUP bekleme süresi ve kırpıntı hazırlığının CPU tarafı",
+      "(cv2.resize, poz süresine dahil ama GPU'da değil).",
+      "37 FPS en iyi gözlenen kararlı değerdir, garanti edilen değer DEĞİL.",
+      "Açık iş (Gün 8): worker'ın bekleme/işleme süre ayrımını ölç."
+    ],
+    "frames_processed": 4502,
+    "per_frame_cost_ms_p50": {
+      "detect": 7.6,
+      "pose": 7.3,
+      "track": 1.0,
+      "total": 15.9
+    },
+    "end_to_end_latency_ms_p50": 600,
+    "pose": {
+      "crops_total": 20686,
+      "crops_per_frame": 4.59,
+      "skeleton_hit_rate": 0.931
+    },
+    "tracking": {
+      "tracks_total": 1585,
+      "tracks_finished": 1873,
+      "fragmentation_rate": 0.466,
+      "median_lifetime_frames": 4,
+      "note": "Parçalanma oranı = kısa ömürlü (<=3 kare) izlerin biten izlere oranı. İlk ölçüm; hedef değeri henüz belirlenmedi."
+    },
+    "per_camera_fps": {
+      "cam-01": 0.87, "cam-02": 0.83, "cam-03": 1.25, "cam-04": 0.19,
+      "cam-05": 0.68, "cam-06": 0.23, "cam-07": 0.47, "cam-08": 0.77,
+      "cam-09": 1.71, "cam-10": 1.87, "cam-11": 1.54, "cam-12": 1.47,
+      "cam-13": 1.58, "cam-14": 1.26, "cam-15": 1.84, "cam-16": 1.52,
+      "cam-17": 1.20, "cam-18": 1.11, "cam-19": 1.05, "cam-20": 1.01
+    }
+  },
+  "comparison_with_day6": {
+    "note": "Gün 6 = tespit + takip, poz YOK",
+    "throughput_fps": { "day6": 52.0, "day7": 37.0, "delta_pct": -28.8 },
+    "end_to_end_latency_ms": { "day6": 68, "day7": 600, "delta": "+532 ms" },
+    "busy_camera_fps": { "day6": "3.6-3.8", "day7": "1.5-1.9" },
+    "latency_explanation": [
+      "Gecikme artışı poz modelinin yavaşlığından DEĞİL, üretim/tüketim",
+      "dengesizliğinden geliyor. Alım katmanı ~52 kare/sn üretiyor, çıkarım",
+      "artık 37 kare/sn tüketiyor. Aradaki fark paylaşımlı bellek havuzunu",
+      "sürekli dolu tutuyor; 48 slot / 37 FPS = 1.3 sn azami kuyruk beklemesi.",
+      "Bu tam olarak P-12'de teşhis edilen mekanizmanın geri dönüşü: kuyruk",
+      "dolu kaldığı sürece kare beklerken değersizleşiyor."
+    ]
+  },
+  "criteria": {
+    "K3_end_to_end_latency": {
+      "target_ms": 1500,
+      "measured_ms": 600,
+      "passed": true,
+      "note": "Hâlâ geçiyor ama marj 68 ms'ten 600 ms'e daraldı."
+    },
+    "K2_fps_per_camera": {
+      "target": 4.0,
+      "measured_busy_cameras": "1.5-1.9",
+      "passed": false,
+      "note": "Poz açıkken hedeften belirgin uzak. Açık iş (Gün 8): poz kademesini seyreltmek (iz başına her N karede bir) veya kamera sayısı/FPS hedefini ölçüme göre revize etmek."
+    }
+  },
+  "decisions_made": [
+    {
+      "id": "poz_ayri_kademe",
+      "decision": "Tespit ve poz AYRI kademelerde kalır; dedektör poz modeliyle değiştirilmez",
+      "evidence": "benchmarks/pose_20260815-153539.json — poz modeli tek başına tespitlerin %43'ünü buluyor"
+    },
+    {
+      "id": "letterbox",
+      "decision": "Kişi kırpıntısı kareye SIKIŞTIRILMAZ, en-boy oranı korunarak dolgulanır",
+      "evidence": "iskelet başarısı %47.4 -> %88.2; küçük kutularda %18.1 -> %94.4 (P-14)"
+    },
+    {
+      "id": "crop_batch_64",
+      "decision": "Kırpıntı batch sınırı 32 yerine 64",
+      "evidence": "tipik yük 35 kırpıntı; 32'de iki GPU çağrısına bölünüyordu. Poz maliyeti 12.5 -> 9.1 ms/kare (P-15)"
+    }
+  ]
+}

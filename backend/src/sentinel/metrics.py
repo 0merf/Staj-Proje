@@ -81,6 +81,39 @@ detections_found = Counter(
     ["cam"],
 )
 
+pose_crops = Counter(
+    "sentinel_pose_crops_total",
+    "KADEME 2a'ya giren kişi kırpıntısı — iskelet çıktı mı",
+    ["result"],  # skeleton | empty
+)
+
+# Bir kişinin kimliğinin kaç kez değiştiğinin göstergesi (PLAN.md §6.1).
+# Zamansal analizin tamamı ("bu kişi 3 saniyedir hızlanıyor") kimliğin
+# kararlı kalmasına dayanır; kimlik sık değişiyorsa saldırganlık ve
+# anomali modüllerinin girdisi bozulur.
+#
+# Ölçüm yöntemi: doğrudan "ID switch" sayılamaz — bunun için gerçek
+# referans (ground truth) gerekir. Onun yerine PROXY sayıyoruz: kısa
+# ömürlü izler. Bir iz birkaç kare sonra kaybolup yerine yeni kimlikli
+# bir iz geliyorsa, bu büyük olasılıkla aynı kişidir.
+track_switches = Counter(
+    "sentinel_track_switches_total",
+    "Kimlik kararsızlığı göstergesi: kısa ömürlü (terk edilmiş) iz sayısı",
+    ["cam"],
+)
+
+tracks_started = Counter(
+    "sentinel_tracks_started_total",
+    "Yeni oluşturulan iz sayısı — kararsızlık oranının paydası",
+    ["cam"],
+)
+
+track_lifetime = Histogram(
+    "sentinel_track_lifetime_frames",
+    "Bir izin kaç kare boyunca yaşadığı — uzun ömür = kararlı kimlik",
+    buckets=(1, 2, 3, 5, 8, 13, 21, 34, 55, 89),
+)
+
 end_to_end_latency = Histogram(
     "sentinel_end_to_end_latency_seconds",
     "Kare yakalanmasından sonucun yazılmasına kadar geçen süre (K3 kriteri)",
@@ -131,8 +164,12 @@ __all__ = [
     "gpu_memory_used",
     "inference_duration",
     "motion_gate_ratio",
+    "pose_crops",
     "queue_depth",
     "serve_metrics",
     "shm_slots_free",
+    "track_lifetime",
+    "track_switches",
+    "tracks_started",
     "worker_up",
 ]

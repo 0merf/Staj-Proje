@@ -100,6 +100,15 @@ class Settings(BaseSettings):
     detector_model_path: str = "models/yolo26s.pt"
     detector_conf_threshold: float = 0.35
     pose_model_path: str = "models/yolo26s-pose.pt"
+    # KADEME 2a. Açıkken kare başına maliyet ~4.5 ms → ~10.3 ms'e çıkar
+    # (20 kamerada ~%23 → ~%53 GPU). Ölçüm ve gerekçe:
+    # benchmarks/pose_20260815-153539.json · inference/pose/base.py
+    pose_enabled: bool = True
+    pose_crop_size: int = 192
+    # 64: tipik yük (8 kare × ~4.4 kişi ≈ 35 kırpıntı) tek GPU çağrısına
+    # sığsın diye. 32'de ikiye bölünüyordu ve %27 pahalıya geliyordu.
+    pose_crop_batch: int = 64
+    pose_conf_threshold: float = 0.25
     face_detector_path: str = "models/yunet.onnx"
     emotion_model_path: str = "models/emotieff.onnx"
     tracker: str = "botsort"

@@ -32,6 +32,7 @@ from typing import Any
 
 import numpy as np
 
+from sentinel import metrics
 from sentinel.inference.detector.base import Detection
 from sentinel.inference.tracker.base import (
     MAX_VELOCITY_GAP_S,
@@ -43,6 +44,12 @@ from sentinel.inference.tracker.base import (
 from sentinel.logging import get_logger
 
 log = get_logger(__name__)
+
+# Bu kadar az karede görülüp terk edilen iz "parça" (fragment) sayılır.
+# Gerçek bir kişi kadrajda kalır; 1-3 karelik izler ya yanlış pozitiftir
+# ya da aynı kişinin kimliğini kaybedip yenisini almasıdır. İkincisi
+# tam olarak ölçmek istediğimiz şey (PLAN.md §6.1).
+SHORT_TRACK_FRAMES = 3
 
 
 def default_args(
@@ -99,6 +106,12 @@ class BotSortTracker:
         self._id_switches = 0
         self._unconfirmed = 0
         self._seen_ids: dict[str, set[int]] = {}
+        self._lifetimes: list[int] = []
+        # Geçmişin, iz çıktı vermedikten sonra ne kadar bekletileceği.
+        # Takipçinin kendi hafızasıyla (track_buffer kare) eşitliyoruz;
+        # kısa tutarsak geri dönen izi "yeni" sanıp kararsızlığı olduğundan
+        # yüksek ölçerdik.
+        self._grace_s = self._args.track_buffer / max(1, frame_rate)
 
     # ─── Tracker protokolü ───────────────────────────────────
 
@@ -136,6 +149,7 @@ class BotSortTracker:
             if track_id not in seen:
                 seen.add(track_id)
                 self._total_tracks += 1
+                metrics.tracks_started.labels(cam=camera).inc()
 
             # Keypoint'leri kaynak tespitten taşı: takipçi onları bilmez,
             # ama det_idx sayesinde hangi tespitten geldiğini biliyoruz.
@@ -180,7 +194,7 @@ class BotSortTracker:
             tracks.append(Track(track_id=-1, detection=detection))
             self._unconfirmed += 1
 
-        self._prune(history, {t.track_id for t in tracks if t.track_id >= 0})
+        self._prune(camera, history, timestamp)
         return tracks
 
     def reset(self, camera: str | None = None) -> None:
@@ -195,11 +209,20 @@ class BotSortTracker:
 
     @property
     def stats(self) -> dict[str, Any]:
+        finished = len(self._lifetimes)
         return {
             "cameras": len(self._trackers),
             "total_tracks": self._total_tracks,
             "active_tracks": sum(len(h) for h in self._history.values()),
             "unconfirmed_passthrough": self._unconfirmed,
+            # Kimlik kararlılığı (PLAN.md §6.1). "Biten izlerin yüzde
+            # kaçı kısa ömürlüydü" — düşük olması iyi.
+            "finished_tracks": finished,
+            "short_lived_tracks": self._id_switches,
+            "fragmentation_rate": round(self._id_switches / finished, 3) if finished else 0.0,
+            "median_lifetime_frames": (
+                sorted(self._lifetimes)[finished // 2] if finished else 0
+            ),
         }
 
     # ─── Hız hesabı ──────────────────────────────────────────
@@ -249,11 +272,33 @@ class BotSortTracker:
         entry.samples += 1
         return entry.velocity
 
-    @staticmethod
-    def _prune(history: dict[int, _History], alive: set[int]) -> None:
-        """Kaybolan izlerin geçmişini temizle — bellek sızmasın."""
-        for track_id in [k for k in history if k not in alive]:
-            del history[track_id]
+    def _prune(self, camera: str, history: dict[int, _History], now: float) -> None:
+        """Gerçekten biten izlerin geçmişini temizler ve ömrünü kaydeder.
+
+        ⚠ Bu fonksiyonun ilk hâli, o karede çıktı vermeyen HER izin
+        geçmişini siliyordu. Yanlıştı: BoT-SORT kısa süre kapanan
+        (occluded) bir izi çıktı vermez ama `track_buffer` boyunca
+        hafızasında tutar ve kişi göründüğünde AYNI kimlikle geri verir.
+        Biz ise geçmişi çoktan silmiş oluyorduk — hız sıfırlanıyor, yaş
+        baştan başlıyordu.
+
+        Şimdi geçmiş, takipçinin kendi hafıza süresi kadar (track_buffer
+        / kare hızı) bekletiliyor. Bu süre dolduğunda iz gerçekten
+        bitmiştir; ömrü histograma yazılır ve kısa ömürlüyse kimlik
+        kararsızlığı sayacına eklenir.
+        """
+        expired = [
+            track_id
+            for track_id, entry in history.items()
+            if entry.last_time is not None and now - entry.last_time > self._grace_s
+        ]
+        for track_id in expired:
+            entry = history.pop(track_id)
+            metrics.track_lifetime.observe(entry.samples)
+            self._lifetimes.append(entry.samples)
+            if entry.samples <= SHORT_TRACK_FRAMES:
+                self._id_switches += 1
+                metrics.track_switches.labels(cam=camera).inc()
 
 
 __all__ = ["BotSortTracker", "default_args"]

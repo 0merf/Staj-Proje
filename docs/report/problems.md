@@ -33,6 +33,153 @@ ama **belirti / sebep / çözüm** üçlüsü mutlaka olsun.
 
 <!-- Yeni kayıtlar buraya, en yenisi en üstte -->
 
+### P-16 · Poz açılınca gecikme 68 ms'ten 600 ms'e çıktı — P-12'nin geri dönüşü
+
+**Tarih:** 15.08.2026 · **Faz:** 1 / Gün 7 · **Durum:** teşhis kondu, karar Gün 8'e
+
+**Belirti:** Kademe 2a (poz) devreye alındıktan sonra uçtan uca gecikme
+**68 ms → ~600 ms** çıktı. Poz modelinin kendisi hızlıydı (7.3 ms/kare),
+yani 530 ms'lik fark modelin çalışma süresinden gelmiyordu.
+
+**Kök sebep — üretim/tüketim dengesizliği:**
+
+```
+Alım katmanı üretiyor : ~52 kare/sn   (değişmedi)
+Çıkarım tüketiyor     :  37 kare/sn   (poz eklendi, 52'den düştü)
+                        ─────────────
+Fark                  :  15 kare/sn   → havuz sürekli dolu
+```
+
+48 slotluk havuz, 37 FPS tüketimle **48 / 37 ≈ 1.3 saniyelik** azami
+kuyruk beklemesi demek. Ölçülen p50 600 ms tam da bu aralıkta.
+
+**Bu tam olarak P-12'de teşhis edilen mekanizma.** Orada tamponu
+küçülterek çözmüştük (128→48, gecikme 770→68 ms). Şimdi aynı tampon,
+tüketim hızı düştüğü için yeniden dolu kalıyor. Yani P-12'nin çözümü
+yanlış değildi — **belirli bir tüketim hızına göre boyutlanmıştı** ve o
+varsayım değişti.
+
+**Öğrenilen ders:** Bir tampon boyutu mutlak bir sayı değil, **tüketici
+hızının fonksiyonudur**. `48 slot` kararını verirken "48 iyi bir sayı"
+diye not almıştım; doğrusu "52 FPS tüketimde 0.9 sn'lik tampon" olmalıydı.
+Böyle yazsaydım, tüketim 37'ye düştüğünde tamponun da küçülmesi gerektiği
+kendiliğinden görünürdü. **Türetilmiş sabitleri, türetildikleri formülle
+birlikte yaz.**
+
+**Seçenekler (Gün 8'de karara bağlanacak):**
+
+| Seçenek | Etkisi | Bedeli |
+|---|---|---|
+| Havuzu küçült (48 → ~24) | gecikme ~600 → ~300 ms | daha çok kare atılır |
+| Pozu seyrelt (iz başına her N karede bir) | tüketim 37 → ~48 FPS | bilek hızı çözünürlüğü düşer |
+| Alım hızını tüketime bağla (geri basınç) | kuyruk hiç dolmaz | uyarlanabilir FPS mantığı gerekir (PLAN.md §5.2) |
+| Kabul et, raporla | iş yok | K2 hedefinden uzaklaşılır |
+
+⚠ Karar verilirken şu unutulmamalı: **poz, saldırganlık modülünün tek
+girdisidir** (PLAN.md §6.5.2 — bilek hızı, kol açısı, gövde eğimi).
+Pozu kısmak doğrudan projenin ana yeteneğini kısar.
+
+---
+
+### P-15 · Doğru batch boyutu modelin değil, ÜRETİLEN İŞİN fonksiyonuymuş
+
+**Tarih:** 15.08.2026 · **Faz:** 1 / Gün 7 · **Kazanç:** poz maliyeti %27 düştü
+
+**Belirti:** İzole ölçüm (`benchmark_pose.py`) kırpıntı başına poz
+maliyetini **1.30 ms** buldu ve kare başına 5.80 ms öngördü. Boru hattına
+bağlayınca gerçekleşen **12.5 ms/kare** oldu — 2 kattan fazla sapma.
+
+**Araştırma:** Önce GPU çekişmesinden şüphelendim (aynı anda tespit de
+koşuyor). Ama tespit de aynı oranda yavaşlamıştı, yani sistematik bir
+şey vardı. Sayıları yazınca görüldü:
+
+```
+8 kare × ~4.4 kişi/kare  ≈  35 kırpıntı
+kırpıntı batch sınırı    =  32
+                            ────────────────
+sonuç                    :  32 + 3  →  İKİ GPU çağrısı
+```
+
+**Kök sebep:** 3 kırpıntılık kuyruk çağrısı, 32'lik çağrıyla neredeyse
+**aynı sabit maliyeti** ödüyor (çekirdek başlatma, Python tarafı ön/son
+işleme, sonuç nesnelerinin kurulması). Yani her batch'te bir çağrının
+maliyetini boşuna ödüyorduk.
+
+Batch sınırı 32 seçilmişti çünkü izole ölçümde kırpıntı başına maliyet
+32'de en düşüktü (8 → 2.84 ms, 16 → 1.80 ms, 32 → 1.30 ms). Ölçüm
+doğruydu; **soru yanlıştı.** "Hangi batch boyutu en verimli?" diye
+sormuştum. Doğru soru: "Sistemim tipik olarak kaç kırpıntı üretiyor ve
+bunu kaç çağrıya bölüyorum?"
+
+**Çözüm:** Sınır 64'e çıkarıldı — tipik yük tek çağrıya sığıyor.
+
+| | batch 32 | batch 64 |
+|---|---|---|
+| Poz maliyeti (p50) | 12.5 ms/kare | **9.1 ms/kare** |
+| GPU çağrısı / batch | 2 | 1 |
+
+**Öğrenilen ders:** İzole kıyaslama, bileşenin **kendi** eğrisini verir;
+sistemdeki davranışını vermez. Kritik olan parametre "eğrinin en iyi
+noktası" değil, **iş miktarının o parametreye bölünme biçimiydi.** Bir
+sonraki sefer: bir batch sınırı seçerken önce "gerçek yük bunun neresine
+düşüyor" diye bakmalı — özellikle sınırın hemen üstüne düşen yükler en
+kötü durumdur (33 kırpıntı = 2 çağrı, biri 1 elemanlı).
+
+---
+
+### P-14 · İskeletlerin yarısı çıkmıyordu — suçlu çözünürlük değil, en-boy oranıydı
+
+**Tarih:** 15.08.2026 · **Faz:** 1 / Gün 7 · **Kazanç:** iskelet başarısı %47 → %88
+
+**Bağlam:** Gün 7 ölçümü, poz modelinin tek başına kullanılamayacağını
+gösterdi (tespitlerin yalnızca %43'ünü buluyor — aşağıya bakınız). Bu
+yüzden tasarım "tespit + kişi kırpıntısına poz" oldu. İlk uygulamada
+kırpıntılar modele `cv2.resize(crop, (192, 192))` ile veriliyordu.
+
+**Belirti:** Kırpıntıların yalnızca **%47.4'ünden** iskelet çıkıyordu.
+Dahası başarısızlık kutu boyutuyla güçlü şekilde ilişkiliydi:
+
+| Kutu alanı | Başarı |
+|---|---|
+| < 3 000 px² | %18.1 |
+| 3–6 000 px² | %28.3 |
+| 6–12 000 px² | %59.4 |
+| 12–25 000 px² | %78.5 |
+
+**Yanlış hipotez:** "Küçük kutular çözünürlük sınırı. 50×50 pikseli
+192'ye büyütmek bulanık bir leke veriyor, model eklem göremiyor."
+Bu tamamen makul görünüyordu ve veriye de uyuyordu — kabul edip
+"küçük kutulara poz çalıştırma" filtresi eklemeye hazırdım.
+
+**Gerçek kök sebep:** Kareye sıkıştırma. Uzaktaki bir kişi **ince ve
+uzun** bir kutu verir (örn. 40×130 px, oran 1:3.25). Bunu 192×192'ye
+sıkıştırmak kişiyi yatay olarak **3 kat şişirir** — model artık insan
+şekli görmez. Kutu ne kadar uzunsa bozulma o kadar büyük, ve en uzun
+kutular tam da en uzak (en küçük alanlı) kişilerdir. **Alanla korelasyon
+sahteydi; asıl değişken en-boy oranıydı.**
+
+**Çözüm:** En-boy oranını koruyarak dolgulama (letterbox) — kırpıntı
+oranı bozulmadan büyütülür, kalan yer nötr griyle (114) doldurulur.
+
+| | Kare sıkıştırma | Letterbox |
+|---|---|---|
+| Genel başarı | %47.4 | **%88.1** |
+| < 3 000 px² kutular | %18.1 | **%94.4** |
+
+En küçük kutular en çok kazanan grup oldu — hipotezin tam tersi.
+
+**Öğrenilen ders:** İki değişken birlikte hareket ettiğinde (burada
+"küçük alan" ve "uzun oran"), veriye uyan ilk açıklama doğru olmayabilir.
+Hipotezi kabul etmeden önce **ayırt edici bir deney** yapmak gerekiyordu:
+"oranı düzeltirsem küçük kutular düzelir mi?" Bu deney 10 dakika sürdü ve
+bir filtreyi (dolayısıyla uzaktaki kişilerin iskeletini tamamen) kurtardı.
+
+Gözetim açısından bu kritik: uzaktaki kişi tam da izlenmesi gerekendir.
+"Küçük kutulara poz çalıştırma" filtresini eklemiş olsaydım, koridorun
+ucundaki kavgayı hiç göremezdik ve sebebini de bilemezdik.
+
+---
+
 ### P-13 · Takip eklendi, tespitlerin %21'i kayboldu
 
 **Tarih:** 15.08.2026 · **Faz:** 1 / Gün 6 · **Tür:** gerileme (regression)
