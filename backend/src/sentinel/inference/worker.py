@@ -177,6 +177,11 @@ class InferenceWorker:
         self.pose_ms: deque[float] = deque(maxlen=500)
         self.track_ms: deque[float] = deque(maxlen=500)
         self.e2e_ms: deque[float] = deque(maxlen=500)
+        # Boru hattı muhasebesi: batch başına toplam süre nereye gidiyor?
+        self.wait_ms: deque[float] = deque(maxlen=500)
+        self.read_ms: deque[float] = deque(maxlen=500)
+        self.publish_ms: deque[float] = deque(maxlen=500)
+        self.release_ms: deque[float] = deque(maxlen=500)
         # Aralık hızı için pencere durumu (bkz. summary)
         self._window_started = 0.0
         self._window_processed = 0
@@ -206,11 +211,18 @@ class InferenceWorker:
         deadline = started + duration if duration else None
 
         while not _stop:
+            # ⚠ BEKLEME SÜRESİ AYRI ÖLÇÜLÜYOR
+            # "Kare başına 16 ms harcıyoruz ama 62 değil 25 FPS alıyoruz"
+            # açığını kapatmak için: döngünün ne kadarı iş, ne kadarı
+            # kare beklemek? İkisi karışırsa hangi tarafı iyileştireceğimizi
+            # bilemeyiz (üretici mi yavaş, tüketici mi).
+            t_wait = time.perf_counter()
             batch = list(
                 self._frames.consume(
                     GROUP, self._worker_id, count=self._batch_size, block_ms=self._block_ms
                 )
             )
+            self.wait_ms.append((time.perf_counter() - t_wait) * 1000.0)
             if batch:
                 self._run_batch(batch)
 
@@ -227,7 +239,9 @@ class InferenceWorker:
 
     def _run_batch(self, batch: list) -> None:  # type: ignore[type-arg]
         # Kareleri paylaşımlı bellekten oku — kopyalama yok
+        t_read = time.perf_counter()
         images = [self._pool.read(message.ref) for message in batch]
+        self.read_ms.append((time.perf_counter() - t_read) * 1000.0)
 
         t0 = time.perf_counter()
         try:
@@ -282,6 +296,7 @@ class InferenceWorker:
         self.track_ms.append(track_s / len(batch) * 1000.0)
 
         now_monotonic = time.monotonic()
+        t_publish = time.perf_counter()
         for message, detections in zip(batch, tracked, strict=True):
             payload = _serialize(
                 detections,
@@ -304,8 +319,11 @@ class InferenceWorker:
             latency = now_monotonic - message.captured_at
             self.e2e_ms.append(latency * 1000.0)
             metrics.end_to_end_latency.observe(latency)
+        self.publish_ms.append((time.perf_counter() - t_publish) * 1000.0)
 
+        t_release = time.perf_counter()
         self._release(batch)
+        self.release_ms.append((time.perf_counter() - t_release) * 1000.0)
 
     @staticmethod
     def _attach_keypoints(
@@ -336,6 +354,35 @@ class InferenceWorker:
         """
         self._allocator.release_many([m.ref.slot for m in batch])
         self._frames.ack(GROUP, *[m.message_id for m in batch])
+
+    def budget(self) -> str:
+        """Batch başına sürenin nereye gittiğinin dökümü.
+
+        "Kare başına 16 ms harcıyoruz ama 62 değil 25 FPS alıyoruz"
+        açığını bu tablo kapatır: GPU dışındaki her adım da zaman yiyor
+        ve tek tek küçük görünen maliyetler batch başına toplanınca
+        modelin maliyetini geçebiliyor.
+        """
+        b = statistics.fmean(self.batch_sizes) if self.batch_sizes else 1.0
+        rows = [
+            ("bekleme (kare yok)", self._p50(self.wait_ms)),
+            ("shm okuma", self._p50(self.read_ms)),
+            ("tespit", self._p50(self.infer_ms) * b),
+            ("poz", self._p50(self.pose_ms) * b),
+            ("takip", self._p50(self.track_ms) * b),
+            ("yayınlama (Valkey)", self._p50(self.publish_ms)),
+            ("slot iadesi + ack", self._p50(self.release_ms)),
+        ]
+        total = sum(v for _, v in rows)
+        lines = [f"  {'ADIM':<22} {'ms/batch':>9} {'pay':>7} {'ms/kare':>9}", "  " + "-" * 50]
+        for name, value in rows:
+            share = value / total * 100 if total else 0
+            lines.append(f"  {name:<22} {value:>9.2f} {share:>6.1f}% {value / b:>9.2f}")
+        lines.append("  " + "-" * 50)
+        lines.append(f"  {'TOPLAM':<22} {total:>9.2f} {100.0:>6.1f}% {total / b:>9.2f}")
+        if total:
+            lines.append(f"  Teorik tavan: {1000.0 / (total / b):.1f} FPS (batch {b:.1f})")
+        return "\n".join(lines)
 
     def _report(self, now: float, elapsed: float) -> None:
         metrics.shm_slots_free.set(self._allocator.available)
@@ -402,6 +449,10 @@ class InferenceWorker:
                 f"p50 {ordered[len(ordered) // 2]:.2f} · "
                 f"p95 {ordered[int(len(ordered) * 0.95) - 1]:.2f}"
             )
+        print()
+        print("SÜRE BÜTÇESİ (batch başına, p50)")
+        print(self.budget())
+        print()
         print(f"  Model: {info.backend} · {info.precision} · {info.device}")
         if self._pose is not None:
             stats = getattr(self._pose, "stats", None)
