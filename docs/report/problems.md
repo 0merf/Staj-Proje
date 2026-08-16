@@ -33,6 +33,135 @@ ama **belirti / sebep / çözüm** üçlüsü mutlaka olsun.
 
 <!-- Yeni kayıtlar buraya, en yenisi en üstte -->
 
+### P-18 · Darboğaz GPU sanılıyordu, CPU çıktı — GPU %0-5'te boş oturuyormuş
+
+**Tarih:** 16.08.2026 · **Faz:** 1 / Gün 8 · **Kazanç:** gecikme 4× azaldı
+
+**Belirti:** Poz eklendikten sonra sistem 20-37 FPS'te takılı kaldı
+(gereken 80). Kare başına maliyet 16 ms ölçülmüştü — bu 62 FPS'e
+denk gelmeliydi. Aradaki açık açıklanamıyordu.
+
+**Araştırma:** Önce worker'a aşama bazlı süre ölçümü eklendi. Bekleme
+süresi yalnızca %0.5 çıktı, yani worker kare beklemiyordu — gerçekten
+çalışıyordu. Sonra koşu sırasında GPU izlendi:
+
+```
+GPU kullanımı : %0-5
+Güç çekişi    : 17-32 W   (kartın bütçesi 80-125 W)
+Sıcaklık      : 49°C
+Kısıtlama sebebi: 0x01 = GpuIdle
+```
+
+**GPU boş oturuyordu.** Termal kısıtlama da yoktu (49°C).
+
+Kesin ölçüm — `predict()` içinde süre nereye gidiyor:
+
+| | toplam | saf GPU | CPU tarafı |
+|---|---|---|---|
+| Tespit (batch 8) | 47.7 ms | 22.5 ms (%47) | **25.3 ms (%53)** |
+| Poz (64 kırpıntı) | 52.1 ms | 22.5 ms (%43) | **29.6 ms (%57)** |
+
+**Kök sebep:** Ultralytics'e numpy dizisi verildiğinde ön işlemeyi
+(1280×720 → 640 yeniden boyutlandırma, BGR→RGB, eksen değiştirme,
+normalizasyon, GPU'ya kopyalama) **CPU'da** yapıyor. Boru hattımız seri
+çalıştığı için GPU, bir sonraki batch'in CPU hazırlığı bitene kadar
+bekliyordu.
+
+Bu bilinen bir problem: Ultralytics kendi dokümanında *"üretimde ön
+işleme çoğu zaman darboğaz olur"* ve *"seri boru hattında GPU çoğu
+zaman boş oturur, çözüm eşzamanlılıktır"* diyor (LITERATUR §P).
+
+**Çözüm:** Ön işleme **alım katmanına** taşındı. Kareler paylaşımlı
+belleğe ham değil, model uzayında (640×640 letterbox) yazılıyor.
+Çıkarım worker'ı hazır diziyi doğrudan GPU tensörüne çevirip veriyor;
+Ultralytics kendi ön işlemesini atlıyor.
+
+Neden alım tarafı: orası 20 kamera iş parçacığına dağılıyor ve
+`cv2.resize` GIL'i bıraktığı için gerçekten paralel koşuyor. Çıkarım
+worker'ı ise **tek süreç** — aynı işi orada yapmak seri kalırdı.
+Ölçüm bunu doğruladı: hazırlık çıkarım tarafında yapılınca net kazanç
+sıfır (3.87 + 3.43 ≈ 6.8 ≈ eski 6.78 ms).
+
+**Sonuç (20 kamera, 210 sn):**
+
+| | Gün 7 | Gün 8 | |
+|---|---|---|---|
+| Uçtan uca gecikme | ~600 ms | **144 ms** | 4.2× |
+| Akış | 20-37 FPS | 34.6 FPS | kararlı |
+| Tespit | 7.6 ms | 6.5 ms | |
+| Boş slot | 0-8 / 48 | **44 / 48** | kuyruk artık dolmuyor |
+| Kamera başına FPS | 1.5-1.9 | 2.2-2.4 | |
+| Parçalanma | %46.6 | **%37.3** | kimlik daha kararlı |
+| shm slot boyutu | 2.76 MB | 1.23 MB | 2.2× küçük |
+
+**En önemli değişim boş slot sayısı.** Tüketici artık üreticiden hızlı;
+sistem "kuyruk sınırlı" olmaktan çıktı. Gecikmedeki 4 katlık düşüş
+doğrudan bunun sonucu — P-16'da teşhis edilen mekanizma kapandı.
+
+**Doğrulama:** Kutular artık model uzayında (640×640) üretilip kaynak
+piksel uzayına geri taşınıyor. Bu eşleme hatalı olsaydı sessizce yanlış
+yere çizerdi, o yüzden ayrıca ölçüldü: 2240 tespitte **0** kare dışı/bozuk
+kutu, 28 342 keypoint'in **%100'ü** kendi kutusuyla uyumlu, üç farklı
+kaynak çözünürlük (900/960/1280 × 720) doğru raporlanıyor.
+
+**Öğrenilen ders:** Bütçe hesabı yaparken **hangi kaynağın** sınır
+olduğunu varsaymak yerine ölçmek gerekiyor. PLAN.md §2.3'te GPU bütçesi
+titizlikle hesaplanmış, **CPU bütçesi hiç hesaplanmamıştı.** Sistemin
+darboğazı hesaplanan yerde değil, hiç bakılmayan yerdeydi. Ayrıca
+"GPU kullanımı" metriği baştan izlenseydi bu 3 gün önce görülürdü —
+`nvidia-smi`'nin tek satırı, tüm süre bütçesi tablosundan daha
+açıklayıcıydı.
+
+---
+
+### P-17 · Ölçümü sırayla koşturmak sonucu tersine çevirdi
+
+**Tarih:** 16.08.2026 · **Faz:** 1 / Gün 8 · **Kaybedilen süre:** ~20 dk
+
+**Belirti:** Ön işlemenin nereye taşınacağına karar vermek için üç
+senaryo ölçüldü. Sonuç hipotezin tam tersi çıktı:
+
+```
+A) numpy 1280x720 (mevcut)   6.78 ms/kare
+B) numpy 640x640             (A'dan %9 YAVAŞ)
+C) hazır GPU tensörü         (A'dan %34 YAVAŞ)
+```
+
+C'nin daha yavaş çıkması Ultralytics'in kendi dokümanıyla çelişiyordu.
+Neredeyse "hazır tensör işe yaramıyor" diye kaydedip başka yol
+arayacaktım.
+
+**Kök sebep:** Senaryolar **sırayla** koşturulmuştu — önce A'nın 25
+turu, sonra B'nin, sonra C'nin. Arka planda 20 kameralık alım katmanı
+çalışıyor ve makinedeki yük dalgalanıyor. Ölçüm ilerledikçe yük arttığı
+için **sonra koşan senaryo cezalandırılıyordu.** Ölçtüğüm şey senaryolar
+arasındaki fark değil, zamanın kendisiydi.
+
+**Çözüm:** A/B/C **dönüşümlü** (interleaved) koşturuldu — her turda
+sırayla biri, 25 tur, sonra medyan. Böylece yük dalgalanması üç
+senaryoyu da eşit etkiliyor.
+
+**Düzeltilmiş sonuç:**
+
+| Senaryo | ms/kare | Kazanç |
+|---|---|---|
+| A) numpy 1280×720 | 6.78 | — |
+| B) numpy 640×640 | 6.31 | %7 |
+| **C) hazır GPU tensörü** | **3.87** | **%43** |
+
+Tam tersi. Üçü de aynı tespitleri veriyor (69), yani kazanç doğruluk
+bedeli olmadan geliyor.
+
+**Öğrenilen ders:** Bu, P-07'nin aynısı — *ölçüm düzeneğinin kendisi
+sonucu bozmamalı.* P-07'de RTSP'nin hız sınırını kapasite sanmıştım;
+burada zamanla değişen sistem yükünü senaryo farkı sandım. Ortak kural:
+**A/B karşılaştırmasında A ve B eşit koşullarda koşmalı.** Değişen bir
+ortamda bunun tek güvenli yolu dönüşümlü ölçüm ve medyandır. Sıralı
+ölçüm ancak ortam sabitse geçerlidir — ve bizim ortamımız asla sabit
+değil, çünkü sistemin kendisi arka planda çalışıyor.
+
+---
+
 ### P-16 · Poz açılınca gecikme 68 ms'ten 600 ms'e çıktı — P-12'nin geri dönüşü
 
 **Tarih:** 15.08.2026 · **Faz:** 1 / Gün 7 · **Durum:** teşhis kondu, karar Gün 8'e

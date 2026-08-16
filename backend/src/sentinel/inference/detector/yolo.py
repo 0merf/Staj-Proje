@@ -124,11 +124,51 @@ class UltralyticsDetector:
 
     # ─── İç işler ────────────────────────────────────────────
 
+    def _as_tensor(self, images: list[np.ndarray]) -> Any | None:
+        """Kareleri doğrudan GPU tensörüne çevirir — mümkünse.
+
+        ⚠ NEDEN: Ultralytics'e numpy listesi verildiğinde ön işlemeyi
+        (yeniden boyutlandırma, renk dönüşümü, eksen değiştirme,
+        normalizasyon) **CPU'da** yapar. Gün 8 ölçümü bunun süre
+        bütçesinin %53'ünü yediğini, GPU'nun ise %0-5 kullanımda boş
+        oturduğunu gösterdi. Hazır tensör verildiğinde Ultralytics bu
+        adımı atlıyor ve kare başına maliyet 6.78 → 3.87 ms'e düşüyor
+        (%43), üstelik tespitler birebir aynı kalıyor.
+
+        Koşul: kareler zaten model uzayında olmalı (alım tarafında
+        letterbox'lanmış, hepsi aynı kare boyutta). Değilse None döner
+        ve eski numpy yolu kullanılır — kıyaslama betikleri ham kare
+        verdiğinde çalışmaya devam etsin diye.
+        """
+        if not images:
+            return None
+        first = images[0].shape
+        if first[0] != self._imgsz or first[1] != self._imgsz or first[2] != 3:
+            return None
+        if any(img.shape != first for img in images):
+            return None
+
+        import torch
+
+        # np.stack: bitişik bellekten düz kopya, ucuz.
+        batch = np.stack(images)  # (N, H, W, 3) BGR uint8
+        tensor = torch.from_numpy(batch).to(self._device, non_blocking=True)
+        # Pahalı olan eksen değiştirme ve kanal çevirme GPU'da yapılıyor:
+        # BGR→RGB için flip, HWC→CHW için permute. İkisi de burada
+        # neredeyse bedava, CPU'da kare başına milisaniyelerce sürüyordu.
+        tensor = tensor.permute(0, 3, 1, 2).flip(1).contiguous()
+        tensor = tensor.half() if self._half else tensor.float()
+        return tensor.div_(255.0)
+
     def _predict(self, images: list[np.ndarray], conf: float) -> list[Any]:
+        source: Any = self._as_tensor(images)
+        if source is None:
+            source = images
+
         # cast: Ultralytics predict() birlesik (union) bir tip donduruyor;
         # stream=False oldugu icin pratikte her zaman liste gelir.
         return cast("list[Any]", self._model.predict(
-            images,
+            source,
             imgsz=self._imgsz,
             conf=conf,
             classes=self._classes,

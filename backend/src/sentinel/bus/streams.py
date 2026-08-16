@@ -19,6 +19,7 @@ from redis.exceptions import ResponseError
 
 from sentinel.bus.shm import FREE_LIST_KEY, FrameRef
 from sentinel.config import settings
+from sentinel.core.preprocess import Letterbox
 from sentinel.logging import get_logger
 
 log = get_logger(__name__)
@@ -103,9 +104,14 @@ class FrameMessage:
     ref: FrameRef
     motion_ratio: float
     gate_reason: str
+    # Kare alım tarafında model uzayına taşındıysa (letterbox 640×640),
+    # geri dönüşüm bilgisi burada. Kutular model uzayında üretiliyor;
+    # operatöre gösterilmeden önce kaynak piksel uzayına taşınmaları
+    # gerekiyor. None = ön işleme yapılmamış (ham kare).
+    letterbox: Letterbox | None = None
 
     def to_fields(self) -> dict[str, str]:
-        return {
+        fields = {
             "cam": self.camera,
             "seq": str(self.sequence),
             "ts": f"{self.captured_at:.6f}",
@@ -114,6 +120,9 @@ class FrameMessage:
             "gate": self.gate_reason,
             **self.ref.to_dict(),
         }
+        if self.letterbox is not None:
+            fields.update(self.letterbox.to_fields())
+        return fields
 
     @classmethod
     def from_fields(cls, message_id: str, fields: dict[str, str]) -> FrameMessage:
@@ -126,7 +135,20 @@ class FrameMessage:
             ref=FrameRef.from_dict(fields),
             motion_ratio=float(fields.get("motion", 0.0)),
             gate_reason=fields.get("gate", ""),
+            letterbox=Letterbox.from_fields(fields),
         )
+
+    @property
+    def source_size(self) -> tuple[int, int]:
+        """Kaynak karenin (genişlik, yükseklik) boyutu.
+
+        Tarayıcı kutuları kendi görüntü alanına ölçeklemek için buna
+        muhtaç. Ön işleme varsa kaynak boyut letterbox kaydında,
+        yoksa karenin kendi şeklindedir.
+        """
+        if self.letterbox is not None:
+            return (self.letterbox.source_width, self.letterbox.source_height)
+        return (self.ref.width, self.ref.height)
 
 
 class FrameStream:

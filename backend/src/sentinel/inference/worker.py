@@ -39,9 +39,11 @@ from dataclasses import replace
 from types import FrameType
 
 from sentinel import metrics
-from sentinel.bus.shm import DEFAULT_SLOT_BYTES, FramePool, FramePoolError
+from sentinel.bus.shm import FramePool, FramePoolError
 from sentinel.bus.streams import FrameStream, ResultStream, SlotAllocator, connect
 from sentinel.config import settings
+from sentinel.core import preprocess
+from sentinel.core.preprocess import Letterbox
 from sentinel.inference.detector.base import Detection, Detector
 from sentinel.inference.pose.base import PoseEstimator
 from sentinel.inference.tracker.base import Track
@@ -108,8 +110,51 @@ def build_pose_estimator(model_path: str, *, device: str, half: bool) -> PoseEst
     )
 
 
+def _to_source_space(data: dict[str, object], box: Letterbox) -> dict[str, object]:
+    """Bir tespitin koordinatlarını model uzayından kaynak kareye taşır.
+
+    ⚠ Bu adım atlanırsa kutular tarayıcıda YANLIŞ YERE çizilir ve hata
+    sessizdir: koordinatlar geçerli sayılardır, sadece 640×640 uzayına
+    aittir. Kaynak kare 1280×720 olduğu için kutular sol üst köşeye
+    toplanmış ve küçülmüş görünür.
+
+    Taşınması gereken üç şey var: kutu köşeleri, iskelet noktaları ve
+    hız vektörü. Hız bir FARK olduğu için dolgu payı eklenmez, yalnızca
+    ölçek uygulanır (bkz. Letterbox.to_source_length).
+    """
+    bbox = data.get("bbox")
+    if isinstance(bbox, list) and len(bbox) == 4:
+        x1, y1, x2, y2 = box.to_source_box(*(float(v) for v in bbox))
+        data["bbox"] = [round(x1, 1), round(y1, 1), round(x2, 1), round(y2, 1)]
+
+    keypoints = data.get("kp")
+    if isinstance(keypoints, list):
+        data["kp"] = [
+            [
+                round((float(point[0]) - box.pad_x) / box.scale, 1),
+                round((float(point[1]) - box.pad_y) / box.scale, 1),
+                point[2],
+            ]
+            for point in keypoints
+        ]
+
+    velocity = data.get("v")
+    if isinstance(velocity, list) and len(velocity) == 2:
+        data["v"] = [
+            round(box.to_source_length(float(velocity[0]))),
+            round(box.to_source_length(float(velocity[1]))),
+        ]
+    return data
+
+
 def _serialize(
-    tracks: list[Track], *, motion: float, gate: str, width: int, height: int
+    tracks: list[Track],
+    *,
+    motion: float,
+    gate: str,
+    width: int,
+    height: int,
+    letterbox: Letterbox | None = None,
 ) -> str:
     """Sonucu JSON'a çevirir.
 
@@ -120,7 +165,15 @@ def _serialize(
 
     Her iz kimliği (`id`) ve hız vektörü (`v`) taşır — tarayıcı iki
     tespit arasında kutunun konumunu bunlarla tahmin eder.
+
+    ⚠ Kareler alım tarafında model uzayına (640×640 letterbox)
+    taşındığı için tespitler de o uzayda çıkar. Tarayıcıya gitmeden
+    önce kaynak piksel uzayına geri çevriliyorlar.
     """
+    detections = [t.to_dict() for t in tracks]
+    if letterbox is not None:
+        detections = [_to_source_space(d, letterbox) for d in detections]
+
     return json.dumps(
         {
             "w": width,
@@ -128,7 +181,7 @@ def _serialize(
             "motion": round(motion, 5),
             "gate": gate,
             "count": len(tracks),
-            "detections": [t.to_dict() for t in tracks],
+            "detections": detections,
         },
         separators=(",", ":"),
     )
@@ -162,7 +215,7 @@ class InferenceWorker:
 
         try:
             self._pool = FramePool(
-                slot_count=settings.shm_slot_count, slot_bytes=DEFAULT_SLOT_BYTES
+                slot_count=settings.shm_slot_count, slot_bytes=preprocess.slot_bytes()
             )
         except FramePoolError as exc:
             raise SystemExit(f"HATA: {exc}") from exc
@@ -298,12 +351,14 @@ class InferenceWorker:
         now_monotonic = time.monotonic()
         t_publish = time.perf_counter()
         for message, detections in zip(batch, tracked, strict=True):
+            source_w, source_h = message.source_size
             payload = _serialize(
                 detections,
                 motion=message.motion_ratio,
                 gate=message.gate_reason,
-                width=message.ref.width,
-                height=message.ref.height,
+                width=source_w,
+                height=source_h,
+                letterbox=message.letterbox,
             )
             self._results.publish(
                 message.camera,

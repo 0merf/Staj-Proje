@@ -1,0 +1,186 @@
+{
+  "measured_at": "2026-08-15T18:40:00",
+  "phase": "Faz 1 / Gün 8",
+  "description": "Ön işlemenin nereye taşınacağı kararı: CPU darboğazını çözmek için üç seçeneğin ölçümü",
+  "context": {
+    "problem": "Sistem 20-37 FPS (gereken 80). GPU %0-5 kullanımda, boşta. Sürenin %53'ü Ultralytics'in CPU tarafı ön/son işlemesinde.",
+    "reference": "benchmarks/pipeline_20260815-gun7-poz.json · LITERATUR.md §P"
+  },
+  "method_note": [
+    "⚠ İLK ÖLÇÜM YANLIŞTI ve düzeltildi.",
+    "İlk denemede A, B, C senaryoları SIRAYLA koşturuldu ve C %34 DAHA YAVAŞ",
+    "çıktı. Makinedeki yük (20 alım worker'ı) dalgalandığı için sırayla koşmak",
+    "son koşanı cezalandırıyordu.",
+    "Düzeltme: A/B/C dönüşümlü (interleaved) koşturulup medyan alındı.",
+    "Aynı ders P-07'de de öğrenilmişti: ölçüm düzeneğinin kendisi sonucu bozmamalı."
+  ],
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 3070 Laptop GPU",
+    "cpu": "Intel i7-12700H",
+    "note": "20 alım worker'ı arka planda çalışırken ölçüldü (gerçekçi yük)"
+  },
+  "config": {
+    "model": "yolo26s.pt",
+    "imgsz": 640,
+    "precision": "fp16",
+    "batch_size": 8,
+    "iterations": 25,
+    "statistic": "medyan (dönüşümlü koşu)"
+  },
+  "results": {
+    "detection_speed": {
+      "A_current_numpy_1280x720": {
+        "ms_per_frame": 6.78,
+        "gain_pct": 0
+      },
+      "B_numpy_640x640": {
+        "ms_per_frame": 6.31,
+        "gain_pct": 7
+      },
+      "C_ready_gpu_tensor": {
+        "ms_per_frame": 3.87,
+        "gain_pct": 43
+      },
+      "detections_identical": true,
+      "detections_count": 69,
+      "note": "Üç senaryo da AYNI tespitleri veriyor — kazanç doğruluk bedeli olmadan geliyor."
+    },
+    "preparation_cost": {
+      "letterbox_ms_per_frame": 1.49,
+      "numpy_to_gpu_tensor_ms_per_frame": 1.94,
+      "total_ms_per_frame": 3.43,
+      "critical_note": [
+        "Bu hazırlık ÇIKARIM worker'ında yapılırsa hiçbir kazanç yok:",
+        "3.87 + 3.43 = 7.30 ms  ≈  A ile aynı (6.78).",
+        "Kazanç ancak hazırlık 20 KAMERA İŞ PARÇACIĞINA dağıtılırsa geliyor.",
+        "Tek süreçte 20 iş parçacığı GIL yüzünden sıraya girmez mi? Girmez:",
+        "cv2.resize C kodudur ve çalışırken GIL'i bırakır, iş gerçekten paralel geçer.",
+        "Çıkarım worker'ı ise TEK süreçtir — orada aynı iş seri kalırdı."
+      ]
+    },
+    "pose_crop_quality": {
+      "question": "Paylaşımlı bellekte orijinal kare tutulmazsa poz kırpıntıları bozulur mu?",
+      "crop_from_original_1280x720": {
+        "overall": 0.907,
+        "by_box_area": {
+          "<3k": 0.972,
+          "3-6k": 0.826,
+          "6-12k": 0.901,
+          ">12k": 0.966
+        }
+      },
+      "crop_from_640_letterbox": {
+        "overall": 0.942,
+        "by_box_area": {
+          "<3k": 0.972,
+          "3-6k": 0.877,
+          "6-12k": 0.97,
+          ">12k": 0.974
+        }
+      },
+      "verdict": "BOZULMUYOR — İYİLEŞİYOR (%90.7 → %94.2)",
+      "explanation": [
+        "Beklenti kalite kaybıydı; ölçüm tersini gösterdi. Sebebi sinyal işleme:",
+        "1280'den doğrudan 192'ye inmek örtüşmeye (aliasing) yol açar.",
+        "1280 → 640 → 192 iki kademeli inişte 640 adımı ön filtre görevi görür.",
+        "Kademeli küçültme, tek adımda büyük atlamadan daha kalitelidir."
+      ]
+    }
+  },
+  "decision": {
+    "chosen": "C — ön işleme alım worker'larına taşınır, çıkarım hazır tensör alır",
+    "design": {
+      "ingest_worker_writes_to_shm": "uint8, HWC düzeninde, BGR, 640x640 letterbox",
+      "why_hwc_bgr_not_chw_rgb": [
+        "Model CHW/RGB ister ama poz kademesi kırpıntıları doğrudan bu diziden",
+        "alıp OpenCV ile işliyor ve OpenCV BGR/HWC bekliyor.",
+        "Eksen değiştirme (permute) ve kanal çevirme (flip) GPU'da neredeyse",
+        "bedava; CPU'da her kare için ek maliyet olurdu.",
+        "Böylece poz kademesinin kodu hiç değişmeden çalıştı."
+      ],
+      "message_carries": [
+        "scale",
+        "pad_x",
+        "pad_y",
+        "kaynak w/h"
+      ],
+      "inference_worker": "torch.from_numpy(batch).to(cuda).permute(0,3,1,2).flip(1).contiguous().half().div_(255) → predict(tensor)",
+      "box_mapping": "x_kaynak = (x_640 - pad_x) / scale  ·  hız için yalnızca ölçek (dolgu bir FARK'ta sadeleşir)",
+      "pose_crops": "640 letterbox karesinden alınır (orijinale gerek yok — kalite zaten daha iyi)"
+    },
+    "expected_gains": [
+      "tespit maliyeti 6.78 → 3.87 ms/kare (%43)",
+      "shm slot boyutu 2.76 MB → 1.23 MB (2.2× küçük, daha çok slot sığar)",
+      "iskelet başarısı %90.7 → %94.2"
+    ],
+    "expected_throughput": {
+      "note": "Kare başına toplam ~18 ms'ten ~15 ms'e iner → ~30 FPS'ten ~40 FPS'e.",
+      "honest_caveat": "Gereken 80 FPS. Bu düzeltme tek başına K2 hedefini TUTTURMUYOR. Kalan açık için boru hattı paralelleştirmesi (ön işleme/GPU/son işleme ayrı iş parçacıkları) veya hedef revizyonu gerekecek."
+    }
+  },
+  "applied_at": "2026-08-16T18:35:00",
+  "pipeline_result": {
+    "description": "Karar uygulandıktan sonra 20 kameralı uçtan uca ölçüm (210 sn)",
+    "before_day7": {
+      "throughput_fps": "20-37",
+      "latency_ms_p50": 600,
+      "detect_ms_p50": 7.6,
+      "pose_ms_p50": 7.3,
+      "free_slots": "0-8/48",
+      "per_camera_fps": "1.5-1.9",
+      "fragmentation_rate": 0.466,
+      "median_track_lifetime": 4,
+      "shm_slot_mb": 2.76
+    },
+    "after_day8": {
+      "throughput_fps": 34.6,
+      "latency_ms_p50": 144,
+      "detect_ms_p50": 6.5,
+      "pose_ms_p50": 8.1,
+      "track_ms_p50": 0.93,
+      "free_slots": "44/48",
+      "per_camera_fps": "2.2-2.4",
+      "fragmentation_rate": 0.373,
+      "median_track_lifetime": 5,
+      "shm_slot_mb": 1.23,
+      "skeleton_hit_rate": 0.924,
+      "frames": 7263,
+      "avg_batch": 5.3
+    },
+    "time_budget_per_batch_p50_ms": {
+      "wait": 1.26,
+      "shm_read": 0.01,
+      "detect": 34.54,
+      "pose": 43.27,
+      "track": 4.97,
+      "publish": 7.02,
+      "release": 1.85,
+      "total": 92.92,
+      "theoretical_ceiling_fps": 57.5
+    },
+    "key_change": [
+      "En önemli değişim boş slot sayısı: 0-8/48 → 44/48.",
+      "Tüketici artık üreticiden HIZLI; sistem 'kuyruk sınırlı' olmaktan çıktı.",
+      "Gecikmedeki 4.2 katlık düşüş doğrudan bunun sonucu (P-16 kapandı).",
+      "Batch ortalaması 8.0 → 5.3'e düştü çünkü artık birikmiş kuyruk yok —",
+      "bu bir kayıp değil, sağlıklı bir işaret."
+    ],
+    "correctness_verification": {
+      "note": "Kutular model uzayında üretilip kaynak piksel uzayına geri taşınıyor; hatalı eşleme SESSİZ bir hata olurdu, ayrıca doğrulandı.",
+      "detections_checked": 2240,
+      "out_of_frame_or_malformed_boxes": 0,
+      "keypoints_checked": 28342,
+      "keypoints_consistent_with_box_pct": 100.0,
+      "source_resolutions_seen": [
+        "900x720",
+        "960x720",
+        "1280x720"
+      ]
+    },
+    "remaining_gap": {
+      "target_fps_per_camera": 4.0,
+      "measured": "2.2-2.4",
+      "note": "K2 hâlâ tutmuyor. Sistem artık üretici sınırlı: alım katmanı hareket filtresi sonrası ~35 kare/sn üretiyor. Sıradaki adım (Gün 9) uyarlanabilir FPS ile üretimi tüketim kapasitesine yaklaştırmak."
+    }
+  }
+}

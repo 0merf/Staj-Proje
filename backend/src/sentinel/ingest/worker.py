@@ -39,9 +39,10 @@ from dataclasses import dataclass, field
 from types import FrameType
 
 from sentinel import metrics
-from sentinel.bus.shm import DEFAULT_SLOT_BYTES, FramePool, FramePoolError
+from sentinel.bus.shm import FramePool, FramePoolError
 from sentinel.bus.streams import FrameMessage, FrameStream, SlotAllocator, connect
 from sentinel.config import settings
+from sentinel.core import preprocess
 from sentinel.ingest.decoder import RtspDecoder, StreamClosedError, rtsp_url
 from sentinel.ingest.motion_gate import MotionGate
 from sentinel.logging import configure_logging, get_logger
@@ -163,7 +164,16 @@ class CameraTask:
             return
 
         try:
-            ref = self._pool.write(slot, image)
+            # ─── MODEL GİRDİSİ HAZIRLIĞI ────────────────────
+            # Kare paylaşımlı belleğe HAM değil, model uzayında yazılır
+            # (640×640 letterbox). Bu iş bilinçli olarak BURADA yapılıyor:
+            # burası 20 kamera iş parçacığına dağılıyor ve `cv2.resize`
+            # GIL'i bıraktığı için gerçekten paralel koşuyor. Aynı işi
+            # TEK süreç olan çıkarım worker'ında yapmak seri kalır ve
+            # hiçbir şey kazandırmaz (ölçüldü: net kazanç ~0).
+            # Ölçüm ve gerekçe: core/preprocess.py modül başlığı.
+            prepared, box = preprocess.letterbox(image)
+            ref = self._pool.write(slot, prepared)
             self._stream.publish(
                 FrameMessage(
                     message_id="",
@@ -174,6 +184,7 @@ class CameraTask:
                     ref=ref,
                     motion_ratio=decision.foreground_ratio,
                     gate_reason=decision.reason.value,
+                    letterbox=box,
                 )
             )
         except Exception:
@@ -211,7 +222,7 @@ class IngestWorker:
         try:
             self._pool = FramePool(
                 slot_count=settings.shm_slot_count,
-                slot_bytes=DEFAULT_SLOT_BYTES,
+                slot_bytes=preprocess.slot_bytes(),
                 create=own_pool,
             )
         except FramePoolError:
@@ -220,7 +231,7 @@ class IngestWorker:
             log.info("havuz_yok_olusturuluyor")
             self._pool = FramePool(
                 slot_count=settings.shm_slot_count,
-                slot_bytes=DEFAULT_SLOT_BYTES,
+                slot_bytes=preprocess.slot_bytes(),
                 create=True,
             )
             self._own_pool = True
