@@ -1,0 +1,81 @@
+/** Canlı durum — Zustand.
+ *
+ * Neden Zustand, neden React state değil
+ * --------------------------------------
+ * Saniyede ~60 sonuç mesajı geliyor (20 kamera × ~3 FPS). Bunları
+ * React state'ine yazmak her mesajda tüm ağacın yeniden render
+ * edilmesi demek olurdu. Zustand ile abone olan bileşen kendi
+ * kesitini seçiyor.
+ *
+ * ⚠ DAHA ÖNEMLİSİ: sonuç tamponu React'in DIŞINDA tutuluyor
+ * (`buffers` bir Map ve mutasyona uğruyor). Çizim döngüsü
+ * requestAnimationFrame ile ekran tazeleme hızında çalışıyor ve
+ * tampondan okuyor — yani gelen her mesaj bir render tetiklemiyor.
+ * React yalnızca kamera listesi, bağlantı durumu ve kullanıcı
+ * ayarları gibi SEYREK değişen şeyleri yönetiyor.
+ */
+import { create } from 'zustand'
+import type { Camera, TimedResult, ViewMode } from './types'
+import { BUFFER_SIZE } from './lib/sync'
+
+/** Kamera adı → son N sonuç (eskiden yeniye). React dışında. */
+export const buffers = new Map<string, TimedResult[]>()
+
+export function pushResult(result: TimedResult) {
+  let list = buffers.get(result.cam)
+  if (!list) {
+    list = []
+    buffers.set(result.cam, list)
+  }
+  list.push(result)
+  if (list.length > BUFFER_SIZE) list.shift()
+}
+
+interface State {
+  cameras: Camera[]
+  connection: 'bağlanıyor' | 'bağlı' | 'kopuk'
+  /** Panelde ne çizilsin (kullanıcı düğmesi). */
+  viewMode: ViewMode
+  /** Kutular kaç ms geriden çizilsin — video/kutu hizalaması. */
+  syncOffsetMs: number
+  /** Açık olan kameralar (video oynatılıyor). */
+  playing: Set<string>
+  messageCount: number
+
+  setCameras: (c: Camera[]) => void
+  setConnection: (c: State['connection']) => void
+  setViewMode: (m: ViewMode) => void
+  setSyncOffset: (ms: number) => void
+  togglePlaying: (name: string) => void
+  bumpMessages: () => void
+}
+
+export const useStore = create<State>((set) => ({
+  cameras: [],
+  connection: 'bağlanıyor',
+  viewMode: 'full',
+  // Varsayılan 250 ms: ölçülen analiz gecikmesi 273 ms, WebRTC gecikmesi
+  // ~200-500 ms. İkisi yakın olduğu için küçük bir kaydırma yetiyor.
+  // Kullanıcı kaydırıcıyla kendi gözüne göre ayarlayabiliyor — tarayıcı
+  // videonun gerçek gecikmesini ölçemediği için en dürüst çözüm bu.
+  syncOffsetMs: 250,
+  playing: new Set<string>(),
+  messageCount: 0,
+
+  setCameras: (cameras) => set({ cameras }),
+  setConnection: (connection) => set({ connection }),
+  setViewMode: (viewMode) => set({ viewMode }),
+  setSyncOffset: (syncOffsetMs) => set({ syncOffsetMs }),
+  togglePlaying: (name) =>
+    set((s) => {
+      const next = new Set(s.playing)
+      if (next.has(name)) {
+        next.delete(name)
+        buffers.delete(name)
+      } else {
+        next.add(name)
+      }
+      return { playing: next }
+    }),
+  bumpMessages: () => set((s) => ({ messageCount: s.messageCount + 1 })),
+}))

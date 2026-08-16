@@ -98,3 +98,5 @@ temp/
 # benchmarks/ KLASÖRÜ COMMIT EDİLİR — rapor malzemesi
 benchmarks/**/*.raw
 benchmarks/**/*.pkl
+backend/src/sentinel/api/static/app/
+*.tsbuildinfo

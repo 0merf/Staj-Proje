@@ -14,6 +14,7 @@ from typing import Any
 from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 from sentinel.api import cameras, health, webcam
@@ -160,7 +161,29 @@ async def metrics() -> Response:
 async def dashboard() -> FileResponse:
     """Geliştirme durum paneli.
 
-    Geçicidir — asıl arayüz React SPA olacak (Faz 1, Gün 5).
-    Amaç: altyapının çalıştığını gözle görebilmek.
+    Bu tek dosyalık panel, React arayüzü hazır olana kadar sistemin
+    gözle doğrulanmasını sağladı. React SPA (Gün 10) devreye girdikten
+    sonra da **kasten duruyor**: React derlemesi bozulduğunda ya da
+    Node ortamı yokken sistemi doğrulayabilmek için bağımsız bir
+    yedek gerekiyor. Çok az bakım istiyor.
     """
     return FileResponse(STATIC_DIR / "index.html")
+
+
+# ─── React SPA ───────────────────────────────────────────────
+# `cd frontend && npm run build` çıktısı buraya derleniyor.
+# Geliştirme sırasında Vite sunucusu (127.0.0.1:5173) kullanılır;
+# burası derlenmiş sürümü Node olmadan servis eder.
+_SPA_DIR = STATIC_DIR / "app"
+if (_SPA_DIR / "index.html").is_file():
+    app.mount("/app", StaticFiles(directory=_SPA_DIR, html=True), name="spa")
+else:
+    @app.get("/app", include_in_schema=False)
+    async def spa_missing() -> Response:
+        return Response(
+            "React arayüzü henüz derlenmedi.\n"
+            "  cd frontend && npm install && npm run build\n"
+            "Geliştirme için: cd frontend && npm run dev  →  http://127.0.0.1:5173",
+            media_type="text/plain; charset=utf-8",
+            status_code=503,
+        )

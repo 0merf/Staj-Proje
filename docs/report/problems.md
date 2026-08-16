@@ -33,6 +33,45 @@ ama **belirti / sebep / çözüm** üçlüsü mutlaka olsun.
 
 <!-- Yeni kayıtlar buraya, en yenisi en üstte -->
 
+### P-21 · `localhost` ile `127.0.0.1` ayrı kökenlerdir — P-11 ikinci kez
+
+**Tarih:** 16.08.2026 · **Faz:** 1 / Gün 10 · **Kaybedilen süre:** ~0 (önceden test edildi)
+
+**Belirti:** React geliştirme sunucusu kurulduktan sonra WebSocket
+bağlantısı `http://127.0.0.1:5173` adresinden **403** alıyordu,
+`http://localhost:5173` adresinden ise çalışıyordu.
+
+**Kök sebep:** Tarayıcı `Origin` başlığını adres çubuğuna ne yazıldıysa
+ona göre gönderir ve **`localhost` ile `127.0.0.1` farklı kökenlerdir**
+— aynı makineyi göstermeleri fark etmez. Beyaz listede yalnızca
+`http://localhost:5173` vardı. Aynı-köken (same-origin) kontrolü de
+kurtarmıyordu: Vite vekili arkasında Host `127.0.0.1:8001`, Origin ise
+`127.0.0.1:5173` — portlar farklı olduğu için eşleşmiyor.
+
+**Çözüm:** Her iki yazım da beyaz listeye eklendi.
+
+**Bu P-11'in tekrarı — ama bu sefer bedeli olmadı.** P-11'de aynı hata
+panelin sessizce boş kalmasına yol açmış ve teşhis zaman almıştı. Bu
+sefer arayüzü kurar kurmaz *önce* üç senaryoyu birden test ettim:
+
+```
+OK  http://127.0.0.1:5173     kabul edildi, 3 kare
+OK  http://localhost:5173     kabul edildi, 3 kare
+OK  http://evil.example.com   reddedildi
+```
+
+**Öğrenilen ders:** P-11'in dersi ("güvenlik kontrolü eklerken meşru
+istemcileri de test et") burada **işe yaradı** — aynı sınıf hata
+tekrar üretildi ama bu kez teşhis değil, rutin bir doğrulama oldu.
+Problem günlüğü tutmanın somut faydası tam olarak bu: aynı tuzağa
+ikinci kez düşerken maliyeti sıfıra iniyor.
+
+Ek not: Vite de varsayılan olarak yalnızca `::1` (IPv6) dinliyordu ve
+`127.0.0.1`'den erişilemiyordu — P-03'ün aynısı. `host: '127.0.0.1'`
+ile sabitlendi.
+
+---
+
 ### P-20 · Alım worker'ını yeniden başlatmak çıkarım worker'ını öldürüyordu
 
 **Tarih:** 16.08.2026 · **Faz:** 1 / Gün 9 · **Tür:** hata izolasyonu
