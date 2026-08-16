@@ -221,10 +221,33 @@ class FrameStream:
         count: int = 8,
         block_ms: int = 1000,
     ) -> Iterator[FrameMessage]:
-        """Gruptan mesaj okur. Her mesaj gruptaki TEK bir tüketiciye gider."""
-        response: Any = self._client.xreadgroup(
-            group, consumer, {self._stream: ">"}, count=count, block=block_ms
-        )
+        """Gruptan mesaj okur. Her mesaj gruptaki TEK bir tüketiciye gider.
+
+        ⚠ NOGROUP'A DAYANIKLI
+        Havuz sahibi (alım worker'ı) her açılışta akışı siler — bu
+        zorunlu, yoksa önceki çalışmadan kalan geçersiz slot referansları
+        havuzu bozar (P-10). Ama akış silinince tüketici grubu da silinir
+        ve o sırada çalışan çıkarım worker'ı `NOGROUP` alıp **çöker**.
+
+        Yani alım worker'ını yeniden başlatmak çıkarım worker'ını
+        öldürüyordu. Bir bileşenin normal yeniden başlaması başka bir
+        bileşeni düşürmemeli (PLAN.md §4.2 hata izolasyonu). Grubu
+        sessizce yeniden kurup devam ediyoruz.
+        """
+        try:
+            response: Any = self._client.xreadgroup(
+                group, consumer, {self._stream: ">"}, count=count, block=block_ms
+            )
+        except ResponseError as exc:
+            if "NOGROUP" not in str(exc):
+                raise
+            log.warning(
+                "tuketici_grubu_kayboldu_yeniden_kuruluyor",
+                stream=self._stream,
+                group=group,
+            )
+            self.ensure_group(group)
+            return
         if not response:
             return
         for _stream_name, entries in response:

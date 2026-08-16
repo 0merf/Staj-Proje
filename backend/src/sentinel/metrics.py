@@ -34,6 +34,12 @@ frames_dropped = Counter(
     ["cam", "reason"],  # gate_idle | no_slot | publish_error
 )
 
+gate_decisions = Counter(
+    "sentinel_gate_decisions_total",
+    "Kademe 0 kararlarının dağılımı — hareket mi, periyodik yoklama mı, boşta mı",
+    ["cam", "reason"],  # motion | refresh | idle | warmup
+)
+
 motion_gate_ratio = Gauge(
     "sentinel_motion_gate_pass_ratio",
     "Kademe 0'ı geçen karelerin oranı (kayan pencere)",
@@ -57,6 +63,12 @@ gate_duration = Histogram(
 camera_fps = Gauge(
     "sentinel_camera_fps",
     "Kamera başına gerçekleşen örnekleme hızı",
+    ["cam"],
+)
+
+camera_target_fps = Gauge(
+    "sentinel_camera_target_fps",
+    "Kamera başına HEDEFLENEN örnekleme hızı — uyarlanabilir FPS bunu değiştirir",
     ["cam"],
 )
 
@@ -153,6 +165,7 @@ def serve_metrics(port: int) -> None:
 __all__ = [
     "batch_size",
     "camera_fps",
+    "camera_target_fps",
     "camera_up",
     "decode_duration",
     "detections_found",
@@ -160,6 +173,7 @@ __all__ = [
     "frames_dropped",
     "frames_published",
     "frames_received",
+    "gate_decisions",
     "gate_duration",
     "gpu_memory_used",
     "inference_duration",

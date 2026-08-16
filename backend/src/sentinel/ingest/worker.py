@@ -44,12 +44,18 @@ from sentinel.bus.streams import FrameMessage, FrameStream, SlotAllocator, conne
 from sentinel.config import settings
 from sentinel.core import preprocess
 from sentinel.ingest.decoder import RtspDecoder, StreamClosedError, rtsp_url
-from sentinel.ingest.motion_gate import MotionGate
+from sentinel.ingest.motion_gate import GateReason, MotionGate
 from sentinel.logging import configure_logging, get_logger
 
 log = get_logger(__name__)
 
 _shutdown = threading.Event()
+
+# Uyarlanabilir FPS'te "gerçek hareket" sayılan kararlar.
+# REFRESH kasten DIŞARIDA: o, hareketsiz duran birini kaybetmemek için
+# 5 saniyede bir yapılan periyodik yoklamadır. Hareket sayılsaydı hiçbir
+# kamera boşta moduna geçemezdi.
+_MOTION_REASONS = frozenset({GateReason.MOTION, GateReason.WARMUP})
 
 
 def _handle_signal(_sig: int, _frame: FrameType | None) -> None:
@@ -107,6 +113,9 @@ class CameraTask:
             refresh_interval_s=float(settings.motion_refresh_interval_s),
         )
         self._url = rtsp_url(settings.mediamtx_host, settings.mediamtx_rtsp_port, camera)
+        # Uyarlanabilir FPS durumu: açılışta hareket varmış say, yoksa
+        # sistem daha ilk kareden boşta moduna düşerdi.
+        self._last_motion_at = time.monotonic()
 
     def run(self) -> None:
         """Kamera düşerse yeniden bağlanarak sonsuza dek okur."""
@@ -140,16 +149,60 @@ class CameraTask:
                 metrics.frames_received.labels(cam=self.camera).inc()
 
                 self._process(frame)
+                self._adapt_rate(decoder, frame.timestamp)  # type: ignore[attr-defined]
 
                 metrics.camera_fps.labels(cam=self.camera).set(self.stats.fps)
                 metrics.motion_gate_ratio.labels(cam=self.camera).set(self.stats.pass_ratio)
                 last = time.perf_counter()
 
+    def _adapt_rate(self, decoder: RtspDecoder, now: float) -> None:
+        """Kamerada uzun süredir hareket yoksa örnekleme hızını düşürür.
+
+        PLAN.md §5.2. Mantık basit: hareketsiz bir kameradan 4 FPS
+        örneklemek boşa iş — kareler zaten Kademe 0'da eleniyor ama
+        renk dönüşümü maliyeti çoktan ödenmiş oluyor. Ölçüm bunu
+        doğruluyor: cam-06 örneklenen karelerin **%94'ünü** eliyordu.
+
+        ⚠ REFRESH kararı hareket SAYILMAZ. Hareket filtresi 5 saniyede
+        bir zorunlu "yenileme karesi" geçirir (hareketsiz duran birini
+        kaybetmemek için). Bunu hareket sayarsak hiçbir kamera asla
+        boşta moduna geçemezdi — sessiz bir hata olurdu.
+
+        Hareket dönünce hız ANINDA tam değere çıkar: geç kalmak
+        olayın başlangıcını kaçırmak demektir, asıl önemsediğimiz an
+        tam da o.
+        """
+        if not settings.adaptive_fps_enabled:
+            return
+
+        idle_for = now - self._last_motion_at
+        target = (
+            float(settings.target_fps_idle)
+            if idle_for >= settings.adaptive_idle_after_s
+            else self._target_fps
+        )
+        if abs(decoder.target_fps - target) > 0.01:
+            decoder.set_target_fps(target)
+            log.info(
+                "ornekleme_hizi_degisti",
+                camera=self.camera,
+                fps=target,
+                idle_s=round(idle_for, 1),
+            )
+        metrics.camera_target_fps.labels(cam=self.camera).set(target)
+
     def _process(self, frame: object) -> None:
         image = frame.image  # type: ignore[attr-defined]
         decision = self._gate.evaluate(image, frame.timestamp)  # type: ignore[attr-defined]
         metrics.gate_duration.labels(cam=self.camera).observe(decision.elapsed_ms / 1000.0)
+        metrics.gate_decisions.labels(cam=self.camera, reason=decision.reason.value).inc()
         self.stats.recent_gate.append(decision.process)
+
+        # Uyarlanabilir FPS için "son gerçek hareket" zamanı.
+        # REFRESH bilinçli olarak sayılmıyor — o periyodik bir yoklama,
+        # sahnede bir şey olduğunun kanıtı değil (bkz. _adapt_rate).
+        if decision.reason in _MOTION_REASONS:
+            self._last_motion_at = frame.timestamp  # type: ignore[attr-defined]
 
         if not decision.process:
             self.stats.dropped_gate += 1

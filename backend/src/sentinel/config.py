@@ -91,6 +91,12 @@ class Settings(BaseSettings):
     ring_buffer_seconds: int = 30
     shm_slot_count: int = 128
 
+    # Uyarlanabilir FPS (PLAN §5.2): hareketsiz kamerayı 4 FPS
+    # örneklemek boşa iş — kareler Kademe 0'da eleniyor ama renk
+    # dönüşümü maliyeti ödenmiş oluyor. O CPU kalabalık kameralara.
+    adaptive_fps_enabled: bool = True
+    adaptive_idle_after_s: float = 30.0
+
     motion_gate_enabled: bool = True
     motion_threshold: float = 0.005
     motion_refresh_interval_s: int = 5

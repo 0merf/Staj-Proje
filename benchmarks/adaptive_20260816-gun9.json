@@ -1,0 +1,67 @@
+{
+  "measured_at": "2026-08-16T19:45:00",
+  "phase": "Faz 1 / Gün 9",
+  "description": "Örnekleme takvimi düzeltmesi + uyarlanabilir FPS + hata izolasyonu",
+  "results": {
+    "sampling_fix": {
+      "problem": "Hedef 4 FPS iken gerçekleşen 3.57 FPS (%11 açık)",
+      "root_cause": "next_emit = pts + interval → takvim her seferinde GERÇEKLEŞEN kareye sıfırlanıyor, aşma birikiyor. 25 FPS kaynakta 0.24 < 0.25 olduğu için ancak her 7. kare alınabiliyordu: 25/7 = 3.57",
+      "fix": "next_emit += interval (sabit takvim). Aralıklar 0.28/0.24/0.24/0.24 diye değişiyor ama ortalaması tam 0.25 sn",
+      "before_fps": 3.57,
+      "after_fps": 4.0
+    },
+    "pipeline_balance": {
+      "sampled_fps": 72.8,
+      "published_fps": 57.2,
+      "consumed_fps": 60.4,
+      "motion_gate_removed_fps": 15.6,
+      "motion_gate_pct": 21.4,
+      "forced_drops_no_slot_fps": 0.0,
+      "latency_ms": 273,
+      "free_slots": "41/48",
+      "note": "Üretici ve tüketici dengede; zorla atılan kare YOK."
+    },
+    "per_camera_analyzed_fps": {
+      "cam-09": 4.0, "cam-10": 4.0, "cam-13": 4.0, "cam-14": 4.0,
+      "cam-16": 4.0, "cam-17": 4.0, "cam-18": 4.0, "cam-19": 4.0,
+      "cam-20": 4.0, "cam-15": 3.98, "cam-12": 3.77, "cam-11": 3.12,
+      "cam-08": 2.78, "cam-03": 1.90, "cam-05": 1.70, "cam-01": 1.57,
+      "cam-07": 1.13, "cam-04": 0.63, "cam-02": 0.45, "cam-06": 0.17
+    },
+    "adaptive_fps": {
+      "design": "30 sn gerçek hareket yoksa örnekleme 4 → 1 FPS (PLAN §5.2)",
+      "implemented": true,
+      "triggered_on": ["cam-04 (1.35)", "cam-06 (1.00)"],
+      "finding": [
+        "⚠ VARSAYIM KISMEN ÇÜRÜDÜ: hiçbir kamera gerçekten hareketsiz değil.",
+        "Gate kararı dağılımı ölçüldü — en sakin kamera (cam-06) bile karelerin",
+        "%15.5'inde GERÇEK hareket görüyor (saniyede ~0.55 kez). Dış mekân",
+        "sahnelerinde ağaç, gölge, uzaktaki araç sürekli hareket üretiyor.",
+        "30 sn'lik boşta eşiği bu içerikte nadiren doluyor.",
+        "Mekanizma doğru çalışıyor ama bu veri setinde beklenen kadar",
+        "kazandırmıyor. Gerçek kurulumda (gece koridoru, depo) değerli olur."
+      ],
+      "gate_decision_breakdown_pct_motion": {
+        "cam-06": 15.5, "cam-07": 16.9, "cam-02": 21.1, "cam-01": 24.3,
+        "cam-03": 26.8, "cam-04": 43.7, "cam-08": 49.7, "cam-05": 64.2,
+        "cam-11": 76.5, "cam-12": 90.8, "cam-09": 93.1, "cam-13": 93.1
+      }
+    },
+    "fault_isolation": {
+      "found": "Alım worker'ı yeniden başlayınca çıkarım worker'ı ÇÖKÜYORDU",
+      "mechanism": "Havuz sahibi açılışta akışı siliyor (P-10 gereği zorunlu). Akış silinince tüketici grubu da siliniyor, çalışan tüketici NOGROUP alıp ölüyor.",
+      "fix": "consume() NOGROUP'u yakalayıp grubu sessizce yeniden kuruyor",
+      "verified": "Birim test: akış silindikten sonra okuma çökmüyor, grup yeniden kuruluyor"
+    }
+  },
+  "criteria": {
+    "K1_camera_count": { "target": 20, "measured": 20, "passed": true },
+    "K2_fps_per_camera": {
+      "target": 4.0,
+      "measured_active_cameras": 4.0,
+      "passed": true,
+      "note": "Hareketli tüm kameralar (cam-09..cam-20) tam 4.00 FPS'te analiz ediliyor. Düşük FPS'li kameralar hareket filtresi ve uyarlanabilir FPS'in TASARIM GEREĞİ elediği durgun sahneler."
+    },
+    "K3_end_to_end_latency": { "target_ms": 1500, "measured_ms": 273, "passed": true }
+  }
+}

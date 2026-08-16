@@ -148,7 +148,23 @@ class RtspDecoder:
                 # (Decode maliyeti yine ödendi — yukarıdaki nota bakınız.)
                 if self._interval > 0 and pts_s < next_emit:
                     continue
-                next_emit = pts_s + self._interval
+
+                # ⚠ SABİT TAKVİM — kayma birikmesin
+                # İlk sürüm `next_emit = pts_s + interval` yazıyordu, yani
+                # takvimi her seferinde GERÇEKLEŞEN kareye sıfırlıyordu.
+                # Gerçekleşen kare hedeften hep biraz sonradır (kaynak
+                # ayrık: 25 FPS'te kareler 0.04 sn aralıklı), bu aşma her
+                # turda birikiyordu:
+                #   hedef 4 FPS (0.25 sn) → 0.24 < 0.25 olduğu için ancak
+                #   her 7. kare alınabiliyor → 25/7 = 3.57 FPS
+                # Takvimi sabit tutunca aralıklar 0.28/0.24/0.24/0.24 diye
+                # değişiyor ama ORTALAMASI tam 0.25 sn = 4.0 FPS oluyor.
+                next_emit += self._interval
+                if next_emit <= pts_s:
+                    # Çok geri kaldık (kare atlandı, yeniden bağlanıldı) —
+                    # takvimi tazele, yoksa yetişmek için ardı ardına kare
+                    # yayınlamaya çalışır.
+                    next_emit = pts_s + self._interval
 
                 self._sequence += 1
                 emitted += 1
@@ -166,6 +182,25 @@ class RtspDecoder:
             log.info("akis_bitti", camera=self._camera_id)
         except av.error.FFmpegError as exc:
             raise StreamClosedError(f"{self._camera_id}: {exc}") from exc
+
+    def set_target_fps(self, fps: float) -> None:
+        """Örnekleme hızını çalışma anında değiştirir (uyarlanabilir FPS).
+
+        PLAN.md §5.2: sistem her kameraya eşit davranmaz. Hareketsiz bir
+        kamerayı 4 FPS örneklemek boşa iş — kareler zaten Kademe 0'da
+        eleniyor, ama YUV→BGR dönüşümü (sürenin %77'si) çoktan ödenmiş
+        oluyor. Onu 1 FPS'e düşürmek o CPU'yu kalabalık kameralara
+        bırakır.
+
+        Not: decode maliyeti düşmez, H.264 kareler arası kodlamalıdır
+        (bkz. modül başlığı). Kazanç renk dönüşümü ve hareket
+        filtresindedir.
+        """
+        self._interval = 1.0 / fps if fps > 0 else 0.0
+
+    @property
+    def target_fps(self) -> float:
+        return 1.0 / self._interval if self._interval > 0 else 0.0
 
     # ─── İstatistik ──────────────────────────────────────────
 

@@ -33,6 +33,105 @@ ama **belirti / sebep / çözüm** üçlüsü mutlaka olsun.
 
 <!-- Yeni kayıtlar buraya, en yenisi en üstte -->
 
+### P-20 · Alım worker'ını yeniden başlatmak çıkarım worker'ını öldürüyordu
+
+**Tarih:** 16.08.2026 · **Faz:** 1 / Gün 9 · **Tür:** hata izolasyonu
+
+**Belirti:** Gün 9 değişikliklerini denemek için alım worker'ını yeniden
+başlattım. Çıkarım worker'ı birkaç saniye sonra çöktü:
+
+```
+redis.exceptions.ResponseError: NOGROUP No such key 'frames.ready'
+or consumer group 'inference' in XREADGROUP with GROUP option
+```
+
+**Kök sebep — iki doğru kararın çarpışması:**
+
+1. Havuz sahibi (alım worker'ı) açılışta akışı **silmek zorunda**.
+   Bu P-10'da öğrenilmişti: önceki çalışmadan kalan mesajlar geçersiz
+   slot referansları taşır, tüketici onları "işledim" diye slotları
+   geri verirse havuz bozulur ve iki kamera aynı slota yazar.
+2. Çıkarım worker'ı akıştan tüketici grubu ile okuyor.
+
+Valkey'de bir akışı silmek **tüketici gruplarını da siler.** Yani (1)
+her yapıldığında (2) ayaklarının altındaki zemini kaybediyor.
+
+Tek başına her iki karar da doğru; **etkileşimleri** yanlış.
+
+**Neden önemli:** Bir bileşenin *normal* yeniden başlaması başka bir
+bileşeni düşürmemeli (PLAN.md §4.2 hata izolasyonu). Üstelik bu sessiz
+değil gürültülü bir çökmeydi ama yine de fark edilmesi zaman aldı,
+çünkü çıkarım worker'ı arka planda çalışıyordu.
+
+**Çözüm:** `FrameStream.consume()` artık `NOGROUP` hatasını yakalayıp
+grubu sessizce yeniden kuruyor ve bir sonraki turda devam ediyor.
+
+**Doğrulama (birim testi):**
+```
+1) grup kuruldu
+2) okuma calisti
+3) akis silindi (grup da gitti)
+4) okuma COKMEDI, 0 mesaj dondu
+5) ikinci okuma da calisiyor -> grup yeniden kurulmus
+```
+
+**Öğrenilen ders:** Dağıtık sistemlerde hatalar tek tek bileşenlerde
+değil, **bileşenler arası varsayımlarda** yaşıyor. Burada üretici
+"akışı ben yönetiyorum" varsayıyordu, tüketici "grubum kalıcıdır"
+varsayıyordu. İkisi de kendi içinde makul. Bir bileşenin yeniden
+başlatılmasının diğerlerinde ne yarattığını **düzenli olarak test
+etmek** gerekiyor — bu yüzden Gün 9'un planında "hata izolasyonu
+testi" vardı ve tam da onu bulduk.
+
+---
+
+### P-19 · Hedef 4 FPS, gerçekleşen 3.57 — örnekleme takvimi kayıyordu
+
+**Tarih:** 16.08.2026 · **Faz:** 1 / Gün 9 · **Kazanç:** kamera başına %12 daha fazla kare
+
+**Belirti:** `TARGET_FPS=4` ayarlıyken her kamera tam **3.57 FPS**
+örneklüyordu. Sapma küçük ama şüpheliydi: 20 kamerada tutarlı olarak
+aynı sayı çıkıyordu, yani rastgele bir gecikme değil **sistematik**
+bir şeydi.
+
+**Kök sebep:** Örnekleme kodu şöyleydi:
+
+```python
+if pts_s < next_emit:
+    continue
+next_emit = pts_s + self._interval    # ← hata burada
+```
+
+Takvim her seferinde **gerçekleşen** karenin zamanına sıfırlanıyordu.
+Kaynak ayrık olduğu için (25 FPS = kareler 0.04 sn aralıklı) gerçekleşen
+kare hedeften hep biraz sonradır ve bu aşma **her turda birikiyordu**:
+
+```
+hedef aralık 0.25 sn
+6 kare = 0.24 sn  <  0.25  → yetmiyor, atla
+7 kare = 0.28 sn  ≥  0.25  → yayınla, takvimi 0.28'e sıfırla
+sonuç: 25 / 7 = 3.57 FPS
+```
+
+**Çözüm:** Sabit takvim — `next_emit += interval`. Aralıklar
+0.28/0.24/0.24/0.24 diye değişiyor ama **ortalaması tam 0.25 sn**.
+Çok geri kalınırsa (kare atlandı, yeniden bağlanıldı) takvim tazeleniyor,
+yoksa yetişmek için ardı ardına kare yayınlamaya çalışırdı.
+
+**Sonuç:** Örnekleme 3.57 → **4.00 FPS**. Bu, K2 kriterinin
+tutturulmasındaki son adım oldu: hareketli kameralar artık tam 4.00
+FPS'te analiz ediliyor.
+
+**Öğrenilen ders:** Zamanlanmış tekrarlarda **"bir sonraki sefer"i
+gerçekleşen zamana göre değil, planlanan takvime göre hesapla.**
+Gerçekleşen zamana dayanmak her turda küçük bir gecikme ekler ve bu
+gecikme birikir (kayma / drift). Klasik bir zamanlayıcı hatası; sapma
+küçük olduğu için de kolayca gözden kaçıyor. Fark etmemi sağlayan şey,
+sayının **20 kamerada da birebir aynı** çıkmasıydı — tesadüf öyle
+davranmaz.
+
+---
+
 ### P-18 · Darboğaz GPU sanılıyordu, CPU çıktı — GPU %0-5'te boş oturuyormuş
 
 **Tarih:** 16.08.2026 · **Faz:** 1 / Gün 8 · **Kazanç:** gecikme 4× azaldı
