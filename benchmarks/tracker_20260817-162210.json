@@ -1,0 +1,127 @@
+{
+  "measured_at": "2026-08-17T16:22:10",
+  "phase": "Faz 1 / Gün 12",
+  "description": "Takipçi parametrelerinin kimlik kararlılığına etkisi",
+  "method": "Tespitler BİR KEZ çıkarılıp belleğe alındı; her ayar aynı diziyi işledi. Tek değişen parametre — sahne, kalabalık ve kare hızı sabit.",
+  "caveat": "Gerçek referans (ground truth) yok; bu bir DOĞRULUK değil TUTARLILIK ölçümüdür. Gerçek ID-switch için MOT17 gerekir.",
+  "config": {
+    "camera": "cam-09",
+    "frames": 250,
+    "detections": 3341,
+    "fps": 4
+  },
+  "results": [
+    {
+      "tracks": 110,
+      "median_lifetime": 24,
+      "mean_lifetime": 27.5,
+      "single_frame_pct": 10.0,
+      "short_lived_pct": 15.5,
+      "long_lived_pct": 50.9,
+      "tracks_per_frame": 13.36,
+      "id_coverage_pct": 90.7,
+      "label": "varsayılan (match 0.8 → IoU>0.2)",
+      "params": {}
+    },
+    {
+      "tracks": 424,
+      "median_lifetime": 1,
+      "mean_lifetime": 5.4,
+      "single_frame_pct": 61.6,
+      "short_lived_pct": 78.3,
+      "long_lived_pct": 8.3,
+      "tracks_per_frame": 13.36,
+      "id_coverage_pct": 68.3,
+      "label": "SIKI eşleştirme (match 0.6 → IoU>0.4)",
+      "params": {
+        "match_thresh": 0.6
+      }
+    },
+    {
+      "tracks": 95,
+      "median_lifetime": 29,
+      "mean_lifetime": 32.8,
+      "single_frame_pct": 4.2,
+      "short_lived_pct": 8.4,
+      "long_lived_pct": 61.1,
+      "tracks_per_frame": 13.36,
+      "id_coverage_pct": 93.3,
+      "label": "GEVŞEK eşleştirme (match 0.9 → IoU>0.1)",
+      "params": {
+        "match_thresh": 0.9
+      }
+    },
+    {
+      "tracks": 99,
+      "median_lifetime": 24,
+      "mean_lifetime": 29.4,
+      "single_frame_pct": 8.1,
+      "short_lived_pct": 14.1,
+      "long_lived_pct": 51.5,
+      "tracks_per_frame": 13.36,
+      "id_coverage_pct": 87.2,
+      "label": "new_track_thresh 0.5",
+      "params": {
+        "new_track_thresh": 0.5
+      }
+    },
+    {
+      "tracks": 77,
+      "median_lifetime": 29,
+      "mean_lifetime": 33.6,
+      "single_frame_pct": 6.5,
+      "short_lived_pct": 11.7,
+      "long_lived_pct": 63.6,
+      "tracks_per_frame": 13.36,
+      "id_coverage_pct": 77.3,
+      "label": "new_track_thresh 0.7",
+      "params": {
+        "new_track_thresh": 0.7
+      }
+    },
+    {
+      "tracks": 108,
+      "median_lifetime": 24,
+      "mean_lifetime": 28.1,
+      "single_frame_pct": 8.3,
+      "short_lived_pct": 13.9,
+      "long_lived_pct": 51.9,
+      "tracks_per_frame": 13.36,
+      "id_coverage_pct": 90.8,
+      "label": "track_buffer 60",
+      "params": {
+        "track_buffer": 60
+      }
+    },
+    {
+      "tracks": 86,
+      "median_lifetime": 29,
+      "mean_lifetime": 35.0,
+      "single_frame_pct": 3.5,
+      "short_lived_pct": 5.8,
+      "long_lived_pct": 64.0,
+      "tracks_per_frame": 13.36,
+      "id_coverage_pct": 90.0,
+      "label": "GEVŞEK + new_track 0.5",
+      "params": {
+        "match_thresh": 0.9,
+        "new_track_thresh": 0.5
+      }
+    },
+    {
+      "tracks": 69,
+      "median_lifetime": 29,
+      "mean_lifetime": 38.6,
+      "single_frame_pct": 2.9,
+      "short_lived_pct": 5.8,
+      "long_lived_pct": 66.7,
+      "tracks_per_frame": 13.36,
+      "id_coverage_pct": 79.7,
+      "label": "GEVŞEK + new_track 0.7",
+      "params": {
+        "match_thresh": 0.9,
+        "new_track_thresh": 0.7
+      }
+    }
+  ]
+}

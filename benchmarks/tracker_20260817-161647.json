@@ -1,0 +1,118 @@
+{
+  "measured_at": "2026-08-17T16:16:47",
+  "phase": "Faz 1 / Gün 12",
+  "description": "Takipçi parametrelerinin kimlik kararlılığına etkisi",
+  "method": "Tespitler BİR KEZ çıkarılıp belleğe alındı; her ayar aynı diziyi işledi. Tek değişen parametre — sahne, kalabalık ve kare hızı sabit.",
+  "caveat": "Gerçek referans (ground truth) yok; bu bir DOĞRULUK değil TUTARLILIK ölçümüdür. Gerçek ID-switch için MOT17 gerekir.",
+  "config": {
+    "camera": "cam-09",
+    "frames": 250,
+    "detections": 3341,
+    "fps": 4
+  },
+  "results": [
+    {
+      "tracks": 110,
+      "median_lifetime": 24,
+      "mean_lifetime": 27.5,
+      "single_frame_pct": 10.0,
+      "short_lived_pct": 15.5,
+      "long_lived_pct": 50.9,
+      "tracks_per_frame": 13.36,
+      "label": "varsayılan",
+      "params": {}
+    },
+    {
+      "tracks": 424,
+      "median_lifetime": 1,
+      "mean_lifetime": 5.4,
+      "single_frame_pct": 61.6,
+      "short_lived_pct": 78.3,
+      "long_lived_pct": 8.3,
+      "tracks_per_frame": 13.36,
+      "label": "match_thresh 0.6 (gevşek eşleştirme)",
+      "params": {
+        "match_thresh": 0.6
+      }
+    },
+    {
+      "tracks": 95,
+      "median_lifetime": 29,
+      "mean_lifetime": 32.8,
+      "single_frame_pct": 4.2,
+      "short_lived_pct": 8.4,
+      "long_lived_pct": 61.1,
+      "tracks_per_frame": 13.36,
+      "label": "match_thresh 0.9 (sıkı eşleştirme)",
+      "params": {
+        "match_thresh": 0.9
+      }
+    },
+    {
+      "tracks": 99,
+      "median_lifetime": 24,
+      "mean_lifetime": 29.4,
+      "single_frame_pct": 8.1,
+      "short_lived_pct": 14.1,
+      "long_lived_pct": 51.5,
+      "tracks_per_frame": 13.36,
+      "label": "new_track_thresh 0.5",
+      "params": {
+        "new_track_thresh": 0.5
+      }
+    },
+    {
+      "tracks": 77,
+      "median_lifetime": 29,
+      "mean_lifetime": 33.6,
+      "single_frame_pct": 6.5,
+      "short_lived_pct": 11.7,
+      "long_lived_pct": 63.6,
+      "tracks_per_frame": 13.36,
+      "label": "new_track_thresh 0.7",
+      "params": {
+        "new_track_thresh": 0.7
+      }
+    },
+    {
+      "tracks": 108,
+      "median_lifetime": 24,
+      "mean_lifetime": 28.1,
+      "single_frame_pct": 8.3,
+      "short_lived_pct": 13.9,
+      "long_lived_pct": 51.9,
+      "tracks_per_frame": 13.36,
+      "label": "track_buffer 60",
+      "params": {
+        "track_buffer": 60
+      }
+    },
+    {
+      "tracks": 109,
+      "median_lifetime": 21,
+      "mean_lifetime": 27.1,
+      "single_frame_pct": 11.0,
+      "short_lived_pct": 16.5,
+      "long_lived_pct": 49.5,
+      "tracks_per_frame": 13.36,
+      "label": "track_high_thresh 0.4",
+      "params": {
+        "track_high_thresh": 0.4
+      }
+    },
+    {
+      "tracks": 337,
+      "median_lifetime": 1,
+      "mean_lifetime": 6.3,
+      "single_frame_pct": 58.8,
+      "short_lived_pct": 74.2,
+      "long_lived_pct": 10.4,
+      "tracks_per_frame": 13.36,
+      "label": "gevşek eşleştirme + yüksek yeni-iz",
+      "params": {
+        "match_thresh": 0.6,
+        "new_track_thresh": 0.5
+      }
+    }
+  ]
+}

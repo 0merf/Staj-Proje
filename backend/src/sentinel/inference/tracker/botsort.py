@@ -58,7 +58,7 @@ def default_args(
     track_low_thresh: float = 0.1,
     new_track_thresh: float = 0.25,
     track_buffer: int = 30,
-    match_thresh: float = 0.8,
+    match_thresh: float = 0.9,
     fuse_score: bool = True,
 ) -> SimpleNamespace:
     """BoT-SORT konfigürasyonu.
@@ -74,6 +74,23 @@ def default_args(
         # Bizde tespit ~3 FPS olduğu için 30 kare ≈ 10 saniye eder —
         # bir kişinin ağacın arkasından geçmesine fazlasıyla yeter.
         track_buffer=track_buffer,
+        # ⚠ match_thresh bir MESAFE eşiğidir, benzerlik DEĞİL.
+        # Ultralytics maliyeti `1 - IoU` diye hesaplayıp eşleşmeyi
+        # `maliyet < eşik` ise kabul ediyor:
+        #     0.9 → IoU > 0.1 yeterli → GEVŞEK
+        #     0.6 → IoU > 0.4 gerekli → SIKI
+        # İsimlendirme sezgiye ters; ilk ölçümde etiketleri ters
+        # yazmıştım (bkz. problems.md · P-27).
+        #
+        # Varsayılan 0.8'den 0.9'a çıkarıldı. Gerekçe ölçüm
+        # (benchmarks/tracker_20260817-162210.json, cam-09, 250 kare):
+        #     tek kare yaşayan iz   %10.0 → %4.2
+        #     5 sn'den uzun yaşayan %50.9 → %61.1
+        #     kimlik alan tespit    %90.7 → %93.3
+        #     toplam iz sayısı      110   → 95
+        # Her eksende iyileşme; bedeli yok. Sebebi kare hızımız:
+        # 4 FPS'te kareler arası 250 ms var ve yürüyen bir kişinin
+        # ardışık iki kutusu %20 örtüşmeyi zor yakalıyor.
         match_thresh=match_thresh,
         fuse_score=fuse_score,
         # ─── Kapatılanlar ve gerekçeleri ───

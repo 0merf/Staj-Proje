@@ -33,6 +33,91 @@ ama **belirti / sebep / çözüm** üçlüsü mutlaka olsun.
 
 <!-- Yeni kayıtlar buraya, en yenisi en üstte -->
 
+### P-27 · `match_thresh` sezgiye ters çalışıyor — ve kimlik parçalanmasının sebebi buydu
+
+**Tarih:** 17.08.2026 · **Faz:** 1 / Gün 12 · **Kazanç:** tek kare yaşayan iz %10 → %4.2
+
+**Belirti:** Biten izlerin **%20'si tek kare yaşayıp ölüyordu**, yalnızca
+%15'i 5 saniyeden uzun sürüyordu. Kimlik bu kadar çabuk kopunca "bu kişi
+3 saniyedir hızlanıyor" cümlesi kurulamaz — saldırganlık modülünün tek
+girdisi bu (PLAN.md §6.5.2).
+
+**Çürütülen hipotez:** "Kare hızımız düşük olduğu için kişi kareler
+arasında çok yol alıyor, takipçi eşleştiremiyor."
+
+Uyarlanabilir FPS sayesinde kameralar farklı hızlarda çalışıyordu
+(1, 4, 5.7 FPS) — hazır bir doğal deney. Korelasyona bakınca:
+
+| Hedef FPS | Ortalama parçalanma |
+|---|---|
+| 1.0 | %50.2 |
+| 4.0 | %54.2 |
+| 5.7 | %56.8 |
+
+**Korelasyon yok.** Hipotez düştü.
+
+**Kontrollü deney:** Aynı tespit dizisi (cam-09, 250 kare, 3341 tespit)
+bir kez çıkarılıp belleğe alındı, sonra her parametre ayarı **aynı
+diziyi** işledi. Tek değişen parametre; sahne, kalabalık ve kare hızı
+sabit.
+
+| Ayar | tek kare | uzun ömürlü | kimlik kapsamı |
+|---|---|---|---|
+| varsayılan (`match_thresh` 0.8) | %10.0 | %50.9 | %90.7 |
+| **0.9** | **%4.2** | **%61.1** | **%93.3** |
+| 0.6 | %61.6 | %8.3 | %68.3 |
+| 0.9 + `new_track_thresh` 0.7 | %2.9 | %66.7 | %79.7 |
+
+**Kök sebep — isimlendirme tuzağı.** `match_thresh` bir **benzerlik**
+eşiği gibi duruyor ama aslında **mesafe** eşiği. Ultralytics kaynağında:
+
+```python
+return 1 - ious          # cost matrix
+...
+linear_assignment(dists, thresh=match_thresh)   # eşleşme: maliyet < eşik
+```
+
+Yani:
+
+```
+match_thresh 0.9  →  1 - IoU < 0.9  →  IoU > 0.1  →  GEVŞEK
+match_thresh 0.6  →  1 - IoU < 0.6  →  IoU > 0.4  →  SIKI
+```
+
+Varsayılan 0.8 (IoU > 0.2) bizim kare hızımız için fazla sıkıymış:
+4 FPS'te kareler arası 250 ms var ve yürüyen bir kişinin ardışık iki
+kutusu %20 örtüşmeyi zor yakalıyor. Eşleşemeyen iz ölüyor, kişi yeni
+kimlik alıyor.
+
+⚠ **İlk ölçümde etiketleri TERS yazdım** — 0.9'a "sıkı", 0.6'ya "gevşek"
+demiştim. Sonuç tablosu anlamsız görünüyordu ("sıkılaştırınca düzeliyor,
+gevşetince bozuluyor"). Kaynak koda bakıp maliyet fonksiyonunu görene
+kadar açıklayamadım. **Sayı doğruydu, yorum yanlıştı** — ve öyle
+raporlasaydım rapora yanlış bir çıkarım girecekti.
+
+**Çözüm:** `match_thresh` 0.8 → 0.9.
+
+`new_track_thresh` 0.7 parçalanmayı daha da düşürüyor (%2.9) **ama
+alınmadı**: kimlik kapsamı %93 → %80'e iniyor, yani tespitlerin beşte
+biri hiç kimlik alamıyor ve zamansal analizin tamamen dışında kalıyor.
+Kaybedilenler düşük güvenli, yani uzaktaki kişiler — P-14'te tam da
+onları kurtarmıştık.
+
+**Öğrenilen dersler:**
+
+1. **Bir eşiğin YÖNÜNÜ varsayma, kaynağa bak.** "thresh" adı benzerlik
+   mi mesafe mi söylemiyor. Beş dakikalık kaynak okuması, yanlış bir
+   raporu önledi.
+2. **Tek metriğe bakarak ayar seçme.** Parçalanma tek başına bakılsaydı
+   `new_track_thresh 0.7` "en iyi" görünürdü; gizli bedeli kimlik
+   kapsamıydı. Her ayar için "bu neyi kötüleştiriyor" diye ayrı bir
+   sütun gerekiyor.
+3. **Hipotezi doğal deneyle test et.** Kare hızı hipotezini çürüten şey,
+   uyarlanabilir FPS'in kameraları zaten farklı hızlarda çalıştırıyor
+   olmasıydı — ek bir düzenek kurmadan korelasyona bakmak yetti.
+
+---
+
 ### P-26 · Hizalama kaydırıcısı TERS yönde çalışıyormuş + zaman ekseni yanlıştı
 
 **Tarih:** 17.08.2026 · **Faz:** 1 / Gün 11 · **Tür:** mantık hatası, ölçümle yakalandı
