@@ -15,7 +15,7 @@
  * React render etseydik 20 kutucukta arayüz kilitlenirdi.
  */
 import { useEffect, useRef } from 'react'
-import { buffers, useStore } from '../store'
+import { analysisFps, buffers, useStore } from '../store'
 import { frameAt } from '../lib/sync'
 import { recordTrace } from '../lib/trace'
 import { BONES, KP_CONF_MIN } from '../lib/skeleton'
@@ -95,6 +95,10 @@ export function CameraTile({ camera, webrtcBase }: Props) {
     let handle = 0
     let usingVideoCallback = false
 
+    // Video kare hızı: rVFC her gerçek video karesinde tetiklendiği
+    // için çağrıları saymak doğrudan videonun FPS'ini veriyor.
+    const videoTicks: number[] = []
+
     const draw = () => {
       // ⚠ requestVideoFrameCallback — requestAnimationFrame DEĞİL.
       // rAF ekranın tazeleme hızına bağlıdır (60 Hz) ve videodan
@@ -114,6 +118,10 @@ export function CameraTile({ camera, webrtcBase }: Props) {
 
       const canvas = canvasRef.current
       if (!canvas) return
+
+      const tick = performance.now()
+      videoTicks.push(tick)
+      while (videoTicks.length && tick - videoTicks[0] > 1000) videoTicks.shift()
 
       const rect = canvas.getBoundingClientRect()
       if (canvas.width !== rect.width || canvas.height !== rect.height) {
@@ -139,8 +147,13 @@ export function CameraTile({ camera, webrtcBase }: Props) {
           badgeRef.current.textContent = frame ? 'analiz durdu' : 'bekleniyor'
           badgeRef.current.className = 'rounded bg-warn/25 px-2 py-0.5 text-warn'
         } else {
-          badgeRef.current.textContent = `${frame.count} kişi`
-          badgeRef.current.className = `rounded px-2 py-0.5 ${
+          // Kişi sayısı + iki ayrı kare hızı: video kaç FPS geliyor,
+          // analiz kaç FPS yapılıyor. İkisi arasındaki fark kutuların
+          // neden ara değerlenmesi gerektiğini gözle gösteriyor.
+          const vf = videoTicks.length
+          const af = analysisFps(camera.name)
+          badgeRef.current.textContent = `${frame.count} kişi · ${vf} vid · ${af} yz`
+          badgeRef.current.className = `rounded px-2 py-0.5 font-mono ${
             frame.count > 0 ? 'bg-ok/25 text-ok' : 'bg-panel text-muted'
           }`
         }

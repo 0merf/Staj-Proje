@@ -21,7 +21,7 @@
  * DOĞRU YERDE olması, yarım saniye daha taze olmasından önemli —
  * üstelik alarm ayrı kanaldan gecikmesiz geliyor.
  */
-import { useStore } from '../store'
+import { buffers, useStore } from '../store'
 import { startTrace, stopTrace, isTracing } from '../lib/trace'
 import { useState } from 'react'
 
@@ -44,9 +44,25 @@ export function SyncControl() {
       await stopTrace({ videoBufferMs: buffer, videoLatencyMs: video, aiLatencyMs: ai })
       setTracing(false)
     } else {
-      const first = [...playing][0]
-      if (!first) return
-      startTrace(first)
+      // ⚠ İlk açık kamerayı almak yetmiyor: boş bir otopark seçilirse
+      // takip edilecek kimse olmaz ve kayıt boş çıkar (ilk denemede
+      // tam olarak bu oldu). En çok kişi görülen kamerayı seçiyoruz.
+      let best: string | null = null
+      let bestCount = 0
+      for (const cam of playing) {
+        const buffer = buffers.get(cam)
+        const last = buffer?.[buffer.length - 1]
+        const count = last?.detections.filter((d) => d.id !== undefined).length ?? 0
+        if (count > bestCount) {
+          bestCount = count
+          best = cam
+        }
+      }
+      if (!best) {
+        console.warn('[iz] kimlikli tespit olan açık kamera yok')
+        return
+      }
+      startTrace(best)
       setTracing(true)
     }
   }

@@ -21,6 +21,19 @@ import { BUFFER_SIZE } from './lib/sync'
 /** Kamera adı → son N sonuç (eskiden yeniye). React dışında. */
 export const buffers = new Map<string, TimedResult[]>()
 
+/** Kamera başına analiz sonucu varış zamanları — FPS hesabı için.
+ * React dışında tutuluyor; saniyede ~60 mesaj render tetiklemesin. */
+export const resultTimes = new Map<string, number[]>()
+
+/** Son bir saniyede kaç analiz sonucu geldi (kamera başına). */
+export function analysisFps(camera: string): number {
+  const times = resultTimes.get(camera)
+  if (!times || times.length < 2) return 0
+  const now = performance.now()
+  while (times.length && now - times[0] > 1000) times.shift()
+  return times.length
+}
+
 export function pushResult(result: TimedResult) {
   let list = buffers.get(result.cam)
   if (!list) {
@@ -29,6 +42,14 @@ export function pushResult(result: TimedResult) {
   }
   list.push(result)
   if (list.length > BUFFER_SIZE) list.shift()
+
+  let times = resultTimes.get(result.cam)
+  if (!times) {
+    times = []
+    resultTimes.set(result.cam, times)
+  }
+  times.push(result.rx)
+  if (times.length > 60) times.shift()
 }
 
 interface State {

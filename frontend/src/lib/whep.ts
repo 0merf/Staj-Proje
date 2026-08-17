@@ -44,6 +44,8 @@ export interface WhepSession {
  * ve MediaMTX'in paketleme süresini içermez. Ama bizim ihtiyacımız
  * mutlak değer değil, analiz yoluyla ARASINDAKİ FARK.
  */
+const lastStats = new WeakMap<RTCPeerConnection, { delay: number; count: number }>()
+
 export async function measureVideoLatencyMs(pc: RTCPeerConnection): Promise<number | null> {
   try {
     const stats = await pc.getStats()
@@ -58,6 +60,24 @@ export async function measureVideoLatencyMs(pc: RTCPeerConnection): Promise<numb
       }
     })
     if (!count) return null
+
+    // ⚠ ARALIK ÖLÇÜMÜ — kümülatif ortalama DEĞİL.
+    // Bu iki sayaç oturum başından beri birikiyor. Oranları alınca
+    // "oturum boyunca ortalama gecikme" çıkıyor; tamponu değiştirince
+    // bu ortalama yeni değere çok yavaş yaklaşıyor.
+    //
+    // Sonucu: tampon 500 ms'e çıkarıldığı hâlde ölçüm hâlâ ~100 ms
+    // gösteriyordu. Kod videoyu olduğundan TAZE sanıp kutuları fazla
+    // ileri taşıyordu — kullanıcı "kutu adamdan önce gitti" dedi.
+    //
+    // İki ölçüm arasındaki FARKI alınca anlık değer çıkıyor.
+    // (Aynı ders sunucu tarafında da yaşandı: kümülatif ortalama
+    // başlangıç birikimini kalıcı taşıyordu.)
+    const prev = lastStats.get(pc)
+    lastStats.set(pc, { delay, count })
+    if (prev && count > prev.count) {
+      return ((delay - prev.delay) / (count - prev.count)) * 1000
+    }
     return (delay / count) * 1000
   } catch {
     return null
