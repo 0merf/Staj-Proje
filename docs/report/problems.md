@@ -33,6 +33,62 @@ ama **belirti / sebep / çözüm** üçlüsü mutlaka olsun.
 
 <!-- Yeni kayıtlar buraya, en yenisi en üstte -->
 
+### P-22 · Yeniden başlatma sonrası Docker bind mount ve port yönlendirmeleri bozuldu
+
+**Tarih:** 17.08.2026 · **Faz:** 1 / Gün 11 · **Kaybedilen süre:** ~25 dk
+
+**Belirti:** Bilgisayar yeniden başlatıldıktan sonra Docker servisleri
+`docker compose ps` çıktısında **"Up ... (healthy)"** görünüyordu ama
+sistem hiçbir kare üretmiyordu. Alım worker'ı ayaktaydı, 20 kamera
+başta bağlanmış gibiydi, sonra hepsi düştü (`sentinel_camera_up` = 0/20).
+
+**Yanlış yola sapma:** İlk baktığım yer modeldi — çıkarım worker'ı
+kare başına 169 ms gösteriyordu (normalde 6.5 ms). "GPU bozuldu"
+sandım. Oysa o sayı **kümülatif ortalamaydı** ve yalnızca 51 batch
+vardı; çoğu soğuk başlangıçtı. Kendi öğrettiğim dersi (ortalama değil
+p50, kümülatif değil aralık) neredeyse tekrar unutuyordum.
+
+**Kök sebep — iki ayrı bozulma, ikisi de Docker Desktop kaynaklı:**
+
+1. **Bind mount koptu.** MediaMTX video dosyalarını açamıyordu:
+   ```
+   Error opening input file /videos/cam-16.mp4.  I/O error
+   ```
+   Konteyner içinden `ls /videos` → `I/O error`. Host'ta dosyalar
+   sapasağlam duruyordu. Konteyneri yeniden yaratmayı deneyince asıl
+   hata çıktı:
+   ```
+   mkdir /run/desktop/mnt/host/d: file exists
+   ```
+   Yani Docker'ın WSL2 sanal makinesinde D: sürücüsünün bağlanma
+   noktası bozuk bir durumda kalmış.
+
+2. **Port yönlendirmeleri bayatladı.** Sanal makineyi yeniden
+   başlattıktan sonra Valkey konteyneri "healthy" olmasına rağmen
+   host'tan `ping` bile `Connection closed by server` veriyordu.
+   Konteyner içinde sağlıklı, dışarıdan erişilemez.
+
+**Çözüm:**
+```powershell
+wsl --terminate docker-desktop   # sanal makineyi yeniden başlat
+docker compose down              # konteynerleri kaldır (veri kaybolmaz)
+docker compose up -d             # yeniden kur — port yönlendirmeleri tazelenir
+```
+
+**Öğrenilen ders — "healthy" ile "erişilebilir" aynı şey değil.**
+Bu, P-02'nin daha derin bir versiyonu. Docker'ın sağlık kontrolü
+konteynerin **içinden** çalışır; mount'un okunabildiğini ya da port
+yönlendirmesinin ayakta olduğunu söylemez. Sağlık kontrolümüz
+(`/api/v1/system/health`) de aynı tuzağa düşüyordu: MediaMTX'in API'si
+cevap verdiği için "sağlıklı" diyordu, ama yolların hiçbiri `ready`
+değildi.
+
+**Yapılacak (Gün 11 kapsamına alındı):** Sağlık kontrolü "kaç yol
+ready" bilgisini zaten topluyor; **0 ise sağlıksız saymalı.** Aksi
+hâlde panel yeşil görünürken sistem boş çalışıyor — sessiz hata.
+
+---
+
 ### P-21 · `localhost` ile `127.0.0.1` ayrı kökenlerdir — P-11 ikinci kez
 
 **Tarih:** 16.08.2026 · **Faz:** 1 / Gün 10 · **Kaybedilen süre:** ~0 (önceden test edildi)
