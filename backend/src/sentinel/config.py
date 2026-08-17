@@ -97,6 +97,18 @@ class Settings(BaseSettings):
     adaptive_fps_enabled: bool = True
     adaptive_idle_after_s: float = 30.0
 
+    # OPERATÖRÜN İZLEDİĞİ KAMERAYA ÖNCELİK (PLAN.md §5.2)
+    # Panelde 7 kutucuk açıkken 20 kamerayı eşit hızda analiz etmek,
+    # bütçenin dörtte üçünü kimsenin bakmadığı yere harcamaktı.
+    # Açık kameralar daha sık analiz edilir; kapalılar taban hızda
+    # kalıp alarm üretmeye devam eder.
+    target_fps_watched: int = 10
+    # ⚠ Toplam bütçe olmadan bu ayar tehlikeli: 20 kutucuk birden
+    # açılırsa üretim tüketimi ikiye katlar, kuyruk dolar, gecikme
+    # geri gelir (P-16 / P-25 ile aynı tuzak). İzlenen kameralar bu
+    # toplamı paylaşır.
+    watched_fps_budget: float = 40.0
+
     # Çıkarım worker'ı bu yaştan eski kareleri İŞLEMEDEN atar.
     # Gecikmeyi sınırlayan tek mekanizma budur: kuyrukta bekleyen kare
     # eskir ve değersizleşir, ama işlenmeye devam ederse TAZE kareyi de

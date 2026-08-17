@@ -29,6 +29,7 @@ export function useLiveResults() {
       socket.onopen = () => {
         setConnection('bağlı')
         socket?.send(JSON.stringify({ type: 'subscribe', cameras: [] }))
+        sendWatching()
       }
       socket.onmessage = (event) => {
         const message = JSON.parse(event.data) as FrameResult
@@ -47,7 +48,24 @@ export function useLiveResults() {
       socket.onerror = () => socket?.close()
     }
 
+    // ⚠ Panelde AÇIK olan kutucukları sunucuya bildiriyoruz.
+    // Alım katmanı bu listeye bakıp izlenen kameralara daha yüksek
+    // örnekleme hızı ayırıyor (PLAN.md §5.2). Bildirmezsek 20 kamera
+    // eşit hızda analiz edilir ve bütçenin çoğu kimsenin bakmadığı
+    // kameralara gider.
+    //
+    // Düzenli tekrarlıyoruz çünkü sunucudaki kayıt TTL'li: panel
+    // kapanırsa ya da bağlantı koparsa liste kendiliğinden silinsin
+    // ve sistem "kimse izlemiyor" moduna dönsün.
+    const sendWatching = () => {
+      if (socket?.readyState !== WebSocket.OPEN) return
+      const cameras = [...useStore.getState().playing]
+      socket.send(JSON.stringify({ type: 'watching', cameras }))
+    }
+
     connect()
+    const watchTicker = window.setInterval(sendWatching, 5000)
+    const unsubscribe = useStore.subscribe(sendWatching)
     const ticker = window.setInterval(() => {
       if (since > 0) {
         bump()
@@ -59,6 +77,8 @@ export function useLiveResults() {
       closed = true
       if (retry.current) clearTimeout(retry.current)
       clearInterval(ticker)
+      clearInterval(watchTicker)
+      unsubscribe()
       socket?.close()
     }
   }, [setConnection, bump, setAiLatency])

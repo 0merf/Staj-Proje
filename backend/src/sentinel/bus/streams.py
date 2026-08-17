@@ -318,3 +318,36 @@ class ResultStream:
 
 
 __all__ = ["FrameMessage", "FrameStream", "ResultStream", "SlotAllocator", "connect"]
+
+
+# ─── Operatörün izlediği kameralar ────────────────────────────
+# Panel hangi kutucukları AÇTIYSA onları buraya yazar; alım worker'ı
+# okuyup o kameralara daha yüksek örnekleme hızı ayırır (PLAN.md §5.2).
+#
+# Neden Valkey: panel API sürecine bağlı, örnekleme kararı ise alım
+# sürecinde veriliyor. İkisi ayrı süreç; paylaşılan tek yer Valkey.
+#
+# Neden TTL: panel kapanırsa ya da tarayıcı çökerse liste taze kalmamalı.
+# Panel düzenli olarak yeniliyor; yenilenmezse kendiliğinden siliniyor
+# ve sistem "kimse izlemiyor" moduna dönüyor.
+WATCHED_KEY = "cameras:watched"
+WATCHED_TTL_S = 20
+
+
+def set_watched_cameras(client: Redis, cameras: list[str]) -> None:
+    """Operatörün şu an izlediği kameraları yayınlar."""
+    pipe = client.pipeline()
+    pipe.delete(WATCHED_KEY)
+    if cameras:
+        pipe.sadd(WATCHED_KEY, *cameras)
+        pipe.expire(WATCHED_KEY, WATCHED_TTL_S)
+    pipe.execute()
+
+
+def get_watched_cameras(client: Redis) -> set[str]:
+    """İzlenen kamera kümesi. Panel kapalıysa boş döner."""
+    try:
+        members = client.smembers(WATCHED_KEY)
+    except Exception:
+        return set()
+    return {m.decode() if isinstance(m, bytes) else str(m) for m in members}  # type: ignore[union-attr]

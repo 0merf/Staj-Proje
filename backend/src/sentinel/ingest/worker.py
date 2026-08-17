@@ -40,7 +40,13 @@ from types import FrameType
 
 from sentinel import metrics
 from sentinel.bus.shm import FramePool, FramePoolError
-from sentinel.bus.streams import FrameMessage, FrameStream, SlotAllocator, connect
+from sentinel.bus.streams import (
+    FrameMessage,
+    FrameStream,
+    SlotAllocator,
+    connect,
+    get_watched_cameras,
+)
 from sentinel.config import settings
 from sentinel.core import preprocess
 from sentinel.ingest.decoder import RtspDecoder, StreamClosedError, rtsp_url
@@ -116,6 +122,10 @@ class CameraTask:
         # Uyarlanabilir FPS durumu: açılışta hareket varmış say, yoksa
         # sistem daha ilk kareden boşta moduna düşerdi.
         self._last_motion_at = time.monotonic()
+        # Operatör bu kamerayı panelde açtı mı ve payına kaç FPS düştü?
+        # Worker düzenli günceller (IngestWorker.refresh_watched).
+        self.watched = False
+        self.watched_fps = 0.0
 
     def run(self) -> None:
         """Kamera düşerse yeniden bağlanarak sonsuza dek okur."""
@@ -176,11 +186,21 @@ class CameraTask:
             return
 
         idle_for = now - self._last_motion_at
-        target = (
-            float(settings.target_fps_idle)
-            if idle_for >= settings.adaptive_idle_after_s
-            else self._target_fps
-        )
+        if idle_for >= settings.adaptive_idle_after_s:
+            # Uzun süredir hareket yok — kimse izlemiyorsa iyice kıs.
+            # İzleniyorsa taban hızın altına inme: operatör baktığı
+            # kamerada donuk kutu görmemeli.
+            target = float(settings.target_fps if self.watched else settings.target_fps_idle)
+        elif self.watched:
+            # ⚠ OPERATÖRÜN BAKTIĞI KAMERAYA ÖNCELİK (PLAN.md §5.2)
+            # Panelde 7 kutucuk açıkken 20 kamerayı eşit hızda analiz
+            # etmek bütçeyi kimsenin bakmadığı yere harcamaktı.
+            # Açık kameralar daha sık analiz edilince ekrandaki kutular
+            # gözle görülür şekilde düzeliyor; kapalı olanlar taban
+            # hızda kalıp alarm üretmeye devam ediyor.
+            target = self.watched_fps or float(settings.target_fps_watched)
+        else:
+            target = self._target_fps
         if abs(decoder.target_fps - target) > 0.01:
             decoder.set_target_fps(target)
             log.info(
@@ -270,6 +290,7 @@ class IngestWorker:
         self._allocator = SlotAllocator(self._client, settings.shm_slot_count)
         self._stream = FrameStream(self._client)
         self._tasks: list[CameraTask] = []
+        self._watched_cache: set[str] = set()
         self._threads: list[threading.Thread] = []
 
         try:
@@ -319,6 +340,41 @@ class IngestWorker:
             self._tasks.append(task)
             self._threads.append(thread)
             thread.start()
+
+    def refresh_watched(self) -> None:
+        """İzlenen kamera listesini Valkey'den alıp görevlere dağıtır.
+
+        Panel hangi kutucukları açtığını bildiriyor (WS `watching`
+        mesajı). Liste TTL'li: panel kapanırsa kendiliğinden silinir ve
+        tüm kameralar taban hıza döner.
+
+        Bütçe koruması: izlenen kamera sayısı arttıkça kamera başına
+        pay düşer. Aksi hâlde 20 kutucuk birden açıldığında üretim
+        tüketimi ikiye katlar, kuyruk dolar ve gecikme geri gelirdi
+        (P-16 / P-25 ile aynı tuzak).
+        """
+        try:
+            watched = get_watched_cameras(self._client)
+        except Exception:
+            return
+
+        budget = float(settings.watched_fps_budget)
+        per_camera = (
+            min(float(settings.target_fps_watched), budget / len(watched))
+            if watched
+            else 0.0
+        )
+        for task in self._tasks:
+            task.watched = task.camera in watched
+            task.watched_fps = per_camera
+
+        if watched != self._watched_cache:
+            log.info(
+                "izlenen_kameralar_degisti",
+                sayi=len(watched),
+                kamera_basina_fps=round(per_camera, 1),
+            )
+            self._watched_cache = watched
 
     def stop(self) -> None:
         _shutdown.set()
@@ -402,11 +458,24 @@ def main() -> int:
 
     deadline = time.monotonic() + args.duration if args.duration else None
     try:
+        # ⚠ İki farklı ritim: izlenen kamera listesi HIZLI tazelenmeli
+        # (operatör kutucuk açınca birkaç saniyede etkisini görmeli),
+        # istatistik raporu ise seyrek basılır. Tek bir uzun bekleme
+        # kullansaydık panel değişikliği 5 dakika sonra etki ederdi.
+        watch_tick_s = 5.0
+        next_stats = time.monotonic() + args.stats_interval
         while not _shutdown.is_set():
-            _shutdown.wait(args.stats_interval)
-            worker.update_pipeline_metrics()
-            print(f"  {worker.summary()}", flush=True)
-            if deadline and time.monotonic() >= deadline:
+            _shutdown.wait(watch_tick_s)
+            if _shutdown.is_set():
+                break
+            worker.refresh_watched()
+
+            now = time.monotonic()
+            if now >= next_stats:
+                worker.update_pipeline_metrics()
+                print(f"  {worker.summary()}", flush=True)
+                next_stats = now + args.stats_interval
+            if deadline and now >= deadline:
                 break
     finally:
         print()

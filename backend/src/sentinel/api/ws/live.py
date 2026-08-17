@@ -136,9 +136,43 @@ async def _receiver(client: Client) -> None:
             await client.websocket.send_text(
                 json.dumps({"type": "subscribed", "cameras": allowed}, separators=(",", ":"))
             )
+        elif kind == "watching":
+            # Panel hangi kutucukları AÇTIĞINI bildiriyor. Bu bilgi
+            # örnekleme hızını yönlendiriyor: operatörün baktığı kamera
+            # daha sık analiz edilir (PLAN.md §5.2).
+            #
+            # ⚠ Yetki kontrolünden geçiyor — istemci izinsiz bir kamerayı
+            # "izliyorum" diye bildirip kaynak yönlendiremesin.
+            requested = message.get("cameras") or []
+            watched = authorize_cameras(requested if isinstance(requested, list) else [])
+            _publish_watched(watched)
         elif kind == "ping":
             await client.websocket.send_text(json.dumps({"type": "pong", "ts": time.time()}))
 
+
+
+# ─── İzlenen kameraların yayınlanması ────────────────────────
+
+_watch_client: Any = None
+
+
+def _publish_watched(cameras: list[str]) -> None:
+    """İzlenen kamera listesini alım worker'ının okuyacağı yere yazar.
+
+    Hata yutuluyor: bu bir optimizasyon sinyali, kritik yol değil.
+    Valkey erişilemezse sistem varsayılan hızlarla çalışmaya devam eder.
+    """
+    global _watch_client
+    try:
+        if _watch_client is None:
+            from sentinel.bus.streams import connect
+
+            _watch_client = connect()
+        from sentinel.bus.streams import set_watched_cameras
+
+        set_watched_cameras(_watch_client, cameras)
+    except Exception as exc:  # pragma: no cover
+        log.debug("izlenen_kamera_yayinlanamadi", error=str(exc))
 
 @router.websocket("/ws/live")
 async def live_feed(websocket: WebSocket) -> None:
