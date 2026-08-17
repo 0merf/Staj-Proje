@@ -1,0 +1,55 @@
+{
+  "measured_at": "2026-08-17T18:00:00",
+  "phase": "Faz 1 / Gün 13",
+  "description": "KADEME 2b — yüz tespiti + yüz ifadesi sınıflandırma; yetenek kuruldu, GİRDİ yetersiz çıktı",
+  "models": {
+    "face_detection": "YuNet (OpenCV FaceDetectorYN), 232 KB",
+    "expression": "EmotiEffLib enet_b0_8_best_vgaf (AffectNet 8 sınıf), 16 MB ONNX",
+    "expression_device": "CPU",
+    "note_gpu": "onnxruntime-gpu kuruldu ama CUDA sağlayıcısı bu ortamda yüklenmedi (beklediği cuDNN sürümü yok). Model CPU'da ~58 ms/yüz."
+  },
+  "finding": {
+    "headline": "Kamera çiftliği görüntüsü yüz ifadesi analizini DESTEKLEMİYOR",
+    "person_height_px": { "p50": 120, "p90": 286, "max": 504 },
+    "estimated_face_px": { "p50": 15, "max": 63, "rule": "yüz ≈ gövde boyu / 8" },
+    "people_over_180px_pct": 24.1,
+    "face_detection_hit_rate": {
+      "all_crops": "1 / 130",
+      "largest_crops_over_200px": "2 / 60"
+    },
+    "classified_examples": [
+      { "camera": "cam-17", "person_px": 479, "face_px": "75x117", "label": "nötr", "confidence": 0.33, "quality": 0.28, "usable": false },
+      { "camera": "cam-19", "person_px": 294, "face_px": "90x101", "label": "korku", "confidence": 0.27, "quality": 0.13, "usable": false }
+    ],
+    "interpretation": [
+      "Bulunan iki yüzde de güven %27-33. Model 8 sınıflı, yani rastgele tahmin %12.5.",
+      "Bu skorlar şanstan biraz iyi — bilgi taşımıyor.",
+      "Kalite skorları (0.13 ve 0.28) 'gösterilebilir' eşiği olan 0.50'nin altında,",
+      "yani sistem bu sonuçları DOĞRU şekilde kullanılamaz işaretliyor.",
+      "Modül bozuk değil; girdi yetersiz."
+    ]
+  },
+  "validation": {
+    "module_correctness": "Doğrulandı — boru hattı uçtan uca çalışıyor (tespit → kişi kırpıntısı → yüz tespiti → ifade sınıflandırma → kalite skoru).",
+    "gating_works": "178 kişiden 151'i 'çok küçük' diye elendi, 17'si 'süre dolmadı', pahalı adıma hiçbiri boşuna gitmedi."
+  },
+  "plan_reference": {
+    "section": "PLAN.md §6.3",
+    "predicted": "Gözetim görüntülerinde yüzler küçük, açılı ve düşük çözünürlüklüdür.",
+    "verdict": "Tahmin ÖLÇÜMLE DOĞRULANDI. Modülün füzyondaki ağırlığının düşük (0.10) tutulması kararı da böylece gerekçelenmiş oldu."
+  },
+  "decision": {
+    "keep_module": true,
+    "why": [
+      "Yetenek şartnamede isteniyor ve kurulmuş durumda — çalıştığı koşulda çalışıyor.",
+      "Webcam (cam-21-live) bu modülün gerçek gösterim alanı: laptop kamerasının",
+      "önündeki kişinin yüzü yüzlerce piksel. Canlı demoda anlamlı sonuç verir.",
+      "Kademeli kapı sayesinde uygun girdi yokken hiç maliyet üretmiyor."
+    ],
+    "do_not": "Eşikleri düşürüp 15 piksellik yüzlere etiket üretmek. Bu, bilgi değil gürültü üretmek olurdu."
+  },
+  "cost_when_idle": {
+    "note": "Uygun yüz yokken kapı bedava çalışıyor: kutu boyutu kontrolü + zamanlayıcı. Pahalı adıma (58 ms) hiç gidilmiyor.",
+    "measured": "24 karede 178 aday değerlendirildi, 0 sınıflandırma yapıldı."
+  }
+}

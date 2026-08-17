@@ -14,44 +14,37 @@ dependencies = [
     "uvicorn[standard]>=0.34",
     "python-multipart>=0.0.20",
     "websockets>=14",
-
     # Konfigürasyon ve doğrulama
     "pydantic>=2.10",
     "pydantic-settings>=2.7",
-
     # Veritabanı
     "sqlalchemy[asyncio]>=2.0.36",
     "asyncpg>=0.30",
     "alembic>=1.14",
-
     # Valkey — redis-py protokol uyumludur, Valkey ile değişmeden çalışır
     "redis>=5.2",
-
     # Video ve görüntü işleme
     "av>=13.1",              # PyAV — shell'e çıkmaz, komut enjeksiyonu riski yok
     "opencv-python>=4.10",   # MOG2 hareket filtresi + YuNet yüz tespiti
     "numpy>=2.1",
-
     # Güvenlik (PLAN.md §11.1)
     "argon2-cffi>=23.1",     # G01 — parola hash'i (MD5/SHA DEĞİL)
     "pyjwt>=2.10",           # G02
     "cryptography>=44",
-
     # Depolama (S3 / Garage)
     "boto3>=1.35",
-
     # Gözlemlenebilirlik
     "structlog>=24.4",
     "prometheus-client>=0.21",
-
     # Analitik (hafif — ağır ML değil)
     "scikit-learn>=1.6",     # IsolationForest — kamera normal profili
     "scipy>=1.15",
-
     # Yardımcılar
     "orjson>=3.10",
     "httpx>=0.28",
     "typer>=0.15",           # worker başlatma CLI'ı
+    "emotiefflib>=1.1.1",
+    "onnxruntime-gpu>=1.28.0",
 ]
 
 # ─── GPU / ML BAĞIMLILIKLARI ─────────────────────────────────

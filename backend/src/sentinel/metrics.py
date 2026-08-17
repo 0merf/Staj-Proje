@@ -93,6 +93,12 @@ detections_found = Counter(
     ["cam"],
 )
 
+expressions_classified = Counter(
+    "sentinel_expressions_total",
+    "KADEME 2b — sınıflandırılan yüz ifadesi (kullanılabilir olup olmadığıyla)",
+    ["cam", "label", "usable"],
+)
+
 pose_crops = Counter(
     "sentinel_pose_crops_total",
     "KADEME 2a'ya giren kişi kırpıntısı — iskelet çıktı mı",
@@ -170,6 +176,7 @@ __all__ = [
     "decode_duration",
     "detections_found",
     "end_to_end_latency",
+    "expressions_classified",
     "frames_dropped",
     "frames_published",
     "frames_received",
