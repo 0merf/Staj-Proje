@@ -28,6 +28,42 @@ export interface WhepSession {
   close: () => void
 }
 
+/**
+ * Videonun tarayıcıya ulaşma gecikmesini WebRTC istatistiklerinden ölçer.
+ *
+ * Neden bu mümkün: alıcı, gelen kareleri oynatmadan önce bir **jitter
+ * tamponunda** bekletir (ağdaki düzensizliği yutmak için). WebRTC bu
+ * bekleme süresinin toplamını ve kaç kareye uygulandığını raporlar;
+ * bölünce kare başına ortalama bekleme çıkıyor.
+ *
+ * Her şey aynı makinede olduğu için ağ gecikmesi ~0; geriye kalan
+ * baskın bileşen jitter tamponudur. Yani bu ölçüm "video kaç ms
+ * geriden geliyor" sorusunun iyi bir yaklaşığı.
+ *
+ * ⚠ Tam bir uçtan uca ölçüm DEĞİL: kameranın kendi kodlama gecikmesini
+ * ve MediaMTX'in paketleme süresini içermez. Ama bizim ihtiyacımız
+ * mutlak değer değil, analiz yoluyla ARASINDAKİ FARK.
+ */
+export async function measureVideoLatencyMs(pc: RTCPeerConnection): Promise<number | null> {
+  try {
+    const stats = await pc.getStats()
+    let delay = 0
+    let count = 0
+    stats.forEach((report) => {
+      if (report.type === 'inbound-rtp' && report.kind === 'video') {
+        if (typeof report.jitterBufferDelay === 'number') delay = report.jitterBufferDelay
+        if (typeof report.jitterBufferEmittedCount === 'number') {
+          count = report.jitterBufferEmittedCount
+        }
+      }
+    })
+    if (!count) return null
+    return (delay / count) * 1000
+  } catch {
+    return null
+  }
+}
+
 /** ICE adaylarının toplanmasını bekler.
  *
  * Trickle ICE kullanmıyoruz: WHEP tek atımlık bir alışveriş, teklifi

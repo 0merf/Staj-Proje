@@ -12,6 +12,7 @@ import type { FrameResult } from '../types'
 export function useLiveResults() {
   const setConnection = useStore((s) => s.setConnection)
   const bump = useStore((s) => s.bumpMessages)
+  const setAiLatency = useStore((s) => s.setAiLatency)
   const retry = useRef<number | null>(null)
 
   useEffect(() => {
@@ -36,6 +37,7 @@ export function useLiveResults() {
         // Date.now() ile karşılaştırılamaz — hizalama bu yüzden
         // varış anına dayanıyor.
         pushResult({ ...message, rx: performance.now() })
+        if (typeof message.lat === 'number') setAiLatency(message.lat)
         since++
       }
       socket.onclose = () => {
@@ -59,5 +61,5 @@ export function useLiveResults() {
       clearInterval(ticker)
       socket?.close()
     }
-  }, [setConnection, bump])
+  }, [setConnection, bump, setAiLatency])
 }

@@ -33,6 +33,8 @@ export interface FrameResult {
   count: number
   motion: number
   gate: string
+  /** Bu karenin ANALIZ yolunda harcadigi sure (ms) — sunucu olcuyor. */
+  lat?: number
   detections: Detection[]
 }
 

@@ -18,7 +18,7 @@ import { useEffect, useRef } from 'react'
 import { buffers, useStore } from '../store'
 import { frameAt } from '../lib/sync'
 import { BONES, KP_CONF_MIN } from '../lib/skeleton'
-import { connectWhep, type WhepSession } from '../lib/whep'
+import { connectWhep, measureVideoLatencyMs, type WhepSession } from '../lib/whep'
 import type { Camera } from '../types'
 
 /** Bu süre sonuç gelmezse "analiz durdu" uyarısı. */
@@ -37,6 +37,7 @@ export function CameraTile({ camera, webrtcBase }: Props) {
 
   const playing = useStore((s) => s.playing.has(camera.name))
   const toggle = useStore((s) => s.togglePlaying)
+  const setVideoLatency = useStore((s) => s.setVideoLatency)
 
   // ─── Video bağlantısı ────────────────────────────────────
   useEffect(() => {
@@ -50,12 +51,22 @@ export function CameraTile({ camera, webrtcBase }: Props) {
       })
       .catch((error) => console.warn('WHEP başarısız', camera.name, error))
 
+    // Video gecikmesini periyodik ölç. Bu sayede hizalama kaydırıcısı
+    // tahmin değil ÖLÇÜM önerebiliyor (bkz. SyncControl).
+    const probe = window.setInterval(async () => {
+      const pc = sessionRef.current?.pc
+      if (!pc) return
+      const ms = await measureVideoLatencyMs(pc)
+      if (ms !== null && ms > 0) setVideoLatency(ms)
+    }, 3000)
+
     return () => {
       cancelled = true
+      clearInterval(probe)
       sessionRef.current?.close()
       sessionRef.current = null
     }
-  }, [playing, camera.name, webrtcBase])
+  }, [playing, camera.name, webrtcBase, setVideoLatency])
 
   // ─── Çizim döngüsü ───────────────────────────────────────
   useEffect(() => {

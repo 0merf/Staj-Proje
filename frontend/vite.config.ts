@@ -4,7 +4,13 @@ import tailwindcss from '@tailwindcss/vite'
 
 // Vite 7 — Vite 8 DEĞİL. Gerekçe: Vite 8 + Tailwind v4 + React 19
 // birleşiminde bilinen kurulum sorunları raporlanmış (PLAN.md §3.5).
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+  // ⚠ Derlenmiş sürüm FastAPI'de `/app` altında servis ediliyor.
+  // `base` verilmezse Vite varlıkları `/assets/...` diye KÖKTEN arar,
+  // sunucu 404 döner ve sayfa BEYAZ açılır — konsola bakmadan sebebi
+  // anlaşılmayan bir hata. Geliştirme sunucusunda kök doğru, o yüzden
+  // yalnızca derlemede değiştiriyoruz.
+  base: command === 'build' ? '/app/' : '/',
   plugins: [react(), tailwindcss()],
   server: {
     // ⚠ IPv4'e SABİTLENDİ. Varsayılan `localhost` Windows'ta yalnızca
@@ -27,4 +33,4 @@ export default defineConfig({
     outDir: '../backend/src/sentinel/api/static/app',
     emptyOutDir: true,
   },
-})
+}))

@@ -41,6 +41,10 @@ interface State {
   /** Açık olan kameralar (video oynatılıyor). */
   playing: Set<string>
   messageCount: number
+  /** Ölçülen video yolu gecikmesi (WebRTC jitter tamponu). */
+  videoLatencyMs: number | null
+  /** Ölçülen analiz yolu gecikmesi (sunucu raporluyor). */
+  aiLatencyMs: number | null
 
   setCameras: (c: Camera[]) => void
   setConnection: (c: State['connection']) => void
@@ -48,6 +52,8 @@ interface State {
   setSyncOffset: (ms: number) => void
   togglePlaying: (name: string) => void
   bumpMessages: () => void
+  setVideoLatency: (ms: number) => void
+  setAiLatency: (ms: number) => void
 }
 
 export const useStore = create<State>((set) => ({
@@ -61,6 +67,8 @@ export const useStore = create<State>((set) => ({
   syncOffsetMs: 250,
   playing: new Set<string>(),
   messageCount: 0,
+  videoLatencyMs: null,
+  aiLatencyMs: null,
 
   setCameras: (cameras) => set({ cameras }),
   setConnection: (connection) => set({ connection }),
@@ -78,4 +86,13 @@ export const useStore = create<State>((set) => ({
       return { playing: next }
     }),
   bumpMessages: () => set((s) => ({ messageCount: s.messageCount + 1 })),
+  // Üstel yumuşatma: tek bir sıçrama öneriyi zıplatmasın.
+  setVideoLatency: (ms) =>
+    set((s) => ({
+      videoLatencyMs: s.videoLatencyMs === null ? ms : s.videoLatencyMs * 0.7 + ms * 0.3,
+    })),
+  setAiLatency: (ms) =>
+    set((s) => ({
+      aiLatencyMs: s.aiLatencyMs === null ? ms : s.aiLatencyMs * 0.9 + ms * 0.1,
+    })),
 }))

@@ -155,6 +155,7 @@ def _serialize(
     width: int,
     height: int,
     letterbox: Letterbox | None = None,
+    latency_ms: float = 0.0,
 ) -> str:
     """Sonucu JSON'a çevirir.
 
@@ -181,6 +182,11 @@ def _serialize(
             "motion": round(motion, 5),
             "gate": gate,
             "count": len(tracks),
+            # Bu karenin ANALİZ YOLUNDA harcadığı süre (ms). Tarayıcı
+            # bunu videonun kendi gecikmesiyle karşılaştırıp kutuları
+            # ne kadar geriden çizmesi gerektiğini HESAPLAYABİLİYOR —
+            # kullanıcının gözüyle tahmin etmesine gerek kalmıyor.
+            "lat": round(latency_ms),
             "detections": detections,
         },
         separators=(",", ":"),
@@ -352,6 +358,7 @@ class InferenceWorker:
         t_publish = time.perf_counter()
         for message, detections in zip(batch, tracked, strict=True):
             source_w, source_h = message.source_size
+            latency = (now_monotonic - message.captured_at) * 1000.0
             payload = _serialize(
                 detections,
                 motion=message.motion_ratio,
@@ -359,6 +366,7 @@ class InferenceWorker:
                 width=source_w,
                 height=source_h,
                 letterbox=message.letterbox,
+                latency_ms=latency,
             )
             self._results.publish(
                 message.camera,
@@ -371,9 +379,8 @@ class InferenceWorker:
             self.by_camera[message.camera] += 1
             metrics.detections_found.labels(cam=message.camera).inc(len(detections))
             # Uçtan uca gecikme: kare yakalandığından sonuç yazılana kadar
-            latency = now_monotonic - message.captured_at
-            self.e2e_ms.append(latency * 1000.0)
-            metrics.end_to_end_latency.observe(latency)
+            self.e2e_ms.append(latency)
+            metrics.end_to_end_latency.observe(latency / 1000.0)
         self.publish_ms.append((time.perf_counter() - t_publish) * 1000.0)
 
         t_release = time.perf_counter()

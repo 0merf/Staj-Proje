@@ -33,6 +33,84 @@ ama **belirti / sebep / çözüm** üçlüsü mutlaka olsun.
 
 <!-- Yeni kayıtlar buraya, en yenisi en üstte -->
 
+### P-23 · React arayüzü beyaz açıldı — `base` yolu ayarlanmamıştı
+
+**Tarih:** 17.08.2026 · **Faz:** 1 / Gün 11 · **Kaybedilen süre:** ~10 dk
+
+**Belirti:** `http://127.0.0.1:8001/app/` tamamen **beyaz** açılıyordu.
+Sunucu 200 döndürüyordu, HTML geliyordu, `<div id="root">` yerindeydi.
+Hiçbir hata mesajı yoktu.
+
+**Kök sebep:** Vite derlerken varlıkları **kökten** referanslıyordu:
+
+```html
+<script src="/assets/index-DB3ZTPzo.js">     ← 404
+```
+
+Uygulama `/app` altında servis edildiği için doğru yol
+`/app/assets/...` olmalıydı. Tarayıcı script'i bulamayınca React hiç
+başlamıyor, `<div id="root">` boş kalıyor ve sayfa beyaz görünüyor.
+
+**Çözüm:** `vite.config.ts` içinde `base` ayarı — ama yalnızca
+derlemede, geliştirme sunucusunda kök zaten doğru:
+
+```ts
+base: command === 'build' ? '/app/' : '/',
+```
+
+**Öğrenilen ders:** Bu hatanın tehlikesi **sessiz** olması. Sunucu
+200 veriyor, HTML doğru, konsola bakmazsan hiçbir ipucu yok. Bir SPA
+beyaz açılıyorsa ilk bakılacak yer **ağ sekmesinde varlıkların
+yüklenip yüklenmediği** — sayfanın kendisi değil. Ayrıca: bir uygulamayı
+kök dışında bir yola monte ediyorsan, derleyicinin bunu bilmesi gerekir.
+
+---
+
+### P-24 · Paneli açmak boru hattının verimini yarıya düşürüyor
+
+**Tarih:** 17.08.2026 · **Faz:** 1 / Gün 11 · **Durum:** ölçüldü, karar kullanıcıya
+
+**Belirti:** Arayüz devreye girdikten sonra verim 57.7 → 29 kare/sn'ye
+düştü, gecikme 426 → 1304 ms'e çıktı.
+
+**İlk (yanlış) refleks:** "React sistemi yavaşlattı." Bu yanlış olurdu —
+React arka uçta hiçbir şey çalıştırmıyor, ayrı bir süreç.
+
+**Ölçüm ne diyor:**
+
+```
+MediaMTX okuyucu sayısı : 40
+  · 20 → alım worker'ı (analiz için, her zaman var)
+  · 20 → TARAYICI (WebRTC, panel açık)
+
+CPU yükü         : %35
+GPU              : %25
+GPU dekoder      : %0     ← tarayıcı videoları CPU'da çözüyor
+```
+
+**Kök sebep:** Panelde 20 kamerayı birden açmak, tarayıcının aynı
+laptopta 20 adet H.264 akışını çözmesi demek — ve bu iş **CPU'da**
+yapılıyor (GPU dekoder %0). Sistem Gün 8'den beri **CPU sınırlı**
+(P-18), dolayısıyla tarayıcının aldığı her çekirdek doğrudan analiz
+boru hattından çalınıyor.
+
+**Bu React'e özgü DEĞİL.** Eski tek dosyalık panel de 20 `<iframe>`
+içinde aynı 20 akışı çözüyordu. Yeni olan tek şey, artık ölçebiliyor
+olmamız.
+
+**Sonuç ve karar:**
+- Gerçek kullanımda operatör 20 kamerayı birden izlemez; 4-6 kutucuk açar.
+- **Ölçüm yaparken panel kapalı olmalı** — aksi hâlde ölçtüğümüz şey
+  sistemin kapasitesi değil, "panel açıkken kalan kapasite" olur.
+- Panelde açık kamera sayısı bir **ölçüm koşulu** olarak raporlanmalı.
+
+**Öğrenilen ders:** Gözlem aracının kendisi ölçtüğü sistemi etkiliyor.
+Bu, P-07 ve P-17 ile aynı aile: *ölçüm düzeneği sonucu bozmamalı.*
+Üçüncü kez aynı ders — ama bu sefer düzeneğin kendisi değil,
+**operatörün davranışı** ölçümü bozuyor.
+
+---
+
 ### P-22 · Yeniden başlatma sonrası Docker bind mount ve port yönlendirmeleri bozuldu
 
 **Tarih:** 17.08.2026 · **Faz:** 1 / Gün 11 · **Kaybedilen süre:** ~25 dk
