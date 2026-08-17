@@ -60,11 +60,11 @@ export const useStore = create<State>((set) => ({
   cameras: [],
   connection: 'bağlanıyor',
   viewMode: 'full',
-  // Varsayılan 250 ms: ölçülen analiz gecikmesi 273 ms, WebRTC gecikmesi
-  // ~200-500 ms. İkisi yakın olduğu için küçük bir kaydırma yetiyor.
-  // Kullanıcı kaydırıcıyla kendi gözüne göre ayarlayabiliyor — tarayıcı
-  // videonun gerçek gecikmesini ölçemediği için en dürüst çözüm bu.
-  syncOffsetMs: 250,
+  // İLERİ TAHMİN payı (ms). Video ~13 ms'de geliyor, analiz ~200-465 ms.
+  // Aradaki fark kadar ileri tahmin gerekiyor; panel bunu ölçüp
+  // "öner" düğmesiyle sunuyor. 0 = tahmin yok (kutular analizin
+  // olduğu anı gösterir, yani videodan geride kalır).
+  syncOffsetMs: 400,
   playing: new Set<string>(),
   messageCount: 0,
   videoLatencyMs: null,

@@ -40,9 +40,9 @@ export function SyncControl() {
       <div className="flex items-center gap-2">
         <span
           className="text-xs text-muted"
-          title="Kutular videodan kaç ms geriden çizilsin"
+          title="Kutular ne kadar İLERİ tahmin edilsin — analiz ile video arasındaki fark"
         >
-          Hizalama
+          İleri tahmin
         </span>
         <input
           type="range"

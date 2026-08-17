@@ -33,6 +33,81 @@ ama **belirti / sebep / çözüm** üçlüsü mutlaka olsun.
 
 <!-- Yeni kayıtlar buraya, en yenisi en üstte -->
 
+### P-26 · Hizalama kaydırıcısı TERS yönde çalışıyormuş + zaman ekseni yanlıştı
+
+**Tarih:** 17.08.2026 · **Faz:** 1 / Gün 11 · **Tür:** mantık hatası, ölçümle yakalandı
+
+**Belirti:** Gecikme 1212 → 465 ms'e düşürüldükten sonra bile kullanıcı
+kutuların yürüyen kişinin arkasından geldiğini ve **takıldığını**
+bildirdi: *"bazen takip ediyor yetişiyor, bazen edemiyor."*
+
+**İki ayrı hata vardı.**
+
+**Hata 1 — kaydırıcının yönü ters.**
+
+Zaman eksenini yazınca ortaya çıktı:
+
+```
+video  : sahneyi  now − 13 ms   anında gösteriyor  (WebRTC çok hızlı)
+analiz : sonuç    now − 465 ms  anına ait
+```
+
+Kod `now − offset` anını çiziyordu. Yani kaydırıcıyı artırmak kutuları
+**daha da geriye** alıyordu. 250 ms ayarındayken kutular aslında
+`now − 250 − 465 = now − 715 ms` anını gösteriyordu — kullanıcı
+düzeltmeye çalışırken sorunu büyütüyordu.
+
+Doğrusu tam tersi: analiz zaten geride olduğu için kutuların **ileri
+tahmin edilmesi** gerekiyor. Kaydırıcı artık "ne kadar ileri tahmin
+et" anlamına geliyor.
+
+**Hata 2 — tampon varış anına göre indeksleniyordu.**
+
+Ara değerleme, sonuçların **tarayıcıya varış** zamanına (`rx`) göre
+yapılıyordu. Ama boru hattı gecikmesi sabit değil (181-465 ms arası
+dalgalanıyor), dolayısıyla **düzenli aralıklarla yakalanan kareler
+düzensiz aralıklarla varıyor.**
+
+Örnek — ikisi de 250 ms arayla yakalanmış:
+
+| | yakalanma | gecikme | varış |
+|---|---|---|---|
+| kare 1 | 1000 | 400 ms | 1400 |
+| kare 2 | 1250 | 200 ms | 1450 |
+
+Varış farkı **50 ms**, gerçek fark **250 ms**. Varışa göre hesaplayan
+kod kişiyi 5 kat hızlı sanıyor, kutuyu fırlatıyor, sonraki karede geri
+çekiyor. Kullanıcının gördüğü "takılma" tam olarak buydu.
+
+**Çözüm:** Sunucu her sonuca ölçtüğü gecikmeyi ekliyor (`lat`), böylece
+yakalanma anı hesaplanabiliyor:
+
+```
+yakalanma ≈ varış − gecikme
+```
+
+Tampon bu eksene göre işleniyor. Gecikme dalgalansa da kareler arası
+mesafe gerçek kalıyor.
+
+**Doğrulama (7 birim testi):** yakalanma anı hesabı, tahmin yokken tam
+sonuç, 450 ms ileri tahmin, bayatlamış sonucun ilerlemeye devam etmesi,
+üst sınır (700 ms), ve kritik olan: *gecikme dalgalanması kareler arası
+gerçek mesafeyi bozmuyor.*
+
+**Öğrenilen ders:** Zamanla ilgili bir hata ayıklarken **önce zaman
+eksenlerini yazmak** gerekiyor. Burada üç ayrı an vardı (yakalanma,
+varış, çizim) ve kod ikisini karıştırıyordu. Eksenleri kağıda dökene
+kadar "gecikmeyi düşürelim" diye yanlış yerde uğraştım — gecikme
+gerçekten yüksekti ve düşürmek doğruydu (P-25), ama takılmanın sebebi
+o değildi.
+
+İkinci ders: bir kontrolün **yönünü** de test etmek gerekiyor.
+Kaydırıcı çalışıyordu, değer değişiyordu, ama ters yöne. Kullanıcı
+"değiştirdim, bir şey olmadı" dediğinde bu ihtimali baştan
+düşünmeliydim.
+
+---
+
 ### P-25 · "Eski kare değersizdir" ilkesini tüketici tarafında hiç uygulamamışız
 
 **Tarih:** 17.08.2026 · **Faz:** 1 / Gün 11 · **Kazanç:** gecikme 6.7× azaldı
