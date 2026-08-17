@@ -204,12 +204,14 @@ class InferenceWorker:
         worker_id: str = "inference-0",
         batch_size: int = 8,
         block_ms: int = 500,
+        max_age_ms: int = 0,
     ) -> None:
         self._detector = detector
         self._pose = pose
         self._worker_id = worker_id
         self._batch_size = batch_size
         self._block_ms = block_ms
+        self._max_age_s = max_age_ms / 1000.0 if max_age_ms > 0 else 0.0
         # Kamera başına ayrı takipçi durumu (bkz. tracker/botsort.py)
         self._tracker = BotSortTracker(frame_rate=int(settings.target_fps))
 
@@ -228,6 +230,7 @@ class InferenceWorker:
 
         # İstatistik
         self.processed = 0
+        self.dropped_stale = 0
         self.detections_total = 0
         self.batches = 0
         self.by_camera: Counter[str] = Counter()
@@ -282,6 +285,8 @@ class InferenceWorker:
                 )
             )
             self.wait_ms.append((time.perf_counter() - t_wait) * 1000.0)
+            if batch:
+                batch = self._drop_stale(batch)
             if batch:
                 self._run_batch(batch)
 
@@ -408,6 +413,44 @@ class InferenceWorker:
                 metrics.pose_crops.labels(result="skeleton").inc()
         return out
 
+    def _drop_stale(self, batch: list) -> list:  # type: ignore[type-arg]
+        """Çok eskimiş kareleri İŞLEMEDEN atar.
+
+        ⚠ BU, GECİKMEYİ SINIRLAYAN TEK MEKANİZMA
+        ----------------------------------------
+        "Eski kare değersizdir" ilkesini P-12'den beri söylüyoruz ama
+        şimdiye kadar yalnızca ÜRETİCİ tarafında uyguluyorduk (slot
+        yoksa at). Tüketici tarafında hiç uygulanmıyordu: kuyruğa giren
+        kare, ne kadar beklerse beklesin sonunda işleniyordu.
+
+        Sonucu şuydu: sistem yüklendiğinde kuyruk doluyor ve her kare
+        sırasını beklerken eskiyor. 48 slot ÷ 29 kare/sn ≈ 1.65 sn.
+        Ölçülen gecikme 1212 ms — kutular videodan 2-3 adım geriden
+        geliyordu.
+
+        Eski kareyi işlemek iki kez zarar veriyor: (1) sonucu zaten
+        değersiz, (2) o sırada TAZE kare işlenemiyor. Atmak her iki
+        sorunu da çözüyor ve sistem kendi kendini toparlıyor —
+        birikim ne kadar büyükse o kadar hızlı eritiliyor.
+
+        Bu bir "kare kaybı" değil, gecikme bütçesinin korunmasıdır.
+        Atılan kareler `sentinel_frames_dropped_total{reason="stale"}`
+        ile sayılıyor; sürekli artıyorsa sistem gerçekten yetişemiyor
+        demektir ve bu bilgi gizlenmemeli.
+        """
+        if self._max_age_s <= 0:
+            return batch
+
+        now = time.monotonic()
+        fresh = [m for m in batch if now - m.captured_at <= self._max_age_s]
+        stale = [m for m in batch if now - m.captured_at > self._max_age_s]
+        if stale:
+            self._release(stale)
+            self.dropped_stale += len(stale)
+            for message in stale:
+                metrics.frames_dropped.labels(cam=message.camera, reason="stale").inc()
+        return fresh
+
     def _release(self, batch: list) -> None:  # type: ignore[type-arg]
         """Slotları havuza geri ver ve mesajları onayla.
 
@@ -493,6 +536,7 @@ class InferenceWorker:
             f"batch {avg_batch:4.1f} · {active:>3} aktif iz · "
             f"gecikme {self._p50(self.e2e_ms):5.0f} ms · "
             f"boş slot {self._allocator.available}/{settings.shm_slot_count}"
+            + (f" · eski atılan {self.dropped_stale}" if self.dropped_stale else "")
         )
 
     def _finish(self, elapsed: float) -> None:
@@ -561,6 +605,13 @@ def main() -> int:
         help="KADEME 2a'yı kapat (GPU bütçesi sıkışırsa ilk kısılacak yer)",
     )
     parser.add_argument("--pose-model", default=None, help="Poz ağırlığı")
+    parser.add_argument(
+        "--max-frame-age-ms",
+        type=int,
+        default=None,
+        help="Bu yaştan eski kareler İŞLENMEDEN atılır (0 = kapalı). "
+             "Gecikmeyi sınırlayan mekanizma budur.",
+    )
     parser.add_argument("--worker-id", default="inference-0")
     parser.add_argument("--metrics-port", type=int, default=9110)
     parser.add_argument("--duration", type=float, default=None)
@@ -595,6 +646,11 @@ def main() -> int:
         pose=pose,
         worker_id=args.worker_id,
         batch_size=args.batch_size,
+        max_age_ms=(
+            args.max_frame_age_ms
+            if args.max_frame_age_ms is not None
+            else settings.max_frame_age_ms
+        ),
     )
     worker.warmup()
     worker.run(duration=args.duration, stats_interval=args.stats_interval)

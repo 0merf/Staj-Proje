@@ -97,6 +97,12 @@ class Settings(BaseSettings):
     adaptive_fps_enabled: bool = True
     adaptive_idle_after_s: float = 30.0
 
+    # Çıkarım worker'ı bu yaştan eski kareleri İŞLEMEDEN atar.
+    # Gecikmeyi sınırlayan tek mekanizma budur: kuyrukta bekleyen kare
+    # eskir ve değersizleşir, ama işlenmeye devam ederse TAZE kareyi de
+    # geciktirir. Ölçüm: bu kapalıyken gecikme 1212 ms'e çıkıyordu.
+    max_frame_age_ms: int = 400
+
     motion_gate_enabled: bool = True
     motion_threshold: float = 0.005
     motion_refresh_interval_s: int = 5

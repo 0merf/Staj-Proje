@@ -33,6 +33,64 @@ ama **belirti / sebep / çözüm** üçlüsü mutlaka olsun.
 
 <!-- Yeni kayıtlar buraya, en yenisi en üstte -->
 
+### P-25 · "Eski kare değersizdir" ilkesini tüketici tarafında hiç uygulamamışız
+
+**Tarih:** 17.08.2026 · **Faz:** 1 / Gün 11 · **Kazanç:** gecikme 6.7× azaldı
+
+**Belirti:** Kullanıcı kutuların insanların 2-3 adım gerisinden geldiğini
+bildirdi. Panelde ölçülen değerler sorunu tek satırda gösterdi:
+
+```
+video 14 ms  ·  analiz 1212 ms
+```
+
+Video WebRTC ile neredeyse anında geliyor; analiz 1.2 saniye geriden.
+Aradaki fark tam olarak kutuların gecikmesi.
+
+**Kök sebep:** Kuyruk beklemesi. Üretici ve tüketici dengedeydi
+(58 = 58 kare/sn) ama havuz sürekli doluydu — 48 slot ÷ 29 kare/sn ≈
+1.65 sn azami bekleme. Denge, gecikmenin düşük olacağı anlamına
+gelmiyor: **dolu bir kuyruk dengede de olsa geciktirir.**
+
+**Asıl utanç verici kısım:** "Eski kare değersizdir, beklemek yerine
+atmak doğrudur" cümlesi P-12'den beri PLAN.md'de ve kod yorumlarında
+yazılı. Ama bunu yalnızca **üretici** tarafında uygulamışız (slot yoksa
+kareyi at). **Tüketici** tarafında hiç uygulanmamış: kuyruğa bir kez
+giren kare, ne kadar beklerse beklesin sonunda işleniyordu.
+
+**Çözüm:** Çıkarım worker'ı artık `max_frame_age_ms`'ten (400 ms) eski
+kareleri **işlemeden** atıyor, slotu hemen iade ediyor.
+
+Neden işe yarıyor: eski kareyi işlemek iki kez zarar veriyor —
+(1) sonucu zaten değersiz, (2) o sırada taze kare işlenemiyor. Atmak
+ikisini de çözüyor ve sistem kendi kendini toparlıyor: birikim ne
+kadar büyükse o kadar hızlı eritiliyor.
+
+**Sonuç:**
+
+| | Önce | Sonra |
+|---|---|---|
+| Gecikme p50 | 1212 ms | **181 ms** |
+| Gecikme p95 | 4438 ms | **293 ms** |
+| Azami gecikme | sınırsız | **317 ms** |
+| Ortalama batch | 8.0 (doygun) | 4.8 (pay var) |
+| Verim | 57 kare/sn | 58 kare/sn (değişmedi) |
+| Bedel | — | karelerin **%0.7'si** atılıyor |
+
+**Öğrenilen ders:** Bir ilkeyi yazmak onu uygulamak değildir. "Eski
+kare atılır" kuralımız vardı, kod yorumlarında tekrar tekrar
+geçiyordu, ama boru hattının **yarısında** hiç kod karşılığı yoktu.
+Bir mimari kural yazdığında, o kuralın **her sınırda** nerede
+uygulandığını göstermek gerekiyor — yoksa kural belge olarak var,
+sistemde yok.
+
+İkinci ders: **gecikmeyi sınırlayan bir mekanizma yoksa gecikme
+sınırsızdır.** Denge (üretim = tüketim) yeterli değil; dolu bir kuyruk
+dengede de gecikme üretir. Azami gecikme ancak açıkça bir yerde
+kesilirse bağlanır.
+
+---
+
 ### P-23 · React arayüzü beyaz açıldı — `base` yolu ayarlanmamıştı
 
 **Tarih:** 17.08.2026 · **Faz:** 1 / Gün 11 · **Kaybedilen süre:** ~10 dk

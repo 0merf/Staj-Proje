@@ -50,6 +50,32 @@ class ServiceStatus:
         }
 
 
+class ServiceUnhealthyError(RuntimeError):
+    """Servis CEVAP VERİYOR ama işlevsel değil.
+
+    ⚠ Bu ayrım pahalıya öğrenildi (docs/report/problems.md · P-22).
+    Bir servisin "ayakta" olması ile "işini yapıyor" olması aynı şey
+    değildir. MediaMTX'in yönetim API'si cevap veriyordu, konteyner
+    "healthy" görünüyordu, panel yeşildi — ama hiçbir kamera yayında
+    değildi ve sistem saatlerce boş çalıştı.
+
+    Bir sağlık kontrolü "bağlanabildim mi" değil, **"bu servis şu an
+    işe yarıyor mu"** sorusunu cevaplamalı.
+    """
+
+    def __init__(
+        self,
+        detail: str,
+        *,
+        version: str | None = None,
+        extra: dict[str, Any] | None = None,
+    ) -> None:
+        super().__init__(detail)
+        self.detail = detail
+        self.version = version
+        self.extra = extra or {}
+
+
 async def _timed(name: str, coro: Any) -> ServiceStatus:
     """Bir kontrolü süre ölçerek ve hatayı yutarak çalıştırır."""
     started = time.perf_counter()
@@ -62,6 +88,15 @@ async def _timed(name: str, coro: Any) -> ServiceStatus:
             version=version,
             detail=detail,
             extra=extra or {},
+        )
+    except ServiceUnhealthyError as exc:
+        return ServiceStatus(
+            name=name,
+            healthy=False,
+            latency_ms=(time.perf_counter() - started) * 1000,
+            version=exc.version,
+            detail=exc.detail,
+            extra=exc.extra,
         )
     except TimeoutError:
         return ServiceStatus(name=name, healthy=False, detail=f"zaman aşımı (>{_TIMEOUT}s)")
@@ -106,7 +141,7 @@ async def _probe_mediamtx() -> tuple[str | None, str | None, dict[str, Any]]:
         resp.raise_for_status()
         items = resp.json().get("items", [])
     ready = [i["name"] for i in items if i.get("ready")]
-    return None, f"{len(ready)}/{len(items)} yayında", {
+    payload = {
         "paths": [
             {
                 "name": i["name"],
@@ -116,6 +151,19 @@ async def _probe_mediamtx() -> tuple[str | None, str | None, dict[str, Any]]:
             for i in items
         ]
     }
+
+    # ⚠ SIFIR KAMERA YAYINDA İSE SAĞLIKLI DEĞİLİZ.
+    # MediaMTX ayakta ve API cevap veriyor olabilir; ama tek bir yol
+    # bile `ready` değilse sisteme kare girmiyor demektir. Bunu
+    # "sağlıklı" saymak, panelin yeşil görünürken sistemin boş
+    # çalışmasına yol açıyordu (P-22).
+    if items and not ready:
+        raise ServiceUnhealthyError(
+            f"0/{len(items)} yayında — sisteme kare girmiyor",
+            extra=payload,
+        )
+
+    return None, f"{len(ready)}/{len(items)} yayında", payload
 
 
 async def _probe_prometheus() -> tuple[str | None, str | None, dict[str, Any]]:

@@ -1,0 +1,53 @@
+{
+  "measured_at": "2026-08-17T14:30:00",
+  "phase": "Faz 1 / Gün 11",
+  "description": "Gecikmenin sınırlanması: çıkarım worker'ı eski kareleri işlemeden atıyor",
+  "problem": {
+    "symptom": "Kutular videodan 2-3 adım geriden geliyordu",
+    "measured_paths": {
+      "video_ms": 14,
+      "analysis_ms": 1212,
+      "note": "Video WebRTC ile 14 ms'de geliyor, analiz 1212 ms. Fark kutuların gecikmesi."
+    },
+    "root_cause": [
+      "'Eski kare değersizdir' ilkesi P-12'den beri yazılı ama yalnızca ÜRETİCİ",
+      "tarafında uygulanıyordu (slot yoksa at). Tüketici tarafında hiç yoktu:",
+      "kuyruğa giren kare ne kadar beklerse beklesin sonunda işleniyordu.",
+      "48 slot / 29 kare-sn = 1.65 sn azami kuyruk beklemesi."
+    ]
+  },
+  "fix": {
+    "what": "max_frame_age_ms = 400 — bu yaştan eski kareler işlenmeden atılır",
+    "why_it_works": [
+      "Eski kareyi işlemek iki kez zarar veriyor: sonucu zaten değersiz,",
+      "ve o sırada TAZE kare işlenemiyor. Atmak ikisini de çözüyor.",
+      "Sistem kendi kendini toparlıyor: birikim büyüdükçe daha hızlı eriyor."
+    ]
+  },
+  "results": {
+    "before": { "latency_p50_ms": 1212, "latency_p95_ms": 4438, "avg_batch": 8.0, "note": "batch 8.0 = tüketici doygun, kuyruk sürekli dolu" },
+    "after": {
+      "latency_p50_ms": 181,
+      "latency_p95_ms": 293,
+      "latency_max_ms": 317,
+      "avg_batch": 4.8,
+      "note": "azami gecikme artık GERÇEKTEN sınırlı; batch 4.8 = tüketicide pay var"
+    },
+    "improvement": "6.7x",
+    "cost": {
+      "stale_drops_per_second": 0.4,
+      "consumed_per_second": 58.3,
+      "drop_ratio_pct": 0.7,
+      "note": "Kararlı hâlde karelerin yalnızca %0.7'si atılıyor. Verim değişmedi (57-58 kare/sn)."
+    },
+    "throughput_unchanged": { "published_fps": 57.2, "consumed_fps": 58.3 },
+    "measurement_condition": {
+      "browser_open": true,
+      "browser_cameras": 10,
+      "note": "⚠ Panel açıkken ölçüldü (P-24). Panel kapalıyken verim daha yüksek olur."
+    }
+  },
+  "criteria": {
+    "K3_end_to_end_latency": { "target_ms": 1500, "measured_ms": 181, "passed": true, "margin": "8x" }
+  }
+}
