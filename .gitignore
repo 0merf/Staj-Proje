@@ -100,3 +100,4 @@ benchmarks/**/*.raw
 benchmarks/**/*.pkl
 backend/src/sentinel/api/static/app/
 *.tsbuildinfo
+benchmarks/traces/

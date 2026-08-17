@@ -41,6 +41,10 @@ interface State {
   /** Açık olan kameralar (video oynatılıyor). */
   playing: Set<string>
   messageCount: number
+  /** Tarayıcıya "videoyu bu kadar tamponla" dediğimiz değer (ms).
+   *  Analiz gecikmesini aşarsa kutular TAHMİN yerine ARA DEĞERLEME ile
+   *  çiziliyor — literatürün önerdiği yöntem (LITERATUR.md §T). */
+  videoBufferMs: number
   /** Ölçülen video yolu gecikmesi (WebRTC jitter tamponu). */
   videoLatencyMs: number | null
   /** Ölçülen analiz yolu gecikmesi (sunucu raporluyor). */
@@ -52,6 +56,7 @@ interface State {
   setSyncOffset: (ms: number) => void
   togglePlaying: (name: string) => void
   bumpMessages: () => void
+  setVideoBufferMs: (ms: number) => void
   setVideoLatency: (ms: number) => void
   setAiLatency: (ms: number) => void
 }
@@ -67,6 +72,7 @@ export const useStore = create<State>((set) => ({
   syncOffsetMs: 400,
   playing: new Set<string>(),
   messageCount: 0,
+  videoBufferMs: 500,
   videoLatencyMs: null,
   aiLatencyMs: null,
 
@@ -87,6 +93,7 @@ export const useStore = create<State>((set) => ({
     }),
   bumpMessages: () => set((s) => ({ messageCount: s.messageCount + 1 })),
   // Üstel yumuşatma: tek bir sıçrama öneriyi zıplatmasın.
+  setVideoBufferMs: (videoBufferMs) => set({ videoBufferMs }),
   setVideoLatency: (ms) =>
     set((s) => ({
       videoLatencyMs: s.videoLatencyMs === null ? ms : s.videoLatencyMs * 0.7 + ms * 0.3,

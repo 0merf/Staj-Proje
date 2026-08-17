@@ -147,3 +147,55 @@ export async function connectWhep(
     },
   }
 }
+
+
+/**
+ * Tarayıcıya "bu videoyu N milisaniye tamponla" der.
+ *
+ * ⚠ PROJENİN KUTU HİZALAMA SORUNUNUN ÇÖZÜMÜ BU SATIR.
+ *
+ * Problem: analiz sonucu ~450 ms eski, video canlı. Kutuyu nereye
+ * çizeceğiz? Şimdiye kadar kişinin nerede OLACAĞINI hız vektöründen
+ * tahmin ediyorduk (ekstrapolasyon). İnsan yavaşlar/döner/durur, tahmin
+ * tutmaz, ve bir sonraki gerçek sonuç kutuyu SIÇRATARAK doğru yere
+ * çeker — kullanıcının gördüğü "takılma" buydu.
+ *
+ * Oyun ağ literatürünün (LITERATUR.md §T) yerleşik çözümü tersini
+ * söylüyor: **tahmin etme, görüntüyü geciktir.** Video 450 ms geriden
+ * gelirse, ekranda gösterilen an için elimizde İKİ gerçek ölçüm olur
+ * (öncesi ve sonrası) ve aradaki konum hesaplanır — tahmin edilmez.
+ *
+ * Film dublajı mantığı: çevirmenin ne diyeceğini tahmin etmezsin,
+ * görüntüyü çeviri hazır olana kadar bekletirsin.
+ *
+ * Bedeli 450 ms tazelik. Gözetimde bu takas rahatlıkla kabul edilir:
+ * operatör için kutunun DOĞRU YERDE olması, yarım saniye daha taze
+ * olmasından önemli. (Alarm zaten ayrı kanaldan, gecikmesiz geliyor.)
+ *
+ * Tarayıcı uyumluluğu: standart ad `jitterBufferTarget`, Chrome hâlâ
+ * eski ad `playoutDelayHint` ile sunuyor. İkisini de deniyoruz;
+ * hiçbiri yoksa sessizce ekstrapolasyona düşüyoruz.
+ */
+export function setVideoBuffer(pc: RTCPeerConnection, ms: number): boolean {
+  const clamped = Math.max(0, Math.min(ms, 4000))
+  let applied = false
+  for (const receiver of pc.getReceivers()) {
+    if (receiver.track?.kind !== 'video') continue
+    // Tip iddiası: iki özellik de TypeScript'in DOM tanımlarında yok
+    // (biri çok yeni, biri Chrome'a özgü). Varlıklarını çalışma anında
+    // yokluyoruz.
+    const r = receiver as unknown as Record<string, unknown>
+    try {
+      if ('jitterBufferTarget' in r) {
+        r.jitterBufferTarget = clamped        // standart ad: MİLİSANİYE
+        applied = true
+      } else if ('playoutDelayHint' in r) {
+        r.playoutDelayHint = clamped / 1000   // Chrome eski adı: SANİYE
+        applied = true
+      }
+    } catch {
+      /* aralık dışı değer — yok say */
+    }
+  }
+  return applied
+}

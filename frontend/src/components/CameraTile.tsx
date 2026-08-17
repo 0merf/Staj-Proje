@@ -17,8 +17,14 @@
 import { useEffect, useRef } from 'react'
 import { buffers, useStore } from '../store'
 import { frameAt } from '../lib/sync'
+import { recordTrace } from '../lib/trace'
 import { BONES, KP_CONF_MIN } from '../lib/skeleton'
-import { connectWhep, measureVideoLatencyMs, type WhepSession } from '../lib/whep'
+import {
+  connectWhep,
+  measureVideoLatencyMs,
+  setVideoBuffer,
+  type WhepSession,
+} from '../lib/whep'
 import type { Camera } from '../types'
 
 /** Bu süre sonuç gelmezse "analiz durdu" uyarısı. */
@@ -38,6 +44,7 @@ export function CameraTile({ camera, webrtcBase }: Props) {
   const playing = useStore((s) => s.playing.has(camera.name))
   const toggle = useStore((s) => s.togglePlaying)
   const setVideoLatency = useStore((s) => s.setVideoLatency)
+  const videoBufferMs = useStore((s) => s.videoBufferMs)
 
   // ─── Video bağlantısı ────────────────────────────────────
   useEffect(() => {
@@ -46,8 +53,15 @@ export function CameraTile({ camera, webrtcBase }: Props) {
 
     connectWhep(webrtcBase, camera.name, videoRef.current)
       .then((session) => {
-        if (cancelled) session.close()
-        else sessionRef.current = session
+        if (cancelled) {
+          session.close()
+          return
+        }
+        sessionRef.current = session
+        // ⚠ Kutu hizalamasının ÇÖZÜMÜ burada: videoyu bilerek
+        // geciktiriyoruz ki analiz sonuçları yetişsin ve kutular
+        // tahmin edilmek yerine ARA DEĞERLENSİN (LITERATUR.md §T).
+        setVideoBuffer(session.pc, useStore.getState().videoBufferMs)
       })
       .catch((error) => console.warn('WHEP başarısız', camera.name, error))
 
@@ -68,13 +82,36 @@ export function CameraTile({ camera, webrtcBase }: Props) {
     }
   }, [playing, camera.name, webrtcBase, setVideoLatency])
 
+  // Kullanıcı tamponu değiştirdiğinde açık oturuma anında uygula —
+  // yeniden bağlanmaya gerek yok.
+  useEffect(() => {
+    const pc = sessionRef.current?.pc
+    if (pc) setVideoBuffer(pc, videoBufferMs)
+  }, [videoBufferMs])
+
   // ─── Çizim döngüsü ───────────────────────────────────────
   useEffect(() => {
     if (!playing) return
-    let raf = 0
+    let handle = 0
+    let usingVideoCallback = false
 
     const draw = () => {
-      raf = requestAnimationFrame(draw)
+      // ⚠ requestVideoFrameCallback — requestAnimationFrame DEĞİL.
+      // rAF ekranın tazeleme hızına bağlıdır (60 Hz) ve videodan
+      // bağımsız çalışır; kutu ile videonun güncellendiği anlar
+      // birbirini tutmaz. rVFC video karesi ekrana basıldığında
+      // tetiklenir, yani çizim video hızına senkron olur
+      // (LITERATUR.md §T). Desteklenmiyorsa rAF'a düşüyoruz.
+      const video = videoRef.current as
+        | (HTMLVideoElement & { requestVideoFrameCallback?: (cb: () => void) => number })
+        | null
+      if (video && typeof video.requestVideoFrameCallback === 'function') {
+        usingVideoCallback = true
+        handle = video.requestVideoFrameCallback(draw)
+      } else {
+        handle = requestAnimationFrame(draw)
+      }
+
       const canvas = canvasRef.current
       if (!canvas) return
 
@@ -89,10 +126,13 @@ export function CameraTile({ camera, webrtcBase }: Props) {
 
       // Ayarları store'dan HER KAREDE okuyoruz. getState() abonelik
       // kurmaz, yani ayar değişimi render tetiklemiyor.
-      const { viewMode, syncOffsetMs } = useStore.getState()
+      const { viewMode, videoLatencyMs, videoBufferMs } = useStore.getState()
       const buffer = buffers.get(camera.name)
       const now = performance.now()
-      const frame = buffer ? frameAt(buffer, now, syncOffsetMs) : null
+      // Ekranda görünen sahnenin yaşı. Ölçüm geldiyse onu kullan;
+      // gelmediyse istediğimiz tampon iyi bir yaklaşıktır.
+      const shownAgeMs = videoLatencyMs ?? videoBufferMs
+      const frame = buffer ? frameAt(buffer, now, shownAgeMs) : null
 
       if (badgeRef.current) {
         if (!frame || frame.ageMs > STALE_MS) {
@@ -145,10 +185,23 @@ export function CameraTile({ camera, webrtcBase }: Props) {
 
         if (viewMode === 'full' && det.kp) drawSkeleton(ctx, det.kp, sx, sy)
       }
+
+      // Teşhis izi: kayıt açıksa çizilen kutunun konumu saklanıyor.
+      // "Takılıyor" şikâyetini gözle değil SAYIYLA incelemek için.
+      recordTrace(camera.name, now, frame)
     }
 
-    raf = requestAnimationFrame(draw)
-    return () => cancelAnimationFrame(raf)
+    handle = requestAnimationFrame(draw)
+    return () => {
+      if (usingVideoCallback) {
+        const video = videoRef.current as
+          | (HTMLVideoElement & { cancelVideoFrameCallback?: (h: number) => void })
+          | null
+        video?.cancelVideoFrameCallback?.(handle)
+      } else {
+        cancelAnimationFrame(handle)
+      }
+    }
   }, [playing, camera.name])
 
   return (

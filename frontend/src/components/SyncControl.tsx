@@ -1,81 +1,116 @@
-/** Video/kutu hizalama kaydırıcısı — artık ÖLÇÜME dayalı.
+/** Video tamponu kontrolü — kutu hizalamasının kalbi.
  *
- * PROBLEM
- * -------
- * Video ve kutular tarayıcıya iki ayrı yoldan geliyor ve gecikmeleri
- * farklı. Kutuların doğru yerde görünmesi için aradaki FARK kadar
- * geriden çizilmeleri gerekiyor.
+ * NEDEN VİDEOYU GECİKTİRİYORUZ
+ * ----------------------------
+ * Analiz sonucu ~200-450 ms eski; video canlı. Kutuyu nereye çizeceğiz?
  *
- * İlk sürümde bu farkı kullanıcı gözüyle ayarlıyordu. Artık iki yolu
- * da ölçüyoruz:
+ * İlk yaklaşımımız kişinin ŞU AN nerede olduğunu hız vektöründen
+ * tahmin etmekti (ekstrapolasyon). İnsan yavaşlar/döner/durur, tahmin
+ * tutmaz, ve bir sonraki gerçek sonuç kutuyu SIÇRATARAK doğru yere
+ * çeker — kullanıcının bildirdiği "takılma" buydu.
  *
- *   analiz yolu : sunucu her sonuçta kendi ölçtüğü gecikmeyi
- *                 gönderiyor (`lat` alanı) — kare yakalanmasından
- *                 sonucun yazılmasına kadar geçen süre
- *   video yolu  : WebRTC'nin jitter tamponu istatistiğinden
- *                 (`jitterBufferDelay / jitterBufferEmittedCount`)
+ * Çok oyunculu oyun ağ literatürünün yerleşik çözümü tersini söylüyor
+ * (LITERATUR.md §T): **tahmin etme, görüntüyü geciktir.** Video analiz
+ * kadar geriden gelirse, ekranda gösterilen an için elimizde İKİ gerçek
+ * ölçüm olur ve aradaki konum hesaplanır — tahmin edilmez.
  *
- *   önerilen kaydırma = analiz − video
+ * Tarayıcının bunun için hazır bir düğmesi var: `jitterBufferTarget`
+ * (Chrome'da `playoutDelayHint`). "Bu videoyu N ms tamponla" diyoruz.
  *
- * Fark negatifse (video analizden yavaş) kaydırma 0'dır: kutuları
- * geriye almak yerine olduğu gibi çizmek doğru olur.
- *
- * Kaydırıcı yine elle ayarlanabilir — ölçüm bir öneri, emir değil.
- * Jitter tamponu kameranın kodlama gecikmesini içermiyor, o yüzden
- * gözle ince ayar hâlâ anlamlı.
+ * Bedeli tazelik. Gözetimde kabul edilebilir: operatör için kutunun
+ * DOĞRU YERDE olması, yarım saniye daha taze olmasından önemli —
+ * üstelik alarm ayrı kanaldan gecikmesiz geliyor.
  */
 import { useStore } from '../store'
+import { startTrace, stopTrace, isTracing } from '../lib/trace'
+import { useState } from 'react'
 
 export function SyncControl() {
-  const offset = useStore((s) => s.syncOffsetMs)
-  const setOffset = useStore((s) => s.setSyncOffset)
+  const buffer = useStore((s) => s.videoBufferMs)
+  const setBuffer = useStore((s) => s.setVideoBufferMs)
   const video = useStore((s) => s.videoLatencyMs)
   const ai = useStore((s) => s.aiLatencyMs)
+  const playing = useStore((s) => s.playing)
+  const [tracing, setTracing] = useState(isTracing())
 
-  const suggestion =
-    video !== null && ai !== null ? Math.max(0, Math.round((ai - video) / 25) * 25) : null
+  // Tampon, analiz gecikmesini aşmalı ki ara değerleme mümkün olsun.
+  // Pay bırakıyoruz: gecikme dalgalanıyor, sınırda kalırsak yarı yarıya
+  // tahmine düşeriz.
+  const suggestion = ai !== null ? Math.min(2000, Math.round((ai * 1.3 + 100) / 50) * 50) : null
+  const interpolating = video !== null && ai !== null && video > ai
+
+  const toggleTrace = async () => {
+    if (tracing) {
+      await stopTrace({ videoBufferMs: buffer, videoLatencyMs: video, aiLatencyMs: ai })
+      setTracing(false)
+    } else {
+      const first = [...playing][0]
+      if (!first) return
+      startTrace(first)
+      setTracing(true)
+    }
+  }
 
   return (
     <div className="flex items-center gap-3">
       <div className="flex items-center gap-2">
         <span
           className="text-xs text-muted"
-          title="Kutular ne kadar İLERİ tahmin edilsin — analiz ile video arasındaki fark"
+          title="Video kaç ms tamponlansın — analizin yetişmesi için"
         >
-          İleri tahmin
+          Video tamponu
         </span>
         <input
           type="range"
           min={0}
-          max={800}
-          step={25}
-          value={offset}
-          onChange={(e) => setOffset(Number(e.target.value))}
+          max={1500}
+          step={50}
+          value={buffer}
+          onChange={(e) => setBuffer(Number(e.target.value))}
           className="w-28 accent-[oklch(0.72_0.17_145)]"
         />
-        <span className="w-14 font-mono text-xs text-ink">{offset} ms</span>
+        <span className="w-16 font-mono text-xs text-ink">{buffer} ms</span>
       </div>
 
-      {/* Ölçülen gecikmeler — "hangi yol ne kadar sürüyor" sorusunun cevabı */}
       <div className="flex items-center gap-2 font-mono text-[10px] text-muted">
-        <span title="Videonun tarayıcıya ulaşma gecikmesi (WebRTC jitter tamponu)">
+        <span title="Videonun ölçülen gecikmesi">
           video {video === null ? '—' : `${Math.round(video)}ms`}
         </span>
         <span className="text-line">·</span>
-        <span title="Kare yakalanmasından analiz sonucunun yazılmasına kadar (sunucu ölçüyor)">
+        <span title="Analiz yolunun ölçülen gecikmesi (sunucu raporluyor)">
           analiz {ai === null ? '—' : `${Math.round(ai)}ms`}
+        </span>
+        <span
+          className={interpolating ? 'text-ok' : 'text-warn'}
+          title={
+            interpolating
+              ? 'Video analizden geride — kutular iki gerçek ölçüm arasında ARA DEĞERLENİYOR'
+              : 'Video analizden ileride — kutular TAHMİN ediliyor, sıçrama olabilir'
+          }
+        >
+          {interpolating ? 'ara değerleme' : 'tahmin'}
         </span>
       </div>
 
-      {suggestion !== null && suggestion !== offset && (
+      {suggestion !== null && suggestion !== buffer && (
         <button
-          onClick={() => setOffset(suggestion)}
-          title="Ölçülen iki gecikmenin farkını uygula"
+          onClick={() => setBuffer(suggestion)}
+          title="Analiz gecikmesini aşacak tampon — ara değerlemeyi devreye sokar"
           className="rounded-md border border-ok/40 px-2 py-0.5 text-[10px] text-ok hover:bg-ok/10"
         >
           öner: {suggestion} ms
         </button>
       )}
+
+      <button
+        onClick={toggleTrace}
+        title="Çizilen kutunun konumunu kaydeder; takılmayı sayısal incelemek için"
+        className={`rounded-md border px-2 py-0.5 text-[10px] ${
+          tracing ? 'border-bad/50 text-bad' : 'border-line text-muted hover:text-ink'
+        }`}
+      >
+        {tracing ? '● kaydı bitir' : 'iz kaydet'}
+      </button>
     </div>
   )
 }

@@ -6,8 +6,10 @@ Kimlik doğrulama, kamera CRUD ve WebSocket katmanı sonraki fazlarda eklenecek.
 
 from __future__ import annotations
 
+import json
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -20,7 +22,7 @@ from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from sentinel.api import cameras, health, webcam
 from sentinel.api.ws import live as ws_live
 from sentinel.api.ws.manager import broadcaster
-from sentinel.config import settings
+from sentinel.config import PROJECT_ROOT, settings
 from sentinel.logging import configure_logging, get_logger
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -152,6 +154,33 @@ async def metrics() -> Response:
     if not settings.metrics_enabled:
         return Response(status_code=404)
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
+
+# ─── Hata ayıklama: çizim izi ────────────────────────────────
+
+
+@app.post("/api/v1/debug/trace", include_in_schema=False)
+async def save_trace(payload: dict[str, Any]) -> dict[str, Any]:
+    """Panelin kaydettiği kutu yörüngesini diske yazar.
+
+    Neden var: "kutular takılıyor" gibi bir şikâyeti gözle teşhis etmek
+    zor — göz "sıçradı" der ama "kaç piksel, ne zaman, neyle korele"
+    diyemez. Panel her çizilen karede kutunun konumunu kaydediyor;
+    burada dosyaya alıp sayısal olarak inceliyoruz.
+
+    ⚠ Yalnızca geliştirme ortamında açık. Üretimde kimlik doğrulaması
+    olmayan yazma uç noktası bırakılmaz (PLAN.md §11.1).
+    """
+    if settings.sentinel_env != "development":
+        return {"saved": False, "reason": "yalnızca geliştirme ortamında"}
+
+    traces = PROJECT_ROOT / "benchmarks" / "traces"
+    traces.mkdir(parents=True, exist_ok=True)
+    name = f"trace_{datetime.now():%Y%m%d-%H%M%S}_{payload.get('camera', 'bilinmeyen')}.json"
+    path = traces / name
+    path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    log.info("cizim_izi_kaydedildi", path=str(path), samples=len(payload.get("samples", [])))
+    return {"saved": True, "path": str(path.relative_to(PROJECT_ROOT))}
 
 
 # ─── Geliştirme durum paneli ─────────────────────────────────

@@ -113,9 +113,9 @@ export interface RenderFrame {
  *
  * @param buffer   Sonuçlar (varış sırasına göre)
  * @param now      performance.now()
- * @param leadMs   Kaç ms İLERİ tahmin edilecek. Video gecikmesiyle
- *                 analiz gecikmesi arasındaki fark kadar olmalı;
- *                 panel bunu ölçüp öneriyor.
+ * @param leadMs   Videonun ÖLÇÜLEN gecikmesi (ms). Ekranda görünen
+ *                 sahnenin ne kadar geride olduğu. Büyükse ara
+ *                 değerleme, küçükse ileri tahmin devreye girer.
  */
 export function frameAt(
   buffer: TimedResult[],
@@ -127,15 +127,17 @@ export function frameAt(
   const newest = buffer[buffer.length - 1]
   const newestCapture = captureTime(newest)
 
-  // Hedef: ekranda gördüğümüz ana karşılık gelen YAKALANMA anı.
+  // Hedef: ŞU AN EKRANDA GÖRÜNEN karenin yakalanma anı.
   //
-  //   en yeni karenin yakalanma anı
-  //   + kullanıcı payı (analiz ile video arasındaki fark)
-  //   + o sonuç geleli ne kadar olduysa (kişi bu sürede de yürüdü)
+  // Video `videoLatencyMs` kadar geriden geliyor, yani ekranda
+  // gördüğümüz sahne `now - videoLatencyMs` anına ait. Analiz sonucunu
+  // da o ana getirmemiz gerekiyor.
   //
-  // Sonuç geldiği anda ahead = leadMs olur; sonraki sonuç gelene kadar
-  // gerçek zamanla birlikte büyür. Böylece kutu donmaz, akmaya devam eder.
-  const target = newestCapture + leadMs + (now - newest.rx)
+  // Video TAMPONLANMIŞSA (setVideoBuffer) videoLatency analiz
+  // gecikmesini aşar ve hedef, elimizdeki en yeni sonucun GERİSİNDE
+  // kalır → iki gerçek ölçüm arasında ARA DEĞERLEME yapabiliriz.
+  // Tamponlanmamışsa hedef ileride kalır → tahmine düşeriz.
+  const target = now - leadMs
 
   if (target >= newestCapture) {
     const ahead = Math.min(target - newestCapture, MAX_LEAD_MS) / 1000
