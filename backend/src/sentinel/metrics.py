@@ -155,6 +155,15 @@ gpu_memory_used = Gauge(
 
 # ─── Boru hattı sağlığı ───────────────────────────────────────
 
+# Çıkarım worker'ının ÖLÇÜLEN tüketim hızı (kare/sn).
+# Alım katmanı üretimini buna göre kısıyor: atılan kare için decode +
+# BGR + letterbox CPU'su zaten ödenmiş oluyor ve o CPU çıkarımdan
+# çalınıyor (bkz. bus/streams.py · CAPACITY_KEY).
+pipeline_capacity = Gauge(
+    "sentinel_pipeline_capacity_fps",
+    "Çıkarım worker'ının ölçülen tüketim hızı — üretici bunu hedefler",
+)
+
 queue_depth = Gauge(
     "sentinel_queue_depth",
     "Kuyruktaki mesaj sayısı — geri basınç göstergesi",
@@ -195,6 +204,7 @@ __all__ = [
     "gpu_memory_used",
     "inference_duration",
     "motion_gate_ratio",
+    "pipeline_capacity",
     "pose_crops",
     "queue_depth",
     "serve_metrics",

@@ -45,6 +45,7 @@ from sentinel.bus.streams import (
     FrameStream,
     SlotAllocator,
     connect,
+    get_pipeline_capacity,
     get_watched_cameras,
 )
 from sentinel.config import settings
@@ -62,6 +63,13 @@ _shutdown = threading.Event()
 # 5 saniyede bir yapılan periyodik yoklamadır. Hareket sayılsaydı hiçbir
 # kamera boşta moduna geçemezdi.
 _MOTION_REASONS = frozenset({GateReason.MOTION, GateReason.WARMUP})
+
+# Tüketici kapasitesinin ne kadarı hedeflensin.
+# Tam kapasiteyi hedeflemek kuyruğu DOLU tutar ve dolu kuyruk dengede
+# bile gecikme üretir (P-25'in ana dersi). %15 pay bırakmak kuyruğun
+# boşalmasını sağlıyor: üretim tüketimin biraz altında kalınca birikim
+# eriyor ve gecikme kuyruk beklemesi yerine yalnızca işleme süresi olur.
+CAPACITY_SAFETY = 0.85
 
 
 def _handle_signal(_sig: int, _frame: FrameType | None) -> None:
@@ -129,6 +137,9 @@ class CameraTask:
         # Worker düzenli günceller (IngestWorker.refresh_watched).
         self.watched = False
         self.watched_fps = 0.0
+        # Tüketici kapasitesinden gelen kamera başına TAVAN hız.
+        # None = kapasite bilinmiyor (çıkarım worker'ı yok), tabana düş.
+        self.capacity_fps: float | None = None
 
     def run(self) -> None:
         """Kamera düşerse yeniden bağlanarak sonsuza dek okur."""
@@ -188,6 +199,14 @@ class CameraTask:
         if not settings.adaptive_fps_enabled:
             return
 
+        # ⚠ KAPASİTE TAVANI HER ŞEYİN ÜSTÜNDE
+        # Hareket ve "operatör bakıyor" sinyalleri bütçenin NASIL
+        # dağıtılacağını söyler; kapasite bütçenin NE KADAR olduğunu.
+        # Sırayı ters çevirirsek (önce hareket, sonra tavan) izlenen bir
+        # kamera 10 FPS isteyip tüketici 6 kare/sn'deyken sistemi yine
+        # boğardı — tam da düzeltmeye çalıştığımız şey.
+        tavan = self.capacity_fps
+
         idle_for = now - self._last_motion_at
         if idle_for >= settings.adaptive_idle_after_s:
             # Uzun süredir hareket yok — kimse izlemiyorsa iyice kıs.
@@ -204,6 +223,12 @@ class CameraTask:
             target = self.watched_fps or float(settings.target_fps_watched)
         else:
             target = self._target_fps
+
+        # Tavan uygulanıyor. Taban hızın altına inilmiyor: sıfıra
+        # yaklaşan bir kamera kördür (bkz. _refresh_capacity).
+        if tavan is not None:
+            target = max(float(settings.target_fps_idle), min(target, tavan))
+
         if abs(decoder.target_fps - target) > 0.01:
             decoder.set_target_fps(target)
             log.info(
@@ -294,6 +319,8 @@ class IngestWorker:
         self._stream = FrameStream(self._client)
         self._tasks: list[CameraTask] = []
         self._watched_cache: set[str] = set()
+        # Son uygulanan kapasite tavanı — yalnızca değişince loglamak için
+        self._capacity_cap: float | None = None
         self._threads: list[threading.Thread] = []
 
         try:
@@ -345,7 +372,7 @@ class IngestWorker:
             thread.start()
 
     def refresh_watched(self) -> None:
-        """İzlenen kamera listesini Valkey'den alıp görevlere dağıtır.
+        """İzlenen kamera listesini ve TÜKETİCİ KAPASİTESİNİ tazeler.
 
         Panel hangi kutucukları açtığını bildiriyor (WS `watching`
         mesajı). Liste TTL'li: panel kapanırsa kendiliğinden silinir ve
@@ -360,6 +387,8 @@ class IngestWorker:
             watched = get_watched_cameras(self._client)
         except Exception:
             return
+
+        self._refresh_capacity()
 
         budget = float(settings.watched_fps_budget)
         per_camera = (
@@ -378,6 +407,69 @@ class IngestWorker:
                 kamera_basina_fps=round(per_camera, 1),
             )
             self._watched_cache = watched
+
+    def _refresh_capacity(self) -> None:
+        """Tüketici kapasitesini okuyup kamera başına tavan hıza çevirir.
+
+        ⚠ NEDEN — ÖLÇÜLEN İSRAF
+        -----------------------
+        18.08.2026: alım 80 kare/sn üretiyor, çıkarım ~6 kare/sn
+        tüketiyor, **karelerin %89'u atılıyor.** Atmak gecikmeyi
+        sınırlıyor (P-25, doğru karar) ama israfı çözmüyor: atılan her
+        kare için decode + BGR dönüşümü + letterbox CPU'su ZATEN
+        ödenmiş oluyor. BGR dönüşümü alım maliyetinin %77'si (P-09).
+
+        Ve o CPU boşa gitmiyor sadece — aynı çekirdekleri paylaşan
+        çıkarım sürecinden ÇALINIYOR. Poz'un izole ölçümde 2.77 ms,
+        boru hattında 99.8 ms sürmesinin sebebi bu çekişme.
+
+        Yani üretimi kısmak tüketimi HIZLANDIRIYOR. Alışılmadık ama
+        mekanizma net: daha az kare → daha az alım CPU'su → çıkarıma
+        daha çok çekirdek → kare başına daha hızlı işleme.
+
+        ⚠ GÜVENLİK PAYI (%85)
+        Tam kapasiteyi hedeflemek kuyruğu dolu tutar; dolu kuyruk
+        dengede bile gecikme üretir (P-25'in ana dersi). Hedefi
+        kapasitenin biraz altına koymak kuyruğun BOŞALMASINI sağlıyor.
+
+        ⚠ TABAN HIZ
+        Kapasite ne kadar düşerse düşsün kamera başına hız
+        `target_fps_idle`ın (1 FPS) altına inmiyor. Sıfıra yaklaşan bir
+        kamera kördür; gözetim sisteminde bu kabul edilemez. Kapasite
+        gerçekten yetmiyorsa doğru cevap kamerayı köreltmek değil,
+        raporda "bu donanım N kamera kaldırıyor" demektir (R2).
+        """
+        kapasite = get_pipeline_capacity(self._client)
+        if kapasite is None or kapasite <= 0:
+            # Çıkarım worker'ı yok ya da henüz ölçmedi — yapılandırılmış
+            # taban hızlarla devam. Kısıtlamamak, yanlış kısıtlamaktan iyi.
+            if self._capacity_cap is not None:
+                log.info("kapasite_bilgisi_kayboldu_taban_hiza_donuluyor")
+                self._capacity_cap = None
+                for task in self._tasks:
+                    task.capacity_fps = None
+            return
+
+        kullanilabilir = kapasite * CAPACITY_SAFETY
+        kamera_basina = max(
+            float(settings.target_fps_idle),
+            min(float(settings.target_fps), kullanilabilir / max(1, len(self._tasks))),
+        )
+
+        for task in self._tasks:
+            task.capacity_fps = kamera_basina
+
+        # Yalnızca anlamlı değişimde logla — 5 saniyede bir satır basmak
+        # gerçek olayları log içinde boğar.
+        onceki = self._capacity_cap
+        if onceki is None or abs(kamera_basina - onceki) >= 0.2:
+            log.info(
+                "kapasite_butcesi_guncellendi",
+                tuketici_fps=round(kapasite, 1),
+                kamera_basina_tavan=round(kamera_basina, 2),
+                kamera=len(self._tasks),
+            )
+            self._capacity_cap = kamera_basina
 
     def stop(self) -> None:
         _shutdown.set()
@@ -406,6 +498,11 @@ class IngestWorker:
             f"elenen {total_gate} · slot yok {total_slot} · "
             f"boş slot {self._allocator.available}/{settings.shm_slot_count} · "
             f"kuyruk {self._stream.depth}"
+            + (
+                f" · tavan {self._capacity_cap:.1f} FPS/kam"
+                if self._capacity_cap is not None
+                else " · tavan yok"
+            )
         )
 
     def per_camera_table(self) -> str:

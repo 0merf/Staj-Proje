@@ -346,6 +346,59 @@ WATCHED_PREFIX = "cameras:watched:"
 WATCHED_TTL_S = 20
 
 
+# ─── Tüketici kapasitesi ──────────────────────────────────────
+#
+# ⚠ ÜRETİCİ/TÜKETİCİ DENGESİZLİĞİ — ölçülen sorun
+# 18.08.2026 ölçümü: alım 20 kamera × 4 FPS = 80 kare/sn üretiyor,
+# çıkarım ~6 kare/sn tüketiyor, **karelerin %89'u atılıyor.**
+#
+# Atmak gecikmeyi sınırlıyor (P-25, doğru karar) ama israfı çözmüyor:
+# atılan her kare için decode + BGR dönüşümü + letterbox CPU'su ZATEN
+# ödenmiş oluyor. Ve BGR dönüşümü alım maliyetinin %77'si (P-09).
+#
+# Yani CPU'nun büyük kısmı çöpe giden kareler için harcanıyor — üstelik
+# o CPU, aynı çekirdekleri paylaşan çıkarım sürecinden çalınıyor. Poz'un
+# izole ölçümde 2.77 ms, boru hattında 99.8 ms sürmesinin sebebi bu
+# çekişme.
+#
+# Çözüm: üreticiyi tüketici kapasitesine bağlamak. Tüketici kaç kare
+# işleyebiliyorsa üretici o kadar üretsin.
+#
+# Neden Valkey: iki AYRI süreç. Paylaşılan tek yer burası — izlenen
+# kamera listesiyle aynı desen.
+#
+# Neden TTL: çıkarım worker'ı düşerse alım sonsuza dek kısık kalmamalı.
+# Anahtar tazelenmezse silinir ve sistem varsayılan hızlara döner.
+CAPACITY_KEY = "pipeline:capacity"
+CAPACITY_TTL_S = 20
+
+
+def set_pipeline_capacity(client: Redis, frames_per_second: float) -> None:
+    """Çıkarım worker'ı ölçülen tüketim hızını yayınlar."""
+    client.set(CAPACITY_KEY, f"{frames_per_second:.3f}", ex=CAPACITY_TTL_S)
+
+
+def get_pipeline_capacity(client: Redis) -> float | None:
+    """Tüketici kapasitesi (kare/sn). Bilinmiyorsa None.
+
+    None dönmesi bir hata değil: çıkarım worker'ı henüz açılmamış ya da
+    kapanmış olabilir. O durumda alım katmanı yapılandırılmış taban
+    hızlarıyla çalışmaya devam eder.
+    """
+    try:
+        value = client.get(CAPACITY_KEY)
+    except Exception:
+        return None
+    if value is None:
+        return None
+    try:
+        # `decode_responses=True` ile str gelir; ham istemcide bytes
+        # gelebilir. float() ikisini de kabul ediyor.
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def set_watched_cameras(client: Redis, session_id: str, cameras: list[str]) -> None:
     """Bir oturumun izlediği kameraları yayınlar.
 

@@ -40,7 +40,13 @@ from types import FrameType
 
 from sentinel import metrics
 from sentinel.bus.shm import FramePool, FramePoolError
-from sentinel.bus.streams import FrameStream, ResultStream, SlotAllocator, connect
+from sentinel.bus.streams import (
+    FrameStream,
+    ResultStream,
+    SlotAllocator,
+    connect,
+    set_pipeline_capacity,
+)
 from sentinel.config import settings
 from sentinel.core import preprocess
 from sentinel.core.preprocess import Letterbox
@@ -287,6 +293,12 @@ class InferenceWorker:
         # Aralık hızı için pencere durumu (bkz. summary)
         self._window_started = 0.0
         self._window_processed = 0
+        # Kapasite bildirimi için ayrı pencere — rapor aralığından
+        # BAĞIMSIZ olmalı: alım katmanı kapasiteyi sık öğrenmeli
+        # (birkaç saniye), istatistik ise seyrek basılır.
+        self._capacity_window_started = 0.0
+        self._capacity_window_processed = 0
+        self._capacity_ema: float | None = None
 
     def warmup(self) -> None:
         self._detector.warmup(self._batch_size)
@@ -308,8 +320,11 @@ class InferenceWorker:
 
         started = time.monotonic()
         last_report = started
+        last_capacity = started
         self._window_started = started
         self._window_processed = 0
+        self._capacity_window_started = started
+        self._capacity_window_processed = 0
         deadline = started + duration if duration else None
 
         while not _stop:
@@ -331,6 +346,11 @@ class InferenceWorker:
                 self._run_batch(batch)
 
             now = time.monotonic()
+            # Kapasite sık yayınlanır (3 sn): alım katmanı yük değişimine
+            # hızlı uyum sağlamalı. İstatistik ise seyrek basılır.
+            if now - last_capacity >= 3.0:
+                self._publish_capacity(now)
+                last_capacity = now
             if now - last_report >= stats_interval:
                 self._report(now, now - started)
                 last_report = now
@@ -602,6 +622,45 @@ class InferenceWorker:
         if total:
             lines.append(f"  Teorik tavan: {1000.0 / (total / b):.1f} FPS (batch {b:.1f})")
         return "\n".join(lines)
+
+    def _publish_capacity(self, now: float) -> None:
+        """Ölçülen tüketim hızını alım katmanına bildirir.
+
+        ⚠ NEDEN — israfı kesmek için
+        Alım 80 kare/sn üretirken çıkarım ~6 kare/sn tüketiyordu ve
+        karelerin %89'u atılıyordu. Atmak gecikmeyi sınırlıyor (P-25)
+        ama atılan her kare için decode + BGR + letterbox CPU'su zaten
+        ödenmiş oluyor — ve o CPU, aynı çekirdekleri paylaşan bu
+        süreçten çalınıyor.
+
+        ÖLÇÜLEN hız yayınlanıyor, teorik tavan değil: gerçek hız
+        termal kısıtlama, kalabalık sahne ve CPU çekişmesini zaten
+        içinde barındırıyor. Teorik bir sayı bunları göremezdi.
+
+        Üstel yumuşatma (EMA) şart: ham değer batch'ten batch'e
+        dalgalanıyor ve alım katmanı her dalgalanmada örnekleme hızını
+        değiştirirse sistem salınıma girer. α=0.3 — yeni ölçüme makul
+        hızda uyum sağlar ama tek seferlik sıçramaları söndürür.
+        """
+        pencere = now - self._capacity_window_started
+        if pencere < 1.0:
+            return
+
+        anlik = (self.processed - self._capacity_window_processed) / pencere
+        self._capacity_window_started = now
+        self._capacity_window_processed = self.processed
+
+        if self._capacity_ema is None:
+            self._capacity_ema = anlik
+        else:
+            self._capacity_ema = 0.3 * anlik + 0.7 * self._capacity_ema
+
+        try:
+            set_pipeline_capacity(self._client, self._capacity_ema)
+        except Exception as exc:  # pragma: no cover
+            # Kapasite bildirimi bir optimizasyon sinyali, kritik yol değil.
+            log.debug("kapasite_yayinlanamadi", error=str(exc))
+        metrics.pipeline_capacity.set(self._capacity_ema)
 
     def _report(self, now: float, elapsed: float) -> None:
         metrics.shm_slots_free.set(self._allocator.available)
