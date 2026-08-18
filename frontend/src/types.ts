@@ -19,7 +19,32 @@ export interface Detection {
   age?: number
   /** COCO-17 iskelet: 17 × [x, y, güven]. Poz kademesi kapalıysa yok. */
   kp?: [number, number, number][]
+  /** KADEME 2b — yüz ifadesi. Seyrek gelir (iz başına ~2 sn'de bir). */
+  expr?: Expression
 }
+
+/** Yüz ifadesi sınıflandırması.
+ *
+ * ⚠ Bu bir DUYGU İDDİASI DEĞİL. Model "üzgün" dediğinde kanıtladığı tek
+ * şey, görüntünün eğitim setindeki "üzgün" etiketli yüzlere benzediği.
+ * Bu yüzden panelde `q` (kalite) eşiğin altındaysa etiket HİÇ
+ * gösterilmiyor — gürültüyü bilgi gibi sunmamak için (PLAN.md §6.3).
+ */
+export interface Expression {
+  /** AffectNet etiketi (İngilizce, modelden geldiği gibi). */
+  label: string
+  /** Türkçe karşılığı — panelde bu gösteriliyor. */
+  tr: string
+  conf: number
+  /** Kalite 0-1: yüz boyutu × netlik. 0.5 altı gösterilmez. */
+  q: number
+}
+
+/** Etiketin operatöre gösterilebilecek kadar güvenilir olduğu eşikler.
+ * Sunucudaki `ExpressionResult.usable` ile AYNI değerler olmalı
+ * (backend `inference/emotion/base.py`). */
+export const EXPR_MIN_QUALITY = 0.5
+export const EXPR_MIN_CONF = 0.4
 
 export interface FrameResult {
   type: 'frame'

@@ -43,9 +43,17 @@ dependencies = [
     "orjson>=3.10",
     "httpx>=0.28",
     "typer>=0.15",           # worker başlatma CLI'ı
-    "emotiefflib>=1.1.1",
-    "onnxruntime-gpu>=1.28.0",
 ]
+
+# ⚠ `emotiefflib` ve `onnxruntime-gpu` buradan ÇIKARILDI, `gpu` extra'ya
+#   taşındı. İki sebep:
+#   1. Bu dosyanın kendi kuralı: "Ağır ML paketleri 'gpu' extra'sında."
+#      emotiefflib ağır bir ML paketi; çekirdekte olması kurala aykırıydı.
+#   2. `onnxruntime-gpu` İKİ YERDE, ÇELİŞEN kısıtlarla tanımlıydı
+#      (çekirdekte >=1.28.0, gpu extra'sında >=1.20). uv iki kısıtı
+#      kesiştirmek zorunda kalıyordu ve hangi sürümün çözüldüğü
+#      belirsizleşiyordu — "onnxruntime CUDA sağlayıcısı etkinleşmedi"
+#      açık maddesinin muhtemel kaynağı bu.
 
 # ─── GPU / ML BAĞIMLILIKLARI ─────────────────────────────────
 #  Kurulum:  uv sync --extra gpu
@@ -56,7 +64,12 @@ gpu = [
     "torch>=2.6",
     "torchvision>=0.21",
     "ultralytics>=8.3",      # YOLO26 / YOLO11   ⚠ Lisans: AGPL-3.0
+    # KADEME 2b — yüz ifadesi. TEK tanım burada (çekirdekten taşındı).
+    # ⚠ CUDA sağlayıcısı bu ortamda yüklenmedi (beklediği cuDNN yok);
+    #   model CPU'da ~58 ms/yüz. Ölçüm:
+    #   benchmarks/expression_20260817-gun13.json
     "onnxruntime-gpu>=1.20",
+    "emotiefflib>=1.1.1",
     "lightgbm>=4.5",         # tırmanma skoru taban modeli
     # BoT-SORT'un eşleştirme adımı (Macar algoritması) bunu kullanır.
     # Ultralytics eksikse çalışma anında kendisi kurmaya çalışıyor —
@@ -83,6 +96,31 @@ packages = ["src/sentinel"]
 
 [tool.uv]
 package = true
+
+# ─── onnxruntime (CPU) BİLEREK ELENİYOR ───────────────────────
+# Sorun: `emotiefflib` bağımlılık olarak `onnxruntime` (CPU derlemesi)
+# istiyor. Biz `onnxruntime-gpu` kuruyoruz. İkisi de PyPI'da AYRI paket
+# ama **aynı dizine** (`site-packages/onnxruntime/`) açılıyor. Sonuç:
+# hangisi sonra kurulursa `onnxruntime.dll`'i o eziyor. Bizde CPU
+# sürümü kazanmıştı ve tablo şöyleydi:
+#
+#     get_available_providers() -> ['AzureExecutionProvider',
+#                                   'CPUExecutionProvider']
+#     capi/ dizininde ise: onnxruntime_providers_cuda.dll     ← duruyor
+#                          onnxruntime_providers_tensorrt.dll ← duruyor
+#
+# Yani CUDA sağlayıcısının DLL'i diskteydi ama ana kütüphane onu
+# tanımıyordu — öksüz dosyalar. "onnxruntime CUDA sağlayıcısı
+# etkinleşmedi" açık maddesinin kök sebebi buydu; eksik cuDNN değil,
+# iki paketin aynı dizini paylaşması.
+#
+# Neden elemek güvenli: `onnxruntime-gpu` da `onnxruntime` MODÜLÜNÜ
+# sağlıyor. emotiefflib'in `import onnxruntime` satırı çalışmaya devam
+# ediyor; bağımlılık beyanı sadece fazla dar yazılmış.
+#
+# Aşağıdaki her zaman yanlış olan işaretleyici (marker), uv'nin bir
+# geçişli bağımlılığı çözüm ağacından çıkarmak için belgelediği yöntem.
+override-dependencies = ["onnxruntime ; python_version < '0'"]
 
 # ─── PyTorch CUDA indeksi ─────────────────────────────────────
 # PyPI'daki torch wheel'i Windows'ta CPU-ONLY gelir. CUDA yapısı

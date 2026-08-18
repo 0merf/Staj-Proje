@@ -88,6 +88,7 @@ class ExpressionStage:
         device: str = "cpu",
         min_interval_s: float = MIN_INTERVAL_S,
         max_faces_per_round: int = MAX_FACES_PER_ROUND,
+        min_person_px: int = MIN_PERSON_HEIGHT,
     ) -> None:
         self._faces = YuNetFaceDetector(face_model)
         self._classifier = EmotiEffExpressionClassifier(
@@ -95,6 +96,7 @@ class ExpressionStage:
         )
         self._min_interval = min_interval_s
         self._budget = max_faces_per_round
+        self._min_person_px = min_person_px
         # Kamera + iz kimliği → geçmiş
         self._state: dict[tuple[str, int], TrackExpression] = {}
 
@@ -131,7 +133,7 @@ class ExpressionStage:
             self.considered += 1
 
             # ── Kapı 1: kutu yeterince büyük mü (bedava) ──
-            if detection.height < MIN_PERSON_HEIGHT:
+            if detection.height < self._min_person_px:
                 self.gated_small += 1
                 continue
 
@@ -214,8 +216,18 @@ class ExpressionStage:
         return state.last_result if state else None
 
     def prune(self, max_age_s: float = 60.0) -> None:
-        """Uzun süredir görülmeyen izlerin durumunu temizler."""
-        now = time.monotonic()
+        """Uzun süredir görülmeyen izlerin durumunu temizler.
+
+        ⚠ SAAT TUTARLILIĞI
+        `process()` çağrısına karenin `captured_at` damgası geliyor ve o
+        bir DUVAR saati (ingest/decoder.py · DecodedFrame.timestamp).
+        Burada `time.monotonic()` kullanılıyordu — iki farklı zaman
+        ekseni. Monotonik değer duvar saatinden çok küçük olduğu için
+        `now - v.last_at` daima büyük negatif çıkıyor, hiçbir kayıt asla
+        eskimiyor ve sözlük sınırsız büyüyordu. Sessiz bir bellek
+        sızıntısı: hata vermez, sadece saatler içinde şişer.
+        """
+        now = time.time()
         stale = [k for k, v in self._state.items() if now - v.last_at > max_age_s]
         for key in stale:
             del self._state[key]
@@ -225,7 +237,14 @@ class ExpressionStage:
         self._classifier.close()
 
     @property
-    def stats(self) -> dict[str, object]:
+    def stats(self) -> dict[str, float]:
+        """Kapının nerede eleme yaptığının dökümü.
+
+        Dönüş tipi `object` değil `float`: çağıran taraf bu sayıları
+        doğrudan biçimlendiriyor ve `object` her kullanımda elle tip
+        daraltması gerektiriyordu. Sayaçlar int, oranlar float — ikisi
+        de `float` ile uyumlu.
+        """
         return {
             "considered": self.considered,
             "classified": self.classified,

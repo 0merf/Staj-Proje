@@ -43,6 +43,16 @@ class Track:
     velocity_y: float = 0.0
     age: int = 0  # kaç kare boyunca görüldü
     time_since_update: int = 0
+    # KADEME 2b sonucu — `ExpressionResult.to_dict()` çıktısı.
+    #
+    # ⚠ Neden `ExpressionResult` DEĞİL de düz sözlük: takip katmanı
+    # ifade katmanını TANIMAMALI. `Detector` / `PoseEstimator` /
+    # `Tracker` protokollerinin tamamı birbirinden bağımsız kalsın diye
+    # bu tasarım seçildi (AGPL çıkış kapısıyla aynı gerekçe). Tip
+    # bağımlılığı eklersek `tracker/base.py` → `emotion/base.py` →
+    # (ileride) başka bir şey diye zincir kurulur ve takipçiyi tek
+    # başına test etmek zorlaşır.
+    expression: dict[str, Any] | None = None
 
     @property
     def speed(self) -> float:
@@ -59,6 +69,12 @@ class Track:
         # Hızı tam sayıya yuvarlıyoruz: mesaj boyutu 20 kamerada önemli
         data["v"] = [round(self.velocity_x), round(self.velocity_y)]
         data["age"] = self.age
+        # İfade yalnızca VARSA gönderiliyor. KADEME 2b seyrek çalışıyor
+        # (iz başına 2 saniyede bir, bütçe sınırlı), yani izlerin çoğunda
+        # bu alan hiç olmayacak — boş alan göndermek 20 kamerada mesaj
+        # boyutunu boşuna şişirirdi.
+        if self.expression is not None:
+            data["expr"] = self.expression
         return data
 
 

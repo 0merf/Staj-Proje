@@ -25,7 +25,7 @@ import {
   setVideoBuffer,
   type WhepSession,
 } from '../lib/whep'
-import type { Camera } from '../types'
+import { EXPR_MIN_CONF, EXPR_MIN_QUALITY, type Camera } from '../types'
 
 /** Bu süre sonuç gelmezse "analiz durdu" uyarısı. */
 const STALE_MS = 4000
@@ -195,6 +195,26 @@ export function CameraTile({ camera, webrtcBase }: Props) {
         ctx.fillRect(x, Math.max(0, y - 15), tw, 15)
         ctx.fillStyle = '#06111f'
         ctx.fillText(label, x + 4, Math.max(11, y - 4))
+
+        // KADEME 2b — yüz ifadesi, kutunun ALTINDA.
+        //
+        // ⚠ Yalnızca KALİTE VE GÜVEN eşiği geçilirse yazılıyor. Sunucu
+        // her sınıflandırmayı gönderiyor (kalite skoruyla birlikte) ama
+        // düşük kaliteli olanı ekrana basmak operatöre bilgi değil
+        // gürültü sunmak olurdu — 15 piksellik bulanık bir yüze "öfke"
+        // demek teknik olarak bir çıktıdır, bilgi değildir (PLAN §6.3).
+        //
+        // Eşikler sunucudaki `ExpressionResult.usable` ile aynı.
+        const expr = det.expr
+        if (expr && expr.q >= EXPR_MIN_QUALITY && expr.conf >= EXPR_MIN_CONF) {
+          const text = `${expr.tr} ${(expr.conf * 100).toFixed(0)}%`
+          const ew = ctx.measureText(text).width + 8
+          ctx.fillStyle = '#1f6feb'
+          ctx.fillRect(x, y + h, ew, 15)
+          ctx.fillStyle = '#f0f6fc'
+          ctx.fillText(text, x + 4, y + h + 11)
+          ctx.fillStyle = ctx.strokeStyle
+        }
 
         if (viewMode === 'full' && det.kp) drawSkeleton(ctx, det.kp, sx, sy)
       }

@@ -85,9 +85,23 @@ class Settings(BaseSettings):
     # ─── Boru hattı ───────────────────────────────────────────
     camera_count: int = 20
     target_fps: int = 4
+    # ⚠ HENÜZ KULLANILMIYOR — risk skoru üretilmeye başlayınca (Gün 15,
+    #   analytics katmanı) `_adapt_rate` içine girecek. PLAN §5.2.
     target_fps_high_risk: int = 8
     target_fps_idle: int = 1
+    # ⚠ ÖLÜ AYAR — mimari değişti, silinmedi ki sapma görünür kalsın.
+    #   PLAN §4.1 "4 × Ingest Worker (her biri ~5 kamera)" diyordu.
+    #   Gerçekleşen: TEK süreç + kamera başına bir thread. Gerekçe
+    #   ingest/worker.py modül başlığında (PyAV/OpenCV GIL'i bırakıyor,
+    #   FramePool tek nesne olarak paylaşılabiliyor).
+    #   Bedeli: PLAN §4.2'nin "bir worker düşer, diğerleri etkilenmez"
+    #   faydası kayboldu; yerine kamera başına try/except + yeniden
+    #   bağlanma döngüsü kondu.
     ingest_worker_count: int = 4
+    # ⚠ HENÜZ KULLANILMIYOR — klip kaynağı olarak RAM halka tamponu
+    #   yerine MediaMTX sürekli kaydı seçildi (YOL-HARITASI.md §2).
+    #   Ayar, kayıt segmentlerinden kesilecek olay ÖNCESİ süreyi
+    #   tanımlamak için Gün 19'da klip yazıcıda kullanılacak.
     ring_buffer_seconds: int = 30
     shm_slot_count: int = 128
 
@@ -133,8 +147,29 @@ class Settings(BaseSettings):
     # sığsın diye. 32'de ikiye bölünüyordu ve %27 pahalıya geliyordu.
     pose_crop_batch: int = 64
     pose_conf_threshold: float = 0.25
+    # ─── KADEME 2b — yüz + ifade ──────────────────────────────
     face_detector_path: str = "models/yunet.onnx"
     emotion_model_path: str = "models/emotieff.onnx"
+    # EmotiEffLib model adı (ağırlığı kendisi yönetiyor, yol değil ad ister)
+    expression_model_name: str = "enet_b0_8_best_vgaf"
+    expression_enabled: bool = True
+    # cuda | cpu. `onnxruntime-gpu` CUDA sağlayıcısı artık yükleniyor
+    # (pyproject.toml · override-dependencies notu), ama ÖLÇÜM kazancın
+    # ihmal edilebilir olduğunu gösterdi: emotiefflib girdileri tek tek
+    # işliyor, toplu (batch) çağrı yapmıyor. Bu yüzden GPU'nun sabit
+    # maliyeti amorti edilemiyor — 8 yüz için cuda 61.4 ms, cpu 62.9 ms.
+    # Gerçek kazanç ONNX oturumunu doğrudan toplu çağırmakla gelir.
+    expression_device: str = "cuda"
+    # Tek turda en fazla kaç yüz sınıflandırılsın — çıkarım döngüsünü
+    # bloklamamak için üst sınır.
+    expression_max_faces: int = 4
+    # Aynı iz için iki sınıflandırma arasındaki en kısa süre (saniye).
+    expression_min_interval_s: float = 2.0
+    # Yüz aranmaya değecek en küçük kişi kutusu yüksekliği (piksel).
+    # ⚠ Bu eşik ÇIKARIM UZAYINDA (640×640 letterbox) uygulanıyor, kaynak
+    #   karede değil. 1280×720 kaynak 640'a inerken ölçek 0.5 olduğu için
+    #   buradaki 180 px, kaynakta 360 px'e denk geliyor.
+    expression_min_person_px: int = 180
     tracker: str = "botsort"
     use_tensorrt: bool = True
     use_fp16: bool = True
@@ -194,6 +229,10 @@ class Settings(BaseSettings):
     @property
     def pose_weights(self) -> Path:
         return self.resolve_path(self.pose_model_path)
+
+    @property
+    def face_detector_weights(self) -> Path:
+        return self.resolve_path(self.face_detector_path)
 
     @property
     def effective_database_url(self) -> str:

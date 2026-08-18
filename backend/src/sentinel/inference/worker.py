@@ -45,6 +45,7 @@ from sentinel.config import settings
 from sentinel.core import preprocess
 from sentinel.core.preprocess import Letterbox
 from sentinel.inference.detector.base import Detection, Detector
+from sentinel.inference.emotion.stage import ExpressionStage
 from sentinel.inference.pose.base import PoseEstimator
 from sentinel.inference.tracker.base import Track
 from sentinel.inference.tracker.botsort import BotSortTracker
@@ -88,6 +89,39 @@ def build_detector(
             conf_threshold=conf,
         )
     raise ValueError(f"Bilinmeyen dedektör arka ucu: {backend}")
+
+
+def build_expression_stage() -> ExpressionStage:
+    """KADEME 2b yüz + ifade kademesini kurar.
+
+    ⚠ ÇÖZÜNÜRLÜK UYARISI — bu kademe kısıtlı bir girdiyle çalışıyor
+    -------------------------------------------------------------
+    Kırpıntılar boru hattındaki TEK kareden alınıyor ve o kare artık
+    ham 1280×720 değil, model uzayındaki 640×640 letterbox (Gün 8
+    optimizasyonu · P-18). Yani yüzler kaynağa göre **yarı boyutta.**
+
+    Gün 13 ölçümü zaten kamera çiftliğinde yüzlerin ~15 px olduğunu
+    gösterdi (benchmarks/expression_20260817-gun13.json); bu ölçek
+    kaybı onun üstüne biniyor. Sonuç: sabit kameralarda bu kademe
+    neredeyse hiç aday bulamayacak — ve bu **doğru davranış**, çünkü
+    15 px'lik bir yüze etiket üretmek bilgi değil gürültü olurdu.
+
+    Kademenin gerçek gösterim alanı **cam-21-live (webcam)**: oradaki
+    yüz yüzlerce piksel ve 640'a inince bile yeterli kalıyor.
+
+    Maliyeti sıfıra yakın: kapı (kutu boyutu + zamanlayıcı + bütçe)
+    tamamen aritmetik. Uygun aday yoksa pahalı adıma hiç gidilmiyor.
+    """
+    from sentinel.inference.emotion.stage import ExpressionStage
+
+    return ExpressionStage(
+        str(settings.face_detector_weights),
+        expression_model=settings.expression_model_name,
+        device=settings.expression_device,
+        min_interval_s=settings.expression_min_interval_s,
+        max_faces_per_round=settings.expression_max_faces,
+        min_person_px=settings.expression_min_person_px,
+    )
 
 
 def build_pose_estimator(model_path: str, *, device: str, half: bool) -> PoseEstimator:
@@ -201,6 +235,7 @@ class InferenceWorker:
         detector: Detector,
         *,
         pose: PoseEstimator | None = None,
+        expression: ExpressionStage | None = None,
         worker_id: str = "inference-0",
         batch_size: int = 8,
         block_ms: int = 500,
@@ -208,6 +243,7 @@ class InferenceWorker:
     ) -> None:
         self._detector = detector
         self._pose = pose
+        self._expression = expression
         self._worker_id = worker_id
         self._batch_size = batch_size
         self._block_ms = block_ms
@@ -238,7 +274,10 @@ class InferenceWorker:
         self.infer_ms: deque[float] = deque(maxlen=500)
         self.pose_ms: deque[float] = deque(maxlen=500)
         self.track_ms: deque[float] = deque(maxlen=500)
+        self.expr_ms: deque[float] = deque(maxlen=500)
         self.e2e_ms: deque[float] = deque(maxlen=500)
+        # KADEME 2b durum sözlüğü zamanla şişer; periyodik temizlenmeli.
+        self._last_expr_prune = 0.0
         # Boru hattı muhasebesi: batch başına toplam süre nereye gidiyor?
         self.wait_ms: deque[float] = deque(maxlen=500)
         self.read_ms: deque[float] = deque(maxlen=500)
@@ -359,11 +398,26 @@ class InferenceWorker:
         metrics.inference_duration.labels(stage="track").observe(track_s / len(batch))
         self.track_ms.append(track_s / len(batch) * 1000.0)
 
-        now_monotonic = time.monotonic()
+        # ⚠ Duvar saati — `captured_at` alım SÜRECİNDE damgalandı ve
+        # monotonik saatlerin süreçler arası farkı tanımsızdır
+        # (gerekçe: ingest/decoder.py · DecodedFrame.timestamp).
+        now_wall = time.time()
+
+        # ─── KADEME 2b: yüz + ifade ─────────────────────────
+        # Takipten SONRA çalışıyor, çünkü kapının ikinci basamağı
+        # "bu İZ için süre doldu mu" — kimlik olmadan seyreltme
+        # yapılamaz, her karede aynı kişiyi baştan sınıflandırırdık.
+        #
+        # Kırpıntı kaynağı `images[i]`, yani 640×640 letterbox kare.
+        # Tespit koordinatları da o uzayda (kaynak uzayına geçiş
+        # _serialize içinde, daha sonra) — ikisi uyumlu.
+        if self._expression is not None:
+            self._run_expression(batch, images, tracked, now_wall)
+
         t_publish = time.perf_counter()
         for message, detections in zip(batch, tracked, strict=True):
             source_w, source_h = message.source_size
-            latency = (now_monotonic - message.captured_at) * 1000.0
+            latency = (now_wall - message.captured_at) * 1000.0
             payload = _serialize(
                 detections,
                 motion=message.motion_ratio,
@@ -391,6 +445,62 @@ class InferenceWorker:
         t_release = time.perf_counter()
         self._release(batch)
         self.release_ms.append((time.perf_counter() - t_release) * 1000.0)
+
+    def _run_expression(
+        self,
+        batch: list,  # type: ignore[type-arg]
+        images: list,  # type: ignore[type-arg]
+        tracked: list[list[Track]],
+        now: float,
+    ) -> None:
+        """KADEME 2b'yi batch'teki her kareye uygular.
+
+        Sonuç doğrudan `Track.expression` alanına yazılıyor; oradan
+        `to_dict()` ile mesaja giriyor.
+
+        İki tür sonuç var ve ikisi de kullanılıyor:
+          · bu turda SINIFLANDIRILAN izler → `results` sözlüğünden
+          · daha önce sınıflandırılmış izler → `last_for()` ile
+
+        İkincisi olmasa etiket 2 saniyede bir yanıp sönerdi: kademe
+        seyrek çalıştığı için aradaki karelerde sonuç üretilmiyor.
+        Son bilinen etiketi taşımak, PLAN §6.3'ün "zamansal yumuşatma"
+        gereğinin doğal sonucu.
+
+        ⚠ Hata YUTULUYOR. Bu kademe füzyonda 0.10 ağırlıklı bir yan
+        sinyal; çökmesi KADEME 1'i (her şeyin temeli) durdurmamalı.
+        """
+        assert self._expression is not None
+        t0 = time.perf_counter()
+        try:
+            for message, image, tracks in zip(batch, images, tracked, strict=True):
+                if not tracks:
+                    continue
+                detections = [t.detection for t in tracks]
+                track_ids = [t.track_id if t.track_id >= 0 else None for t in tracks]
+                fresh = self._expression.process(
+                    message.camera, image, detections, track_ids, now
+                )
+                for track in tracks:
+                    if track.track_id < 0:
+                        continue
+                    result = fresh.get(track.track_id) or self._expression.last_for(
+                        message.camera, track.track_id
+                    )
+                    if result is not None:
+                        track.expression = result.to_dict()
+        except Exception as exc:
+            log.error("ifade_hatasi", error=f"{type(exc).__name__}: {exc}")
+            return
+
+        elapsed = time.perf_counter() - t0
+        metrics.inference_duration.labels(stage="emotion").observe(elapsed / len(batch))
+        self.expr_ms.append(elapsed / len(batch) * 1000.0)
+
+        # Kadrajdan çıkmış izlerin durumu birikmesin (60 sn'de bir yeter)
+        if now - self._last_expr_prune > 60.0:
+            self._expression.prune()
+            self._last_expr_prune = now
 
     @staticmethod
     def _attach_keypoints(
@@ -441,7 +551,9 @@ class InferenceWorker:
         if self._max_age_s <= 0:
             return batch
 
-        now = time.monotonic()
+        # ⚠ Duvar saati — `captured_at` başka bir süreçten geliyor
+        # (gerekçe: ingest/decoder.py · DecodedFrame.timestamp).
+        now = time.time()
         fresh = [m for m in batch if now - m.captured_at <= self._max_age_s]
         stale = [m for m in batch if now - m.captured_at > self._max_age_s]
         if stale:
@@ -474,6 +586,7 @@ class InferenceWorker:
             ("shm okuma", self._p50(self.read_ms)),
             ("tespit", self._p50(self.infer_ms) * b),
             ("poz", self._p50(self.pose_ms) * b),
+            ("ifade (2b)", self._p50(self.expr_ms) * b),
             ("takip", self._p50(self.track_ms) * b),
             ("yayınlama (Valkey)", self._p50(self.publish_ms)),
             ("slot iadesi + ack", self._p50(self.release_ms)),
@@ -529,6 +642,9 @@ class InferenceWorker:
         avg_batch = statistics.fmean(self.batch_sizes) if self.batch_sizes else 0
         active = self._tracker.stats["active_tracks"]
         pose_part = f"poz {self._p50(self.pose_ms):5.1f} ms · " if self.pose_ms else ""
+        if self._expression is not None:
+            classified = self._expression.stats["classified"]
+            pose_part += f"ifade {self._p50(self.expr_ms):4.1f} ms ({classified:.0f}) · "
         return (
             f"{self.processed:>6} kare · {fps:5.1f} FPS · "
             f"tespit {self._p50(self.infer_ms):5.1f} ms · {pose_part}"
@@ -568,6 +684,23 @@ class InferenceWorker:
                     f"iskelet çıkan %{stats['skeleton_hit_rate'] * 100:.1f}"
                 )
 
+        # KADEME 2b — kapının nerede eleme yaptığı raporlanıyor.
+        # "Kaç sınıflandırma yapıldı" tek başına yanıltıcı: 0 çıkması
+        # modülün bozuk olduğunu değil, uygun GİRDİ olmadığını gösteriyor
+        # olabilir. Eleme dağılımı bu ikisini ayırt ediyor.
+        if self._expression is not None:
+            e = self._expression.stats
+            print(
+                f"  İfade: {e['considered']:.0f} aday · "
+                f"sınıflandırılan {e['classified']:.0f} "
+                f"(%{e['classify_ratio'] * 100:.1f})"
+            )
+            print(
+                f"         elenen — küçük {e['gated_small']:.0f} · "
+                f"süre dolmadı {e['gated_recent']:.0f} · bütçe {e['gated_budget']:.0f} · "
+                f"yüz yok {e['no_face']:.0f} · kalitesiz {e['low_quality']:.0f}"
+            )
+
         # Kimlik kararlılığı (PLAN.md §6.1): zamansal analizin tamamı
         # buna dayanıyor. Parçalanma oranı yüksekse "bu kişi 3 saniyedir
         # hızlanıyor" cümlesi kurulamaz.
@@ -606,6 +739,11 @@ def main() -> int:
     )
     parser.add_argument("--pose-model", default=None, help="Poz ağırlığı")
     parser.add_argument(
+        "--no-expression",
+        action="store_true",
+        help="KADEME 2b'yi (yüz + ifade) kapat",
+    )
+    parser.add_argument(
         "--max-frame-age-ms",
         type=int,
         default=None,
@@ -641,9 +779,20 @@ def main() -> int:
             half=not args.no_half,
         )
 
+    expression: ExpressionStage | None = None
+    if settings.expression_enabled and not args.no_expression:
+        try:
+            expression = build_expression_stage()
+        except Exception as exc:
+            # KADEME 2b yan bir sinyal (füzyonda 0.10 ağırlık). Modeli
+            # yüklenemiyorsa sistem ONSUZ devam etmeli — tespit ve takip
+            # her şeyin temeli ve onlar çalışıyor.
+            log.error("ifade_kademesi_kurulamadi", error=f"{type(exc).__name__}: {exc}")
+
     worker = InferenceWorker(
         detector,
         pose=pose,
+        expression=expression,
         worker_id=args.worker_id,
         batch_size=args.batch_size,
         max_age_ms=(
