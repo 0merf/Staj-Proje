@@ -387,9 +387,15 @@ def main() -> int:
     cikti = args.out or (
         PROJECT_ROOT / "benchmarks" / f"expression_{datetime.now():%Y%m%d}-gun14.json"
     )
+    cikti = cikti.resolve()
     cikti.parent.mkdir(parents=True, exist_ok=True)
     cikti.write_text(json.dumps(rapor, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"\nKaydedildi: {cikti.relative_to(PROJECT_ROOT)}")
+    # `--out` göreli verilmiş olabilir; proje kökü dışındaysa mutlak yaz.
+    try:
+        gosterilecek = cikti.relative_to(PROJECT_ROOT)
+    except ValueError:
+        gosterilecek = cikti
+    print(f"\nKaydedildi: {gosterilecek}")
     return 0
 
 

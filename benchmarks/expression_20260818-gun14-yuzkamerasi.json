@@ -1,0 +1,55 @@
+{
+  "measured_at": "2026-08-18T16:33:52",
+  "phase": "Faz 1 / Gün 14",
+  "description": "KADEME 2b yeniden ölçüm — Gün 13'ün '58 ms/yüz' rakamı doğrulanıyor",
+  "cameras": [
+    "cam-18",
+    "cam-19",
+    "cam-20"
+  ],
+  "frames_per_camera": 20,
+  "input_analysis": {
+    "kaynak_uzayi": {
+      "kisi_sayisi": 60,
+      "kisi_boyu_px": {
+        "p50": 550.5,
+        "p90": 711.5,
+        "azami": 712.8
+      },
+      "tahmini_yuz_px_p50": 68.8,
+      "esik_ustu_kisi_yuzdesi": 100.0,
+      "yuz_aranan": 60,
+      "yuz_bulunan": 60,
+      "yuz_isabet_yuzdesi": 100.0,
+      "bulunan_yuz_px_p50": 178.2,
+      "kalite_p50": 1.0,
+      "kullanilabilir_yuz": 60
+    },
+    "model_uzayi_640": {
+      "kisi_sayisi": 60,
+      "kisi_boyu_px": {
+        "p50": 275.1,
+        "p90": 356.5,
+        "azami": 356.8
+      },
+      "tahmini_yuz_px_p50": 34.4,
+      "esik_ustu_kisi_yuzdesi": 100.0,
+      "yuz_aranan": 60,
+      "yuz_bulunan": 60,
+      "yuz_isabet_yuzdesi": 100.0,
+      "bulunan_yuz_px_p50": 89.0,
+      "kalite_p50": 0.53,
+      "kullanilabilir_yuz": 42
+    }
+  },
+  "face_detection": {
+    "kirpinti_basina_ms": 34.932
+  },
+  "gun8_kucultmesinin_bedeli": {
+    "soru": "Ön işlemenin alım katmanına taşınması (640×640) KADEME 2b'yi ne kadar zayıflattı?",
+    "kaynak_yuz_isabet": 100.0,
+    "model_640_yuz_isabet": 100.0,
+    "kaynak_kullanilabilir_yuz": 60,
+    "model_640_kullanilabilir_yuz": 42
+  }
+}

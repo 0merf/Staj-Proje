@@ -26,10 +26,29 @@ log = get_logger(__name__)
 FARM_MANIFEST = PROJECT_ROOT / "data" / "videos" / "manifest.json"
 
 # Çiftlik dışındaki sabit yollar (mediamtx.yml'de elle tanımlı)
-STATIC_PATHS: list[dict[str, str]] = [
+#
+# ⚠ TESLİM EDİLEN SİSTEM 20 KAMERADIR
+# Şartname "en az 20 kamera" istiyor ve çiftlikte tam 20 var. Aşağıdaki
+# sentetik yollar **kamera değil test aparatıdır**: video dosyası
+# olmadan boru hattını denemek ve hareket filtresinin gerçekten yük
+# düşürdüğünü ispatlamak için varlar (PLAN §5.1). Panelde kamera gibi
+# görünüyorlardı ve toplamı 24 gösteriyorlardı — sayı hem kafa
+# karıştırıyor hem şartnameyle uyuşmuyordu.
+#
+# Silinmediler, GİZLENDİLER: `?include_test=true` ile geri geliyorlar.
+# Test aparatını silmek, onu bir daha kurmak zorunda kalmak demektir.
+TEST_PATHS: list[dict[str, str]] = [
     {"name": "cam-test-motion", "label": "Test — hareketli desen", "kind": "synthetic"},
     {"name": "cam-test-chaos", "label": "Test — piksel gürültüsü", "kind": "synthetic"},
     {"name": "cam-test-static", "label": "Test — tamamen durağan", "kind": "synthetic"},
+]
+
+# Webcam çiftliğin DIŞINDA — bilinçli. K1 kriteri "20 kamera 30 dk
+# kesintisiz" diyor; webcam ise mahremiyet gereği elle açılıyor (KVKK)
+# ve laptop uyursa düşer. 20'nin içine koysaydık dayanıklılık testi
+# webcam yüzünden kalabilirdi. Raporda "20 kayıtlı kamera + 1 canlı
+# demo" olarak sunuluyor; şartnamenin "≥20" şartı zaten karşılanıyor.
+STATIC_PATHS: list[dict[str, str]] = [
     {"name": "cam-21-live", "label": "Kamera 21 — canlı webcam", "kind": "webcam"},
 ]
 
@@ -108,12 +127,22 @@ async def _runtime_state() -> dict[str, dict[str, Any]]:
     }
 
 
-async def list_cameras() -> dict[str, Any]:
-    """Tanımlı tüm kameralar + anlık yayın durumları."""
+async def list_cameras(*, include_test: bool = False) -> dict[str, Any]:
+    """Tanımlı tüm kameralar + anlık yayın durumları.
+
+    Args:
+        include_test: Sentetik test yollarını da listeye ekler. Varsayılan
+            kapalı — teslim edilen sistem 20 kameradır, test aparatı
+            operatörün kamera listesini kirletmemeli (bkz. TEST_PATHS).
+    """
     cameras = _load_farm()
     cameras += [
         Camera(name=p["name"], label=p["label"], kind=p["kind"]) for p in STATIC_PATHS
     ]
+    if include_test:
+        cameras += [
+            Camera(name=p["name"], label=p["label"], kind=p["kind"]) for p in TEST_PATHS
+        ]
 
     state = await _runtime_state()
     known = {c.name for c in cameras}

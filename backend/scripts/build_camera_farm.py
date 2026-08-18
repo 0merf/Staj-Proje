@@ -85,8 +85,43 @@ class CameraSpec:
 
 PETS_BASE = "_sources/pets/Crowd_PETS09/S2/L1/Time_12-34"
 
+# ⚠ 18.08.2026 — ÇİFTLİK YENİDEN DÜZENLENDİ
+#
+# Önceki dağılımın iki sorunu vardı:
+#
+# 1. **cam-10…cam-16 aynı sahnenin 7 açısıydı** (PETS09 · S2/L1 ·
+#    Time_12-34). Yedi kamera aynı olayı izliyordu. Bu üç şeyi bozuyordu:
+#      · "Her kameranın normali AYRI öğrenilir" ilkesi (mimari kural 7) —
+#        yedisinin normali aynı çıkıyordu, ilke gösterilemiyordu
+#      · Bir olayda 7 kamera birden alarm veriyordu → PLAN §6.6'daki
+#        "sistem seviyesi olay" bastırma kuralı boşuna tetiklenirdi
+#      · Sahne çeşitliliği yapay olarak düşüktü
+#    3 açı bırakıldı (birbirine en uzak olanlar): kalabalık ve ani
+#    dağılma senaryoları için yeterli, kopya değil.
+#
+# 2. **Pexels videoları HİÇ kullanılmıyordu** (10 klip, ~151 MB).
+#    Oysa PLAN §7.1 "19-20: yakın plan yüz içeren sahne — duygu modülü
+#    testi" diyordu ve o slotlara RWF kavga klipleri konmuştu.
+#    Sonuç: KADEME 2b'nin çalışabileceği TEK kamera yoktu ve modül
+#    kamera çiftliğinde hiç sonuç üretemiyordu
+#    (benchmarks/expression_20260818-gun14.json).
+#
+# Ayrıca 10 Pexels klibi demografik olarak çeşitli (farklı yaş, cinsiyet,
+# ten rengi, ışık, arka plan). PLAN §12.2 yanlılık değerlendirmesi için
+# alt gruplara ayrılmış performans raporlamayı istiyor; elimizdeki tek
+# elverişli malzeme bu.
+#
+# ⚠ Karşılanamayan istek: PLAN §7.1 "boş sahne" ve "düşme/koşma"
+# kameraları da istiyor. Elimizde o tür görüntü YOK ve uydurmak
+# ölçümü yanıltır. Raporda kapsam notu olarak yazılacak. (Hareket
+# filtresinin yük düşürdüğü zaten sentetik `cam-test-static` ile ve
+# gerçek kameraların gate oranlarıyla gösteriliyor.)
+
+PEXELS = "_sources/pexels"
+
 CAMERA_PLAN: list[CameraSpec] = [
-    # ── Normal: VIRAT otopark/kampüs (aynı saha, farklı kayıtlar) ──
+    # ── 01-08 · Normal sahne: VIRAT otopark/kampüs ──
+    # Anomali modülünün "normal"i öğrenmesi için çoğunluk normal olmalı.
     CameraSpec("cam-01", "video", "_sources/virat/VIRAT_S_000001.mp4", "Otopark — kuzey"),
     CameraSpec("cam-02", "video", "_sources/virat/VIRAT_S_000002.mp4", "Otopark — orta"),
     CameraSpec("cam-03", "video", "_sources/virat/VIRAT_S_000003.mp4", "Otopark — güney"),
@@ -99,21 +134,31 @@ CAMERA_PLAN: list[CameraSpec] = [
     CameraSpec(
         "cam-08", "video", "_sources/virat/VIRAT_S_000200_01_000226_000268.mp4", "Yan saha — B"
     ),
-    # ── Kalabalık: Oxford (gerçek etiketli veri de var) ──
+    # ── 09 · Yoğun yaya trafiği: Oxford (yer gerçeği de var) ──
     CameraSpec("cam-09", "video", "_sources/oxford/TownCentreXVID.mp4", "Cadde — yoğun yaya"),
-    # ── PETS2009: aynı sahnenin 7 FARKLI AÇISI ──
+    # ── 10-12 · Kalabalık: PETS09, birbirine EN UZAK 3 açı ──
+    # 7 açıdan 3'e indirildi (gerekçe yukarıda). Seçim: 001, 005, 008 —
+    # numaraca uçlarda oldukları için sahneyi en farklı yerlerden görüyorlar.
     CameraSpec("cam-10", "frames", f"{PETS_BASE}/View_001", "Meydan — açı 1"),
-    CameraSpec("cam-11", "frames", f"{PETS_BASE}/View_003", "Meydan — açı 3"),
-    CameraSpec("cam-12", "frames", f"{PETS_BASE}/View_004", "Meydan — açı 4"),
-    CameraSpec("cam-13", "frames", f"{PETS_BASE}/View_005", "Meydan — açı 5"),
-    CameraSpec("cam-14", "frames", f"{PETS_BASE}/View_006", "Meydan — açı 6"),
-    CameraSpec("cam-15", "frames", f"{PETS_BASE}/View_007", "Meydan — açı 7"),
-    CameraSpec("cam-16", "frames", f"{PETS_BASE}/View_008", "Meydan — açı 8"),
-    # ── Saldırganlık: RWF-2000 birleştirilmiş, ground-truth üretilir ──
-    CameraSpec("cam-17", "rwf", "", "Test — kavga (seyrek)", clip_count=60, fight_ratio=0.10, seed=17),
-    CameraSpec("cam-18", "rwf", "", "Test — kavga (orta)", clip_count=60, fight_ratio=0.20, seed=18),
-    CameraSpec("cam-19", "rwf", "", "Test — kavga (yoğun)", clip_count=60, fight_ratio=0.35, seed=19),
-    CameraSpec("cam-20", "rwf", "", "Test — tamamı normal", clip_count=60, fight_ratio=0.00, seed=20),
+    CameraSpec("cam-11", "frames", f"{PETS_BASE}/View_005", "Meydan — açı 5"),
+    CameraSpec("cam-12", "frames", f"{PETS_BASE}/View_008", "Meydan — açı 8"),
+    # ── 13-16 · Saldırganlık: RWF-2000, ARTAN kavga yoğunluğu ──
+    # Farklı oranlar bilinçli: yanlış alarm oranının yoğunlukla nasıl
+    # değiştiğini ölçebilmek için (K7). Sabit tohum = tekrarlanabilir.
+    CameraSpec("cam-13", "rwf", "", "Kavga — seyrek", clip_count=60, fight_ratio=0.10, seed=13),
+    CameraSpec("cam-14", "rwf", "", "Kavga — orta", clip_count=60, fight_ratio=0.20, seed=14),
+    CameraSpec("cam-15", "rwf", "", "Kavga — yoğun", clip_count=60, fight_ratio=0.35, seed=15),
+    CameraSpec("cam-16", "rwf", "", "Kavga — çok yoğun", clip_count=60, fight_ratio=0.50, seed=16),
+    # ── 17 · Yanlış alarm taban çizgisi: hiç kavga yok ──
+    # K7 ölçümünün (kamera-saat başına yanlış alarm) referans kamerası.
+    CameraSpec("cam-17", "rwf", "", "Taban — tamamı normal", clip_count=60, fight_ratio=0.00, seed=17),
+    # ── 18-20 · YAKIN PLAN YÜZ: KADEME 2b'nin evi (PLAN §7.1) ──
+    # Her kamera birkaç Pexels klibinin birleşimi — tek bir yüz yerine
+    # birden çok kişi dönüyor. Böylece hem ifade modülü gerçek girdiyle
+    # test ediliyor hem PLAN §12.2 için demografik çeşitlilik oluşuyor.
+    CameraSpec("cam-18", "faces", PEXELS, "Yakın plan yüz — A", seed=18),
+    CameraSpec("cam-19", "faces", PEXELS, "Yakın plan yüz — B", seed=19),
+    CameraSpec("cam-20", "faces", PEXELS, "Yakın plan yüz — C", seed=20),
 ]
 
 
@@ -263,7 +308,76 @@ def build_rwf(spec: CameraSpec) -> dict[str, object]:
     return {"fight_clips": n_fight, "normal_clips": n_normal, "duration_s": round(cursor, 1)}
 
 
-BUILDERS = {"video": build_video, "frames": build_frames, "rwf": build_rwf}
+def build_faces(spec: CameraSpec) -> dict[str, object]:
+    """Pexels yakın plan yüz kliplerini birleştirir — KADEME 2b'nin girdisi.
+
+    ⚠ NEDEN İKİ AŞAMALI
+    -------------------
+    `concat` demuxer, birleştirilen dosyaların **aynı codec ve aynı
+    çözünürlükte** olmasını ister; sadece paketleri arka arkaya
+    ekler, yeniden kodlamaz. Pexels klipleri ise 1920×1080'den
+    4096×2160'a kadar beş farklı çözünürlükte. Doğrudan birleştirmeye
+    kalkarsak ffmpeg ya hata verir ya da sessizce bozuk çıktı üretir.
+
+    Bu yüzden önce her klip tek tek 720p'ye normalize ediliyor, sonra
+    birleştiriliyor. İkinci geçiş `-c copy` ile yeniden kodlamıyor.
+
+    ⚠ NEDEN BİRDEN ÇOK KLİP
+    -----------------------
+    Tek bir yüz koysaydık ifade modülü tek kişiyle test edilirdi.
+    Birkaç klip dönüşümlü olunca:
+      · ifade sınıflandırma farklı yüzlerde deneniyor
+      · PLAN §12.2'nin istediği demografik alt grup analizi mümkün oluyor
+      · takip modülü "kişi kadraja girdi/çıktı" senaryosunu görüyor
+    """
+    src_dir = DATA / spec.source
+    klipler = sorted(src_dir.glob("*.mp4"))
+    if not klipler:
+        raise FileNotFoundError(f"Pexels klibi yok: {src_dir}")
+
+    # Sabit tohum: aynı komut aynı kamerayı üretir (tekrarlanabilirlik).
+    # Kameralar farklı tohum aldığı için farklı klip karışımları alıyorlar.
+    rng = random.Random(spec.seed)  # noqa: S311
+    secilen = rng.sample(klipler, min(4, len(klipler)))
+
+    TMP.mkdir(parents=True, exist_ok=True)
+    satirlar: list[str] = []
+    kullanilan: list[dict[str, object]] = []
+
+    for sira, klip in enumerate(secilen):
+        ara = f"_tmp/{spec.cam}_p{sira}.mp4"
+        # 1. aşama: ortak biçime getir (720p, 25 FPS, H.264)
+        run_ffmpeg(["-i", f"/data/{klip.relative_to(DATA).as_posix()}", *encode_args(ara)])
+        satirlar.append(f"file '/data/{ara}'")
+        kullanilan.append({"clip": klip.name, "duration_s": round(probe_duration(klip), 1)})
+
+    liste = TMP / f"{spec.cam}_faces.txt"
+    liste.write_text("\n".join(satirlar) + "\n", encoding="utf-8")
+
+    # 2. aşama: birleştir — hepsi artık aynı biçimde, kopyalamak yeterli
+    run_ffmpeg(
+        [
+            "-f", "concat", "-safe", "0",
+            "-i", f"/data/_tmp/{spec.cam}_faces.txt",
+            "-c", "copy",
+            "-y", f"/data/videos/{spec.cam}.mp4",
+        ]
+    )
+
+    # Ara dosyaları temizle — yoksa _tmp şişer
+    for sira in range(len(secilen)):
+        (DATA / "_tmp" / f"{spec.cam}_p{sira}.mp4").unlink(missing_ok=True)
+    liste.unlink(missing_ok=True)
+
+    return {"clips": kullanilan, "clip_count": len(secilen)}
+
+
+BUILDERS = {
+    "video": build_video,
+    "frames": build_frames,
+    "rwf": build_rwf,
+    "faces": build_faces,
+}
 
 
 # ─── Ana akış ────────────────────────────────────────────────

@@ -90,14 +90,18 @@ async def ws_stats() -> dict[str, Any]:
 
 
 @app.get("/api/v1/cameras", tags=["cameras"])
-async def list_cameras() -> dict[str, Any]:
+async def list_cameras(include_test: bool = False) -> dict[str, Any]:
     """Tanımlı tüm kameralar + anlık yayın durumu.
+
+    Varsayılan olarak **20 çiftlik kamerası + 1 canlı webcam** döner.
+    Sentetik test yolları (`cam-test-*`) kamera değil test aparatıdır ve
+    listeye girmez; `?include_test=true` ile görülebilirler.
 
     Not: MediaMTX yalnızca AKTİF yolları listeler; regex ile tanımlı
     cam-02…cam-20 biri bağlanana kadar görünmez. Bu uç nokta tanımlı
     listeyi kamera çiftliği manifestinden alıp durumla birleştirir.
     """
-    return await cameras.list_cameras()
+    return await cameras.list_cameras(include_test=include_test)
 
 
 @app.get("/api/v1/cameras/webcam", tags=["cameras"])
