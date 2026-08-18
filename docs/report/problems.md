@@ -33,6 +33,197 @@ ama **belirti / sebep / çözüm** üçlüsü mutlaka olsun.
 
 <!-- Yeni kayıtlar buraya, en yenisi en üstte -->
 
+### P-30 · İki paket aynı dizini paylaşınca CUDA sağlayıcısı öksüz kaldı
+
+**Tarih:** 18.08.2026 · **Faz:** 1 / Gün 14 · **Kaybedilen süre:** ~4 gün (fark edilmeden)
+
+**Belirti:** Gün 13'ten beri açık madde: *"onnxruntime CUDA sağlayıcısı
+etkinleştirilemedi → ifade modeli CPU'da, yüz başına ~58 ms."* Teşhis
+olarak *"beklediği cuDNN sürümü yok"* yazılmıştı ve Faz 5'e ertelenmişti.
+
+**Çürütülen hipotez:** "cuDNN eksik." Kontrol edilmemişti; makul
+göründüğü için kabul edilmişti.
+
+**Gerçek kök sebep:**
+
+```
+onnxruntime      1.28.0   ← CPU derlemesi
+onnxruntime-gpu  1.28.0   ← GPU derlemesi
+```
+
+İkisi de kurulu. Ve ikisi de **aynı dizine** açılıyor:
+`site-packages/onnxruntime/`. Sonra kurulan diğerinin `onnxruntime.dll`
+dosyasını **eziyor**. Bizde CPU sürümü kazanmıştı:
+
+```
+get_available_providers() → ['AzureExecutionProvider', 'CPUExecutionProvider']
+
+ama capi/ dizininde:
+    onnxruntime_providers_cuda.dll        ← duruyor
+    onnxruntime_providers_tensorrt.dll    ← duruyor
+```
+
+CUDA sağlayıcısının DLL'i **diskteydi**, ana kütüphane onu tanımıyordu.
+Öksüz dosyalar.
+
+CPU paketini kim çekiyor? `emotiefflib`. Bağımlılık listesinde
+`onnxruntime` yazıyor — ama `onnxruntime-gpu` da `onnxruntime`
+**modülünü** sağladığı için bu beyan gereğinden dar.
+
+**Çözüm:** uv override ile CPU paketi çözüm ağacından çıkarıldı:
+
+```toml
+override-dependencies = ["onnxruntime ; python_version < '0'"]
+```
+
+Sonra `onnxruntime-gpu` yeniden kuruldu (paylaşılan dosyalar CPU
+paketiyle birlikte silinmişti).
+
+```
+ÖNCE : ['Azure', 'CPU']
+SONRA: ['Tensorrt', 'CUDA', 'CPU']
+```
+
+**⚠ Ama kazanç beklendiği gibi çıkmadı — ve sebebi P-15'in aynısı:**
+
+| cihaz | 1 yüz | 4 yüz | 8 yüz | 8'de yüz başına |
+|---|---|---|---|---|
+| cuda | 6.78 ms | 27.00 ms | 61.41 ms | 7.68 ms |
+| cpu | 7.15 ms | 26.93 ms | 62.86 ms | 7.86 ms |
+
+GPU kazancı **%2**. Ölçek tam doğrusal: 1 yüz 6.78 → 8 yüz 61.41.
+Yani `emotiefflib.predict_emotions(liste)` **toplu çağrı yapmıyor**,
+içeride tek tek döngüye sokuyor. Model küçük (16 MB `enet_b0`) ve her
+çağrının sabit maliyeti baskın olduğu için GPU'nun avantajı hiç
+doğmuyor. Gerçek kazanç ONNX oturumunu doğrudan `(N,3,224,224)` tensörle
+çağırmakla gelir — `detector/yolo.py::_as_tensor`'da yaptığımızın aynısı.
+
+**Öğrenilen dersler:**
+
+1. **Teşhis edilmemiş bir hipotezi "bilinen sorun" diye kaydetme.**
+   "cuDNN eksik" cümlesi 4 gün boyunca dosyada durdu ve kimse
+   `get_available_providers()` ile `capi/` dizinini yan yana koymadı.
+   Doğrulanmamış teşhis, teşhis değil tahmindir; öyle yazılmalı.
+2. **Aynı modül adını sağlayan iki paket bir arada bulunamaz.**
+   Python'un paket sistemi bunu engellemiyor; ikisi de sessizce kuruluyor
+   ve son kurulan kazanıyor. Bağımlılık çakışması her zaman "sürüm
+   uyuşmazlığı" biçiminde görünmüyor.
+3. **Sağlayıcı listesi tek satırlık bir kontrol.** `nvidia-smi`'nin
+   P-18'de yaptığını burada `get_available_providers()` yapardı.
+
+---
+
+### P-29 · Testler iki gerçek hata buldu — biri dışarıdan ulaşılabilir çökme yolu
+
+**Tarih:** 18.08.2026 · **Faz:** 1 / Gün 14 · **Tür:** güvenlik + dayanıklılık
+
+**Bağlam:** Depoda **sıfır test** vardı. Ama `CLAUDE.md` "8 birim testi
+geçti", P-26 "7 birim testi", P-20 "birim testi" diyordu — testler
+gerçekten koşturulmuş, **commit edilmemişti.** Açığı kapatmak için 68
+backend + 17 frontend testi yazıldı. İlk koşuda ikisi kırmızı yandı ve
+ikisi de gerçek hataydı.
+
+#### Hata 1 — bozuk `Origin` başlığı WS işleyicisini çökertiyordu
+
+Kod şöyleydi:
+
+```python
+try:
+    candidate = urlsplit(origin)
+except ValueError:
+    return False
+...
+for allowed in settings.origins:
+    if (candidate.scheme, candidate.hostname, candidate.port) == (...)
+                                              ^^^^^^^^^^^^^^
+                                              ValueError BURADA fırlıyor
+```
+
+`urlsplit` **tembel çalışıyor**: çağrı bozuk girdide bile hata vermiyor,
+ayrıştırmayı alan erişimine erteliyor. `.port` ise portu tam sayıya
+çeviremezse `ValueError` atıyor. Yani `try` bloğu **yanlış yeri**
+sarmalıyordu ve hata döngünün içinde, korumasız fırlıyordu.
+
+Somut etki: `Origin: http://:::` başlığıyla gelen bir bağlantı işleyiciyi
+çökertiyordu. **Kimlik doğrulaması gerekmeyen, el sıkışma tamamlanmadan
+tetiklenebilen** bir hata yolu — yani dışarıdan ulaşılabilir.
+
+#### Hata 2 — aynı köken kontrolü şemayı yok sayıyordu
+
+`Host` başlığı şema taşımaz (`127.0.0.1:8001`), bu yüzden yalnızca
+host:port karşılaştırılıyordu. Sonuç: `Origin: https://127.0.0.1:8001`
+ile `Host: 127.0.0.1:8001` **eşleşiyordu.** Oysa aynı köken politikasının
+tanımı üç bileşenlidir: **şema + host + port.**
+
+Pratikte sömürülmesi zor (aynı host:port'ta iki şema aynı anda duramaz),
+ama ikisini kontrol edip üçüncüsünü atlamak kontrolün adını yanlış
+koymaktır. Şema artık bağlantının kendisinden türetiliyor
+(`ws` → `http`, `wss` → `https`).
+
+**Öğrenilen dersler:**
+
+1. **Bir çağrıyı `try` içine almak, o çağrının ürettiği NESNEYİ
+   kullanmanın da güvenli olduğu anlamına gelmiyor.** Tembel
+   değerlendirme yapan kütüphanelerde hata, çağrıdan çok sonra çıkar.
+2. **"Test yazdım" ile "test commit ettim" arasındaki fark, raporda
+   savunulabilir olmakla olmamak arasındaki farktır.** Üç ayrı belgede
+   "N birim testi geçti" yazılıydı ve depoda hiçbiri yoktu.
+3. **Testler kapsama için değil, sessiz hata üreten yerler için
+   yazılır.** Öncelik sırası: letterbox ters dönüşümü (yanlış yere
+   çizim, hata mesajı yok), hareket filtresi (fazla elerse olaylar hiç
+   görülmez), origin doğrulaması (iki kez hataya yol açmıştı).
+
+---
+
+### P-28 · Isınma 90 saniye sürüyor — ve ölçümlerin çoğu bunun içinde yapılmış
+
+**Tarih:** 18.08.2026 · **Faz:** 1 / Gün 14 · **Tür:** ölçüm metodolojisi
+
+**Belirti:** KADEME 2b bağlandıktan sonra doğrulama koşusu yapıldı,
+sayılar felaketti:
+
+```
+35 sn'lik koşu:  tespit 31.5 ms · poz 245.2 ms · gecikme 1505 ms · 1.6 FPS
+```
+
+Belgelenen değerler tespit 6.5 ms, poz 9.1 ms, gecikme 181 ms. Yani
+görünürde **25 kat** gerileme. İlk refleks "yeni kod boru hattını
+bozdu" oldu.
+
+**Ölçüm ne diyor:** Koşu 90 saniyeye uzatıldı ve aralık aralık raporlandı:
+
+| süre | tespit | poz | gecikme | FPS |
+|---|---|---|---|---|
+| 30 sn | 19.9 ms | 141.9 ms | 1260 ms | 3.2 |
+| 60 sn | 14.5 ms | 21.5 ms | 457 ms | 9.0 |
+| **90 sn** | **9.6 ms** | **14.4 ms** | **189 ms** | 10.0 |
+
+Gerileme yok. Sistem ısındıkça belgelenen değerlere yakınsıyor.
+
+**Kök sebep:** Soğuk başlangıç. CUDA bağlamı, çekirdek derlemesi,
+model yükleme, ilk batch'lerin küçüklüğü, açılışta kuyrukta biriken
+karelerin eritilmesi. Hepsi ilk dakikada.
+
+**Bu P-22'nin tekrarı** — orada da yeniden başlatma sonrası 169 ms/kare
+görülüp "GPU bozuldu" sanılmıştı. Ama orada **süre ölçülmemiş**, sadece
+"soğuk başlangıç" denip geçilmişti.
+
+**Asıl bulgu şu:** ısınma **~90 saniye** sürüyor. Bu sayı ilk kez
+ölçüldü ve bir ölçüm koşulu hâline getirilmesi gerekiyor.
+
+⚠ **Etkisi geriye dönük.** Kısa koşularla alınmış her ölçüm bu payı
+taşıyor olabilir. Gün 23 değerlendirme maratonunda **ilk 90 saniye
+atılmalı**, yoksa K2/K3 rakamları sistematik olarak kötümser çıkar.
+
+**Öğrenilen ders:** "Soğuk başlangıç" bir açıklama değil, bir
+**büyüklük**. P-22'de doğru teşhis konmuş ama sayıya bağlanmamıştı, o
+yüzden ders uygulanabilir hâle gelmedi ve aynı tuzağa tekrar düşüldü.
+Bir etkiyi fark etmek yetmiyor; **ne kadar sürdüğünü ölçüp ölçüm
+protokolüne yazmak** gerekiyor. `benchmarks/` betiklerine bir "ısınma
+penceresi" parametresi girmeli.
+
+---
+
 ### P-27 · `match_thresh` sezgiye ters çalışıyor — ve kimlik parçalanmasının sebebi buydu
 
 **Tarih:** 17.08.2026 · **Faz:** 1 / Gün 12 · **Kazanç:** tek kare yaşayan iz %10 → %4.2
