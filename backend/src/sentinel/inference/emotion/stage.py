@@ -1,9 +1,8 @@
 """KADEME 2b kapısı — hangi kişiye ne zaman yüz analizi yapılacak.
 
-Bu dosyanın tamamı **iş yapmamak** üzerine. Sebebi ölçüm: ifade modeli
-bu ortamda CPU'da koşuyor ve yüz başına ~58 ms alıyor. 20 kamerada
-kare başına ~4.5 kişi varsa, hepsini her karede sınıflandırmak
-saniyede onlarca saniyelik iş demek — imkânsız.
+Bu dosyanın tamamı **iş yapmamak** üzerine. 20 kamerada kare başına
+~4.5 kişi var; hepsini her karede sınıflandırmak saniyede yüzlerce
+model çağrısı demek.
 
 Üç kademeli kapı (ucuzdan pahalıya)
 -----------------------------------
@@ -11,7 +10,12 @@ saniyede onlarca saniyelik iş demek — imkânsız.
     2. Bu iz için süre doldu mu?       → bedava (sözlük araması)
     3. Bütçe kaldı mı?                 → bedava (sayaç)
     ─────────────────────────────────
-    ancak hepsi geçilirse: yüz tespiti (~1 ms) → ifade (~58 ms)
+    ancak hepsi geçilirse: yüz tespiti (1.46 ms) → ifade (7.4 ms)
+
+⚠ Maliyetler ÖLÇÜLDÜ (18.08.2026). Bu dosya uzun süre "~58 ms/yüz"
+diyordu ve bütçe tasarımı ona dayanıyordu; rakam ~8 kat yanlıştı.
+Ölçüm ve gerekçe: `emotion/base.py` modül başlığı ·
+`benchmarks/expression_20260818-gun14.json`
 
 Kademeli işlemenin aynı mantığı: pahalı adıma gelmeden önce ucuz
 kontrollerle mümkün olduğunca ele.
@@ -51,8 +55,22 @@ log = get_logger(__name__)
 # Yüz, gövdenin kabaca sekizde biri; 60 px yüz için ~200 px gövde gerekir.
 MIN_PERSON_HEIGHT = 180
 
-# Tek turda en fazla kaç yüz sınıflandırılsın. 58 ms/yüz olduğu için
-# 4 yüz ≈ 230 ms — çıkarım döngüsünü bloklamayacak bir üst sınır.
+# Tek turda en fazla kaç yüz sınıflandırılsın.
+#
+# ⚠ Bu sabitin ESKİ gerekçesi yanlış bir ölçüme dayanıyordu:
+# "58 ms/yüz olduğu için 4 yüz ≈ 230 ms". Gerçek maliyet 7.4 ms/yüz,
+# yani 4 yüz ≈ 30 ms (benchmarks/expression_20260818-gun14.json).
+#
+# Sayı yine de 4'te BIRAKILDI, çünkü doğru gerekçe farklı: sınır,
+# modelin maliyetinden değil ÇIKARIM DÖNGÜSÜNÜN bütçesinden geliyor.
+# Batch başına toplam süre ~119 ms ölçüldü; 30 ms buna %25 ekliyor.
+# 8'e çıkarsak %50 olurdu ve KADEME 1 (her şeyin temeli) aç kalırdı.
+# Tespit kaybetmek, ifade kazanmaktan pahalıdır — ifade füzyonda 0.10
+# ağırlıklı.
+#
+# Yani: sayı aynı kaldı ama artık türetildiği formülle birlikte yazılı
+# (P-16'nın dersi: "türetilmiş sabitleri türetildikleri formülle
+# birlikte yaz").
 MAX_FACES_PER_ROUND = 4
 
 

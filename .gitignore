@@ -33,6 +33,21 @@ data/_sources/*
 data/_tmp/*
 models/*
 !**/.gitkeep
+
+# ⚠ SOURCE.md dosyalari git'e GİRER — PLAN.md §7.2:
+#   "Her veri seti için indirme adresi, lisans ve alıntı bilgisi."
+# Veri girmez, KAYNAĞIN BELGESİ girer. Bu dosyalar olmadan hangi verinin
+# nereden geldiği ve hangi lisansla kullanıldığı kayboluyor — rapor ve
+# tekrarlanabilirlik açısından veri kadar değerliler.
+#
+# Not: `data/datasets/*` alt DİZİNLERİ de elediği için git içlerine
+# hiç bakmıyordu. Önce dizinleri geri alıyoruz, sonra içeriklerini
+# eliyoruz, en son SOURCE.md'yi kurtarıyoruz — sıra önemli.
+!data/datasets/*/
+data/datasets/*/*
+!data/_sources/*/
+data/_sources/*/*
+!**/SOURCE.md
 # Ağırlıkların SHA256 kaydı git'te DURMALI — tekrarlanabilirlik ve
 # bütünlük doğrulaması için (G26). Dosyaların kendisi değil, sadece kayıt.
 !models/checksums.json

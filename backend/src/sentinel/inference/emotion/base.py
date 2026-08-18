@@ -35,18 +35,46 @@ KADEME 2b nerede duruyor
     Kademe 2a : poz (iskelet)    → tespit edilen her kişide
     Kademe 2b : yüz + ifade      → SEYREK (aşağıya bakınız)
 
-Seyrek olması zorunlu, çünkü ifade modeli bu ortamda **CPU'da**
-koşuyor: yüz başına ~58 ms. Her kişiyi her karede sınıflandırmak
-imkânsız. Kapı iki kademeli:
+Seyrek olması zorunlu. Kapı iki kademeli:
 
   1. Yüz kutusu yeterince büyük mü (küçük yüzde tahmin gürültüdür)
   2. Bu iz için son sınıflandırmadan bu yana yeterli süre geçti mi
      (duygu 100 ms'de değişmez; 2 saniyede bir yeterli)
 
-⚠ ONNX GPU sağlayıcısı bu ortamda etkinleştirilemedi (onnxruntime-gpu
-kurulu ama CUDA sağlayıcısı yüklenmiyor — beklediği cuDNN sürümü yok).
-Model CPU'da koşuyor ve bu, seyreltmeyi opsiyonel olmaktan çıkarıp
-zorunlu kılıyor. Faz 5'te tekrar denenecek.
+⚠ MALİYET — ölçüldü, önceki rakam YANLIŞTI
+------------------------------------------
+Bu dosyada uzun süre *"CPU'da yüz başına ~58 ms"* yazıyordu ve
+`ExpressionStage`'in tüm bütçe tasarımı ona dayanıyordu. **Yanlıştı.**
+Yeniden ölçüm (`scripts/benchmark_expression.py`, 18.08.2026):
+
+    yüz başına        cuda 7.51 ms   ·   cpu 7.41 ms
+    yüz tespiti       1.46 ms/kırpıntı
+    ısınma (bir kez)  67 ms
+
+Yani gerçek maliyet **~8 kat düşük.** Eski rakam muhtemelen ısınma
+karesi ölçüme dahil edilerek ya da 20 kameralık boru hattı koşarken
+alınmıştı (aynı tuzak: problems.md · P-22, P-28).
+
+⚠ GPU KAZANDIRMIYOR — ve sebebi önemli
+--------------------------------------
+CUDA sağlayıcısı artık yükleniyor (P-30: iki onnxruntime paketi aynı
+dizini paylaşıp birbirini eziyormuş). Ama ölçüm gösterdi ki kazanç yok:
+`cuda 7.51` / `cpu 7.41` ms — CPU marjinal olarak daha hızlı.
+
+Sebep ölçekte görünüyor: 1 yüz 7.25 ms, 8 yüz 60.06 ms → **8.28× tam
+doğrusal.** `emotiefflib.predict_emotions(liste)` toplu çağrı YAPMIYOR,
+içeride tek tek döngüye sokuyor. Model küçük (16 MB `enet_b0`) ve her
+çağrının sabit maliyeti baskın olduğu için GPU'nun paralelliği hiç
+devreye girmiyor.
+
+Gerçek kazanç ONNX oturumunu doğrudan `(N,3,224,224)` tensörle
+çağırmakla gelir — `detector/yolo.py::_as_tensor`'da yaptığımızın
+aynısı. Bu P-15'in aynı ailesi: doğru soru "hangi cihaz hızlı" değil,
+"iş kaç çağrıya bölünüyor". Gün 16'ya bırakıldı.
+
+Maliyet 8 kat düşük çıksa da seyreltme KALDIRILMADI: kapı zaten bedava
+çalışıyor ve bütçe koruması, kalabalık bir kameranın tek başına çıkarım
+döngüsünü bloklamasını engelliyor.
 """
 
 from __future__ import annotations

@@ -10,16 +10,40 @@
   },
   "finding": {
     "headline": "Kamera çiftliği görüntüsü yüz ifadesi analizini DESTEKLEMİYOR",
-    "person_height_px": { "p50": 120, "p90": 286, "max": 504 },
-    "estimated_face_px": { "p50": 15, "max": 63, "rule": "yüz ≈ gövde boyu / 8" },
+    "person_height_px": {
+      "p50": 120,
+      "p90": 286,
+      "max": 504
+    },
+    "estimated_face_px": {
+      "p50": 15,
+      "max": 63,
+      "rule": "yüz ≈ gövde boyu / 8"
+    },
     "people_over_180px_pct": 24.1,
     "face_detection_hit_rate": {
       "all_crops": "1 / 130",
       "largest_crops_over_200px": "2 / 60"
     },
     "classified_examples": [
-      { "camera": "cam-17", "person_px": 479, "face_px": "75x117", "label": "nötr", "confidence": 0.33, "quality": 0.28, "usable": false },
-      { "camera": "cam-19", "person_px": 294, "face_px": "90x101", "label": "korku", "confidence": 0.27, "quality": 0.13, "usable": false }
+      {
+        "camera": "cam-17",
+        "person_px": 479,
+        "face_px": "75x117",
+        "label": "nötr",
+        "confidence": 0.33,
+        "quality": 0.28,
+        "usable": false
+      },
+      {
+        "camera": "cam-19",
+        "person_px": 294,
+        "face_px": "90x101",
+        "label": "korku",
+        "confidence": 0.27,
+        "quality": 0.13,
+        "usable": false
+      }
     ],
     "interpretation": [
       "Bulunan iki yüzde de güven %27-33. Model 8 sınıflı, yani rastgele tahmin %12.5.",
@@ -51,5 +75,17 @@
   "cost_when_idle": {
     "note": "Uygun yüz yokken kapı bedava çalışıyor: kutu boyutu kontrolü + zamanlayıcı. Pahalı adıma (58 ms) hiç gidilmiyor.",
     "measured": "24 karede 178 aday değerlendirildi, 0 sınıflandırma yapıldı."
+  },
+  "SUPERSEDED_BY": "expression_20260818-gun14.json",
+  "correction": {
+    "date": "2026-08-18",
+    "what_was_wrong": [
+      "'Model CPU'da ~58 ms/yuz' rakami ~8 kat YANLIS. Yeniden olcum: 7.41 ms (cpu) / 7.51 ms (cuda).",
+      "'onnxruntime-gpu kuruldu ama CUDA saglayicisi bu ortamda yuklenmedi (bekledigi cuDNN surumu yok)' teshisi de YANLIS. Gercek sebep: onnxruntime (CPU) ile onnxruntime-gpu ayni dizine aciliyor ve son kurulan digerinin DLL'ini eziyor. CUDA saglayici DLL'i diskteydi, ana kutuphane tanimiyordu."
+    ],
+    "why_it_mattered": "ExpressionStage'in butun butce tasarimi (MAX_FACES_PER_ROUND=4, '4 yuz = 230 ms') bu yanlis sayiya dayaniyordu.",
+    "probable_cause": "Isinma karesi olcume dahil edilmis ya da 20 kameralik boru hatti kosarken olculmus. Ayni tuzak: problems.md P-22 ve P-28.",
+    "what_still_holds": "Ana bulgu DEGISMEDI: kamera ciftligi goruntusu bu kademeyi beslemiyor. Gun 14 olcumu bunu bagimsiz olarak dogruladi (kaynak uzayinda kisi boyu p50 118 px, tahmini yuz 14.8 px).",
+    "records": "docs/report/problems.md P-30"
   }
 }

@@ -1,0 +1,80 @@
+{
+  "measured_at": "2026-08-18T15:18:29",
+  "phase": "Faz 1 / Gün 14",
+  "description": "KADEME 2b yeniden ölçüm — Gün 13'ün '58 ms/yüz' rakamı doğrulanıyor",
+  "cameras": [
+    "cam-17",
+    "cam-19",
+    "cam-20",
+    "cam-09"
+  ],
+  "frames_per_camera": 20,
+  "expression_model": {
+    "cuda": {
+      "isinma_ms": 67.4,
+      "toplam_ms": {
+        "batch_1": 7.25,
+        "batch_2": 13.76,
+        "batch_4": 26.19,
+        "batch_8": 60.06
+      },
+      "yuz_basina_ms_batch8": 7.51,
+      "olcek_dogrusal_mi": 8.28
+    },
+    "cpu": {
+      "isinma_ms": 67.4,
+      "toplam_ms": {
+        "batch_1": 6.7,
+        "batch_2": 11.86,
+        "batch_4": 25.69,
+        "batch_8": 59.28
+      },
+      "yuz_basina_ms_batch8": 7.41,
+      "olcek_dogrusal_mi": 8.85
+    }
+  },
+  "input_analysis": {
+    "kaynak_uzayi": {
+      "kisi_sayisi": 387,
+      "kisi_boyu_px": {
+        "p50": 118.0,
+        "p90": 223.5,
+        "azami": 585.2
+      },
+      "tahmini_yuz_px_p50": 14.8,
+      "esik_ustu_kisi_yuzdesi": 18.1,
+      "yuz_aranan": 70,
+      "yuz_bulunan": 5,
+      "yuz_isabet_yuzdesi": 7.1,
+      "bulunan_yuz_px_p50": 123.8,
+      "kalite_p50": 0.43,
+      "kullanilabilir_yuz": 1
+    },
+    "model_uzayi_640": {
+      "kisi_sayisi": 394,
+      "kisi_boyu_px": {
+        "p50": 65.5,
+        "p90": 110.5,
+        "azami": 331.8
+      },
+      "tahmini_yuz_px_p50": 8.2,
+      "esik_ustu_kisi_yuzdesi": 3.6,
+      "yuz_aranan": 14,
+      "yuz_bulunan": 2,
+      "yuz_isabet_yuzdesi": 14.3,
+      "bulunan_yuz_px_p50": 118.0,
+      "kalite_p50": 0.52,
+      "kullanilabilir_yuz": 1
+    }
+  },
+  "face_detection": {
+    "kirpinti_basina_ms": 1.455
+  },
+  "gun8_kucultmesinin_bedeli": {
+    "soru": "Ön işlemenin alım katmanına taşınması (640×640) KADEME 2b'yi ne kadar zayıflattı?",
+    "kaynak_yuz_isabet": 7.1,
+    "model_640_yuz_isabet": 14.3,
+    "kaynak_kullanilabilir_yuz": 1,
+    "model_640_kullanilabilir_yuz": 1
+  }
+}

@@ -12,8 +12,19 @@ Neden EmotiEffLib
 AffectNet üzerinde eğitilmiş, hazır ağırlıklı, 8 sınıflı. Sıfırdan
 eğitmek bu projenin kapsamı değil (PLAN.md §3.4).
 
-⚠ CPU'da koşuyor — GPU sağlayıcısı bu ortamda etkinleşmedi. Yüz başına
-~58 ms. Bu yüzden çağıran kod **seyreltmek zorunda** (base.py).
+Ölçülen maliyetler (18.08.2026, `scripts/benchmark_expression.py`):
+
+    YuNet yüz tespiti   1.46 ms / kırpıntı
+    EmotiEffLib ifade   7.41 ms / yüz  (cpu)  ·  7.51 ms  (cuda)
+
+⚠ Bu dosya uzun süre "~58 ms/yüz, GPU sağlayıcısı etkinleşmedi"
+diyordu. **İkisi de yanlıştı:** maliyet ~8 kat düşük ve CUDA sağlayıcısı
+artık yükleniyor (P-30). Ama GPU kazandırmıyor, çünkü emotiefflib toplu
+çağrı yapmıyor — ayrıntı ve ölçüm `emotion/base.py` modül başlığında.
+
+Çağıran kod yine de **seyreltiyor**: kapı bedava çalışıyor ve bütçe
+koruması kalabalık bir kameranın çıkarım döngüsünü bloklamasını
+engelliyor (stage.py).
 """
 
 from __future__ import annotations
