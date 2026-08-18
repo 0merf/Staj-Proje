@@ -34,3 +34,40 @@ Start-Sleep -Seconds 2
 
 if ($killed -eq 0) { Write-Host "  çalışan SENTINEL süreci yok" }
 else { Write-Host "`n  toplam $killed süreç durduruldu" }
+
+
+# ─── HAM KAYITLARI TEMİZLE ────────────────────────────────────────
+#
+# NEDEN GEREKLİ
+# Kaynak videolar `-stream_loop -1` ile SONSUZ döngüde yayınlanıyor,
+# yani kayıt açıkken disk durmadan yazılır (ölçülen: ~14 GB/saat,
+# 20 kamera). MediaMTX'in kendi `recordDeleteAfter: 1h` temizliği bunu
+# çalışırken sınırlıyor — ama YALNIZCA MediaMTX çalışırken.
+#
+# Açık tam olarak burası: geliştirme oturumunu bitirip konteynerleri
+# durdurunca son bir saatin kayıtları (~14 GB) diskte öylece kalıyor
+# ve bir dahaki açılışa kadar kimse silmiyor. Haftalarca dokunulmazsa
+# öylece durur.
+#
+# Ham kayıt zaten GEÇİCİ bir aratabandır: değeri, alarm anında ondan
+# kesilen klipte. Klipler Garage'a yükleniyor ve KVKK saklama süresi
+# (30 gün) onlara işliyor. Oturum bitince ham kaydı tutmanın hiçbir
+# faydası yok.
+#
+# ⚠ `data/clips/` SİLİNMEZ — orası kesilmiş olay klipleri, yani
+# ürünün çıktısı. Yalnızca `data/recordings/` (ham aratabant) siliniyor.
+$recordings = Join-Path $PSScriptRoot "..\..\data\recordings"
+if (Test-Path $recordings) {
+    $before = Get-ChildItem $recordings -Recurse -File -Filter *.mp4 -ErrorAction SilentlyContinue
+    if ($before) {
+        $mb = [math]::Round(($before | Measure-Object -Property Length -Sum).Sum / 1MB, 1)
+        # Yalnızca kamera alt dizinleri siliniyor; .gitkeep korunuyor ki
+        # dizin yapısı bozulmasın (.gitignore `!**/.gitkeep` bekliyor).
+        Get-ChildItem $recordings -Directory -ErrorAction SilentlyContinue |
+            Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+        Write-Host ("  ham kayıtlar silindi: {0} dosya, {1} MB" -f $before.Count, $mb)
+    }
+    else {
+        Write-Host "  ham kayıt yok (kayıt kapalı ya da zaten temiz)"
+    }
+}

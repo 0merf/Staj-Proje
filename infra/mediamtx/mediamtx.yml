@@ -81,11 +81,20 @@ srt: no
 #   · KADEME 3 (video aksiyon doğrulayıcı) 3 sn'lik klibi de buradan
 #     alacak; onun da kaynağı yoktu
 #
-#  Disk bütçesi: 20 kamera × ~1.5 Mbps ≈ 4.5 GB/saat.
-#  `recordDeleteAfter: 6h` ile ~27 GB'ta döner. KVKK saklama süresi
-#  (PLAN §12.1: klipler 30 gün) bu HAM kayıtlara değil, alarm anında
-#  kesilip Garage'a yüklenen KLİPLERE uygulanır — ham kayıt yalnızca
-#  kesim penceresi kadar tutuluyor.
+#  Disk bütçesi — ÖLÇÜLDÜ (18.08.2026): ~14 GB/saat (20 kamera).
+#  `recordDeleteAfter: 1h` ile ~14 GB'ta döner.
+#
+#  ⚠ ÜÇ KATMANLI DİSK KORUMASI — kaynak videolar SONSUZ döngüde
+#  yayınlandığı için kayıt kendiliğinden durmaz:
+#    1. Kayıt varsayılan KAPALI  → `MEDIAMTX_RECORD=yes` ile açılır
+#    2. Çalışırken 1 saatte döner → `recordDeleteAfter`
+#    3. Kapanışta temizlenir      → `stop_all.ps1`
+#  (2) yalnızca MediaMTX ÇALIŞIRKEN işler; konteyner durunca kalan
+#  dosyalar diskte öylece kalır. (3) tam olarak o boşluğu kapatıyor.
+#
+#  KVKK saklama süresi (PLAN §12.1: klipler 30 gün) bu HAM kayıtlara
+#  değil, alarm anında kesilip Garage'a yüklenen KLİPLERE uygulanır —
+#  ham kayıt yalnızca kesim penceresi kadar tutuluyor.
 # ══════════════════════════════════════════════════════════════
 
 # ─── VARSAYILAN YOL AYARLARI ──────────────────────────────────
@@ -95,10 +104,53 @@ pathDefaults:
   runOnDemandStartTimeout: 20s
   runOnDemandCloseAfter: 30s
 
-  # ⚠ Varsayılan KAPALI. Kayıt yol bazında açılıyor (aşağıda), çünkü
-  # sentetik test kameralarını (testsrc2, life, color) kaydetmek saf
-  # disk israfı — onlar boru hattı testi için var, delil için değil.
+  # ⚠⚠ KAYIT VARSAYILAN OLARAK KAPALI — bilinçli
+  #
+  # Kaynak videolar SONSUZ DÖNGÜDE yayınlanıyor (`-stream_loop -1`),
+  # yani sistem açık kaldığı sürece kayıt da durmadan büyür. Ölçülen
+  # hız ~14 GB/saat. Klip/alarm zinciri üzerinde çalışmadığımız her
+  # gün bu tamamen israf: Gün 19'a kadar kimse klip kesmiyor.
+  #
+  # Bu yüzden kayıt OPT-IN. Açmak için `.env` içinde:
+  #     MEDIAMTX_RECORD=yes
+  # sonra `docker compose up -d mediamtx`
+  #
+  # Ortam değişkeniyle yönetilmesinin sebebi: bu dosya konteynere
+  # salt-okunur bağlı. Değeri değiştirmek için dosyayı düzenlemek
+  # gerekseydi, "sadece bugün açayım" demek bir git değişikliği
+  # doğururdu ve kazara commit'lenirdi.
+  #
+  # Not: değer `pathDefaults`'ta duruyor ki tek bir değişken tüm kamera
+  # çiftliğini birden yönetsin. Sentetik test kameraları aşağıda ayrıca
+  # `record: no` ile kilitli — onlar hiçbir koşulda kaydedilmez.
   record: no
+
+  # ─── Kayıt parametreleri (kayıt açıksa geçerli) ───
+  recordPath: /recordings/%path/%Y-%m-%d_%H-%M-%S-%f
+  # fmp4: parçalı MP4. Seçilme sebebi, kayıt DEVAM EDERKEN okunabilir
+  # olması — klasik MP4'te indeks (moov atomu) dosya kapanınca yazılır,
+  # yani en TAZE segment (alarm anındaki segment!) okunamazdı.
+  recordFormat: fmp4
+  recordPartDuration: 1s
+  # 60 sn'lik segment: alarm penceresi (olay öncesi 10 sn + sonrası
+  # 10 sn) çoğunlukla tek segmente düşer, en kötü ihtimalle ikiye.
+  # Daha kısa segment = daha çok dosya + daha çok kesim birleştirme.
+  recordSegmentDuration: 60s
+  # ⚠ 1 SAAT — ölçümle belirlendi, tahminle değil.
+  # İlk değer 6h yazılmıştı; dayanağı "20 kamera × 1.5 Mbps ≈ 4.5 GB/saat"
+  # TAHMİNİYDİ. ÖLÇÜM (18.08.2026, cam-09 ve cam-12, gerçek 60 sn'lik
+  # segmentler): segment başına 9.4-13.5 MB → kamera başına ~700 MB/saat
+  # → 20 kamerada ~14 GB/saat. Tahmin 3 kat düşüktü.
+  #   6h saklama = ~84 GB   ·   1h saklama = ~14 GB  ⬅ seçilen
+  # 1 saat fazlasıyla yeterli: klip penceresi olay öncesi/sonrası 10'ar
+  # saniye, alarm motoru saniyeler içinde tepki veriyor ve kesilen klip
+  # zaten Garage'a yükleniyor. Ham kayıt yalnızca "kesim yapılana kadar"
+  # tutulmalı; arşiv görevi kliplerin.
+  #
+  # ⚠ Bu temizlik YALNIZCA MediaMTX ÇALIŞIRKEN işler. Konteyner
+  # durunca kalan dosyalar diskte öylece kalır — o yüzden
+  # `stop_all.ps1` kapanışta ayrıca siliyor.
+  recordDeleteAfter: 1h
 
 paths:
 
@@ -115,6 +167,11 @@ paths:
       -pix_fmt yuv420p -g 50 -an
       -rtsp_transport tcp -f rtsp rtsp://127.0.0.1:$RTSP_PORT/$MTX_PATH
 
+    # Sentetik test deseni — HİÇBİR koşulda kaydedilmez.
+    # `pathDefaults` ortam değişkeniyle açılsa bile burası kilitli:
+    # bunlar boru hattı testi için var, delil için değil.
+    record: no
+
   # Yoğun kaotik hareket — batch/yük testi için
   cam-test-chaos:
     runOnDemand: >
@@ -122,6 +179,11 @@ paths:
       -c:v libx264 -preset ultrafast -tune zerolatency
       -pix_fmt yuv420p -g 50 -an
       -rtsp_transport tcp -f rtsp rtsp://127.0.0.1:$RTSP_PORT/$MTX_PATH
+
+    # Sentetik test deseni — HİÇBİR koşulda kaydedilmez.
+    # `pathDefaults` ortam değişkeniyle açılsa bile burası kilitli:
+    # bunlar boru hattı testi için var, delil için değil.
+    record: no
 
   # Tamamen durağan — Kademe 0 hareket filtresi bunu ~%100 ELEMELİ
   # (PLAN.md §5.1 doğrulaması: filtre gerçekten yük düşürüyor mu?)
@@ -131,6 +193,11 @@ paths:
       -c:v libx264 -preset ultrafast -tune zerolatency
       -pix_fmt yuv420p -g 50 -an
       -rtsp_transport tcp -f rtsp rtsp://127.0.0.1:$RTSP_PORT/$MTX_PATH
+
+    # Sentetik test deseni — HİÇBİR koşulda kaydedilmez.
+    # `pathDefaults` ortam değişkeniyle açılsa bile burası kilitli:
+    # bunlar boru hattı testi için var, delil için değil.
+    record: no
 
   # ══════════════════════════════════════════════════════════
   #  KAMERA ÇİFTLİĞİ — data/videos/cam-NN.mp4 dosyalarından
@@ -150,31 +217,12 @@ paths:
       -c copy -an
       -rtsp_transport tcp -f rtsp rtsp://127.0.0.1:$RTSP_PORT/$MTX_PATH
 
-    # ─── OLAY KLİBİ KAYNAĞI (gerekçe: dosya başındaki blok) ───
-    record: yes
-    recordPath: /recordings/%path/%Y-%m-%d_%H-%M-%S-%f
-    # fmp4: parçalı MP4. Seçilme sebebi, kayıt DEVAM EDERKEN okunabilir
-    # olması — klasik MP4'te indeks (moov atomu) dosya kapanınca yazılır,
-    # yani en TAZE segment (alarm anındaki segment!) okunamazdı.
-    recordFormat: fmp4
-    recordPartDuration: 1s
-    # 60 sn'lik segment: alarm penceresi (olay öncesi 10 sn + sonrası
-    # 10 sn) çoğunlukla tek segmente düşer, en kötü ihtimalle ikiye.
-    # Daha kısa segment = daha çok dosya + daha çok kesim birleştirme.
-    recordSegmentDuration: 60s
-    # ⚠ 1 SAAT — ölçümle belirlendi, tahminle değil.
-    # İlk değer 6h yazılmıştı; dayanağı "20 kamera × 1.5 Mbps ≈ 4.5 GB/saat"
-    # tahminiydi. ÖLÇÜM (18.08.2026, cam-09 ve cam-12, 60 sn'lik gerçek
-    # segmentler): segment başına 9.4-13.5 MB, yani kamera başına
-    # ~700 MB/saat, 20 kamerada ~14 GB/saat. Tahmin 3 kat düşüktü —
-    # kaynak videolar varsayılandan yüksek bit hızlı.
-    #   6h saklama = ~84 GB  (D: sürücüsünde 287 GB boş, sığar ama israf)
-    #   1h saklama = ~14 GB  ⬅ seçilen
-    # 1 saat fazlasıyla yeterli: klip penceresi olay öncesi/sonrası
-    # 10'ar saniye, alarm motoru saniyeler içinde tepki veriyor ve
-    # kesilen klip zaten Garage'a yükleniyor. Ham kayıt yalnızca
-    # "kesim yapılana kadar" tutulmalı; arşiv görevi kliplerin.
-    recordDeleteAfter: 1h
+    # ─── OLAY KLİBİ KAYNAĞI ───
+    # Kayıt ayarları BİLEREK burada tekrarlanmıyor; `pathDefaults`'tan
+    # miras alınıyor. Sebep: tek bir `MEDIAMTX_RECORD` ortam değişkeni
+    # 20 kameranın hepsini birden yönetsin. Burada `record: yes`
+    # yazsaydık ortam değişkeni bu satır tarafından ezilir ve kaydı
+    # kapatmak imkânsızlaşırdı.
 
   # ══════════════════════════════════════════════════════════
   #  KAMERA 21 — laptop webcam (canlı demo)
@@ -186,15 +234,14 @@ paths:
     # Yayın bekleniyor — kaynak tanımlanmadı (publisher push edecek)
     source: publisher
 
-    # Webcam de kaydediliyor: canlı demoda alarm tetiklenirse klibi
-    # gösterebilmek gerekiyor — sunumun can alıcı anı tam olarak bu.
-    # ⚠ KVKK: bu gerçek bir kişinin görüntüsü. Kayıt 6 saat sonra
-    # kendiliğinden siliniyor ve `PRIVACY_BLUR_DEFAULT=true` panelde
-    # yüzü bulanıklaştırıyor. Kamera yalnızca panelden elle açılıyor,
-    # kendiliğinden açılmıyor.
-    record: yes
-    recordPath: /recordings/%path/%Y-%m-%d_%H-%M-%S-%f
-    recordFormat: fmp4
-    recordPartDuration: 1s
-    recordSegmentDuration: 60s
-    recordDeleteAfter: 6h
+    # Webcam de kaydediliyor (ayarlar `pathDefaults`'tan): canlı demoda
+    # alarm tetiklenirse klibi gösterebilmek gerekiyor — sunumun can
+    # alıcı anı tam olarak bu.
+    #
+    # ⚠ KVKK: bu GERÇEK bir kişinin görüntüsü, diğer 20 kameradan farkı
+    # bu. Üç koruma birlikte çalışıyor:
+    #   · kayıt varsayılan KAPALI (MEDIAMTX_RECORD=yes gerekiyor)
+    #   · açıksa 1 saat sonra kendiliğinden siliniyor
+    #   · `stop_all.ps1` kapanışta ayrıca temizliyor
+    # Ayrıca `PRIVACY_BLUR_DEFAULT=true` panelde yüzü bulanıklaştırıyor
+    # ve kamera yalnızca panelden elle açılıyor, kendiliğinden açılmıyor.
