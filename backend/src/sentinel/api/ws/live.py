@@ -145,7 +145,9 @@ async def _receiver(client: Client) -> None:
             # "izliyorum" diye bildirip kaynak yönlendiremesin.
             requested = message.get("cameras") or []
             watched = authorize_cameras(requested if isinstance(requested, list) else [])
-            _publish_watched(watched)
+            # Oturum kimliğiyle yazılıyor: iki panel birbirinin
+            # listesini ezmesin (bkz. bus/streams.py · WATCHED_PREFIX)
+            _publish_watched(client.session_id, watched)
         elif kind == "ping":
             await client.websocket.send_text(json.dumps({"type": "pong", "ts": time.time()}))
 
@@ -156,8 +158,11 @@ async def _receiver(client: Client) -> None:
 _watch_client: Any = None
 
 
-def _publish_watched(cameras: list[str]) -> None:
+def _publish_watched(session_id: str, cameras: list[str]) -> None:
     """İzlenen kamera listesini alım worker'ının okuyacağı yere yazar.
+
+    Oturum kimliğiyle yazılır — iki panel açıkken biri diğerinin
+    listesini silmesin (bkz. bus/streams.py · WATCHED_PREFIX).
 
     Hata yutuluyor: bu bir optimizasyon sinyali, kritik yol değil.
     Valkey erişilemezse sistem varsayılan hızlarla çalışmaya devam eder.
@@ -170,7 +175,7 @@ def _publish_watched(cameras: list[str]) -> None:
             _watch_client = connect()
         from sentinel.bus.streams import set_watched_cameras
 
-        set_watched_cameras(_watch_client, cameras)
+        set_watched_cameras(_watch_client, session_id, cameras)
     except Exception as exc:  # pragma: no cover
         log.debug("izlenen_kamera_yayinlanamadi", error=str(exc))
 

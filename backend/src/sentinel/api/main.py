@@ -7,6 +7,7 @@ Kimlik doğrulama, kamera CRUD ve WebSocket katmanı sonraki fazlarda eklenecek.
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -159,6 +160,20 @@ async def metrics() -> Response:
 # ─── Hata ayıklama: çizim izi ────────────────────────────────
 
 
+def _safe_name(value: str, *, fallback: str = "bilinmeyen", limit: int = 32) -> str:
+    """İstemciden gelen bir parçayı dosya adında kullanılabilir hâle getirir.
+
+    Beyaz liste: yalnızca `[A-Za-z0-9_-]`. Kalan her karakter atılır,
+    dolayısıyla yol ayracı (`/`, `\\`), üst dizin (`..`), sürücü harfi
+    (`C:`) ve boşluk tanım gereği geçemez.
+
+    Boş kalırsa `fallback` döner — aksi hâlde `trace_20260818-101500_.json`
+    gibi adsız dosyalar birikirdi.
+    """
+    cleaned = re.sub(r"[^A-Za-z0-9_-]", "", value)[:limit]
+    return cleaned or fallback
+
+
 @app.post("/api/v1/debug/trace", include_in_schema=False)
 async def save_trace(payload: dict[str, Any]) -> dict[str, Any]:
     """Panelin kaydettiği kutu yörüngesini diske yazar.
@@ -170,13 +185,27 @@ async def save_trace(payload: dict[str, Any]) -> dict[str, Any]:
 
     ⚠ Yalnızca geliştirme ortamında açık. Üretimde kimlik doğrulaması
     olmayan yazma uç noktası bırakılmaz (PLAN.md §11.1).
+
+    ⚠ DOSYA ADI TEMİZLENİR (G12 — path traversal)
+    ---------------------------------------------
+    `camera` alanı istemciden geliyor ve doğrudan dosya adına giriyordu.
+    `{"camera": "../../../etc/onemli"}` gönderen biri `benchmarks/traces`
+    DIŞINA yazabilirdi. Kendi Öncelik-1 listemizde G12 tam olarak bunu
+    yasaklıyor: "yol sunucuda kurulur, istemciden gelen parça yol
+    ayracı içeremez".
+
+    Beyaz liste yaklaşımı kullanılıyor (kara liste değil): yalnızca
+    harf, rakam, tire ve alt çizgi geçer. Böylece `..`, `/`, `\\`, ':'
+    ve sürücü harfi gibi her şey tanım gereği elenir — tek tek
+    saymaya gerek kalmaz.
     """
     if settings.sentinel_env != "development":
         return {"saved": False, "reason": "yalnızca geliştirme ortamında"}
 
     traces = PROJECT_ROOT / "benchmarks" / "traces"
     traces.mkdir(parents=True, exist_ok=True)
-    name = f"trace_{datetime.now():%Y%m%d-%H%M%S}_{payload.get('camera', 'bilinmeyen')}.json"
+    camera = _safe_name(str(payload.get("camera", "")))
+    name = f"trace_{datetime.now():%Y%m%d-%H%M%S}_{camera}.json"
     path = traces / name
     path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
     log.info("cizim_izi_kaydedildi", path=str(path), samples=len(payload.get("samples", [])))

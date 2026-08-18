@@ -114,9 +114,19 @@ pose_crops = Counter(
 # referans (ground truth) gerekir. Onun yerine PROXY sayıyoruz: kısa
 # ömürlü izler. Bir iz birkaç kare sonra kaybolup yerine yeni kimlikli
 # bir iz geliyorsa, bu büyük olasılıkla aynı kişidir.
-track_switches = Counter(
-    "sentinel_track_switches_total",
-    "Kimlik kararsızlığı göstergesi: kısa ömürlü (terk edilmiş) iz sayısı",
+#
+# ⚠ METRİK ADI BİLEREK "switches" DEĞİL
+# Önceki adı `sentinel_track_switches_total` idi ve yanlıştı: sayılan
+# şey ID switch değil, KISA ÖMÜRLÜ İZ. İkisi aynı şey değil — her kısa
+# iz bir switch olmayabilir (gerçek yanlış pozitif olabilir), her switch
+# de kısa iz üretmeyebilir (iki uzun iz kimlik takas edebilir).
+# Grafana panelinde ve raporda ad ne diyorsa o okunacağı için, adın
+# ölçtüğü şeyi söylemesi gerekiyor. Gerçek ID switch / IDF1 / HOTA
+# ölçümü MOT17 + TrackEval ister; o Gün 23'ün işi (PLAN.md §14.2).
+short_tracks = Counter(
+    "sentinel_short_tracks_total",
+    "Kimlik kararsızlığı VEKİL göstergesi: kısa ömürlü (terk edilmiş) iz sayısı. "
+    "Gerçek ID switch DEĞİLDİR — bkz. PLAN.md §14.2",
     ["cam"],
 )
 
@@ -189,8 +199,8 @@ __all__ = [
     "queue_depth",
     "serve_metrics",
     "shm_slots_free",
+    "short_tracks",
     "track_lifetime",
-    "track_switches",
     "tracks_started",
     "worker_up",
 ]

@@ -121,7 +121,10 @@ class CameraTask:
         self._url = rtsp_url(settings.mediamtx_host, settings.mediamtx_rtsp_port, camera)
         # Uyarlanabilir FPS durumu: açılışta hareket varmış say, yoksa
         # sistem daha ilk kareden boşta moduna düşerdi.
-        self._last_motion_at = time.monotonic()
+        # ⚠ Duvar saati: `frame.timestamp` ile karşılaştırılıyor ve o
+        # da duvar saati (bkz. ingest/decoder.py · DecodedFrame).
+        # Karıştırmak `idle_for` değerini anlamsız yapardı.
+        self._last_motion_at = time.time()
         # Operatör bu kamerayı panelde açtı mı ve payına kaç FPS düştü?
         # Worker düzenli günceller (IngestWorker.refresh_watched).
         self.watched = False

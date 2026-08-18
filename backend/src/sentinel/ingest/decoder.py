@@ -38,7 +38,26 @@ class DecodedFrame:
 
     camera_id: str
     sequence: int
-    timestamp: float  # monotonik saat (saniye)
+    # ⚠ DUVAR SAATİ (time.time), monotonik DEĞİL — bilinçli.
+    # Bu damga Valkey üzerinden BAŞKA BİR SÜRECE (çıkarım worker'ı)
+    # geçiyor ve orada `now - captured_at` diye kullanılıyor. Python
+    # dokümanı `time.monotonic()` için açıkça şunu diyor: "The reference
+    # point of the returned value is undefined, so that only the
+    # difference between the results of two calls is valid." Yani iki
+    # AYRI SÜREÇTEN alınmış monotonik değerleri çıkarmak tanımsızdır.
+    # Pratikte Windows/Linux'ta ikisi de açılıştan itibaren saydığı için
+    # çalışıyordu, ama garanti yok.
+    #
+    # İkinci sebep çözünürlük: Windows'ta time.monotonic() =
+    # GetTickCount64(), adımı ~15.6 ms. 181 ms'lik bir gecikmeyi 15.6 ms
+    # adımlı saatle ölçmek p50/p95 rakamlarını gereksiz kabalaştırıyordu.
+    # time.time() aynı platformda mikrosaniye çözünürlüklü.
+    #
+    # Bu damgaya dayanan üç şey var, üçü de kritik:
+    #   · _drop_stale()            → gecikmeyi bağlayan tek mekanizma
+    #   · end_to_end_latency        → K3 kriterinin ta kendisi
+    #   · tarayıcıdaki captureTime  → kutu hizalamasının tamamı
+    timestamp: float  # duvar saati (epoch saniye)
     pts_seconds: float  # akış içindeki sunum zamanı
     image: np.ndarray  # BGR, (H, W, 3) uint8
 
@@ -171,7 +190,9 @@ class RtspDecoder:
                 yield DecodedFrame(
                     camera_id=self._camera_id,
                     sequence=self._sequence,
-                    timestamp=time.monotonic(),
+                    # Duvar saati — süreçler arası karşılaştırılabilir
+                    # olmak zorunda (gerekçe: DecodedFrame.timestamp)
+                    timestamp=time.time(),
                     pts_seconds=pts_s,
                     image=frame.to_ndarray(format="bgr24"),
                 )

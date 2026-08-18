@@ -163,8 +163,19 @@ export function frameAt(
     }
   }
 
+  // ⚠ t [0,1] ARALIĞINA KISILIYOR
+  // Hedef, tamponun EN ESKİSİNDEN de eskiyse yukarıdaki döngü hiçbir
+  // aralık bulamaz ve `before = buffer[0]` olarak kalır. O durumda
+  // `target - captureTime(before)` NEGATİF çıkar; kısılmazsa `blend`
+  // kutuyu iki gerçek nokta arasında değil, hareketin TERS yönünde
+  // 3 saniyelik tampon boyu kadar uzağa fırlatır.
+  //
+  // Ne zaman olur: analiz durur/yavaşlarsa (sonuç gelmiyor) ve video
+  // tamponu yüksekse. `STALE_MS` kontrolü bunu kısmen yakalıyor ama
+  // tam örtmüyor — kısma ucuz ve kesin.
   const span = captureTime(after) - captureTime(before)
-  const t = span > 0 ? (target - captureTime(before)) / span : 1
+  const raw = span > 0 ? (target - captureTime(before)) / span : 1
+  const t = Math.max(0, Math.min(1, raw))
 
   // Kimliği olan izleri eşleştirip ara değerliyoruz. Kimliksiz
   // tespitler (takipçi henüz onaylamadı — P-13) eşleştirilemez ama

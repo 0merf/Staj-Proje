@@ -330,24 +330,56 @@ __all__ = ["FrameMessage", "FrameStream", "ResultStream", "SlotAllocator", "conn
 # Neden TTL: panel kapanırsa ya da tarayıcı çökerse liste taze kalmamalı.
 # Panel düzenli olarak yeniliyor; yenilenmezse kendiliğinden siliniyor
 # ve sistem "kimse izlemiyor" moduna dönüyor.
-WATCHED_KEY = "cameras:watched"
+#
+# ⚠ OTURUM BAŞINA AYRI ANAHTAR — tek global küme DEĞİL
+# İlk sürüm tek bir `cameras:watched` kümesi kullanıyordu ve her yazma
+# `DELETE` + `SADD` yapıyordu. İki panel açıkken ikincinin `watching`
+# mesajı birincininkini siliyordu: iki operatörden biri kutucuk açtığı
+# anda diğerinin izlediği kameralar taban hıza düşüyordu. Sessiz bir
+# hata — kimse "benim kameram yavaşladı" diye şikâyet etmeden fark
+# edilmezdi.
+#
+# Şimdi her WS oturumu kendi anahtarını yazıyor, alım worker'ı hepsinin
+# BİRLEŞİMİNİ okuyor. TTL yine oturum başına: bir panel kapanınca
+# yalnızca onun anahtarı düşüyor, diğerleri etkilenmiyor.
+WATCHED_PREFIX = "cameras:watched:"
 WATCHED_TTL_S = 20
 
 
-def set_watched_cameras(client: Redis, cameras: list[str]) -> None:
-    """Operatörün şu an izlediği kameraları yayınlar."""
+def set_watched_cameras(client: Redis, session_id: str, cameras: list[str]) -> None:
+    """Bir oturumun izlediği kameraları yayınlar.
+
+    Args:
+        session_id: WS oturumunu ayırt eden kimlik. Aynı oturumun
+            tekrar tekrar yazması aynı anahtarı tazeler.
+    """
+    key = f"{WATCHED_PREFIX}{session_id}"
     pipe = client.pipeline()
-    pipe.delete(WATCHED_KEY)
+    pipe.delete(key)
     if cameras:
-        pipe.sadd(WATCHED_KEY, *cameras)
-        pipe.expire(WATCHED_KEY, WATCHED_TTL_S)
+        pipe.sadd(key, *cameras)
+        pipe.expire(key, WATCHED_TTL_S)
     pipe.execute()
 
 
 def get_watched_cameras(client: Redis) -> set[str]:
-    """İzlenen kamera kümesi. Panel kapalıysa boş döner."""
+    """Tüm açık oturumların izlediği kameraların BİRLEŞİMİ.
+
+    Hiç panel açık değilse boş küme döner ve sistem "kimse izlemiyor"
+    moduna geçer.
+
+    `SCAN` kullanılıyor, `KEYS` değil: `KEYS` sunucuyu tarama boyunca
+    bloklar. Anahtar sayısı burada küçük (oturum başına bir tane) ama
+    bloklayan komutu alışkanlık hâline getirmemek gerekiyor.
+    """
     try:
-        members = client.smembers(WATCHED_KEY)
+        keys = list(client.scan_iter(match=f"{WATCHED_PREFIX}*", count=100))
+        if not keys:
+            return set()
+        members = client.sunion(keys)
     except Exception:
         return set()
-    return {m.decode() if isinstance(m, bytes) else str(m) for m in members}  # type: ignore[union-attr]
+    # `decode_responses=True` ile bağlanıyoruz, yani str geliyor. Yine de
+    # bytes'a karşı korunuyoruz: bu fonksiyon ham bir Redis nesnesiyle de
+    # çağrılabilir (test, betik) ve orada ayar farklı olabilir.
+    return {m.decode() if isinstance(m, bytes) else str(m) for m in members}

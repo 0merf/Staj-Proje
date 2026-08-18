@@ -120,7 +120,10 @@ class BotSortTracker:
         self._trackers: dict[str, Any] = {}
         self._history: dict[str, dict[int, _History]] = {}
         self._total_tracks = 0
-        self._id_switches = 0
+        # ⚠ "ID switch" DEĞİL, kısa ömürlü iz sayacı. Gerçek ID switch
+        # ölçmek referans (ground truth) ister; bu bir vekil (proxy).
+        # Adın ölçtüğü şeyi söylemesi için yeniden adlandırıldı.
+        self._short_tracks = 0
         self._unconfirmed = 0
         self._seen_ids: dict[str, set[int]] = {}
         self._lifetimes: list[int] = []
@@ -234,9 +237,10 @@ class BotSortTracker:
             "unconfirmed_passthrough": self._unconfirmed,
             # Kimlik kararlılığı (PLAN.md §6.1). "Biten izlerin yüzde
             # kaçı kısa ömürlüydü" — düşük olması iyi.
+            # ⚠ Bu bir VEKİL ölçüdür, ID switch değil (bkz. metrics.py).
             "finished_tracks": finished,
-            "short_lived_tracks": self._id_switches,
-            "fragmentation_rate": round(self._id_switches / finished, 3) if finished else 0.0,
+            "short_lived_tracks": self._short_tracks,
+            "fragmentation_rate": round(self._short_tracks / finished, 3) if finished else 0.0,
             "median_lifetime_frames": (
                 sorted(self._lifetimes)[finished // 2] if finished else 0
             ),
@@ -314,8 +318,8 @@ class BotSortTracker:
             metrics.track_lifetime.observe(entry.samples)
             self._lifetimes.append(entry.samples)
             if entry.samples <= SHORT_TRACK_FRAMES:
-                self._id_switches += 1
-                metrics.track_switches.labels(cam=camera).inc()
+                self._short_tracks += 1
+                metrics.short_tracks.labels(cam=camera).inc()
 
 
 __all__ = ["BotSortTracker", "default_args"]

@@ -25,8 +25,10 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import json
+import time
 from dataclasses import dataclass, field
 from typing import Any
+from uuid import uuid4
 
 from fastapi import WebSocket
 from redis.asyncio import Redis
@@ -51,6 +53,10 @@ class Client:
     """Bağlı bir WebSocket istemcisi."""
 
     websocket: WebSocket
+    # Oturumu ayırt eden kimlik. İzlenen kamera listesi bununla
+    # yazılıyor; iki panel açıkken biri diğerinin listesini ezmesin
+    # (bkz. bus/streams.py · WATCHED_PREFIX).
+    session_id: str = field(default_factory=lambda: uuid4().hex[:16])
     cameras: set[str] = field(default_factory=set)
     queue: asyncio.Queue[str] = field(
         default_factory=lambda: asyncio.Queue(maxsize=CLIENT_QUEUE_MAX)
@@ -157,13 +163,33 @@ class ResultBroadcaster:
 
         camera = fields.get("cam", "")
         try:
+            captured_at = float(fields.get("ts", 0.0))
+            data = json.loads(fields.get("data", "{}"))
+
+            # ⚠ `lat` BURADA YENİDEN HESAPLANIYOR
+            # Çıkarım worker'ı `lat`'ı kendi publish anında yazıyordu,
+            # yani ölçüm "yakalanma → çıkarım sonucu yazıldı" arasını
+            # kapsıyordu. İçermediği kısım: Valkey'e yazma, buraya
+            # okunma, istemci kuyruğu, soket, ağ.
+            #
+            # Tarayıcı bu değerle `yakalanma ≈ varış − lat` hesabı
+            # yapıyor (frontend/src/lib/sync.ts). Eksik ölçülen gecikme,
+            # yakalanma anını olduğundan GEÇ gösteriyor ve kutular
+            # sistematik olarak biraz ileri kayıyordu.
+            #
+            # Yayın anında ölçmek kalan payı da kapsıyor. Geriye yalnızca
+            # soket + ağ süresi kalıyor ki o da tarayıcının kendi
+            # ölçtüğü video gecikmesiyle aynı yolu paylaşıyor.
+            if captured_at > 0:
+                data["lat"] = round((time.time() - captured_at) * 1000.0)
+
             payload = json.dumps(
                 {
                     "type": "frame",
                     "cam": camera,
                     "seq": int(fields.get("seq", 0)),
-                    "ts": float(fields.get("ts", 0.0)),
-                    **json.loads(fields.get("data", "{}")),
+                    "ts": captured_at,
+                    **data,
                 },
                 separators=(",", ":"),
             )
