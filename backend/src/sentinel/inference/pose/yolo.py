@@ -100,6 +100,7 @@ class YoloPoseEstimator:
         crop_batch: int = CROP_BATCH,
         conf_threshold: float = 0.25,
         min_box_height: int = MIN_BOX_HEIGHT_PX,
+        gpu_crop: bool = True,
     ) -> None:
         from ultralytics import YOLO
 
@@ -113,6 +114,10 @@ class YoloPoseEstimator:
         self._device = device
         self._half = half
         self._min_box_height = min_box_height
+        # Kırpıntı hazırlığı GPU'da mı yapılsın (bkz. _gpu_crops).
+        # Kapatılabilir olması bilinçli: gri dolgu ile çevre görüntü
+        # arasındaki iskelet isabet farkı A/B ölçülebilsin.
+        self._gpu_crop = gpu_crop
 
         started = time.perf_counter()
         self._model = YOLO(str(path))
@@ -162,13 +167,21 @@ class YoloPoseEstimator:
     ) -> list[list[PoseResult | None]]:
         output: list[list[PoseResult | None]] = [[None] * len(d) for d in detections]
 
-        crops, refs = self._collect_crops(frames, detections)
-        if not crops:
-            return output
+        if self._gpu_crop:
+            refs, boxes = self._collect_boxes(frames, detections)
+            if not refs:
+                return output
+            self.crops_total += len(refs)
+            hazir = self._gpu_crops(frames, refs, boxes)
+        else:
+            crops, refs = self._collect_crops(frames, detections)
+            if not crops:
+                return output
+            self.crops_total += len(crops)
+            hazir = crops
 
-        self.crops_total += len(crops)
-        for start in range(0, len(crops), self._crop_batch):
-            chunk = crops[start : start + self._crop_batch]
+        for start in range(0, len(refs), self._crop_batch):
+            chunk = hazir[start : start + self._crop_batch]
             results = self._predict(chunk)
             for offset, result in enumerate(results):
                 ref = refs[start + offset]
@@ -195,6 +208,60 @@ class YoloPoseEstimator:
         }
 
     # ─── İç işler ────────────────────────────────────────────
+
+    def _collect_boxes(
+        self,
+        frames: list[np.ndarray],
+        detections: list[list[Detection]],
+    ) -> tuple[list[_CropRef], list[tuple[int, int, int, int]]]:
+        """GPU yolu için kutuları toplar — piksel KOPYALAMADAN.
+
+        CPU yolundan tek farkı burada hiçbir görüntü verisine
+        dokunulmaması: yalnızca koordinat aritmetiği yapılıyor, asıl
+        kesme işi `_gpu_crops` içinde tek çağrıda oluyor.
+
+        `_CropRef` alanları KARE bölgeye göre dolduruluyor ki
+        `_to_frame_space` değişmeden çalışsın:
+            origin = kare bölgenin sol üst köşesi
+            scale  = crop_size / kare kenarı
+            pad    = 0   (gri dolgu yok, çevre görüntü var)
+        """
+        refs: list[_CropRef] = []
+        boxes: list[tuple[int, int, int, int]] = []
+
+        for frame_index, (frame, frame_detections) in enumerate(
+            zip(frames, detections, strict=True)
+        ):
+            height, width = frame.shape[:2]
+            for detection_index, detection in enumerate(frame_detections):
+                if self._min_box_height and detection.height < self._min_box_height:
+                    self.crops_skipped_small += 1
+                    continue
+
+                pad_x = detection.width * CROP_PADDING
+                pad_y = detection.height * CROP_PADDING
+                x1 = max(0, int(detection.x1 - pad_x))
+                y1 = max(0, int(detection.y1 - pad_y))
+                x2 = min(width, int(detection.x2 + pad_x))
+                y2 = min(height, int(detection.y2 + pad_y))
+                if x2 - x1 < 8 or y2 - y1 < 8:
+                    continue
+
+                kenar = max(x2 - x1, y2 - y1)
+                merkez_x, merkez_y = (x1 + x2) / 2.0, (y1 + y2) / 2.0
+                boxes.append((x1, y1, x2, y2))
+                refs.append(
+                    _CropRef(
+                        frame_index=frame_index,
+                        detection_index=detection_index,
+                        origin_x=int(merkez_x - kenar / 2.0),
+                        origin_y=int(merkez_y - kenar / 2.0),
+                        scale=self._crop_size / kenar,
+                        pad_left=0,
+                        pad_top=0,
+                    )
+                )
+        return refs, boxes
 
     def _collect_crops(
         self,
@@ -237,6 +304,92 @@ class YoloPoseEstimator:
                     )
                 )
         return crops, refs
+
+    def _gpu_crops(
+        self,
+        frames: list[np.ndarray],
+        refs: list[_CropRef],
+        boxes: list[tuple[int, int, int, int]],
+    ) -> Any:
+        """Tüm kırpıntıları TEK GPU çağrısında hazırlar.
+
+        ⚠ NEDEN — poz bütçenin %59'uydu ve GPU boşta oturuyordu
+        -------------------------------------------------------
+        CPU yolunda kırpıntı başına iki maliyet vardı:
+          1. Bizim `cv2.resize` + gri tuval ayırma/kopyalama
+          2. Ultralytics'in KENDİ ön işlemesi (numpy listesi verilince
+             yeniden boyutlandırma, BGR→RGB, eksen değiştirme,
+             normalizasyon, GPU'ya kopyalama)
+        Kare başına 4-12 kişi × 20 kamera olduğu için bu, ölçülen
+        bütçenin en büyük kalemiydi (99.8 ms/kare).
+
+        Bu, Gün 8'de TESPİT için yapılan hamlenin (P-18) poz karşılığı.
+        Fark şu: orada iş 20 alım thread'ine dağıtılmıştı, burada
+        tamamen GPU'ya taşınıyor — çünkü çıkarım worker'ı tek süreç ve
+        aynı işi orada thread'lemek seri kalırdı.
+
+        NASIL — tek `grid_sample` çağrısı
+        ---------------------------------
+        Kırpıntı başına ayrı `interpolate` çağırmak N kere çekirdek
+        başlatma maliyeti öderdi (35+ kırpıntı tipik). Bunun yerine her
+        kırpıntı için bir afin dönüşüm kurulup **hepsi tek çağrıda**
+        örnekleniyor.
+
+        ⚠ EN-BOY ORANI KORUNUYOR — ama farklı bir yolla
+        Kaynak bölge, kutunun uzun kenarı kadar bir KARE olarak alınıyor
+        (kutu merkezinde). Yani dolgu gri değil, çevredeki gerçek
+        görüntü. P-14'te öğrenilen şey "kareye sıkıştırma"nın yasak
+        olduğuydu (%88 yerine %47); oran burada da korunuyor.
+
+        Gri dolgu ile gerçek çevre arasındaki fark ölçülmeli — bu yüzden
+        `POSE_GPU_CROP=false` ile eski yola dönülebiliyor ve iskelet
+        isabet oranı iki yolda karşılaştırılabiliyor.
+        """
+        import torch
+        import torch.nn.functional as F  # noqa: N812
+
+        size = self._crop_size
+        # Kareleri tek seferde GPU'ya al. Aynı kare birden çok kırpıntıya
+        # kaynaklık ettiği için kare başına TEK yükleme yapılıyor.
+        benzersiz = sorted({r.frame_index for r in refs})
+        yer = {fi: i for i, fi in enumerate(benzersiz)}
+        yigin = np.stack([frames[fi] for fi in benzersiz])  # (F,H,W,3) BGR
+        gpu = torch.from_numpy(yigin).to(self._device, non_blocking=True)
+        # BGR→RGB (flip) ve HWC→CHW — ikisi de GPU'da neredeyse bedava
+        gpu = gpu.permute(0, 3, 1, 2).flip(1).float().div_(255.0)
+
+        _f, _c, yuk, gen = gpu.shape
+        n = len(refs)
+
+        # Afin dönüşüm: çıktı [-1,1] karesini kaynaktaki kare bölgeye eşler.
+        # theta = [[sx, 0, tx], [0, sy, ty]]
+        theta = torch.zeros((n, 2, 3), dtype=torch.float32)
+        for i, (x1, y1, x2, y2) in enumerate(boxes):
+            kenar = max(x2 - x1, y2 - y1)
+            mx, my = (x1 + x2) / 2.0, (y1 + y2) / 2.0
+            # Normalize edilmiş uzayda yarım kenar
+            theta[i, 0, 0] = kenar / gen
+            theta[i, 1, 1] = kenar / yuk
+            # Merkez: piksel → [-1,1]
+            theta[i, 0, 2] = (2.0 * mx / gen) - 1.0
+            theta[i, 1, 2] = (2.0 * my / yuk) - 1.0
+
+        theta = theta.to(self._device)
+        indeksler = torch.tensor(
+            [yer[r.frame_index] for r in refs], device=self._device, dtype=torch.long
+        )
+
+        izgara = F.affine_grid(
+            theta, size=(n, 3, size, size), align_corners=False
+        )
+        kirpintilar = F.grid_sample(
+            gpu[indeksler],
+            izgara,
+            mode="bilinear",
+            padding_mode="border",  # kare bölge kadraj dışına taşarsa kenarı uzat
+            align_corners=False,
+        )
+        return kirpintilar.half() if self._half else kirpintilar
 
     def _letterbox(self, crop: np.ndarray) -> tuple[np.ndarray, float, int, int]:
         """En-boy oranını koruyarak kareye dolgular (bkz. modül başlığı)."""

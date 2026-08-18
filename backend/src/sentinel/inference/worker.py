@@ -141,6 +141,7 @@ def build_pose_estimator(model_path: str, *, device: str, half: bool) -> PoseEst
         crop_size=settings.pose_crop_size,
         crop_batch=settings.pose_crop_batch,
         conf_threshold=settings.pose_conf_threshold,
+        gpu_crop=settings.pose_gpu_crop,
     )
 
 

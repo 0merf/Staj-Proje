@@ -147,6 +147,34 @@ class Settings(BaseSettings):
     # sığsın diye. 32'de ikiye bölünüyordu ve %27 pahalıya geliyordu.
     pose_crop_batch: int = 64
     pose_conf_threshold: float = 0.25
+    # ⚠ VARSAYILAN KAPALI — ÖLÇÜM HİPOTEZİ ÇÜRÜTTÜ
+    #
+    # Hipotez şuydu: poz çıkarım bütçesinin %59'u (99.8 ms/kare) ve GPU
+    # aynı anda boşta oturuyor (NVML: %0-42, GpuIdle), demek ki maliyet
+    # kırpıntı hazırlığının CPU tarafında. GPU'ya taşırsak kazanırız.
+    #
+    # A/B ölçümü (18.08.2026, 5 kameradan karışık 40 kare, 3.6 kişi/kare):
+    #     CPU yolu   2.77 ms/kare   iskelet %95.2
+    #     GPU yolu   9.95 ms/kare   iskelet %97.9
+    # GPU yolu 3.6 kat DAHA YAVAŞ.
+    #
+    # Sebep: bu uygulama kareleri poz için YENİDEN GPU'ya yüklüyor
+    # (batch başına ~9.8 MB), oysa dedektör onları zaten yüklemişti.
+    # Kazanılan CPU işi, tekrarlanan transferin yanında küçük kalıyor.
+    # Anlamlı olması için dedektörün tensörünün poz kademesine
+    # taşınması gerekir — ayrı ve daha büyük bir iş.
+    #
+    # ⚠ ASIL DERS AYRI: izole ölçümde poz 2.77 ms/kare, boru hattında
+    # 99.8 ms/kare çıkıyor — 36 KAT fark. Yani boru hattındaki poz
+    # maliyeti kırpıntı hazırlığından DEĞİL, sistem düzeyindeki CPU
+    # çekişmesinden geliyor (20 alım thread'i + çıkarım süreci aynı
+    # çekirdekler için yarışıyor). Yanlış yerde optimizasyon arıyorduk.
+    # P-15'in aynı dersi, bu sefer ters yönde.
+    #
+    # Kod duruyor: iskelet isabeti GPU yolunda daha İYİ (%97.9 vs %95.2),
+    # yani kare bölge örneklemesi gri dolgudan kötü değil. Dedektör
+    # tensörü paylaşılabilir hale gelirse doğrudan kullanılabilir.
+    pose_gpu_crop: bool = False
     # ─── KADEME 2b — yüz + ifade ──────────────────────────────
     face_detector_path: str = "models/yunet.onnx"
     emotion_model_path: str = "models/emotieff.onnx"
