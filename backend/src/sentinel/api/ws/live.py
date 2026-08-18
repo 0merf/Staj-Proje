@@ -47,7 +47,7 @@ MAX_SUBSCRIPTIONS = 64
 IDLE_TIMEOUT_S = 120.0
 
 
-def _same_origin(origin: str, host_header: str | None) -> bool:
+def _same_origin(origin: str, host_header: str | None, scheme: str | None = None) -> bool:
     """İstek, sayfayı sunan sunucunun kendisinden mi geliyor?
 
     Panel API ile aynı sunucudan servis ediliyor. Bu durumda `Origin`
@@ -57,16 +57,47 @@ def _same_origin(origin: str, host_header: str | None) -> bool:
     Bu kontrol olmadan beyaz listeye kendi adresimizi elle eklemek
     gerekirdi; adres değişince (farklı port, farklı makine) sessizce
     kırılırdı. Bkz. docs/report/problems.md · P-11
+
+    ⚠ ŞEMA DA KARŞILAŞTIRILIYOR
+    ---------------------------
+    `Host` başlığı yalnızca "127.0.0.1:8001" taşır, şema içermez.
+    İlk sürüm bu yüzden yalnızca host:port karşılaştırıyordu ve
+    `Origin: https://127.0.0.1:8001` ile `Host: 127.0.0.1:8001`
+    eşleşiyordu — oysa http ile https AYRI kökenlerdir.
+
+    Pratikte sömürülmesi zor (aynı host:port'ta iki şema aynı anda
+    duramaz) ama aynı köken politikasının tanımı üç bileşenlidir:
+    şema + host + port. İkisini kontrol edip üçüncüsünü atlamak,
+    kontrolün adını yanlış koymak olurdu.
+
+    Şema `Host`'tan gelmiyor; bağlantının KENDİ şemasından türetiliyor
+    (`ws` → `http`, `wss` → `https`). Çağıran taraf veriyor.
     """
     if not host_header:
         return False
-    candidate = urlsplit(origin)
-    # Host başlığı "127.0.0.1:8001" biçiminde, şema içermez
-    origin_authority = candidate.netloc.lower()
-    return origin_authority == host_header.strip().lower()
+    candidate = _parts(origin)
+    if candidate is None:
+        return False
+    origin_scheme, origin_host, origin_port = candidate
+
+    # netloc'u yeniden kurmak yerine host+port'u Host başlığıyla kıyaslıyoruz;
+    # böylece "127.0.0.1:8001" ile "127.0.0.1:8001" karşılaştırması
+    # kullanıcı adı/parola gibi ekleri olan bozuk Origin'lerde de doğru kalır.
+    authority = origin_host or ""
+    if origin_port is not None:
+        authority = f"{authority}:{origin_port}"
+    if authority != host_header.strip().lower():
+        return False
+
+    # Şema bilinmiyorsa (eski çağrılar, testler) host eşleşmesiyle yetin.
+    return scheme is None or origin_scheme == scheme
 
 
-def origin_allowed(origin: str | None, host_header: str | None = None) -> bool:
+def origin_allowed(
+    origin: str | None,
+    host_header: str | None = None,
+    scheme: str | None = None,
+) -> bool:
     """`Origin` başlığını doğrular.
 
     İki koşuldan biri sağlanmalı:
@@ -79,23 +110,53 @@ def origin_allowed(origin: str | None, host_header: str | None = None) -> bool:
     """
     if not origin:
         return False
-    try:
-        candidate = urlsplit(origin)
-    except ValueError:
-        return False
 
-    if _same_origin(origin, host_header):
+    if _same_origin(origin, host_header, scheme):
         return True
 
+    candidate = _parts(origin)
+    if candidate is None:
+        return False
+
     for allowed in settings.origins:
-        reference = urlsplit(allowed)
-        if (candidate.scheme, candidate.hostname, candidate.port) == (
-            reference.scheme,
-            reference.hostname,
-            reference.port,
-        ):
+        reference = _parts(allowed)
+        if reference is not None and candidate == reference:
             return True
     return False
+
+
+def _parts(url: str) -> tuple[str, str | None, int | None] | None:
+    """URL'yi (şema, host, port) üçlüsüne ayırır; ayrıştırılamazsa None.
+
+    ⚠ `urlsplit` TEMBEL ÇALIŞIR — bu bir tuzak
+    -----------------------------------------
+    İlk sürüm şöyleydi:
+
+        try:
+            candidate = urlsplit(origin)
+        except ValueError:
+            return False
+        ...
+        candidate.port          # ← ValueError BURADA fırlıyor
+
+    `urlsplit` çağrısı bozuk girdide bile hata vermiyor; ayrıştırmayı
+    alan erişimine erteliyor. `.port` ise portu tam sayıya çeviremezse
+    `ValueError` atıyor. Yani `try` bloğu yanlış yeri sarmalıyordu ve
+    hata `for` döngüsünün içinde, korumasız fırlıyordu.
+
+    Somut etki: `Origin: http://:::` başlığıyla gelen bir bağlantı
+    WebSocket işleyicisini çökertiyordu. Kimlik doğrulaması GEREKMEYEN,
+    el sıkışma TAMAMLANMADAN tetiklenebilen bir hata yolu — yani dışarıdan
+    ulaşılabilir. Bu testle yakalandı (tests/unit/test_ws_guvenlik.py).
+
+    Ders: bir kütüphane çağrısını `try` içine almak, o çağrının ürettiği
+    NESNEYİ kullanmanın da güvenli olduğu anlamına gelmiyor.
+    """
+    try:
+        parsed = urlsplit(url)
+        return (parsed.scheme, parsed.hostname, parsed.port)
+    except ValueError:
+        return None
 
 
 def authorize_cameras(requested: list[str]) -> list[str]:
@@ -183,7 +244,11 @@ def _publish_watched(session_id: str, cameras: list[str]) -> None:
 async def live_feed(websocket: WebSocket) -> None:
     origin = websocket.headers.get("origin")
     host_header = websocket.headers.get("host")
-    if not origin_allowed(origin, host_header):
+    # Bağlantının kendi şeması: ws → sayfa http'den, wss → https'den
+    # servis ediliyor demektir. Aynı köken karşılaştırması şemayı da
+    # kapsasın diye geçiliyor (bkz. _same_origin).
+    scheme = "https" if websocket.url.scheme == "wss" else "http"
+    if not origin_allowed(origin, host_header, scheme):
         # Bağlantıyı KABUL ETMEDEN reddet — el sıkışma tamamlanmasın
         log.warning("ws_origin_reddedildi", origin=origin or "(yok)", host=host_header)
         await websocket.close(code=CLOSE_POLICY_VIOLATION, reason="origin not allowed")
