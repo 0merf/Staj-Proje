@@ -154,17 +154,30 @@ async def list_cameras(*, include_test: bool = False) -> dict[str, Any]:
             camera.readers = current["readers"]
 
     # MediaMTX'te olup manifestte olmayan yollar (elle eklenmiş olabilir)
+    #
+    # ⚠ TEST YOLLARI BURADAN DA SIZIYORDU
+    # `TEST_PATHS` listeden çıkarılmıştı ama bu döngü onları MediaMTX'in
+    # çalışma durumundan "bilinmeyen yol" diye geri ekliyordu — panel
+    # yine 24 kamera gösteriyordu. Bir şeyi bir yerden gizlemek, onu
+    # gizlemek değil; girdiği HER kapıyı kapatmak gerekiyor.
+    #
+    # Test yolları burada da eleniyor. Gerçekten bilinmeyen bir yol
+    # (operatörün elle eklediği kamera) yine görünür — o bilgi değerli.
+    test_isimleri = {p["name"] for p in TEST_PATHS}
     for name, current in state.items():
-        if name not in known:
-            cameras.append(
-                Camera(
-                    name=name,
-                    label=name,
-                    kind="unknown",
-                    ready=current["ready"],
-                    readers=current["readers"],
-                )
+        if name in known:
+            continue
+        if name in test_isimleri and not include_test:
+            continue
+        cameras.append(
+            Camera(
+                name=name,
+                label=name,
+                kind="unknown",
+                ready=current["ready"],
+                readers=current["readers"],
             )
+        )
 
     cameras.sort(key=lambda c: (c.kind != "farm", c.name))
     ready = sum(1 for c in cameras if c.ready)

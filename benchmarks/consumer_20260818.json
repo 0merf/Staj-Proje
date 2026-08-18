@@ -1,0 +1,17 @@
+{
+  "measured_at": "2026-08-18T19:09:59",
+  "phase": "Faz 1 / Gün 15",
+  "description": "Çıkarım worker'ının alım çekişmesi OLMADAN kapasitesi",
+  "kare_sayisi": 360,
+  "kamera_sayisi": 20,
+  "batch": 8,
+  "kare_basina_kisi": 2.48,
+  "asamalar_ms_p50": {
+    "tespit": 7.13,
+    "poz": 8.74,
+    "takip": 0.88
+  },
+  "kare_basina_toplam_ms": 16.75,
+  "kapasite_fps": 12.0,
+  "teorik_tavan_fps": 59.7
+}

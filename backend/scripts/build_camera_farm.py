@@ -406,7 +406,26 @@ def main() -> int:
         return 0
 
     VIDEOS.mkdir(parents=True, exist_ok=True)
-    manifest: list[dict[str, object]] = []
+
+    # ⚠ `--only` MANİFESTİ EZMEZ — bu bir hataydı, düzeltildi
+    #
+    # Önceki sürüm manifesti sıfırdan kuruyordu. `--only cam-11 … cam-20`
+    # ile çalıştırıldığında sonuç: manifest 20 değil **10 kayıt** içerdi
+    # ve cam-01…cam-10 sessizce kayboldu. Videoları diskte duruyordu ama
+    # etiketleri, kaynakları ve süreleri gitti; panelde çıplak "cam-01"
+    # diye göründüler.
+    #
+    # Sessiz veri kaybıydı: betik "10 yeni kamera, 0 hata" diye başarı
+    # raporladı. Kısmi bir işlem, dokunmadığı kayıtları silmemeli.
+    mevcut: dict[str, dict[str, object]] = {}
+    manifest_yolu = VIDEOS / "manifest.json"
+    if manifest_yolu.is_file():
+        try:
+            for kayit in json.loads(manifest_yolu.read_text(encoding="utf-8")):
+                mevcut[str(kayit["camera"])] = kayit
+        except (json.JSONDecodeError, KeyError, TypeError) as exc:
+            print(f"UYARI: mevcut manifest okunamadı, sıfırdan kuruluyor ({exc})")
+
     failures: list[tuple[str, str]] = []
     started = time.monotonic()
 
@@ -416,7 +435,9 @@ def main() -> int:
 
         if out.exists() and not args.force:
             print(f"{prefix}  atlandı (mevcut, --force ile yeniden üret)")
-            manifest.append({"camera": spec.cam, "label": spec.label, "status": "skipped"})
+            mevcut.setdefault(
+                spec.cam, {"camera": spec.cam, "label": spec.label, "status": "skipped"}
+            )
             continue
 
         print(f"{prefix}  {spec.label} ... ", end="", flush=True)
@@ -431,7 +452,7 @@ def main() -> int:
         size_mb = out.stat().st_size / 1024**2
         dur = probe_duration(out)
         print(f"OK  {dur:5.0f} sn  {size_mb:6.1f} MB  ({time.monotonic() - t0:.0f} sn'de)")
-        manifest.append(
+        mevcut[spec.cam] = (
             {
                 "camera": spec.cam,
                 "label": spec.label,
@@ -444,7 +465,11 @@ def main() -> int:
             }
         )
 
-    (VIDEOS / "manifest.json").write_text(
+    # CAMERA_PLAN sırasına göre yaz — panel ve rapor kamera numarasına
+    # göre okunuyor, sözlük ekleme sırası anlamsız bir sıralama verirdi.
+    sira = {s.cam: i for i, s in enumerate(CAMERA_PLAN)}
+    manifest = sorted(mevcut.values(), key=lambda k: sira.get(str(k["camera"]), 999))
+    manifest_yolu.write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
     )
 
