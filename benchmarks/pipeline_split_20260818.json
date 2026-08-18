@@ -1,0 +1,85 @@
+{
+  "measured_at": "2026-08-18T16:50:07",
+  "phase": "Faz 1 / Gün 15",
+  "description": "Paralelleştirme kararı için CPU/GPU süre payı",
+  "cameras": [
+    "cam-09",
+    "cam-10",
+    "cam-14",
+    "cam-01"
+  ],
+  "olcumler": [
+    {
+      "batch": 4,
+      "tur": 25,
+      "kare_basina_kisi": 12.39,
+      "asamalar_ms": {
+        "tespit": {
+          "toplam": 66.51,
+          "gpu_beklemesi": 0.05,
+          "cpu": 66.46
+        },
+        "poz": {
+          "toplam": 234.89,
+          "gpu_beklemesi": 0.11,
+          "cpu": 234.78
+        },
+        "takip": {
+          "toplam": 16.69,
+          "gpu_beklemesi": 0.0,
+          "cpu": 16.69
+        }
+      },
+      "batch_basina_ms": {
+        "toplam": 318.09,
+        "gpu": 0.16,
+        "cpu": 317.93,
+        "gpu_payi": 0.001
+      },
+      "paralellestirme_tahmini": {
+        "aciklama": "Seri: CPU+GPU. Örtüşürse: max(CPU,GPU). Kazanç = (CPU+GPU) / max(CPU,GPU)",
+        "simdiki_kare_basina_ms": 79.52,
+        "paralel_kare_basina_ms": 79.48,
+        "beklenen_kazanc": 1.0,
+        "simdiki_tavan_fps": 12.6,
+        "paralel_tavan_fps": 12.6
+      }
+    },
+    {
+      "batch": 8,
+      "tur": 25,
+      "kare_basina_kisi": 12.29,
+      "asamalar_ms": {
+        "tespit": {
+          "toplam": 131.49,
+          "gpu_beklemesi": 0.05,
+          "cpu": 131.44
+        },
+        "poz": {
+          "toplam": 534.4,
+          "gpu_beklemesi": 0.06,
+          "cpu": 534.34
+        },
+        "takip": {
+          "toplam": 33.86,
+          "gpu_beklemesi": 0.0,
+          "cpu": 33.86
+        }
+      },
+      "batch_basina_ms": {
+        "toplam": 699.75,
+        "gpu": 0.11,
+        "cpu": 699.64,
+        "gpu_payi": 0.0
+      },
+      "paralellestirme_tahmini": {
+        "aciklama": "Seri: CPU+GPU. Örtüşürse: max(CPU,GPU). Kazanç = (CPU+GPU) / max(CPU,GPU)",
+        "simdiki_kare_basina_ms": 87.47,
+        "paralel_kare_basina_ms": 87.46,
+        "beklenen_kazanc": 1.0,
+        "simdiki_tavan_fps": 11.4,
+        "paralel_tavan_fps": 11.4
+      }
+    }
+  ]
+}
