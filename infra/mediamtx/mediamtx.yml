@@ -53,12 +53,52 @@ hls: no
 rtmp: no
 srt: no
 
+# ══════════════════════════════════════════════════════════════
+#  SÜREKLİ KAYIT — OLAY KLİBİNİN KAYNAĞI
+#
+#  Neden buraya konuldu (PLAN.md §4.1 halka tamponu yerine)
+#  --------------------------------------------------------
+#  Alarm 14:32:07'de çalıyorsa operatör 14:31:57'den itibaren görmek
+#  zorunda — tırmanmanın kendisi o 10 saniyede ve projenin tüm iddiası
+#  "erken tespit". Ama boru hattındaki bir kare yalnızca ~200-400 ms
+#  yaşıyor: decode → letterbox 640×640 → shm slot → çıkarım → slot iade
+#  → başka kamera üzerine yazıyor. Alarm anında geçmiş kareler yok.
+#
+#  Elenen iki alternatif:
+#   · RAM'de halka tamponu (orijinal tasarım):
+#     20 kamera × 30 sn × 4 FPS × 2.76 MB ≈ 6.6 GB RAM. Olmaz.
+#     JPEG'lersek 240 MB'a iner ama kodlama maliyeti ZATEN DARBOĞAZ
+#     olan CPU'ya biner ve klip 4 FPS kesik olur.
+#   · shm'deki 640×640 letterbox karelerden: klip kare formatta, gri
+#     dolgulu, 640 px, 4 FPS olur. Delil değeri yok.
+#
+#  Seçilen yol her iki alternatiften de UCUZ:
+#   · MediaMTX H.264 paketlerini YENİDEN KODLAMADAN diske muxluyor —
+#     CPU maliyeti ~sıfır (bu zaten MediaMTX'i seçme gerekçelerinden
+#     biriydi, yukarıdaki başlığa bakınız)
+#   · Klip `ffmpeg -c copy` ile kesiliyor — o da yeniden kodlamıyor
+#   · Çözünürlük 720p TAM, kare hızı 25 FPS — kanıt niteliğinde
+#   · KADEME 3 (video aksiyon doğrulayıcı) 3 sn'lik klibi de buradan
+#     alacak; onun da kaynağı yoktu
+#
+#  Disk bütçesi: 20 kamera × ~1.5 Mbps ≈ 4.5 GB/saat.
+#  `recordDeleteAfter: 6h` ile ~27 GB'ta döner. KVKK saklama süresi
+#  (PLAN §12.1: klipler 30 gün) bu HAM kayıtlara değil, alarm anında
+#  kesilip Garage'a yüklenen KLİPLERE uygulanır — ham kayıt yalnızca
+#  kesim penceresi kadar tutuluyor.
+# ══════════════════════════════════════════════════════════════
+
 # ─── VARSAYILAN YOL AYARLARI ──────────────────────────────────
 pathDefaults:
   # Kaynak yalnızca birisi bağlandığında başlar (CPU tasarrufu)
   runOnDemandRestart: yes
   runOnDemandStartTimeout: 20s
   runOnDemandCloseAfter: 30s
+
+  # ⚠ Varsayılan KAPALI. Kayıt yol bazında açılıyor (aşağıda), çünkü
+  # sentetik test kameralarını (testsrc2, life, color) kaydetmek saf
+  # disk israfı — onlar boru hattı testi için var, delil için değil.
+  record: no
 
 paths:
 
@@ -110,6 +150,32 @@ paths:
       -c copy -an
       -rtsp_transport tcp -f rtsp rtsp://127.0.0.1:$RTSP_PORT/$MTX_PATH
 
+    # ─── OLAY KLİBİ KAYNAĞI (gerekçe: dosya başındaki blok) ───
+    record: yes
+    recordPath: /recordings/%path/%Y-%m-%d_%H-%M-%S-%f
+    # fmp4: parçalı MP4. Seçilme sebebi, kayıt DEVAM EDERKEN okunabilir
+    # olması — klasik MP4'te indeks (moov atomu) dosya kapanınca yazılır,
+    # yani en TAZE segment (alarm anındaki segment!) okunamazdı.
+    recordFormat: fmp4
+    recordPartDuration: 1s
+    # 60 sn'lik segment: alarm penceresi (olay öncesi 10 sn + sonrası
+    # 10 sn) çoğunlukla tek segmente düşer, en kötü ihtimalle ikiye.
+    # Daha kısa segment = daha çok dosya + daha çok kesim birleştirme.
+    recordSegmentDuration: 60s
+    # ⚠ 1 SAAT — ölçümle belirlendi, tahminle değil.
+    # İlk değer 6h yazılmıştı; dayanağı "20 kamera × 1.5 Mbps ≈ 4.5 GB/saat"
+    # tahminiydi. ÖLÇÜM (18.08.2026, cam-09 ve cam-12, 60 sn'lik gerçek
+    # segmentler): segment başına 9.4-13.5 MB, yani kamera başına
+    # ~700 MB/saat, 20 kamerada ~14 GB/saat. Tahmin 3 kat düşüktü —
+    # kaynak videolar varsayılandan yüksek bit hızlı.
+    #   6h saklama = ~84 GB  (D: sürücüsünde 287 GB boş, sığar ama israf)
+    #   1h saklama = ~14 GB  ⬅ seçilen
+    # 1 saat fazlasıyla yeterli: klip penceresi olay öncesi/sonrası
+    # 10'ar saniye, alarm motoru saniyeler içinde tepki veriyor ve
+    # kesilen klip zaten Garage'a yükleniyor. Ham kayıt yalnızca
+    # "kesim yapılana kadar" tutulmalı; arşiv görevi kliplerin.
+    recordDeleteAfter: 1h
+
   # ══════════════════════════════════════════════════════════
   #  KAMERA 21 — laptop webcam (canlı demo)
   #  Windows'ta çalıştığı için host tarafından yayınlanır:
@@ -119,3 +185,16 @@ paths:
   cam-21-live:
     # Yayın bekleniyor — kaynak tanımlanmadı (publisher push edecek)
     source: publisher
+
+    # Webcam de kaydediliyor: canlı demoda alarm tetiklenirse klibi
+    # gösterebilmek gerekiyor — sunumun can alıcı anı tam olarak bu.
+    # ⚠ KVKK: bu gerçek bir kişinin görüntüsü. Kayıt 6 saat sonra
+    # kendiliğinden siliniyor ve `PRIVACY_BLUR_DEFAULT=true` panelde
+    # yüzü bulanıklaştırıyor. Kamera yalnızca panelden elle açılıyor,
+    # kendiliğinden açılmıyor.
+    record: yes
+    recordPath: /recordings/%path/%Y-%m-%d_%H-%M-%S-%f
+    recordFormat: fmp4
+    recordPartDuration: 1s
+    recordSegmentDuration: 60s
+    recordDeleteAfter: 6h

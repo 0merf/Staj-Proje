@@ -82,6 +82,13 @@ services:
     volumes:
       - ./infra/mediamtx/mediamtx.yml:/mediamtx.yml:ro
       - ./data/videos:/videos:ro
+      # ⚠ Bu bağlama YAZILABİLİR (:ro yok) — olay klibinin kaynağı.
+      # MediaMTX akışları sürekli buraya kaydediyor; alarm anında
+      # ilgili zaman aralığı `ffmpeg -c copy` ile kesilip Garage'a
+      # yükleniyor. Gerekçe: infra/mediamtx/mediamtx.yml içindeki
+      # "SÜREKLİ KAYIT" bloğu.
+      # Disk: ~4.5 GB/saat, recordDeleteAfter=6h ile ~27 GB'ta döner.
+      - ./data/recordings:/recordings
     ports:
       - "127.0.0.1:${MEDIAMTX_RTSP_PORT:-8554}:8554"      # RTSP
       - "127.0.0.1:${MEDIAMTX_WEBRTC_PORT:-8889}:8889"    # WebRTC / WHEP

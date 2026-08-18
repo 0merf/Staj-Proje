@@ -24,6 +24,9 @@ data/videos/*
 data/datasets/*
 data/clips/*
 data/annotations/*
+# MediaMTX sürekli kaydı — olay klibinin kaynağı (~4.5 GB/saat).
+# ⚠ Bunlar gerçek görüntü içerir (webcam dahil); asla commit edilmez.
+data/recordings/*
 # ham indirilen veri setleri (VIRAT, Oxford, PETS…)
 data/_sources/*
 # ffmpeg concat listeleri gibi geçici dosyalar
