@@ -439,6 +439,12 @@ class IngestWorker:
         gerçekten yetmiyorsa doğru cevap kamerayı köreltmek değil,
         raporda "bu donanım N kamera kaldırıyor" demektir (R2).
         """
+        if not settings.capacity_backpressure_enabled:
+            # Varsayılan yol. Gerekçe: config.py ·
+            # capacity_backpressure_enabled — uygulama hatalıydı,
+            # sistemi kamera başına 1 FPS tabanına çakıyordu.
+            return
+
         kapasite = get_pipeline_capacity(self._client)
         if kapasite is None or kapasite <= 0:
             # Çıkarım worker'ı yok ya da henüz ölçmedi — yapılandırılmış

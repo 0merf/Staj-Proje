@@ -111,6 +111,36 @@ class Settings(BaseSettings):
     adaptive_fps_enabled: bool = True
     adaptive_idle_after_s: float = 30.0
 
+    # ⚠ KAPASİTE GÜDÜMLÜ GERİ BASINÇ — VARSAYILAN KAPALI
+    #
+    # Fikir doğruydu, UYGULAMASI HATALIYDI ve sistemi bozdu.
+    #
+    # Amaç: alım 80 kare/sn üretirken çıkarım ~10 tüketiyordu ve
+    # karelerin çoğu atılıyordu; atılan kare için decode + BGR +
+    # letterbox CPU'su zaten ödenmiş oluyordu. Üretimi tüketime
+    # bağlamak istedik.
+    #
+    # HATA: kod "kaç kare İŞLİYORUM"u kapasite sandı. Oysa işlenen kare
+    # sayısı, üretilen kare sayısının bir FONKSİYONU. Üretimi kısınca
+    # işlenen kare azaldı → kapasite düşük ölçüldü → daha çok kıstı →
+    # aşağı doğru sarmal. Sistem kamera başına 1 FPS tabanına çakıldı
+    # (sabah 4 FPS'te çalışıyordu) ve panelde kutular 4 kat seyrek
+    # güncellenmeye başladı: "kutu yok" şikâyetinin sebebi bu.
+    #
+    # Ölçülen bedel: örnekleme 4.0 → 1.0 FPS/kamera, buna karşılık
+    # tüketim yalnızca ~10 → 8.9 FPS. Yani kısıtlama hiçbir şey
+    # kazandırmadı, sadece her kamerayı körleştirdi.
+    #
+    # DOĞRU TASARIM (yapılmadı): çıktıyı değil DOYGUNLUĞU ölçmek.
+    # Tıkanma kontrolünün (TCP gibi) mantığı: kuyruk boşalıyorken hızı
+    # ARTIR, kuyruk birikiyorken AZALT. "Şu an kaç kare işledim" bir
+    # kapasite ölçüsü değil; kuyruk derinliğinin YÖNÜ ise doğrudan
+    # doygunluk sinyali.
+    #
+    # Kod duruyor ve açılabiliyor — ama yeniden tasarlanmadan
+    # açılmamalı.
+    capacity_backpressure_enabled: bool = False
+
     # OPERATÖRÜN İZLEDİĞİ KAMERAYA ÖNCELİK (PLAN.md §5.2)
     # Panelde 7 kutucuk açıkken 20 kamerayı eşit hızda analiz etmek,
     # bütçenin dörtte üçünü kimsenin bakmadığı yere harcamaktı.
