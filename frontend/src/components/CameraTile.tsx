@@ -185,7 +185,11 @@ export function CameraTile({ camera, webrtcBase }: Props) {
           // neden ara değerlenmesi gerektiğini gözle gösteriyor.
           const vf = videoTicks.length
           const af = analysisFps(camera.name)
-          badgeRef.current.textContent = `${frame.count} kişi · ${vf} vid · ${af} yz`
+          // ⚠ ONDALIK: analiz kamera başına 1 FPS'in ALTINDA koşuyor.
+          // Tam sayıya yuvarlamak 0.6 FPS'i "0" gösterir ve sistem
+          // çalışmıyor sanılır — tam olarak yaşanan buydu.
+          badgeRef.current.textContent =
+            `${frame.count} kişi · ${vf} vid · ${af.toFixed(1)} yz`
           badgeRef.current.className = `rounded px-2 py-0.5 font-mono ${
             frame.count > 0 ? 'bg-ok/25 text-ok' : 'bg-panel text-muted'
           }`

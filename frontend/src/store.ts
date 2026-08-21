@@ -26,12 +26,28 @@ export const buffers = new Map<string, TimedResult[]>()
 export const resultTimes = new Map<string, number[]>()
 
 /** Son bir saniyede kaç analiz sonucu geldi (kamera başına). */
+/** Analiz penceresi. ⚠ Video penceresinden UZUN olmak ZORUNDA.
+ *
+ * İlk sürüm 1 saniye kullanıyordu ve `length < 2` ise 0 dönüyordu.
+ * Video için doğruydu (25 FPS → saniyede 26 örnek), analiz için
+ * TAMAMEN yanlış: analiz kamera başına ~0.5-2 FPS koşuyor, yani çoğu
+ * saniyede 0 veya 1 sonuç düşüyor. Sonuç: panelde kutular çizilirken
+ * rozet "0 yz" yazıyordu — ölçüm aracı bozuktu, boru hattı değil.
+ *
+ * 5 saniye, 0.2 FPS'i bile görünür kılıyor. */
+const ANALIZ_PENCERE_MS = 5000
+
 export function analysisFps(camera: string): number {
   const times = resultTimes.get(camera)
-  if (!times || times.length < 2) return 0
+  if (!times || times.length === 0) return 0
   const now = performance.now()
-  while (times.length && now - times[0] > 1000) times.shift()
-  return times.length
+  while (times.length && now - times[0] > ANALIZ_PENCERE_MS) times.shift()
+  if (times.length === 0) return 0
+  // Sabit pencereye değil GERÇEKLEŞEN aralığa bölüyoruz: kamera yeni
+  // açıldıysa elimizde 5 saniyelik geçmiş yok ve sabit bölme hızı
+  // olduğundan düşük gösterirdi.
+  const span = Math.max(500, now - times[0])
+  return times.length / (span / 1000)
 }
 
 export function pushResult(result: TimedResult) {
