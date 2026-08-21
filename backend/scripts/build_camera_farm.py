@@ -136,29 +136,44 @@ CAMERA_PLAN: list[CameraSpec] = [
     ),
     # ── 09 · Yoğun yaya trafiği: Oxford (yer gerçeği de var) ──
     CameraSpec("cam-09", "video", "_sources/oxford/TownCentreXVID.mp4", "Cadde — yoğun yaya"),
-    # ── 10-12 · Kalabalık: PETS09, birbirine EN UZAK 3 açı ──
-    # 7 açıdan 3'e indirildi (gerekçe yukarıda). Seçim: 001, 005, 008 —
-    # numaraca uçlarda oldukları için sahneyi en farklı yerlerden görüyorlar.
+    # ── 10-16 · Kalabalık: PETS09, aynı sahnenin 7 açısı ──
+    #
+    # ⚠ 19.08.2026 — GERİ ALINDI, ve sebebi öğretici
+    # 18.08'de bu 7 açının 3'e indirilmesi "kopya sahne" gerekçesiyle
+    # savunulmuştu (her kameranın normali ayrı öğrenilmeli). Gerekçe
+    # kendi başına DOĞRU. Ama değişiklik ölçülmeden yapıldı ve boşalan
+    # 4 slota RWF kavga klipleri kondu — çiftliğin yükü sessizce arttı,
+    # sistem yavaşladı, sebebi günlerce aranmadı.
+    #
+    # Ders: bir gerekçenin doğru olması, değişikliğin ölçülmeden
+    # yapılabileceği anlamına gelmiyor. Çiftlik ÖLÇÜM ZEMİNİ — zemini
+    # değiştirince tüm eski ölçümler kıyaslanamaz hâle geliyor.
+    # 7 açı sorunu gerçek ama ayrı bir iş; çözülürse tek başına, ölçüm
+    # öncesi/sonrası kıyaslamayla çözülecek.
     CameraSpec("cam-10", "frames", f"{PETS_BASE}/View_001", "Meydan — açı 1"),
-    CameraSpec("cam-11", "frames", f"{PETS_BASE}/View_005", "Meydan — açı 5"),
-    CameraSpec("cam-12", "frames", f"{PETS_BASE}/View_008", "Meydan — açı 8"),
-    # ── 13-16 · Saldırganlık: RWF-2000, ARTAN kavga yoğunluğu ──
-    # Farklı oranlar bilinçli: yanlış alarm oranının yoğunlukla nasıl
-    # değiştiğini ölçebilmek için (K7). Sabit tohum = tekrarlanabilir.
-    CameraSpec("cam-13", "rwf", "", "Kavga — seyrek", clip_count=60, fight_ratio=0.10, seed=13),
-    CameraSpec("cam-14", "rwf", "", "Kavga — orta", clip_count=60, fight_ratio=0.20, seed=14),
-    CameraSpec("cam-15", "rwf", "", "Kavga — yoğun", clip_count=60, fight_ratio=0.35, seed=15),
-    CameraSpec("cam-16", "rwf", "", "Kavga — çok yoğun", clip_count=60, fight_ratio=0.50, seed=16),
-    # ── 17 · Yanlış alarm taban çizgisi: hiç kavga yok ──
-    # K7 ölçümünün (kamera-saat başına yanlış alarm) referans kamerası.
-    CameraSpec("cam-17", "rwf", "", "Taban — tamamı normal", clip_count=60, fight_ratio=0.00, seed=17),
-    # ── 18-20 · YAKIN PLAN YÜZ: KADEME 2b'nin evi (PLAN §7.1) ──
-    # Her kamera birkaç Pexels klibinin birleşimi — tek bir yüz yerine
-    # birden çok kişi dönüyor. Böylece hem ifade modülü gerçek girdiyle
-    # test ediliyor hem PLAN §12.2 için demografik çeşitlilik oluşuyor.
-    CameraSpec("cam-18", "faces", PEXELS, "Yakın plan yüz — A", seed=18),
-    CameraSpec("cam-19", "faces", PEXELS, "Yakın plan yüz — B", seed=19),
-    CameraSpec("cam-20", "faces", PEXELS, "Yakın plan yüz — C", seed=20),
+    CameraSpec("cam-11", "frames", f"{PETS_BASE}/View_003", "Meydan — açı 3"),
+    CameraSpec("cam-12", "frames", f"{PETS_BASE}/View_004", "Meydan — açı 4"),
+    CameraSpec("cam-13", "frames", f"{PETS_BASE}/View_005", "Meydan — açı 5"),
+    CameraSpec("cam-14", "frames", f"{PETS_BASE}/View_006", "Meydan — açı 6"),
+    CameraSpec("cam-15", "frames", f"{PETS_BASE}/View_007", "Meydan — açı 7"),
+    CameraSpec("cam-16", "frames", f"{PETS_BASE}/View_008", "Meydan — açı 8"),
+    # ── 17-19 · Saldırganlık: RWF-2000 birleştirilmiş + ground-truth ──
+    CameraSpec("cam-17", "rwf", "", "Test — kavga (seyrek)", clip_count=60, fight_ratio=0.10, seed=17),
+    CameraSpec("cam-18", "rwf", "", "Test — kavga (orta)", clip_count=60, fight_ratio=0.20, seed=18),
+    CameraSpec("cam-19", "rwf", "", "Test — kavga (yoğun)", clip_count=60, fight_ratio=0.35, seed=19),
+    # ── 20 · TEK DEĞİŞİKLİK: yakın plan yüz (PLAN §7.1) ──
+    #
+    # Eskiden "RWF tamamı normal" idi. Değiştirilme sebebi: KADEME 2b'nin
+    # çalışabileceği TEK bir kamera bile yoktu — gözetim görüntüsünde
+    # yüzler ~15 px ve ifade modeli 60 px istiyor. Modül kuruluydu ama
+    # kamera çiftliğinde hiç sonuç üretemiyordu
+    # (benchmarks/expression_20260818-gun14.json).
+    #
+    # ⚠ Neden 3 değil 1: 18.08'de üç yüz kamerası eklenmişti; yeteneği
+    # göstermek için biri yeterli, üçü çiftliğin karakterini gereksiz
+    # değiştiriyor. Ölçülen: bu kamerada kişi boyu p50 550 px, yüz
+    # 68.8 px, yüz tespiti isabeti %100 — yani modül gerçekten çalışıyor.
+    CameraSpec("cam-20", "faces", PEXELS, "Yakın plan yüz — duygu testi", seed=20),
 ]
 
 

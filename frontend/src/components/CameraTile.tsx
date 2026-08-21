@@ -27,8 +27,24 @@ import {
 } from '../lib/whep'
 import { EXPR_MIN_CONF, EXPR_MIN_QUALITY, type Camera } from '../types'
 
-/** Bu süre sonuç gelmezse "analiz durdu" uyarısı. */
-const STALE_MS = 4000
+/** ⚠ İKİ EŞİK — çünkü "sakin" ile "bozuk" aynı şey değil
+ *
+ * Eski sürümde tek eşik vardı (4 sn) ve aşıldığında "analiz durdu"
+ * yazıyordu. Bu YANILTICIYDI: bir otopark kamerasında saatlerce hiçbir
+ * şey olmaz, Kademe 0 hareket filtresi kareleri haklı olarak eler ve
+ * sonuç üretilmez. Sistem tam olarak tasarlandığı gibi çalışırken panel
+ * "analiz durdu" diye alarm veriyordu.
+ *
+ * Üstüne uyarlanabilir FPS var: 30 sn hareketsizlikte kamera 1 FPS'e
+ * düşüyor ve yalnızca 5 saniyelik zorunlu yenileme karesi geçiyor.
+ * Yani SAĞLIKLI bir sakin kamerada sonuçlar 5-10 sn arayla gelir —
+ * 4 sn eşiği bunu daima "arıza" sayıyordu.
+ *
+ * Şimdi: SAKIN_MS'i aşan ama son karesi `refresh` olan kamera "sakin"
+ * diye gösteriliyor (bilgi, alarm değil). Gerçekten uzun süre hiçbir
+ * şey gelmezse DURDU_MS'te "analiz durdu" yazıyor. */
+const SAKIN_MS = 6000
+const DURDU_MS = 20000
 
 interface Props {
   camera: Camera
@@ -143,8 +159,25 @@ export function CameraTile({ camera, webrtcBase }: Props) {
       const frame = buffer ? frameAt(buffer, now, shownAgeMs) : null
 
       if (badgeRef.current) {
-        if (!frame || frame.ageMs > STALE_MS) {
-          badgeRef.current.textContent = frame ? 'analiz durdu' : 'bekleniyor'
+        if (!frame) {
+          badgeRef.current.textContent = 'bekleniyor'
+          badgeRef.current.className = 'rounded bg-warn/25 px-2 py-0.5 text-warn'
+        } else if (frame.ageMs > DURDU_MS) {
+          // Bu kadar uzun sessizlik gerçekten anormal: zorunlu yenileme
+          // karesi 5 saniyede bir geçtiği için sağlıklı bir kamera
+          // 20 saniye susmaz.
+          badgeRef.current.textContent = `analiz durdu · ${(frame.ageMs / 1000).toFixed(0)} sn`
+          badgeRef.current.className = 'rounded bg-bad/25 px-2 py-0.5 text-bad'
+        } else if (frame.ageMs > SAKIN_MS && frame.gate === 'refresh') {
+          // Kademe 0 kareleri eliyor çünkü sahnede hareket YOK.
+          // Bu bir arıza değil, filtrenin doğru çalıştığının kanıtı —
+          // 20 kamerayı tek GPU'da döndürebilmemizin sebebi tam da bu.
+          badgeRef.current.textContent = 'sakin · hareket yok'
+          badgeRef.current.className = 'rounded bg-panel px-2 py-0.5 text-muted'
+        } else if (frame.ageMs > SAKIN_MS) {
+          // Son kare hareketliydi ama yenisi gelmiyor — kamera meşgul
+          // ama analiz yetişemiyor. Kullanıcı yaşı görsün, tahmin etmesin.
+          badgeRef.current.textContent = `gecikiyor · ${(frame.ageMs / 1000).toFixed(1)} sn`
           badgeRef.current.className = 'rounded bg-warn/25 px-2 py-0.5 text-warn'
         } else {
           // Kişi sayısı + iki ayrı kare hızı: video kaç FPS geliyor,
@@ -159,7 +192,8 @@ export function CameraTile({ camera, webrtcBase }: Props) {
         }
       }
 
-      if (viewMode === 'off' || !frame || frame.ageMs > STALE_MS) return
+      // Kutuları çizmeyi bırakma eşiği: bayat kutu yanlış yerde durur.
+      if (viewMode === 'off' || !frame || frame.ageMs > DURDU_MS) return
 
       // Kaynak kare pikselinden görüntü alanına ölçekle. Kameralar
       // farklı çözünürlükte (1280×720, 960×720, 900×720) — sabit bir

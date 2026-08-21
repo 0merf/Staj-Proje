@@ -106,6 +106,15 @@ export interface RenderFrame {
   /** En yeni sonucun yaşı (ms) — bayatsa kullanıcıya söylüyoruz. */
   ageMs: number
   mode: 'interpolated' | 'predicted' | 'exact'
+  /** Bu kareyi Kademe 0'ın neden geçirdiği: motion | refresh | warmup.
+   *
+   * ⚠ "SAKİN" ile "BOZUK"u ayıran sinyal bu.
+   * Hareket filtresi yalnızca geçen kareleri yayınlıyor, yani `idle`
+   * hiç gelmiyor. `refresh` ise "hareket yoktu ama 5 saniyelik zorunlu
+   * yoklama zamanı geldi" demek — yani sahnede bir şey OLMUYOR.
+   * Sonuç gecikmişse ve son kare `refresh` ise sistem bozuk değil,
+   * kamera sakin. */
+  gate: string
 }
 
 /**
@@ -148,6 +157,7 @@ export function frameAt(
       count: newest.count,
       ageMs: now - newest.rx,
       mode: ahead > 0 ? 'predicted' : 'exact',
+      gate: newest.gate,
     }
   }
 
@@ -196,5 +206,6 @@ export function frameAt(
     count: after.count,
     ageMs: now - after.rx,
     mode: 'interpolated',
+    gate: after.gate,
   }
 }
