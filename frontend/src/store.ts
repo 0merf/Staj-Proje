@@ -15,7 +15,7 @@
  * ayarları gibi SEYREK değişen şeyleri yönetiyor.
  */
 import { create } from 'zustand'
-import type { Camera, TimedResult, ViewMode } from './types'
+import type { Camera, TimedAlert, TimedResult, ViewMode } from './types'
 import { BUFFER_SIZE } from './lib/sync'
 
 /** Kamera adı → son N sonuç (eskiden yeniye). React dışında. */
@@ -86,6 +86,10 @@ interface State {
   videoLatencyMs: number | null
   /** Ölçülen analiz yolu gecikmesi (sunucu raporluyor). */
   aiLatencyMs: number | null
+  /** Son alarmlar — en yenisi başta. Sınırlı: panel bir olay
+   * günlüğü değil, canlı bir uyarı akışı. Kalıcı kayıt Gün 20'de
+   * PostgreSQL'e gidecek (PLAN §8.1). */
+  alerts: TimedAlert[]
 
   setCameras: (c: Camera[]) => void
   setConnection: (c: State['connection']) => void
@@ -96,6 +100,7 @@ interface State {
   setVideoBufferMs: (ms: number) => void
   setVideoLatency: (ms: number) => void
   setAiLatency: (ms: number) => void
+  pushAlert: (a: TimedAlert) => void
 }
 
 export const useStore = create<State>((set) => ({
@@ -112,6 +117,7 @@ export const useStore = create<State>((set) => ({
   videoBufferMs: 500,
   videoLatencyMs: null,
   aiLatencyMs: null,
+  alerts: [],
 
   setCameras: (cameras) => set({ cameras }),
   setConnection: (connection) => set({ connection }),
@@ -134,6 +140,15 @@ export const useStore = create<State>((set) => ({
   setVideoLatency: (ms) =>
     set((s) => ({
       videoLatencyMs: s.videoLatencyMs === null ? ms : s.videoLatencyMs * 0.7 + ms * 0.3,
+    })),
+  pushAlert: (a) =>
+    set((s) => ({
+      // En yenisi BAŞTA, en fazla 30 kayıt.
+      // ⚠ Panel bir olay GÜNLÜĞÜ değil, canlı uyarı akışı. Sınırsız
+      // biriktirmek belleği şişirir ve operatörün dikkatini eskiye
+      // dağıtır. Kalıcı kayıt Gün 20'de PostgreSQL'e gidecek
+      // (PLAN §8.1 `events` hypertable).
+      alerts: [a, ...s.alerts].slice(0, 30),
     })),
   setAiLatency: (ms) =>
     set((s) => ({

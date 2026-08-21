@@ -7,12 +7,13 @@
  */
 import { useEffect, useRef } from 'react'
 import { pushResult, useStore } from '../store'
-import type { FrameResult } from '../types'
+import type { Alert, FrameResult } from '../types'
 
 export function useLiveResults() {
   const setConnection = useStore((s) => s.setConnection)
   const bump = useStore((s) => s.bumpMessages)
   const setAiLatency = useStore((s) => s.setAiLatency)
+  const pushAlert = useStore((s) => s.pushAlert)
   const retry = useRef<number | null>(null)
 
   useEffect(() => {
@@ -32,7 +33,16 @@ export function useLiveResults() {
         sendWatching()
       }
       socket.onmessage = (event) => {
-        const message = JSON.parse(event.data) as FrameResult
+        const message = JSON.parse(event.data) as FrameResult | Alert
+
+        // ⚠ ALARM ÖNCE — ve abonelikten BAĞIMSIZ.
+        // Kare mesajları yalnızca abone kameralardan gelir; alarm ise
+        // kutucuk kapalı olsa bile gelir. Operatör cam-03'ü açmamışsa
+        // bile orada biri düştüyse bunu GÖRMELİ.
+        if (message.type === 'alert') {
+          pushAlert({ ...message, rx: performance.now() })
+          return
+        }
         if (message.type !== 'frame') return
         // rx: tarayıcının KENDİ saati. Sunucunun ts'i monotoniktir,
         // Date.now() ile karşılaştırılamaz — hizalama bu yüzden
@@ -81,5 +91,5 @@ export function useLiveResults() {
       unsubscribe()
       socket?.close()
     }
-  }, [setConnection, bump, setAiLatency])
+  }, [setConnection, bump, setAiLatency, pushAlert])
 }

@@ -155,9 +155,18 @@ class Anomali:
     tamlik: float
 
     def to_dict(self) -> dict[str, object]:
+        """WS mesajına gömülecek biçim.
+
+        ⚠ Anahtar `type` DEĞİL `anomaly`.
+        WebSocket sarmalayıcısı mesaja `{"type": "alert"}` ekliyor ve bu
+        sözlük onun üzerine açılıyor (`**data`). `type` kullansaydık
+        sarmalayıcının değerini EZERDİ: mesaj `type: "alert"` yerine
+        `type: "fall"` olarak giderdi ve tarayıcı onu tanımazdı.
+        Sessiz bir hata — alarm gönderilir ama panelde hiç görünmez.
+        """
         return {
             "cam": self.camera,
-            "type": self.tur.value,
+            "anomaly": self.tur.value,
             "severity": self.ciddiyet,
             "track": self.track_id,
             "score": round(self.skor, 3),

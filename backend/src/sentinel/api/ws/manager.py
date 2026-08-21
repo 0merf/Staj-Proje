@@ -44,6 +44,9 @@ CLIENT_QUEUE_MAX = 50
 READ_COUNT = 64
 READ_BLOCK_MS = 500
 
+# Analitik worker'ın anomali yazdığı akış (analytics/worker.py).
+EVENT_STREAM = "analytics.events"
+
 
 # eq=False: dataclass varsayılan olarak __eq__ üretir, bu da __hash__'i
 # None yapar ve nesne set'e konulamaz. Her istemci kendine özgüdür;
@@ -91,6 +94,8 @@ class ResultBroadcaster:
         self._task: asyncio.Task[None] | None = None
         self._redis: Redis | None = None
         self._last_id = "$"  # yalnızca yeni sonuçlar — canlı görüntüleme
+        self._last_event_id = "$"  # anomaliler de yalnızca yeniden itibaren
+        self.alerts_sent = 0
         self.messages_read = 0
         self.messages_sent = 0
 
@@ -131,14 +136,27 @@ class ResultBroadcaster:
     # ─── Okuma döngüsü ───────────────────────────────────────
 
     async def _pump(self) -> None:
-        """Akışı okuyup istemcilere dağıtan sonsuz döngü."""
+        """Akışı okuyup istemcilere dağıtan sonsuz döngü.
+
+        ⚠ İKİ AKIŞ, TEK OKUYUCU
+        `inference.results` (kutular, saniyede onlarca) ve
+        `analytics.events` (anomaliler, seyrek) aynı `XREAD` çağrısında
+        okunuyor. Ayrı iki döngü kurmak iki bağlantı, iki bekleme ve
+        iki kod yolu demekti; Valkey tek çağrıda birden çok akış
+        okuyabiliyor.
+
+        Anomali akışı **seyrek** — dakikada birkaç mesaj. Kendi başına
+        bir döngü açmak, çoğu zaman boşta bekleyen bir görev olurdu.
+        """
         assert self._redis is not None
         stream = settings.stream_results
 
         while True:
             try:
                 response = await self._redis.xread(
-                    {stream: self._last_id}, count=READ_COUNT, block=READ_BLOCK_MS
+                    {stream: self._last_id, EVENT_STREAM: self._last_event_id},
+                    count=READ_COUNT,
+                    block=READ_BLOCK_MS,
                 )
             except asyncio.CancelledError:
                 raise
@@ -150,11 +168,26 @@ class ResultBroadcaster:
             if not response:
                 continue
 
-            for _stream_name, entries in response:
+            # ⚠ `Any`'ye düşürülüyor: `redis-py`'nin `xread` dönüş tipi
+            # `decode_responses` ayarına göre değişen çok kollu bir
+            # birleşim ve statik olarak daraltılamıyor. Tipi burada
+            # zorlamak okunmayan bir `cast` yığını üretirdi; yapı zaten
+            # açılırken doğrulanıyor ve bozuk mesaj yakalanıyor.
+            girdiler: Any = response
+            for stream_name, entries in girdiler:
+                # ⚠ Hangi akıştan geldiğini AYIRMAK şart: ikisinin
+                # mesaj biçimi ve son-okunan imleci farklı. Karışırsa
+                # anomali "kare" gibi gönderilir ve panel onu çizmeye
+                # çalışır.
+                anomali_mi = str(stream_name) == EVENT_STREAM
                 for message_id, fields in entries:
-                    self._last_id = message_id
-                    self.messages_read += 1
-                    self._dispatch(fields)
+                    if anomali_mi:
+                        self._last_event_id = message_id
+                        self._dispatch_alert(fields)
+                    else:
+                        self._last_id = message_id
+                        self.messages_read += 1
+                        self._dispatch(fields)
 
     def _dispatch(self, fields: dict[str, str]) -> None:
         """Tek bir sonucu ilgili istemcilere dağıtır."""
@@ -202,11 +235,41 @@ class ResultBroadcaster:
                 client.offer(payload)
                 self.messages_sent += 1
 
+    def _dispatch_alert(self, fields: dict[str, str]) -> None:
+        """Anomaliyi abone istemcilere `alert` olarak gönderir.
+
+        ⚠ Anomali ABONELİK FİLTRESİNE TAKILMAZ.
+        Kare mesajları yalnızca abone olunan kameralara gider (panelde
+        20 kutucuk için 20 akış boşuna taşınmasın). Ama alarm başkadır:
+        operatör cam-03'ü açmamışsa bile orada biri düştüyse BUNU
+        GÖRMELİ. Gözetim sisteminin varlık sebebi tam olarak bu —
+        kimsenin bakmadığı kamerada olanı bildirmek.
+        """
+        camera = fields.get("cam", "")
+        try:
+            payload = json.dumps(
+                {
+                    "type": "alert",
+                    "ts": float(fields.get("ts", 0.0)),
+                    **json.loads(fields.get("data", "{}")),
+                },
+                separators=(",", ":"),
+            )
+        except (ValueError, TypeError) as exc:
+            log.warning("bozuk_anomali_mesaji", error=str(exc), cam=camera)
+            return
+
+        for client in self._clients:
+            client.offer(payload)
+            self.alerts_sent += 1
+        log.info("anomali_yayinlandi", cam=camera, tur=fields.get("type"))
+
     def stats(self) -> dict[str, Any]:
         return {
             "clients": len(self._clients),
             "messages_read": self.messages_read,
             "messages_sent": self.messages_sent,
+            "alerts_sent": self.alerts_sent,
             "dropped_total": sum(c.dropped for c in self._clients),
         }
 

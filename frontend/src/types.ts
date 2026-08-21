@@ -78,3 +78,36 @@ export interface Camera {
 
 /** Panelde ne çizilsin — kullanıcı 3 kademeli düğmeyle seçiyor. */
 export type ViewMode = 'off' | 'boxes' | 'full'
+
+/** Analitik katmanının ürettiği anomali (KATMAN B).
+ *
+ * ⚠ Alarm ABONELİK FİLTRESİNE TAKILMAZ — kutucuk kapalı olsa bile
+ * gelir. Gözetim sisteminin varlık sebebi kimsenin bakmadığı kamerada
+ * olanı bildirmek (backend: api/ws/manager.py · _dispatch_alert).
+ */
+export interface Alert {
+  type: 'alert'
+  cam: string
+  ts: number
+  /** fall | running | loitering | crowd */
+  anomaly: string
+  severity: string
+  track: number | null
+  score: number
+  /** Hangi ölçümün eşiği neden aştığı — açıklanabilirlik zorunlu. */
+  evidence: Record<string, number>
+  completeness: number
+}
+
+/** Panelde gösterilen alarm — varış anı eklenmiş. */
+export interface TimedAlert extends Alert {
+  rx: number
+}
+
+/** Anomali türlerinin Türkçe karşılıkları ve renkleri. */
+export const ANOMALI_TR: Record<string, string> = {
+  fall: 'DÜŞME',
+  running: 'koşma',
+  loitering: 'oyalanma',
+  crowd: 'kalabalık',
+}
