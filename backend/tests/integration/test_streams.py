@@ -275,11 +275,25 @@ def test_oturum_kendi_listesini_guncelleyebiliyor(client: Redis) -> None:
 
 
 def test_bos_liste_yazinca_oturum_temizleniyor(client: Redis) -> None:
-    """Panel tüm kutucukları kapatınca kamera taban hıza dönmeli."""
+    """Panel tüm kutucukları kapatınca kamera taban hıza dönmeli.
+
+    ⚠ KENDİ ANAHTARINA bakıyor, birleşime DEĞİL.
+    İlk sürüm `get_watched_cameras()` (tüm oturumların birleşimi) ile
+    kontrol ediyordu ve sistem CANLIYKEN kırılıyordu: açık bir panel
+    aynı kamerayı izliyorsa birleşimde o kamera duruyor ve test haklı
+    olarak başarısız oluyor.
+
+    Test ettiğimiz şey "bu oturum kendi listesini temizleyebiliyor mu";
+    başkasının ne izlediği bu testin konusu değil. Yalıtımı bozan test,
+    gerçek bir hata yokken kırmızı yanar ve zamanla görmezden gelinir.
+    """
     s = f"oturum-{uuid.uuid4().hex[:6]}"
+    anahtar = f"cameras:watched:{s}"
     try:
         set_watched_cameras(client, s, ["cam-05"])
+        assert client.smembers(anahtar) == {"cam-05"}
+
         set_watched_cameras(client, s, [])
-        assert "cam-05" not in get_watched_cameras(client)
+        assert not client.exists(anahtar), "boş liste yazılınca anahtar silinmeli"
     finally:
-        client.delete(f"cameras:watched:{s}")
+        client.delete(anahtar)

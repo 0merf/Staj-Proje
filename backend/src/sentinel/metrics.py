@@ -153,6 +153,17 @@ gpu_memory_used = Gauge(
     "Kullanılan VRAM",
 )
 
+# ─── Analitik katmanı ─────────────────────────────────────────
+
+# Tespit edilen anomaliler. `type` ve `severity` etiketleri PLAN §8.1'deki
+# `events` tablosuyla AYNI değerleri kullanıyor — metrik ile veritabanı
+# ayrışırsa Grafana'daki sayı ile rapordaki sayı tutmaz.
+anomalies_total = Counter(
+    "sentinel_anomalies_total",
+    "Kural tabanlı anomali tespitleri (KATMAN B)",
+    ["cam", "type", "severity"],
+)
+
 # ─── Boru hattı sağlığı ───────────────────────────────────────
 
 # Çıkarım worker'ının ÖLÇÜLEN tüketim hızı (kare/sn).
@@ -188,6 +199,7 @@ def serve_metrics(port: int) -> None:
 
 
 __all__ = [
+    "anomalies_total",
     "batch_size",
     "camera_fps",
     "camera_target_fps",
