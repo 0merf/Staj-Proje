@@ -45,6 +45,17 @@ const KANIT_TR: Record<string, [etiket: string, birim: string]> = {
   kisi: ['kişi sayısı', ''],
   taban: ['bu kameranın normali', ' kişi'],
   esik: ['eşik', ''],
+
+  // ─── KATMAN A kanıtları (anomaly/normalcy.py) ───
+  // Bunlar kuraldan değil ÖĞRENİLEN profilden geliyor; etiketleri de
+  // "eşik aşıldı" değil "bu kameranın normaline uymuyor" dilinde.
+  nadir_bolge: ['buraya nadiren gidilir', ''],
+  bolge_ziyaret: ['bu bölgede toplam gözlem', ' kez'],
+  hiz_sapmasi_sigma: ['bölge normalinden sapma', 'σ'],
+  bolge_normal_hiz: ['bu bölgenin normal hızı', ' gövde/sn'],
+  yon_orani: ['bu yöne gidenlerin oranı', ''],
+  kisi_sapmasi_sigma: ['kişi sayısı sapması', 'σ'],
+  kamera_normal_kisi: ['bu kameranın normali', ' kişi'],
 }
 
 function saat(rx: number): string {

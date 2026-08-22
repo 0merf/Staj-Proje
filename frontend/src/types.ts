@@ -110,4 +110,8 @@ export const ANOMALI_TR: Record<string, string> = {
   running: 'koşma',
   loitering: 'oyalanma',
   crowd: 'kalabalık',
+  // KATMAN A — kural değil, öğrenilmiş profile göre üretilen alarm.
+  // Diğerleri "şu fiziksel olay oldu" der; bu "bu kameranın normali
+  // böyle değil" der. Adlandırma bu farkı taşımalı.
+  unusual: 'olağandışı',
 }
