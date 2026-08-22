@@ -142,6 +142,12 @@ class AnomaliTuru(StrEnum):
     KOSMA = "running"
     OYALANMA = "loitering"
     KALABALIK = "crowd"
+    # KATMAN A — kamera normaline göre olağandışılık.
+    # Kural tabanlı değil, ÖĞRENİLMİŞ profile göre üretiliyor
+    # (anomaly/normalcy.py). Ayrı bir tür olması bilinçli: operatör
+    # "bu fizikî bir olay mı, yoksa istatistiksel bir sapma mı"
+    # ayrımını görebilmeli.
+    OLAGANDISI = "unusual"
 
 
 # Her türün taban ciddiyeti. Düşme tıbbi acil olabilir; oyalanma
@@ -151,6 +157,7 @@ CIDDIYET: dict[AnomaliTuru, str] = {
     AnomaliTuru.KOSMA: "attention",
     AnomaliTuru.OYALANMA: "attention",
     AnomaliTuru.KALABALIK: "attention",
+    AnomaliTuru.OLAGANDISI: "attention",
 }
 
 
@@ -525,6 +532,50 @@ class KuralMotoru:
             kanit={"kisi": float(kisi_sayisi), "taban": taban, "esik": esik},
             tamlik=1.0,  # kişi sayımı iskelete bağlı değil, hep güvenilir
         )
+
+    def olagandisi_bildir(
+        self,
+        *,
+        camera: str,
+        track_id: int,
+        skor: float,
+        kanit: dict[str, float],
+        tamlik: float,
+        simdi: float,
+    ) -> Anomali | None:
+        """KATMAN A'nın bulgusunu kural motorunun kapılarından geçirir.
+
+        ⚠ NEDEN BURADAN GEÇİYOR
+        Katman A ayrı bir dosyada (normalcy.py) ama soğuma ve histerezis
+        kural motorunda. İki ayrı bastırma mantığı yazmak, aynı hatayı
+        iki yerde düzeltmek demekti — canlı ölçüm soğumanın ne kadar
+        kritik olduğunu zaten gösterdi (18 → 11 alarm/kamera-saat).
+
+        Tek bir kapıdan geçmesinin ikinci faydası: bir kamerada hem
+        kural hem profil alarmı üretilirse iz soğuması ikisini birden
+        bastırıyor. Operatöre aynı olay iki kez bildirilmiyor.
+        """
+        durum = self._izler.setdefault((camera, track_id), _IzDurumu())
+        durum.son_gorulme = simdi
+
+        if AnomaliTuru.OLAGANDISI in durum.aktif:
+            return None
+        if self._sogumada_mi(camera, AnomaliTuru.OLAGANDISI, durum, simdi):
+            return None
+        durum.aktif.add(AnomaliTuru.OLAGANDISI)
+        self._alarm_kaydet(camera, AnomaliTuru.OLAGANDISI, durum, simdi)
+
+        anomali = Anomali(
+            camera=camera,
+            tur=AnomaliTuru.OLAGANDISI,
+            ciddiyet=CIDDIYET[AnomaliTuru.OLAGANDISI],
+            track_id=track_id,
+            skor=skor,
+            kanit=kanit,
+            tamlik=tamlik,
+        )
+        self.toplam[AnomaliTuru.OLAGANDISI] += 1
+        return anomali
 
     # ─── Bakım ───────────────────────────────────────────────
 

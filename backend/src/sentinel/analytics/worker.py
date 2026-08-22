@@ -37,6 +37,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import signal
 import sys
 import time
@@ -47,12 +48,13 @@ from typing import Any
 import numpy as np
 
 from sentinel import metrics
+from sentinel.analytics.anomaly.normalcy import NormalProfilDeposu
 from sentinel.analytics.anomaly.rules import Anomali, KuralMotoru
 from sentinel.analytics.features import skeleton as sk
 from sentinel.analytics.features.person import cikar
 from sentinel.analytics.features.window import Ornek, PencereDeposu
 from sentinel.bus.streams import connect
-from sentinel.config import settings
+from sentinel.config import PROJECT_ROOT, settings
 from sentinel.logging import configure_logging, get_logger
 
 log = get_logger(__name__)
@@ -77,6 +79,10 @@ class AnalyticsWorker:
         self._client = connect()
         self._pencereler = PencereDeposu()
         self._kurallar = KuralMotoru()
+        # KATMAN A — kamera başına öğrenilen normal profil.
+        # Diskten yükleniyor: profil kaybı sistem körlüğü demek
+        # (bkz. anomaly/normalcy.py · NormalProfilDeposu).
+        self._normal = NormalProfilDeposu(PROJECT_ROOT / "data" / "profiles")
         # Kamera başına son değerlendirme anı — oyalanma birikimi için
         # gereken `dt`. Kameralar farklı hızlarda analiz edildiği için
         # (uyarlanabilir FPS) sabit adım kullanmak yanlış olurdu.
@@ -147,6 +153,7 @@ class AnalyticsWorker:
             if now - last_prune >= 30.0:
                 self._pencereler.buda(time.time())
                 self._kurallar.buda(time.time())
+                self._normal.kaydet()
                 last_prune = now
             if now - last_report >= stats_interval:
                 self._rapor(now - started)
@@ -214,8 +221,78 @@ class AnalyticsWorker:
         self._son_degerlendirme[camera] = ts
 
         bulgular = self._kurallar.degerlendir(camera, ozellikler, ts, dt)
+
+        # ─── KATMAN A: kamera normaline göre skorla ───
+        bulgular.extend(
+            self._katman_a(camera, ozellikler, tespitler, veri, ts)
+        )
+
         for bulgu in bulgular:
             self._yayinla(bulgu, ts)
+
+    def _katman_a(
+        self,
+        camera: str,
+        ozellikler: list[Any],
+        tespitler: list[dict[str, Any]],
+        veri: dict[str, Any],
+        ts: float,
+    ) -> list[Anomali]:
+        """Kamera normaline göre olağandışılık (PLAN §6.4 Katman A).
+
+        ⚠ ÖNCE ÖĞREN, SONRA SKORLA — ve sıra önemli.
+        Profil `hazir` değilken skor üretmiyor; yalnızca öğreniyor.
+        Bu koruma olmadan sistem AÇILIŞTA alarm yağdırırdı: hiçbir şey
+        öğrenilmemişken her gözlem "hiç görülmemiş" olur.
+
+        ⚠ ÖĞRENME DURDURULMUYOR.
+        Profil hazır olduktan sonra da öğrenmeye devam ediyor — sahne
+        mevsimle, saatle, mobilya değişimiyle kayar. Donmuş bir profil
+        birkaç hafta sonra her şeyi anomali sayardı.
+        Bedeli: gerçek bir olay uzun sürerse normal öğrenilir
+        (kirlenme). Bu, denetimsiz öğrenmenin bilinen kısıtı ve
+        raporda böyle yazılacak.
+        """
+        profil = self._normal.al(camera)
+        kare_w = float(veri.get("w", 0) or 0)
+        kare_h = float(veri.get("h", 0) or 0)
+        if kare_w <= 0 or kare_h <= 0:
+            return []
+
+        profil.kare_ogren(len(tespitler))
+        bulgular: list[Anomali] = []
+
+        for d, ozellik in zip(tespitler, ozellikler, strict=False):
+            bbox = [float(v) for v in d["bbox"]]
+            ayak_x = (bbox[0] + bbox[2]) / 2.0
+            ayak_y = bbox[3]
+
+            hiz = ozellik.govde_hizi
+            # Yön: hız vektöründen. Yoksa (durgun kişi) yön bilgisi de yok.
+            hz = d.get("v")
+            yon = None
+            if hz and (abs(hz[0]) > 1 or abs(hz[1]) > 1):
+                yon = math.atan2(float(hz[1]), float(hz[0]))
+
+            # ⚠ SIRA: önce skorla, SONRA öğren.
+            # Tersi olsaydı gözlem kendi normalini yükseltip kendini
+            # olağan gösterirdi — özellikle nadir hücrelerde.
+            skor, kanit = profil.skorla(ayak_x, ayak_y, kare_w, kare_h, hiz, yon)
+            profil.ogren(ayak_x, ayak_y, kare_w, kare_h, hiz, yon)
+
+            if skor >= 0.5 and ozellik.track_id >= 0:
+                bulgu = self._kurallar.olagandisi_bildir(
+                    camera=camera,
+                    track_id=ozellik.track_id,
+                    skor=skor,
+                    kanit=kanit,
+                    tamlik=ozellik.tamlik,
+                    simdi=ts,
+                )
+                if bulgu is not None:
+                    bulgular.append(bulgu)
+
+        return bulgular
 
     def _yayinla(self, anomali: Anomali, ts: float) -> None:
         """Anomaliyi akışa yazar — API oradan okuyup panele iletecek."""
