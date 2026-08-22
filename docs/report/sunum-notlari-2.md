@@ -148,11 +148,57 @@
 > **3.6 kat daha yavaş** çıktı.
 >
 > Sebep: benim uygulamam kareleri poz için yeniden GPU'ya yüklüyordu,
-> oysa dedektör onları zaten yüklemişti.
+> oysa dedektör onları zaten yüklemişti."
+
+### ⭐ Ve sistemi gerçekten bozan hata: geri basınç
+
+> "Ama en öğretici olanı bu. Ölçtüğüm şey şuydu: alım katmanı saniyede
+> 80 kare üretiyor, çıkarım ancak 10 tanesini işleyebiliyor,
+> **karelerin %89'u atılıyor.**
 >
-> Bu üçü aynı dersin farklı yüzleri: **makul görünen bir hipotez,
-> ölçülmeden uygulanırsa yanlış olabiliyor.** Ölçüm olmadan
-> optimizasyon, tahminle mühendislik yapmaktır."
+> Atmak doğru bir karar — gecikmeyi o sınırlıyor. Ama israfı çözmüyor:
+> atılan her kare için çözme, renk dönüşümü ve ölçekleme CPU'su
+> **zaten ödenmiş** oluyor. Üstelik o CPU, aynı çekirdekleri paylaşan
+> çıkarım sürecinden çalınıyor.
+>
+> Çözüm belliydi: **üretimi tüketime bağla.** Çıkarım worker'ı kaç kare
+> işlediğini Valkey'e yazsın, alım worker'ı okuyup ona göre yavaşlasın.
+> Yazdım, çalıştırdım.
+>
+> **Sistem çok daha kötü oldu.**
+>
+> Gecikme 250 milisaniyeden **2300 milisaniyeye** çıktı, panelde kutular
+> neredeyse kayboldu. Kullanıcı fark etti: 'ekranda kutu yok, bir dur'.
+>
+> Hatayı bulunca çok net göründü: kod **'kaç kare işliyorum'u kapasite
+> sandı.** Oysa işlenen kare sayısı, üretilen karenin bir
+> **fonksiyonu.** Üretimi kısınca işlenen kare azaldı, kapasite düşük
+> ölçüldü, sistem daha çok kıstı, daha az işledi...
+> **Aşağı doğru bir sarmal.** Kamera başına 4 kareden 1'e, yani tabana
+> çakıldı. Her kamera dört kat daha seyrek analiz edilmeye başladı.
+>
+> Ve ironik olan şu: üretim dörtte bire indi ama **tüketim neredeyse
+> hiç artmadı** — saniyede 10'dan 8.9'a. Yani kısıtlama hiçbir şey
+> kazandırmadı, sadece her kamerayı körleştirdi.
+>
+> Doğru tasarım nedir? **Çıktıyı değil doygunluğu ölçmek.** İnternetin
+> tıkanma kontrolü tam olarak bunu yapar: kuyruk boşalıyorsa hızı
+> artır, birikiyorsa azalt. 'Şu an kaç kare işledim' bir kapasite ölçüsü
+> değil; **kuyruk derinliğinin yönü** ise doğrudan bir doygunluk
+> sinyali.
+>
+> Özelliği varsayılan olarak kapattım. Kod duruyor ama yeniden
+> tasarlanmadan açılmayacak."
+
+### Bu üçünün ortak dersi
+
+> "Üçü de aynı şeyin farklı yüzü: **makul görünen bir hipotez, ölçülmeden
+> uygulanırsa yanlış olabiliyor.** Ve ikisinde daha kötüsünü yaptım —
+> ölçmediğim bir kod yolunu **varsayılan** yaptım, sonra sistemi o hâlde
+> ölçtüm ve kirli veriden sonuç çıkardım.
+>
+> Kendime koyduğum kural: **yeni optimizasyon kapalı gelir, A/B ölçülür,
+> kazanç kanıtlanırsa açılır.**"
 
 ---
 
