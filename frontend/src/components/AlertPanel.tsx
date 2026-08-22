@@ -26,19 +26,25 @@ const RENK: Record<string, string> = {
   attention: 'border-line bg-panel text-ink',
 }
 
-/** Kanıt alanlarının okunabilir adları.
+/** Kanıt alanlarının okunabilir adları ve BİRİMLERİ.
  *
- * Ham anahtarları (`govde_egimi_derece`) ekrana basmak operatöre bir
- * şey anlatmaz. Rapor ve panel aynı dili konuşmalı. */
-const KANIT_TR: Record<string, string> = {
-  en_boy_orani: 'en/boy',
-  govde_egimi_derece: 'eğim',
-  egim_degisim_hizi: 'değişim',
-  govde_hizi_govde_sn: 'hız',
-  oyalanma_saniye: 'süre',
-  kisi: 'kişi',
-  taban: 'normal',
-  esik: 'eşik',
+ * ⚠ BİRİM ZORUNLU — ilk sürümde yoktu ve kafa karıştırdı.
+ * "kişi 7 normal 2.1 eşik 5.24" satırı, kullanıcı tarafından
+ * "kişilerin numarası mı?" diye okundu. Birimsiz bir sayı, okuyanın
+ * onu ne sandığına bağlı olarak anlam kazanıyor.
+ *
+ * Ham anahtarları (`govde_egimi_derece`) ekrana basmak da bir şey
+ * anlatmaz; panel ve rapor aynı dili konuşmalı. */
+const KANIT_TR: Record<string, [etiket: string, birim: string]> = {
+  en_boy_orani: ['en/boy oranı', ''],
+  govde_egimi_derece: ['gövde eğimi', '°'],
+  egim_degisim_hizi: ['eğim değişimi', '°/sn'],
+  govde_hizi_govde_sn: ['hız', ' gövde/sn'],
+  olculen_p99: ['ölçülen p99', ' gövde/sn'],
+  oyalanma_saniye: ['aynı yerde', ' sn'],
+  kisi: ['kişi sayısı', ''],
+  taban: ['bu kameranın normali', ' kişi'],
+  esik: ['eşik', ''],
 }
 
 function saat(rx: number): string {
@@ -85,7 +91,12 @@ export function AlertPanel() {
                   </span>
                   <span className="font-mono text-xs">{a.cam}</span>
                   {a.track !== null && (
-                    <span className="text-[10px] text-muted">#{a.track}</span>
+                    <span
+                      className="text-[10px] text-muted"
+                      title="Takip kimliği — bu kişiye sistemin verdiği numara"
+                    >
+                      kişi #{a.track}
+                    </span>
                   )}
                   <span className="ml-auto font-mono text-[10px] text-muted">
                     {saat(a.rx)}
@@ -93,16 +104,28 @@ export function AlertPanel() {
                 </div>
 
                 {/* ⚠ KANIT — alarmın neden üretildiği */}
-                <div className="mt-1 flex flex-wrap gap-x-2 text-[10px] text-muted">
-                  {Object.entries(a.evidence).map(([k, v]) => (
-                    <span key={k} className="font-mono">
-                      {KANIT_TR[k] ?? k} {v}
-                    </span>
-                  ))}
+                {/* Her kanıt kendi satırında: yan yana dizilince
+                    hangi sayının hangi etikete ait olduğu
+                    karışıyordu. */}
+                <div className="mt-1 space-y-0.5 text-[10px] text-muted">
+                  {Object.entries(a.evidence).map(([k, v]) => {
+                    const [etiket, birim] = KANIT_TR[k] ?? [k, '']
+                    return (
+                      <div key={k} className="flex justify-between gap-2">
+                        <span>{etiket}</span>
+                        <span className="font-mono text-ink">
+                          {v}
+                          {birim}
+                        </span>
+                      </div>
+                    )
+                  })}
                 </div>
 
-                <div className="mt-1 flex items-center gap-2 text-[10px] text-muted">
-                  <span>skor {(a.score * 100).toFixed(0)}%</span>
+                <div className="mt-1.5 flex items-center gap-3 border-t border-line/50 pt-1 text-[10px] text-muted">
+                  <span title="Eşiğin ne kadar aşıldığı">
+                    şiddet {(a.score * 100).toFixed(0)}%
+                  </span>
                   {/* ⚠ Tamlık: özellik vektörü kaç örnekten hesaplandı.
                       Düşükse alarm daha az güvenilir — ölçüm izlerin
                       medyan ömrünün ~4 kare olduğunu gösterdi, yani
@@ -111,7 +134,7 @@ export function AlertPanel() {
                     className={a.completeness < 0.5 ? 'text-warn' : undefined}
                     title="Özellik vektörünün tamlığı — düşükse az örnekten hesaplandı"
                   >
-                    veri {(a.completeness * 100).toFixed(0)}%
+                    kanıt gücü {(a.completeness * 100).toFixed(0)}%
                   </span>
                 </div>
               </li>

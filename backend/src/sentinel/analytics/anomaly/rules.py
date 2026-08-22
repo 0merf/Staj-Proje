@@ -61,16 +61,36 @@ DUSME_EGIM_HIZI = 40.0
 
 # ─── Koşma ───
 # Birim: gövde boyu/saniye (ölçek normalize, bkz. features/skeleton.py).
-# Yürüyüş ~1.4 m/s, ortalama boy ~1.7 m → ~0.8 gövde/sn.
-# Koşu ~3 m/s → ~1.8 gövde/sn.
-# 1.5 eşiği hızlı yürüyüş ile koşuyu ayırıyor.
 #
-# ⚠ Bu MUTLAK bir eşik ve bu bir eksikliktir. PLAN §6.4 "kamera
-# normalinin 95. persentili × 1.5" diyor — o Katman A'nın işi ve
-# öğrenme süresi ister. Katman A devreye girdiğinde bu eşik kamera
-# başına uyarlanacak; şimdilik evrensel bir taban kullanılıyor ve
-# sınırlaması raporda belirtilecek.
+# ⚠ EŞİK ARTIK FİZİKTEN DEĞİL, ÖLÇÜMDEN TÜRETİLİYOR
+# İlk sürüm fizikten hesaplamıştı: yürüme 1.4 m/s ÷ boy 1.7 m ≈ 0.8
+# gövde/sn, koşu ≈ 1.8 → eşik 1.5. Makul ama DOĞRULANMAMIŞTI.
+#
+# Ölçüm (benchmarks/speed_20260821.json, 20 kamera, 13 745 örnek):
+#     p50 0.34 · p90 0.66 · p95 0.77 · p99 0.94 · azami 1.79
+# Eşik 1.5, örneklerin yalnızca %0.1'ini aşıyor — yani zaten
+# muhafazakâr. Fizik tahmini şaşırtıcı biçimde iyi çıktı.
+#
+# ⚠ ASIL SORUN EŞİK DEĞİL, GİRDİ GÜRÜLTÜSÜ
+# Panelde görülen koşma alarmları 1.58-2.21 gövde/sn gösteriyordu —
+# p99'un 2-3 katı, hatta ölçümün azamisinden büyük. Bunlar koşan insan
+# değil, TAKİP GÜRÜLTÜSÜ: kimlik parçalanması %45-72 ölçülmüştü ve
+# takipçi bir kimliği başka kişiye atadığında konum sıçrıyor, sahte
+# bir hız doğuyor.
+#
+# Bu yüzden eşik korunuyor ama koşma kuralına AYRI bir güvenilirlik
+# şartı kondu (KOSMA_MIN_TAMLIK). Gerçekten koşan biri kadrajda
+# saniyelerce kalır; iki örnekten "koşuyor" demek gürültüyü olay
+# sanmaktır.
 KOSMA_HIZ = 1.5
+
+# ⚠ Koşma için genel tamlık eşiğinden DAHA YÜKSEK bir şart.
+# 0.5 ≈ 6 örnek ≈ 1.5 saniyelik gözlem. Alarm kayıtlarında sorunlu
+# olanların hepsi %25-42 tamlıktaydı, yani 2-3 örnek.
+# Neden yalnızca koşmada: düşme ANİ bir olaydır ve az örnekte bile
+# gerçektir; koşma ise SÜREGELEN bir durum ve tek sıçramayla
+# ayırt edilemez.
+KOSMA_MIN_TAMLIK = 0.5
 
 # ─── Oyalanma ───
 # ⚠ 3 saniyelik pencereden ÇIKARILAMAZ — pencere boyu zaten 3 sn.
@@ -386,6 +406,12 @@ class KuralMotoru:
         if o.govde_hizi is None:
             return None
 
+        # ⚠ Koşma için ek güvenilirlik şartı (bkz. KOSMA_MIN_TAMLIK).
+        # Az örnekten çıkan yüksek hız, koşan insan değil takip
+        # gürültüsüdür — ölçümle doğrulandı.
+        if o.tamlik < KOSMA_MIN_TAMLIK:
+            return None
+
         if o.govde_hizi < KOSMA_HIZ:
             # Histerezis: çıkma eşiği girme eşiğinin %75'i.
             # Tek eşikle sınırda salınan bir hız alarmı titretirdi.
@@ -403,7 +429,13 @@ class KuralMotoru:
             ciddiyet=CIDDIYET[AnomaliTuru.KOSMA],
             track_id=o.track_id,
             skor=min(1.0, o.govde_hizi / (KOSMA_HIZ * 2)),
-            kanit={"govde_hizi_govde_sn": o.govde_hizi, "esik": KOSMA_HIZ},
+            kanit={
+                "govde_hizi_govde_sn": o.govde_hizi,
+                "esik": KOSMA_HIZ,
+                # Ölçülen p99 — operatör "bu ne kadar sıra dışı"
+                # sorusunu eşikle değil dağılımla cevaplayabilsin.
+                "olculen_p99": 0.94,
+            },
             tamlik=o.tamlik,
         )
 
@@ -521,6 +553,7 @@ __all__ = [
     "DUSME_EGIM_HIZI",
     "DUSME_EN_BOY",
     "KOSMA_HIZ",
+    "KOSMA_MIN_TAMLIK",
     "OYALANMA_SANIYE",
     "Anomali",
     "AnomaliTuru",
