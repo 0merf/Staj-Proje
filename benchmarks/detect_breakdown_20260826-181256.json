@@ -1,0 +1,39 @@
+{
+ "olculdu": "2026-08-26T15:12:56.400590+00:00",
+ "model": "yolo26s.pt",
+ "batch": 8,
+ "imgsz": 640,
+ "tekrar": 120,
+ "tespit_ort": 0.0,
+ "asama_ms_batch": {
+  "tensor": {
+   "p50": 7.681,
+   "p95": 12.919,
+   "ort": 8.058
+  },
+  "forward": {
+   "p50": 26.973,
+   "p95": 56.61,
+   "ort": 30.791
+  },
+  "predict_toplam": {
+   "p50": 42.729,
+   "p95": 73.965,
+   "ort": 47.391
+  },
+  "artik_nms_results": 15.756,
+  "convert": {
+   "p50": 0.032,
+   "p95": 0.201,
+   "ort": 0.177
+  }
+ },
+ "toplam_ms_batch": 50.442,
+ "toplam_ms_kare": 6.305,
+ "forward_payi": 0.5347,
+ "tensorrt_kazanc_tavani": {
+  "2x": 0.2674,
+  "3x": 0.3565,
+  "5x": 0.4278
+ }
+}

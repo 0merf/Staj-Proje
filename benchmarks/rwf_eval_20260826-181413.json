@@ -1,0 +1,79 @@
+{
+ "olculdu": "2026-08-26T15:14:13.920055+00:00",
+ "klip_sayisi_sinif_basina": 2,
+ "bolum": "val",
+ "ornekleme_fps": 4.0,
+ "imgsz": 640,
+ "tohum": 42,
+ "sure_s": 20.0,
+ "sonuc": {
+  "ESKI": {
+   "kavga_p50": 0.4777,
+   "normal_p50": 0.1877,
+   "auc": 1.0,
+   "en_iyi_esik": 0.188,
+   "f1": 1.0,
+   "duyarlilik": 1.0,
+   "kesinlik": 1.0,
+   "kavga_skorlari": [
+    0.425,
+    0.4777
+   ],
+   "normal_skorlari": [
+    0.1877,
+    0.0
+   ]
+  },
+  "BANT": {
+   "kavga_p50": 0.454,
+   "normal_p50": 0.1489,
+   "auc": 1.0,
+   "en_iyi_esik": 0.149,
+   "f1": 1.0,
+   "duyarlilik": 1.0,
+   "kesinlik": 1.0,
+   "kavga_skorlari": [
+    0.2049,
+    0.454
+   ],
+   "normal_skorlari": [
+    0.1489,
+    0.0
+   ]
+  },
+  "KAPI": {
+   "kavga_p50": 0.3293,
+   "normal_p50": 0.1012,
+   "auc": 1.0,
+   "en_iyi_esik": 0.233,
+   "f1": 1.0,
+   "duyarlilik": 1.0,
+   "kesinlik": 1.0,
+   "kavga_skorlari": [
+    0.233,
+    0.3293
+   ],
+   "normal_skorlari": [
+    0.1012,
+    0.0
+   ]
+  },
+  "IKISI": {
+   "kavga_p50": 0.1893,
+   "normal_p50": 0.0803,
+   "auc": 1.0,
+   "en_iyi_esik": 0.102,
+   "f1": 1.0,
+   "duyarlilik": 1.0,
+   "kesinlik": 1.0,
+   "kavga_skorlari": [
+    0.1021,
+    0.1893
+   ],
+   "normal_skorlari": [
+    0.0803,
+    0.0
+   ]
+  }
+ }
+}

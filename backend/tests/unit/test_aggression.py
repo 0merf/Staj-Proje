@@ -25,6 +25,7 @@ import pytest
 
 from sentinel.analytics.aggression import (
     ESIK_UYARI_GIR,
+    VARSAYILAN,
     TirmanmaSkorlayici,
 )
 from sentinel.analytics.features import pair
@@ -369,16 +370,34 @@ class TestHisterezis:
 
         Skor eşiğin hemen altına inince seviye HEMEN düşmemeli.
         """
-        s = TirmanmaSkorlayici()
+        # ⚠ SAYILAR EŞİKLERDEN TÜRETİLİYOR, ELLE YAZILMIYOR
+        # İlk sürüm 0.60 / 0.90 / 0.45 / 0.30 yazıyordu. Bu değerler o
+        # günkü eşiklere (0.35/0.55/0.75) göre seçilmişti; 26.08'de
+        # skorun ÖLÇEĞİ değişip eşikler yeniden kalibre edilince test
+        # kırıldı — oysa histerezis mantığında hiçbir şey değişmemişti.
+        #
+        # Test neyi sınadığını bilmeli: burada sınanan şey seviye
+        # geçişlerinin MANTIĞI, kalibrasyonun kendisi değil. Kalibrasyon
+        # ölçümle değişir ve değiştiğinde bu testin kırılmaması gerekir.
+        e = VARSAYILAN
+        s = TirmanmaSkorlayici(e)
+
         # ⚠ YUKARI YÖNDE HİSTEREZİS YOK: skor bir anda yükselirse
         # seviye de anında yükselmeli. Merdiven gibi çıkmak erken
         # uyarı avansını (K8) doğrudan yerdi.
-        assert s._seviye(0.60, "sakin") == "uyari"
-        assert s._seviye(0.90, "sakin") == "alarm", "ani sıçrama anında alarm olmalı"
-        # 0.45: uyarıdan çıkma eşiği 0.40, hâlâ uyarıda kalmalı
-        assert s._seviye(0.45, "uyari") == "uyari"
-        # 0.30: çıkma eşiğinin altı → düşüyor
-        assert s._seviye(0.30, "uyari") == "dikkat"
+        uyari_ustu = (e.esik_uyari_gir + e.esik_alarm_gir) / 2
+        assert s._seviye(uyari_ustu, "sakin") == "uyari"
+        assert s._seviye(e.esik_alarm_gir + 0.1, "sakin") == "alarm", (
+            "ani sıçrama anında alarm olmalı"
+        )
+
+        # Girme eşiğinin ALTINDA ama çıkma eşiğinin ÜSTÜNDE → seviye korunur
+        arada = (e.esik_uyari_cik + e.esik_uyari_gir) / 2
+        assert e.esik_uyari_cik < arada < e.esik_uyari_gir
+        assert s._seviye(arada, "uyari") == "uyari"
+
+        # Çıkma eşiğinin altı → bir basamak düşer
+        assert s._seviye(e.esik_uyari_cik - 0.01, "uyari") == "dikkat"
 
     def test_dusuk_tamlik_skorlanmiyor(self) -> None:
         """Saldırganlık iddiası ciddi; iki örnekten üretilmemeli."""

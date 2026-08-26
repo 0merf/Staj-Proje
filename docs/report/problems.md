@@ -33,6 +33,197 @@ ama **belirti / sebep / çözüm** üçlüsü mutlaka olsun.
 
 <!-- Yeni kayıtlar buraya, en yenisi en üstte -->
 
+### P-33 · "GPU boşta, o hâlde hızlandırmaya değmez" — boşta olmak ucuz olmak değildir
+
+**Tarih:** 26.08.2026 · **Faz:** 1 / Gün 15 · **Kaybedilen süre:** ~10 gün (yanlış karar olarak taşındı)
+
+**Belirti:** Gün 8'den beri `CLAUDE.md` şunu yazıyordu:
+
+> *"TensorRT planlandı ama kullanılmıyor: Gün 8 ölçümü GPU'nun %0-5'te
+> boş oturduğunu gösterdi (`GpuIdle`), yani modeli hızlandırmak kazanç
+> getirmezdi."*
+
+Cümle mantıklı görünüyor ve on gün boyunca kimse sorgulamadı.
+
+**Kök sebep:** İki farklı büyüklük birbirine karıştırılmış:
+
+| Ölçtüğüm | Sandığım |
+|---|---|
+| **Görev döngüsü** — GPU zamanın yüzde kaçında meşgul | **Çağrı maliyeti** — bir ileri geçiş kaç ms sürüyor |
+
+GPU'nun %5 kullanımda görünmesi, ileri geçişin ucuz olduğunu değil,
+**partiler arasında beklediğini** söyler. Tek süreçli boru hattında GPU
+işini bitirir, sonra CPU'nun bir sonraki partiyi hazırlamasını bekler.
+Kullanım düşük çünkü çoğu zaman *boş bekliyor* — yaptığı iş kısa
+olduğu için değil.
+
+**Ölçüm** (`scripts/benchmark_detect_breakdown.py`, boru hattı kapalı,
+CUDA olayıyla, `benchmarks/detect_breakdown_20260826-181256.json`):
+
+```
+AŞAMA      kare ms    pay
+TENSOR       0.960    15%   numpy yığma + H2D + permute/flip/half
+FORWARD      3.372    53%   ⬅ saf ileri geçiş — TensorRT'nin alanı
+ARTIK        1.970    31%   NMS + Results nesnesi kurma
+CONVERT      0.004     0%   GPU→CPU + Detection listesi
+TOPLAM       6.305
+```
+
+İleri geçiş bütçenin **yarısından fazlası.** Amdahl'a göre 3×
+hızlanma toplamda %35.6 kazanç demek — hiç de "kazanç getirmez"
+değil.
+
+⚠ Duvar saatiyle ölçseydim bu sayı da yanlış çıkardı: CUDA çağrıları
+eşzamansızdır, `time.perf_counter()` işin bitişini değil **kuyruğa
+atılışını** ölçer. `torch.cuda.Event` GPU'nun kendi zaman çizgisinde
+ölçüyor.
+
+**Çözüm:** TensorRT ölçülmeye alındı (P-34'e devam ediyor).
+
+**Öğrenilen ders:** Bir metriğin *adı* ile *anlamı* aynı şey değil.
+"GPU kullanımı %5" cümlesi doğruydu; ondan çıkardığım sonuç yanlıştı.
+Bir ölçüm karar veriyorsa, o ölçümün tam olarak neyi saydığını yazıya
+dökmek gerekiyor — "GPU boşta" değil, "GPU zamanın %95'inde iş
+beklemiyor, iş gelmesini bekliyor".
+
+Ayrıca: bir kararın gerekçesi belgeye girdikten sonra **veri gibi
+davranmaya başlıyor.** On gün boyunca "TensorRT'ye gerek yok" bir
+bulgu olarak alıntılandı, oysa bir çıkarımdı ve yanlıştı.
+
+---
+
+### P-32 · Saldırganlık skorunun sıfır noktası yoktu — 26.4 yanlış alarm/kamera-saat
+
+**Tarih:** 26.08.2026 · **Faz:** 1 / Gün 15 · **Kaybedilen süre:** ~3 saat
+
+**Belirti:** 10 dakikalık canlı ölçümde 88 alarm, yani **26.4
+alarm/kamera-saat** (K7 hedefi ≤3). En büyük kalem saldırganlık (88'in
+30'u) ve tek başına Oxford caddesinde (cam-09) 12 uyarı. Orada kavga
+yok — sadece yaya trafiği var.
+
+**Araştırma:** İlk refleks eşikleri yükseltmekti. Yapmadım, çünkü eşik
+yükseltmek yanlış alarmı her zaman düşürür — bu bir keşif değil,
+aritmetik. Sebebi öğrenmeden yapılan ayar, bir sonraki sahnede yine
+patlar.
+
+Bunun yerine girdinin dağılımı ölçüldü
+(`scripts/benchmark_features.py`, 20 kamera, 200 sn, 40 bin özellik
+vektörü — `benchmarks/features_20260826-175748.json`):
+
+```
+ÖZELLİK              p50     p90     p99   o günkü doyum
+bilek_hizi_azami    0.87    1.80    4.01     3.0
+bilek_sarsintisi    0.54    1.39    3.24     2.0
+hareket_enerjisi    0.45    0.85    1.39     1.5
+govde_hizi          0.30    0.66    0.94       —
+```
+
+**Kök sebep:** Her bileşen `deger / doyum` ile 0-1'e eşleniyordu.
+Sessiz sonucu: **sıfır noktası yok.** Yürüyen bir insanın bileği de
+hareket eder; normal davranışın p90'ı doyumun %56-69'unu dolduruyordu.
+
+Kalem kalem, p90'lık sıradan bir yaya (yanından biri geçerken):
+
+```
+bilek    0.66 × 0.25 = 0.164
+enerji   0.41 × 0.15 = 0.061
+duruş    0.25 × 0.10 = 0.025
+yakınlık 0.38 × 0.30 = 0.113
+yaklaşma 1.00 × 0.20 = 0.200
+                       ─────
+                       0.563   >  0.55 (uyarı eşiği)
+```
+
+İkinci hata `DOYUM_YAKLASMA = 1.0` idi ve **yorumu ölçümle
+çelişiyordu**: *"bu hızda yaklaşmak koşarak gelmektir"* yazıyordu, oysa
+gövde hızı p99 = 0.94 — iki kişi normal yürüyüşle karşılıklı gelince
+kapanma hızı zaten 1.0'ı aşıyor. Bileşen sürekli doygundu.
+
+Üçüncüsü yapısaldı: modül kendi başlığında *"saldırganlık tanımı gereği
+etkileşimlidir"* diyordu ama **toplamsal** skor bunu uygulamıyordu.
+Yalnız koşan biri bilek + enerji + duruştan skor toplayabiliyordu.
+
+**Çözüm:** İki değişiklik, ikisi de ölçümden türetildi.
+
+1. **Ölü bölge:** `bilesen = clamp((deger − taban)/(doyum − taban),0,1)`,
+   taban = ölçülen normal p90. *Normal davranış kanıt değildir.*
+2. **Etkileşim kapısı:** skor `× max(yakınlık, yaklaşma)`.
+   ⚠ Kapı salt yakınlığa bağlanmadı: birbirine koşan iki kişi henüz
+   yakın değildir ve projenin özgün katkısı tam o anı yakalamak.
+
+Doğrulama için `scripts/calibrate_aggression.py` yazıldı: **tek canlı
+akıştan dört ayarı aynı anda** skorluyor. Ortak zemin olmadan iki sayı
+kıyaslanamaz (P-17).
+
+```
+6932 değerlendirme · 300 sn · 9 normal kamera
+AYAR    dikkat  uyari    p50     p99
+ESKI       610     43   0.193   0.464
+BANT       173      0   0.117   0.394
+KAPI        23      0   0.088   0.278
+IKISI        0      0   0.053   0.189
+```
+
+**Öğrenilen ders:** Bir eşiği ayarlamadan önce, o eşiğe giren büyüklüğün
+**normal koşuldaki dağılımını** bilmek gerekiyor. Bilinmeden seçilen
+her eşik tahmindir; tahminin doğru çıkması ancak şanstır.
+
+İkinci ders: bir modülün docstring'inde yazan mimari iddia
+("etkileşimlidir") ile kodun yaptığı iş ayrışabiliyor ve bu ayrışma
+**hiçbir testi kırmıyor.** Mimari kural 0 yalnızca belge-kod değil,
+docstring-kod arası için de geçerli.
+
+---
+
+### P-31 · Bayat yer gerçeği: diskte kavga etiketi, ekranda kalabalık meydan
+
+**Tarih:** 26.08.2026 · **Faz:** 1 / Gün 15 · **Kaybedilen süre:** ~20 dakika (ama bulunmasaydı ölçümü zehirleyecekti)
+
+**Belirti:** UR Fall dizisi cam-16'ya konulurken `data/annotations/`
+dizinine bakıldı ve cam-16 için **zaten bir yer gerçeği dosyası
+olduğu** görüldü — içinde RWF-2000 kavga zaman damgaları.
+
+Kontrol edilince beş dosyanın bayat olduğu çıktı:
+
+```
+cam-13  plan=PETS kalabalık   truth=RWF-2000 kavga zamanları
+cam-14  plan=PETS kalabalık   truth=RWF-2000 kavga zamanları
+cam-15  plan=PETS kalabalık   truth=RWF-2000 kavga zamanları
+cam-18  plan=Avenue normal    truth=RWF-2000 kavga zamanları
+cam-20  plan=Pexels yüzler    truth=RWF-2000 kavga zamanları
+```
+
+**Kök sebep:** Bu slotlar bir zamanlar RWF kameralarıydı. Çiftlik
+yeniden düzenlenirken `data/videos/cam-NN.mp4` üzerine yazıldı ama
+`data/annotations/cam-NN.truth.json` **yerinde kaldı.** Üretim betiği
+yalnızca ürettiği dosyayı düşünüyordu, geride bıraktığını değil.
+
+**Neden kimse fark etmedi:** Hiçbir betik o dosyaları okumuyordu.
+`benchmark_k7.py` yalnızca cam-19'a bakıyor. Yani hata görünmez
+biçimde bekliyordu — okuyan ilk ölçüm sessizce yanlış sonuç verecekti.
+
+⚠ **Testi olmayan veri, testi olmayan koddan tehlikelidir.** Kod
+yanlışsa patlar; veri yanlışsa patlamaz, sadece yanlış sayı üretir ve o
+sayının üstüne kurulan her şey yanlış olur.
+
+**Çözüm:**
+- Bayat dosyalar silindi; cam-18 kontrol kamerası olarak yeniden
+  yazıldı (boş segment listesi — *ölçümün kendisi budur*: cam-19 ile
+  aynı sahne, tek fark anomalinin yokluğu).
+- Her yer gerçeği dosyası artık **hangi kaynaktan üretildiğini**
+  yazıyor (`uretim_kaynagi`).
+- `build_camera_farm.py` içine `_truth_denetle()` eklendi: plandaki
+  kaynakla dosyadakini karşılaştırıp uyuşmazlığı bildiriyor.
+  **Silmiyor, uyarıyor** — elle yazılmış bir dosyayı bir betiğin
+  silmesi, çözdüğü sorundan büyük bir sorundur.
+
+**Öğrenilen ders:** Kısmi bir işlem, dokunmadığı kayıtları geçersiz
+kılabiliyor. Aynı sınıf hata bu projede ikinci kez çıktı (manifest'in
+`--only` ile ezilmesi). Ortak ders: **bir kaydı üreten kod, o kaydın
+artık geçerli olup olmadığından da sorumludur.**
+
+---
+
 ### P-30 · İki paket aynı dizini paylaşınca CUDA sağlayıcısı öksüz kaldı
 
 **Tarih:** 18.08.2026 · **Faz:** 1 / Gün 14 · **Kaybedilen süre:** ~4 gün (fark edilmeden)

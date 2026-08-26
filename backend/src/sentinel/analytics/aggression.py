@@ -145,12 +145,51 @@ class Esikler:
     # ─── Histerezis eşikleri ───
     # Girme eşiği çıkma eşiğinden yüksek: skor sınırda salınırsa
     # alarm açılıp kapanmasın.
-    esik_dikkat_gir: float = 0.35
-    esik_dikkat_cik: float = 0.25
-    esik_uyari_gir: float = 0.55
-    esik_uyari_cik: float = 0.40
-    esik_alarm_gir: float = 0.75
-    esik_alarm_cik: float = 0.55
+    #
+    # ⚠ 26.08.2026 — ESKİ DEĞERLER (0.35/0.55/0.75) ARTIK GEÇERSİZDİ
+    # Ölü bölge ve etkileşim kapısı skorun ölçeğini değiştirdi. Aynı
+    # eşikleri bırakmak modülü tümden susturmak olurdu: RWF kavga
+    # kliplerinin skor medyanı 0.089, eski uyarı eşiği 0.55.
+    #
+    # ⚠ Ölçek değişince eşik de değişmeli — yoksa "yanlış alarmı
+    # düşürdüm" diye rapor edilen şey aslında sağırlıktır.
+    #
+    # Yeni değerler İKİ ölçümden birlikte türetildi:
+    #
+    #   canlı çiftlik, normal kameralar (aggression_calib_20260826-180807)
+    #     skor p50 = 0.053 · p99 = 0.189
+    #   RWF-2000 val, 60+60 klip (rwf_eval_20260826-181902)
+    #     kavga p50 = 0.089 · p75 = 0.137 · p90 = 0.189
+    #     normal p50 = 0.063 · p90 = 0.170
+    #
+    # ⚠ İKİ DAĞILIM İÇ İÇE GEÇMİŞ. AUC = 0.629. Bu bir ayar sorunu
+    # değil, skorun kendi sınırı: eşik nereye konursa konsun
+    #
+    #     eşik 0.05 → kavganın %78'i yakalanır, normalin %53'ü yanar
+    #     eşik 0.15 → kavganın %20'si,          normalin %20'si
+    #     eşik 0.19 → kavganın  %8'i,           normalin  %3'ü
+    #
+    # 0.15'te yakalama oranı yanlış pozitif oranına EŞİT — yani şans
+    # seviyesi. Kural tabanlı skor tek başına K5'i (F1 ≥ 0.85)
+    # taşıyamaz; ölçülen en iyi F1 = 0.712.
+    #
+    # SEÇİM: sessizlik tarafı. Gerekçe operasyonel —
+    #   · Çiftlikte kavga içeriği neredeyse yok; duyarlı eşik
+    #     pratikte SADECE yanlış alarm üretir (K7 ≤3/kamera-saat).
+    #   · Alarmı kapatan operatör, hiç alarmı olmayan operatörden
+    #     kötüdür: sistem varmış gibi görünür ama yoktur.
+    #   · Duyarlılık eğitilmiş modelin işi (PLAN §6.5.5, Gün 17-18).
+    #     Bu skor onun TABAN ÇİZGİSİ — geçmesi gereken sayı 0.712.
+    #
+    # ⚠ `dikkat` YAYINLANMIYOR (worker.py · _tirmanma_yayinla), yalnızca
+    # skor geçmişine giriyor. Bu yüzden duyarlı tutulabiliyor: K8 (erken
+    # uyarı avansı) ölçümü tüm geçmişi kullanacak, bildirim kapısı ayrı.
+    esik_dikkat_gir: float = 0.12   # RWF kavgasının ~%30'u — ölçüm için
+    esik_dikkat_cik: float = 0.08
+    esik_uyari_gir: float = 0.20    # canlı normalin p99'unun (0.189) üstü
+    esik_uyari_cik: float = 0.13
+    esik_alarm_gir: float = 0.32
+    esik_alarm_cik: float = 0.20
 
     # Zamansal yumuşatma (üstel hareketli ortalama).
     # ⚠ Düşük değer = kararlı ama geç. 0.4 seçildi çünkü ERKEN UYARI
