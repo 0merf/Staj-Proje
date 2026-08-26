@@ -280,7 +280,26 @@ class AnalyticsWorker:
             skor, kanit = profil.skorla(ayak_x, ayak_y, kare_w, kare_h, hiz, yon)
             profil.ogren(ayak_x, ayak_y, kare_w, kare_h, hiz, yon)
 
-            if skor >= 0.5 and ozellik.track_id >= 0:
+            # ⚠ KATMAN A EŞİĞİ 0.5 DEĞİL 0.85 — ölçümle düzeltildi
+            #
+            # İlk eşik 0.5'ti ve canlı ölçüm şunu gösterdi: 63 alarmın
+            # 49'u (%78) Katman A'dan geliyordu ve kontrol kamerasında
+            # (cam-18, tamamı normal) saatte 90 alarm çıkıyordu.
+            # K7 kriteri kamera-saat başına ≤3 diyor.
+            #
+            # ⚠ AMA ASIL MESELE EŞİK DEĞİL, MİMARİ
+            # Katman A istatistiksel bir SAPMA sinyali, fiziksel bir
+            # olay değil. PLAN §6.6 onu füzyona 0.25 ağırlıkla giren bir
+            # GİRDİ olarak tanımlıyor — tek başına alarm üreten bir
+            # kaynak olarak değil. "Bu kişi normalden 3σ hızlı" tek
+            # başına operatörü rahatsız etmeye değmez; ama saldırganlık
+            # skoru da yüksekse birlikte anlam kazanır.
+            #
+            # Füzyon katmanı Gün 19'da gelecek. O zamana kadar Katman A
+            # yalnızca ÇOK belirgin sapmalarda (0.85+) ve kanıtı güçlü
+            # olduğunda (tamlık ≥0.5) alarm üretiyor. Bu geçici bir
+            # kısıtlama, kalıcı çözüm füzyon.
+            if skor >= 0.85 and ozellik.tamlik >= 0.5 and ozellik.track_id >= 0:
                 bulgu = self._kurallar.olagandisi_bildir(
                     camera=camera,
                     track_id=ozellik.track_id,

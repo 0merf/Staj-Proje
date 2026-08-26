@@ -1,0 +1,85 @@
+{
+  "measured_at": "2026-08-26T16:17:17",
+  "phase": "Faz 1 / Gün 16",
+  "description": "K7 yanlış alarm oranı + Avenue yer gerçeğiyle yakalama",
+  "duration_s": 241.0,
+  "kamera_sayisi": 20,
+  "tolerans_s": 4.0,
+  "k7": {
+    "genel_alarm_kamera_saat": 47.05,
+    "kontrol_kamerasi": "cam-18",
+    "kontrol_alarm_saat": 89.63,
+    "hedef": 3.0,
+    "tutuyor_mu": false
+  },
+  "yakalama": {
+    "deney_kamerasi": "cam-19",
+    "yer_gercegi_segment": 39,
+    "yakalanan": 5,
+    "recall": 0.128,
+    "precision": 1.0,
+    "f1": 0.227
+  },
+  "tur_bazinda": {
+    "unusual": 49,
+    "loitering": 5,
+    "crowd": 6,
+    "fall": 1,
+    "running": 2
+  },
+  "kamera_bazinda": {
+    "cam-14": 4,
+    "cam-11": 4,
+    "cam-18": 6,
+    "cam-17": 8,
+    "cam-19": 5,
+    "cam-12": 4,
+    "cam-04": 3,
+    "cam-10": 4,
+    "cam-03": 5,
+    "cam-05": 2,
+    "cam-13": 4,
+    "cam-09": 4,
+    "cam-16": 3,
+    "cam-02": 3,
+    "cam-15": 3,
+    "cam-01": 1
+  },
+  "tur_kamera": {
+    "unusual": {
+      "cam-14": 4,
+      "cam-11": 4,
+      "cam-18": 4,
+      "cam-17": 4,
+      "cam-12": 4,
+      "cam-10": 4,
+      "cam-04": 2,
+      "cam-03": 3,
+      "cam-05": 2,
+      "cam-13": 2,
+      "cam-19": 3,
+      "cam-09": 3,
+      "cam-16": 3,
+      "cam-02": 3,
+      "cam-15": 3,
+      "cam-01": 1
+    },
+    "loitering": {
+      "cam-19": 2,
+      "cam-18": 2,
+      "cam-03": 1
+    },
+    "crowd": {
+      "cam-17": 3,
+      "cam-04": 1,
+      "cam-13": 2
+    },
+    "fall": {
+      "cam-17": 1
+    },
+    "running": {
+      "cam-03": 1,
+      "cam-09": 1
+    }
+  }
+}

@@ -129,6 +129,15 @@ ASGARI_TAMLIK = 0.25
 SOGUMA_KAMERA_S = 60.0   # aynı kamera + aynı tür
 SOGUMA_IZ_S = 120.0      # aynı iz, tür fark etmeksizin
 
+# ⚠ KATMAN A İÇİN AYRI VE UZUN SOĞUMA
+# Katman A istatistiksel bir sapma sinyali: aynı kamerada arka arkaya
+# çok sayıda kişi "olağandışı" çıkabilir (ışık değişimi, kalabalık bir
+# an, öğrenme henüz oturmamış bir bölge). Fiziksel olaylardan farklı
+# olarak bunlar TEK BİR DURUMUN belirtileridir, ayrı olaylar değil.
+# 60 saniyelik soğuma bu yüzden yetmiyordu; ölçümde alarmların %78'i
+# buradan geliyordu.
+SOGUMA_OLAGANDISI_S = 300.0
+
 # Kalabalık taban çizgisi bu kadar örnek görmeden karar vermez.
 # Soğuk başlangıçta taban ilk gözleme eşit oluyor; henüz "normal"i
 # öğrenmemişken alarm üretmek, öğrenilmemiş bir eşikle karar vermektir.
@@ -322,8 +331,12 @@ class KuralMotoru:
         sayılmamalı: bastırma oranı yükseliyorsa eşikler yanlış demektir
         ve bu bilgi raporda K7'nin yanında durmalı.
         """
+        # Katman A'nın soğuması ayrı ve daha uzun (bkz. SOGUMA_OLAGANDISI_S)
+        kamera_soguma = (
+            SOGUMA_OLAGANDISI_S if tur is AnomaliTuru.OLAGANDISI else SOGUMA_KAMERA_S
+        )
         son = self._son_alarm.get((camera, tur))
-        if son is not None and simdi - son < SOGUMA_KAMERA_S:
+        if son is not None and simdi - son < kamera_soguma:
             self.bastirilan += 1
             return True
         if (
