@@ -1,0 +1,28 @@
+{
+ "sure_s": 600.7,
+ "toplam_alarm": 39,
+ "K7_tum_kameralar": 11.69,
+ "K7_normal_kameralar": 3.33,
+ "K7_kontrol_cam18": 0.0,
+ "kirilim": {
+  "cam-17/crowd": 7,
+  "cam-13/crowd": 5,
+  "cam-16/fall": 4,
+  "cam-17/unusual": 2,
+  "cam-20/loitering": 2,
+  "cam-10/unusual": 2,
+  "cam-13/unusual": 2,
+  "cam-17/fall": 2,
+  "cam-01/loitering": 2,
+  "cam-09/loitering": 2,
+  "cam-12/unusual": 1,
+  "cam-01/crowd": 1,
+  "cam-15/unusual": 1,
+  "cam-14/unusual": 1,
+  "cam-05/crowd": 1,
+  "cam-09/unusual": 1,
+  "cam-04/crowd": 1,
+  "cam-20/unusual": 1,
+  "cam-11/unusual": 1
+ }
+}

@@ -247,6 +247,7 @@ class InferenceWorker:
         batch_size: int = 8,
         block_ms: int = 500,
         max_age_ms: int = 0,
+        batch_fill_ms: int = 0,
     ) -> None:
         self._detector = detector
         self._pose = pose
@@ -255,6 +256,8 @@ class InferenceWorker:
         self._batch_size = batch_size
         self._block_ms = block_ms
         self._max_age_s = max_age_ms / 1000.0 if max_age_ms > 0 else 0.0
+        # ⚠ Parti doldurma — varsayılan KAPALI, gerekçesi aşağıda
+        self._batch_fill_s = batch_fill_ms / 1000.0 if batch_fill_ms > 0 else 0.0
         # Kamera başına ayrı takipçi durumu (bkz. tracker/botsort.py)
         self._tracker = BotSortTracker(frame_rate=int(settings.target_fps))
 
@@ -339,6 +342,8 @@ class InferenceWorker:
                     GROUP, self._worker_id, count=self._batch_size, block_ms=self._block_ms
                 )
             )
+            if batch and self._batch_fill_s > 0:
+                batch = self._partiyi_doldur(batch)
             self.wait_ms.append((time.perf_counter() - t_wait) * 1000.0)
             if batch:
                 batch = self._drop_stale(batch)
@@ -360,6 +365,55 @@ class InferenceWorker:
         self._finish(time.monotonic() - started)
 
     # ─── İç işler ────────────────────────────────────────────
+
+    def _partiyi_doldur(self, batch: list) -> list:  # type: ignore[type-arg]
+        """Parti hedefe ulaşana ya da süre dolana kadar kare toplar.
+
+        ⚠ NEDEN GEREKLİ
+        `XREADGROUP ... BLOCK` **eldeki ilk kareyle** dönüyor, `COUNT`
+        kadar birikmesini beklemiyor. Çıkarım worker'ı üretimden hızlı
+        olduğu için sürekli yarım parti alıyordu.
+
+        Ölçüm (canlı, 20 kamera, `sentinel_batch_size` histogramı):
+
+            ortalama 5.28 kare/parti · partilerin %54'ü 6'nın altında
+
+        Bu iki şeye mal oluyor:
+          · Python/CUDA çağrı başına sabit maliyet daha az kareye
+            bölünüyor
+          · TensorRT motoru SABİT parti istiyor (dinamik şekil YOLO26'nın
+            dikkat bloğunda kırılıyor). Yarım partiyi doldurup vermek,
+            küçük partide %26-77 KAYIP demek — yani motor bu dağılımla
+            kullanılamaz
+
+        ⚠ BEDELİ GECİKME, VE BÜTÇESİ VAR
+        En fazla `batch_fill_ms` kadar bekliyoruz. K3 kriteri ≤1500 ms;
+        ölçülen p50 gecikme 377 ms. Yani ~1100 ms boşluk var ve 40-80 ms
+        beklemek bunun küçük bir dilimi.
+
+        ⚠ VARSAYILAN 0 (KAPALI). Bu bir iyimserlik değil disiplin: aynı
+        proje daha önce ölçülmeden açılan bir özellikle (kapasite geri
+        basıncı) kendi verimini yarıya düşürmüştü. Değer ölçümle
+        belirlenip açılacak.
+        """
+        hedef = self._batch_size
+        bitis = time.perf_counter() + self._batch_fill_s
+        while len(batch) < hedef:
+            kalan_ms = int((bitis - time.perf_counter()) * 1000)
+            if kalan_ms <= 0:
+                break
+            ek = list(
+                self._frames.consume(
+                    GROUP,
+                    self._worker_id,
+                    count=hedef - len(batch),
+                    block_ms=kalan_ms,
+                )
+            )
+            if not ek:
+                break  # süre doldu, akış boş — beklemenin anlamı yok
+            batch.extend(ek)
+        return batch
 
     def _run_batch(self, batch: list) -> None:  # type: ignore[type-arg]
         # Kareleri paylaşımlı bellekten oku — kopyalama yok
@@ -810,6 +864,14 @@ def main() -> int:
         help="Bu yaştan eski kareler İŞLENMEDEN atılır (0 = kapalı). "
              "Gecikmeyi sınırlayan mekanizma budur.",
     )
+    parser.add_argument(
+        "--batch-fill-ms",
+        type=int,
+        default=0,
+        help="Parti hedefe ulaşana kadar bu kadar ms daha kare bekle "
+             "(0 = kapalı). XREADGROUP eldeki ilk kareyle döndüğü için "
+             "partiler yarım kalıyor; bu gecikmeden verim satın alır.",
+    )
     parser.add_argument("--worker-id", default="inference-0")
     parser.add_argument("--metrics-port", type=int, default=9110)
     parser.add_argument("--duration", type=float, default=None)
@@ -855,6 +917,7 @@ def main() -> int:
         expression=expression,
         worker_id=args.worker_id,
         batch_size=args.batch_size,
+        batch_fill_ms=args.batch_fill_ms,
         max_age_ms=(
             args.max_frame_age_ms
             if args.max_frame_age_ms is not None
