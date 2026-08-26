@@ -53,6 +53,19 @@ DUSME_EN_BOY = 0.9
 # Gövdenin dikeyden sapması. 55°: oturan kişi ~30°, eğilen ~45°,
 # yere yatan >70°. Aradaki bant bilinçli olarak geniş bırakıldı.
 DUSME_EGIM_DERECE = 55.0
+# ⚠ ÜST SINIR — canlı koşuda sahte düşme yakalandı
+# cam-17'de "gövde eğimi 175°" ile düşme alarmı çıktı. 175°, omuz-kalça
+# vektörünün neredeyse tam AŞAĞI baktığı anlamına gelir: yani kişi baş
+# aşağı. Bu bir düşme değil, BOZUK İSKELET — poz modeli omuz ile kalçayı
+# ters atamış.
+#
+# Gerçek bir düşmede gövde yatay olur (55-120°). 150° üstü fiziksel
+# olarak insan duruşu değil; jimnastikçi bile o hâlde kalmaz.
+#
+# Ders: bir eşiğin ALT sınırını koyup üst sınırını unutmak, gürültüyü
+# "aşırı güçlü kanıt" diye okumaya yol açıyor. Aralık kontrolü tek
+# taraflı olmamalı.
+DUSME_EGIM_AZAMI = 150.0
 # ⚠ ASIL AYIRT EDİCİ: eğimin DEĞİŞİM HIZI.
 # Düşme ani bir olaydır; eğilerek çanta almak yavaştır. 40°/sn,
 # yarım saniyede 20° değişime denk gelir — kontrollü bir hareket
@@ -375,7 +388,8 @@ class KuralMotoru:
             return None
 
         genis = o.en_boy_orani >= DUSME_EN_BOY
-        yatay = o.govde_egimi >= DUSME_EGIM_DERECE
+        # Aralık kontrolü ÇİFT taraflı: üst sınır bozuk iskeleti eliyor
+        yatay = DUSME_EGIM_DERECE <= o.govde_egimi <= DUSME_EGIM_AZAMI
         ani = (o.govde_egimi_degisimi or 0.0) >= DUSME_EGIM_HIZI
 
         if not (genis and yatay and ani):
@@ -629,6 +643,7 @@ class KuralMotoru:
 
 __all__ = [
     "ASGARI_TAMLIK",
+    "DUSME_EGIM_AZAMI",
     "DUSME_EGIM_DERECE",
     "DUSME_EGIM_HIZI",
     "DUSME_EN_BOY",

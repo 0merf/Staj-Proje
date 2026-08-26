@@ -357,3 +357,30 @@ class TestOzellikAnlami:
         ozellik = cikar(pencere)  # patlamamalı
         assert ozellik.bilek_hizi_azami is None
         assert ozellik.en_boy_orani is not None  # kutudan gelen yine var
+
+
+def test_BOZUK_iskelet_dusme_sayilmiyor() -> None:
+    """⚠ Canlı koşuda yakalandı: "gövde eğimi 175°" ile düşme alarmı.
+
+    175°, omuz-kalça vektörünün neredeyse tam AŞAĞI baktığı anlamına
+    gelir — kişi baş aşağı. Bu düşme değil, poz modelinin omuz ile
+    kalçayı ters ataması. Gerçek düşmede gövde yatay olur (55-120°).
+
+    Ders: bir eşiğin alt sınırını koyup üst sınırını unutmak, gürültüyü
+    "aşırı güçlü kanıt" diye okumaya yol açıyor.
+    """
+    from sentinel.analytics.anomaly.rules import (
+        DUSME_EGIM_AZAMI,
+        DUSME_EGIM_DERECE,
+    )
+
+    # Ters çevrilmiş iskelet: omuz kalçanın ALTINDA
+    kp = iskelet()
+    kp[sk.SOL_OMUZ][1], kp[sk.SOL_KALCA][1] = kp[sk.SOL_KALCA][1], kp[sk.SOL_OMUZ][1]
+    kp[sk.SAG_OMUZ][1], kp[sk.SAG_KALCA][1] = kp[sk.SAG_KALCA][1], kp[sk.SAG_OMUZ][1]
+
+    egim = sk.govde_egimi(kp)
+    assert egim is not None
+    assert egim > DUSME_EGIM_AZAMI, f"ters iskelet üst sınırı aşmalıydı ({egim:.0f}°)"
+    # Ve bu aralık düşme sayılmamalı
+    assert not (DUSME_EGIM_DERECE <= egim <= DUSME_EGIM_AZAMI)
