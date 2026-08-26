@@ -134,6 +134,20 @@ PEXELS = "_sources/pexels"
 # Bu kısıt raporda açıkça yazılacak.
 AVENUE = "archive/Avenue_Dataset/Avenue Dataset"
 
+# UR Fall Detection Dataset — GERÇEK düşme görüntüsü.
+#
+# ⚠ NEDEN GEREKLİ
+# Avenue'nun anomalileri koşma/fırlatma/oyalanma; DÜŞME İÇERMİYOR.
+# Düşme kuralımız (rules.py · _dusme) şimdiye kadar yalnızca sentetik
+# iskeletlerle test edilmişti — gerçek bir düşme görüntüsünde hiç
+# denenmedi. Ofis ortamında kayıtlı bu dizi o boşluğu kapatıyor.
+#
+# ⚠ TEK DİZİ, KISA (160 kare @ 30 FPS ≈ 5.3 sn). Bu bir sınırlama ama
+# döngüde oynadığı için düşme her ~5 saniyede tekrarlanıyor: kural
+# defalarca sınanıyor. İstatistiksel güç için yetersiz, VARLIK
+# doğrulaması için yeterli. Raporda böyle yazılacak.
+UR_FALL = "fall-01-cam0-rgb/fall-01-cam0-rgb"
+
 CAMERA_PLAN: list[CameraSpec] = [
     # ── 01-08 · Normal sahne: VIRAT otopark/kampüs ──
     # Anomali modülünün "normal"i öğrenmesi için çoğunluk normal olmalı.
@@ -171,7 +185,14 @@ CAMERA_PLAN: list[CameraSpec] = [
     CameraSpec("cam-13", "frames", f"{PETS_BASE}/View_005", "Meydan — açı 5"),
     CameraSpec("cam-14", "frames", f"{PETS_BASE}/View_006", "Meydan — açı 6"),
     CameraSpec("cam-15", "frames", f"{PETS_BASE}/View_007", "Meydan — açı 7"),
-    CameraSpec("cam-16", "frames", f"{PETS_BASE}/View_008", "Meydan — açı 8"),
+    # ⚠ cam-16 PETS'in 8. açısıydı — 7 kopya açıdan biri, en az bilgi
+    # taşıyanı. Yerine GERÇEK DÜŞME kondu: düşme kuralının tek
+    # doğrulanmamış kural olması, kopya bir kalabalık açısından çok
+    # daha önemli bir eksikti.
+    CameraSpec(
+        "cam-16", "frames", UR_FALL, "Düşme — gerçek (UR Fall)",
+        frame_pattern="fall-01-cam0-rgb-%03d.png", input_fps=30,
+    ),
     # ── 17-19 · Saldırganlık: RWF-2000 birleştirilmiş + ground-truth ──
     CameraSpec("cam-17", "rwf", "", "Test — kavga (seyrek)", clip_count=60, fight_ratio=0.10, seed=17),
     # ── 18-19 · CUHK Avenue: YER GERÇEKLİ anomali doğrulaması ──
@@ -278,7 +299,12 @@ def build_frames(spec: CameraSpec) -> dict[str, object]:
     # -framerate: girdinin gerçek hızı; -r: çıktı hızı.
     # İkisi farklı olunca ffmpeg kare çoğaltır → süre korunur, akış 25 FPS olur.
     run_ffmpeg(["-framerate", str(spec.input_fps), "-i", pattern, *encode_args(f"videos/{spec.cam}.mp4")])
-    return {"source_frames": len(list(src_dir.glob("*.jpg"))), "input_fps": spec.input_fps}
+    # ⚠ Kare sayısı desenin UZANTISINDAN okunuyor, "*.jpg" varsayılmıyor.
+    # UR Fall PNG dizisi eklenince manifest "source_frames: 0" yazdı —
+    # video üretilmişti, sayaç yalan söylüyordu. Sessiz yanlış sayı,
+    # eksik sayıdan kötüdür: ölçüm zeminine güven kalmaz.
+    uzanti = Path(spec.frame_pattern).suffix or ".jpg"
+    return {"source_frames": len(list(src_dir.glob(f"*{uzanti}"))), "input_fps": spec.input_fps}
 
 
 def build_rwf(spec: CameraSpec) -> dict[str, object]:
@@ -337,6 +363,9 @@ def build_rwf(spec: CameraSpec) -> dict[str, object]:
         "camera": spec.cam,
         "source": "RWF-2000 (train bölümü)",
         "citation": "Cheng et al., arXiv:1911.05913",
+        # Bu dosya HANGİ kamera tanımından üretildi — bayat kalırsa
+        # `_truth_denetle` yakalasın diye (bkz. o fonksiyonun docstring'i).
+        "uretim_kaynagi": spec.source or "RWF-2000",
         "seed": spec.seed,
         "total_duration_s": round(cursor, 3),
         "fight_clip_count": n_fight,
@@ -513,6 +542,7 @@ def build_avenue(spec: CameraSpec) -> dict[str, object]:
                     "camera": spec.cam,
                     "source": "CUHK Avenue Dataset (testing split)",
                     "citation": "Lu, Shi, Jia — Abnormal Event Detection at 150 FPS, ICCV 2013",
+                    "uretim_kaynagi": spec.source,
                     "anomali_turleri": [
                         "kosma", "nesne firlatma", "oyalanma", "ters yon", "ziplama",
                     ],
@@ -559,6 +589,52 @@ def _araliklar(
             )
             basla = None
     return cikti
+
+
+def _truth_denetle(plan: list[CameraSpec]) -> None:
+    """Yer gerçeği dosyaları hâlâ doğru kamerayı mı anlatıyor, kontrol eder.
+
+    ⚠ 26.08.2026 — GERÇEK BİR ÖLÇÜM ZEHİRLENMESİ YAKALANDI
+
+    cam-13…cam-16, cam-18 ve cam-20 bir zamanlar RWF-2000 kavga kameralarıydı
+    ve `cam-NN.truth.json` dosyalarına kavga zaman damgaları yazılmıştı.
+    Sonra bu slotlara PETS kalabalığı, Avenue ve Pexels yüzleri kondu —
+    **ama yer gerçeği dosyaları yerinde kaldı.** Diskte, kalabalık bir
+    meydan görüntüsünün yanında "şu saniyede kavga var" diyen bir dosya
+    duruyordu.
+
+    Kimse fark etmemişti çünkü hiçbir betik onları okumuyordu. Okusaydı
+    sessizce yanlış ölçerdi — ve bir ölçüm zemini yanlış olduğunda üstüne
+    kurulan her sayı da yanlış olur. Testi olmayan veri, testi olmayan
+    koddan tehlikelidir: kod patlar, veri patlamaz.
+
+    Çözüm: her yer gerçeği dosyası hangi kaynaktan üretildiğini yazar
+    (`uretim_kaynagi`), bu betik de plandaki kaynakla karşılaştırır.
+    Silmez — uyarır. Elle yazılmış bir dosyayı bir betiğin silmesi,
+    çözdüğü sorundan büyük bir sorundur.
+    """
+    if not ANNOTATIONS.is_dir():
+        return
+    planlanan = {s.cam: (s.source or "RWF-2000") for s in CAMERA_PLAN}
+    for yol in sorted(ANNOTATIONS.glob("cam-*.truth.json")):
+        cam = yol.name.split(".")[0]
+        if cam not in planlanan:
+            print(f"UYARI  {yol.name}: planda böyle bir kamera yok")
+            continue
+        try:
+            kaynak = json.loads(yol.read_text(encoding="utf-8")).get("uretim_kaynagi")
+        except (json.JSONDecodeError, OSError) as exc:
+            print(f"UYARI  {yol.name}: okunamadı ({exc})")
+            continue
+        if kaynak is None:
+            print(f"UYARI  {yol.name}: 'uretim_kaynagi' yok — hangi kameraya ait doğrulanamıyor")
+        elif kaynak != planlanan[cam]:
+            print(
+                f"UYARI  {yol.name}: BAYAT yer gerçeği.\n"
+                f"       dosya  → {kaynak}\n"
+                f"       plan   → {planlanan[cam]}\n"
+                f"       Bu dosyayla yapılan her ölçüm yanlış olur; silin ya da yenileyin."
+            )
 
 
 BUILDERS = {
@@ -615,6 +691,8 @@ def main() -> int:
                 mevcut[str(kayit["camera"])] = kayit
         except (json.JSONDecodeError, KeyError, TypeError) as exc:
             print(f"UYARI: mevcut manifest okunamadı, sıfırdan kuruluyor ({exc})")
+
+    _truth_denetle(plan)
 
     failures: list[tuple[str, str]] = []
     started = time.monotonic()

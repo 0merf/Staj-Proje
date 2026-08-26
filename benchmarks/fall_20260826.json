@@ -1,0 +1,145 @@
+{
+ "sure_s": 600.2,
+ "dusme_olaylari": [
+  {
+   "cam": "cam-17",
+   "anomaly": "fall",
+   "severity": "warning",
+   "track": 83978,
+   "score": 0.758,
+   "evidence": {
+    "en_boy_orani": 0.94,
+    "govde_egimi_derece": 60.54,
+    "egim_degisim_hizi": 44.23
+   },
+   "completeness": 0.58,
+   "t_rel": 188.3
+  },
+  {
+   "cam": "cam-16",
+   "anomaly": "fall",
+   "severity": "warning",
+   "track": 65078,
+   "score": 1.0,
+   "evidence": {
+    "en_boy_orani": 1.79,
+    "govde_egimi_derece": 101.1,
+    "egim_degisim_hizi": 164.97
+   },
+   "completeness": 0.25,
+   "t_rel": 197.4
+  },
+  {
+   "cam": "cam-16",
+   "anomaly": "fall",
+   "severity": "warning",
+   "track": 85537,
+   "score": 1.0,
+   "evidence": {
+    "en_boy_orani": 1.2,
+    "govde_egimi_derece": 88.21,
+    "egim_degisim_hizi": 127.63
+   },
+   "completeness": 0.25,
+   "t_rel": 261.1
+  },
+  {
+   "cam": "cam-16",
+   "anomaly": "fall",
+   "severity": "warning",
+   "track": 87636,
+   "score": 0.979,
+   "evidence": {
+    "en_boy_orani": 1.22,
+    "govde_egimi_derece": 88.21,
+    "egim_degisim_hizi": 47.75
+   },
+   "completeness": 0.67,
+   "t_rel": 369.1
+  },
+  {
+   "cam": "cam-16",
+   "anomaly": "fall",
+   "severity": "warning",
+   "track": 90082,
+   "score": 0.868,
+   "evidence": {
+    "en_boy_orani": 1.1,
+    "govde_egimi_derece": 77.89,
+    "egim_degisim_hizi": 41.8
+   },
+   "completeness": 0.67,
+   "t_rel": 487.9
+  },
+  {
+   "cam": "cam-17",
+   "anomaly": "fall",
+   "severity": "warning",
+   "track": 89879,
+   "score": 0.722,
+   "evidence": {
+    "en_boy_orani": 0.94,
+    "govde_egimi_derece": 55.46,
+    "egim_degisim_hizi": 40.87
+   },
+   "completeness": 0.5,
+   "t_rel": 488.3
+  },
+  {
+   "cam": "cam-16",
+   "anomaly": "fall",
+   "severity": "warning",
+   "track": 65078,
+   "score": 1.0,
+   "evidence": {
+    "en_boy_orani": 1.79,
+    "govde_egimi_derece": 101.58,
+    "egim_degisim_hizi": 165.13
+   },
+   "completeness": 0.25,
+   "t_rel": 575.4
+  }
+ ],
+ "cam16_dusme": 5,
+ "cam16_soguma_slotu": 10,
+ "toplam_alarm": 88,
+ "alarm_kamera_saat": 26.4,
+ "kirilim": {
+  "cam-09/aggression": 12,
+  "cam-17/crowd": 7,
+  "cam-13/crowd": 6,
+  "cam-10/aggression": 5,
+  "cam-16/fall": 5,
+  "cam-19/loitering": 4,
+  "cam-15/aggression": 3,
+  "cam-01/aggression": 2,
+  "cam-14/unusual": 2,
+  "cam-01/unusual": 2,
+  "cam-02/loitering": 2,
+  "cam-09/loitering": 2,
+  "cam-12/unusual": 2,
+  "cam-11/unusual": 2,
+  "cam-05/crowd": 2,
+  "cam-18/unusual": 2,
+  "cam-04/crowd": 2,
+  "cam-15/unusual": 2,
+  "cam-17/fall": 2,
+  "cam-12/aggression": 2,
+  "cam-09/unusual": 2,
+  "cam-11/aggression": 2,
+  "cam-14/aggression": 2,
+  "cam-18/loitering": 2,
+  "cam-02/aggression": 1,
+  "cam-03/loitering": 1,
+  "cam-13/unusual": 1,
+  "cam-17/unusual": 1,
+  "cam-19/unusual": 1,
+  "cam-10/unusual": 1,
+  "cam-03/unusual": 1,
+  "cam-02/unusual": 1,
+  "cam-01/running": 1,
+  "cam-19/aggression": 1,
+  "cam-06/unusual": 1,
+  "cam-16/unusual": 1
+ }
+}

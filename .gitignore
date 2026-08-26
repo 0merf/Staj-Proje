@@ -36,6 +36,11 @@ data/recordings/*
 data/profiles/*
 # ham indirilen veri setleri (VIRAT, Oxford, PETS…)
 data/_sources/*
+# Ham veri setleri — git'e ASLA girmez (boyut + lisans).
+# Kaynak/lisans bilgisi data/SOURCE.md dosyalarinda tutulur.
+data/archive/*
+data/fall-01-cam0-rgb/*
+!data/fall-01-cam0-rgb/SOURCE.md
 # ffmpeg concat listeleri gibi geçici dosyalar
 data/_tmp/*
 models/*
