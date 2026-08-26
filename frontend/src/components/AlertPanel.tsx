@@ -56,6 +56,28 @@ const KANIT_TR: Record<string, [etiket: string, birim: string]> = {
   yon_orani: ['bu yöne gidenlerin oranı', ''],
   kisi_sapmasi_sigma: ['kişi sayısı sapması', 'σ'],
   kamera_normal_kisi: ['bu kameranın normali', ' kişi'],
+
+  // ─── SALDIRGANLIK kanıtları (analytics/aggression.py) ───
+  //
+  // ⚠ Bunlar 26.08.2026'ya kadar ÇEVRİLMEMİŞTİ: panelde ham anahtar
+  // adları (`b_yakinlik`, `b_bilek`) görünüyordu. Modülün en önemli
+  // özelliği açıklanabilir olması — "skor 0.72 çünkü şu, şu, şu" —
+  // ama operatör okuyamıyorsa açıklanabilirlik kâğıt üstünde kalır.
+  //
+  // `b_` öneki "bileşen" demek: her biri 0-1 arası, ağırlıklı toplama
+  // giriyor. Etiketler ağırlık sırasına göre yazıldı.
+  tirmanma_skoru: ['tırmanma skoru', ''],
+  // ⚠ Eğim, projenin özgün katkısının ta kendisi: yüksek ama SABİT
+  // skor süregelen bir durumdur, YÜKSELEN skor tırmanmadır.
+  tirmanma_egimi: ['skorun yükselme hızı', '/sn'],
+  b_yakinlik: ['yakınlık + karşılıklı duruş', ''],
+  b_bilek: ['bilek hızı ve sarsıntısı', ''],
+  b_yaklasma: ['birbirine yaklaşma', ''],
+  b_enerji: ['hareket enerjisi', ''],
+  b_durus: ['duruş (kol, eğim, açıklık)', ''],
+  // Çarpımsal kapı: yalnız bir kişinin hızlı hareketi saldırganlık
+  // değildir. Sıfırsa skor da bastırılıyor.
+  b_etkilesim: ['etkileşim kapısı', ''],
 }
 
 function saat(rx: number): string {
