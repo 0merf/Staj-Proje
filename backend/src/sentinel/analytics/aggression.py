@@ -58,54 +58,156 @@ from sentinel.analytics.features.pair import YAKIN_MESAFE, CiftOzellikleri
 from sentinel.analytics.features.person import KisiOzellikleri
 
 # ══════════════════════════════════════════════════════════════
-#  Bileşen ağırlıkları — PLAN §6.5.3
+#  Eşikler — ÖLÇÜLEN normal davranış dağılımından türetilir
 # ══════════════════════════════════════════════════════════════
 #
-# ⚠ AĞIRLIKLAR GEREKÇELİ, KEYFİ DEĞİL
-# En yüksek ağırlık **yakınlık + karşılıklılık** birleşiminde: kavganın
-# olmazsa olmaz ön koşulu iki kişinin birbirine yakın ve dönük olması.
-# Hızlı bilek tek başına egzersizdir; yakınlık olmadan anlamı yoktur.
+# ⚠ 26.08.2026 — ÖLÜ BÖLGE EKLENDİ, SEBEBİ ÖLÇÜM
 #
-# En düşük ağırlık duruşta: geniş duruş ve öne eğilme zayıf işaretler,
-# yürüyen herkeste görülür.
-A_YAKINLIK = 0.30      # yakın + karşılıklı bakış
-A_BILEK = 0.25         # bilek hızı ve sarsıntısı
-A_YAKLASMA = 0.20      # hızlı yaklaşma (ERKEN sinyal)
-A_ENERJI = 0.15        # genel hareket enerjisi + senkron
-A_DURUS = 0.10         # kol yüksekliği, gövde eğimi, duruş genişliği
-
-# ─── Doyum noktaları (bu değerde bileşen 1.0 olur) ───
+# İlk sürümde her bileşen `deger / doyum` ile 0-1'e eşleniyordu. Bunun
+# sessiz bir sonucu vardı: **sıfır noktası yoktu.** Hiçbir şey yapmayan
+# bir insan bile sıfırdan büyük bir skor alıyordu, çünkü yürüyen bir
+# insanın bileği de hareket eder.
 #
-# ⚠ Ölçülen dağılımdan türetildi (benchmarks/speed_20260821.json):
-# gövde hızı p99 = 0.94 gövde/sn. Bilek hızı gövdeden hızlıdır (uzuv
-# uçları daha çok yol alır); vuruş hareketinde 3-4 gövde/sn bekleniyor.
-DOYUM_BILEK_HIZ = 3.0
-DOYUM_BILEK_SARSINTI = 2.0
-DOYUM_ENERJI = 1.5
-DOYUM_YAKLASMA = 1.0   # gövde/sn — bu hızda yaklaşmak koşarak gelmektir
+# `benchmarks/features_20260826-175748.json` — 20 kamera, 200 sn,
+# 40 bin özellik vektörü (kavganın olmadığı sahneler dâhil):
+#
+#     ÖZELLİK              p50     p90     p99   eski doyum
+#     bilek_hizi_azami    0.87    1.80    4.01     3.0
+#     bilek_sarsintisi    0.54    1.39    3.24     2.0
+#     hareket_enerjisi    0.45    0.85    1.39     1.5
+#     govde_hizi          0.30    0.66    0.94       —
+#
+# Normal davranışın p90'ı doyumun %56-69'unda. Yani sıradan bir yaya
+# bileşenlerin çoğunu YARIDAN FAZLA dolduruyor. Toplama girdiğinde:
+#
+#     bilek 0.66×0.25 + enerji 0.41×0.15 + duruş 0.25×0.10
+#     + yakınlık 0.38×0.30 + yaklaşma 1.00×0.20  =  0.563
+#
+# 0.563 > 0.55 → yan yana geçen iki yabancı "uyarı" veriyordu. Ölçülen
+# yanlış alarm hızı **26.4/kamera-saat**, hedef ≤3 (K7).
+#
+# ⚠ Ayrıca DOYUM_YAKLASMA = 1.0 yanlıştı ve yorumu ölçümle çelişiyordu:
+# "bu hızda yaklaşmak koşarak gelmektir" yazıyordu, oysa gövde hızı
+# p99 = 0.94 — iki kişi NORMAL yürüyüşle karşılıklı gelince kapanma
+# hızı zaten 1.0'ı aşıyor. Bileşen sürekli doygundu.
+#
+# Çözüm: her bileşene **taban** kondu. Taban = ölçülen normal p90.
+# Bileşen tabanın altında SIFIR üretir, tabandan doyuma doğrusal çıkar:
+#
+#     bilesen = clamp((deger − taban) / (doyum − taban), 0, 1)
+#
+# Bu, "her kameranın normali ayrı öğrenilir" ilkesinin (mimari kural 7)
+# saldırganlık modülündeki karşılığı — şimdilik çiftlik geneli tek taban,
+# kamera başına taban Faz 5 işi.
 
-# ─── Histerezis eşikleri (PLAN §6.5.3) ───
-# Girme eşiği çıkma eşiğinden yüksek: skor sınırda salınırsa alarm
-# açılıp kapanmasın.
-ESIK_DIKKAT_GIR, ESIK_DIKKAT_CIK = 0.35, 0.25
-ESIK_UYARI_GIR, ESIK_UYARI_CIK = 0.55, 0.40
-ESIK_ALARM_GIR, ESIK_ALARM_CIK = 0.75, 0.55
 
-# Zamansal yumuşatma katsayısı (üstel hareketli ortalama).
-# ⚠ Düşük değer = kararlı ama geç. 0.4 seçildi çünkü ERKEN UYARI
-# hedefimiz var: fazla yumuşatmak avansı doğrudan yer.
-EMA_ALFA = 0.4
+@dataclass(frozen=True, slots=True)
+class Esikler:
+    """Tırmanma skorunun tüm ayarlanabilir sayıları.
 
-# Skor bu tamlığın altında hesaplanmıyor.
-# Saldırganlık iddiası ciddi; iki örnekten üretilmemeli.
-ASGARI_TAMLIK = 0.3
+    ⚠ NEDEN SABİT DEĞİL DE NESNE
+    Bu sayılar modül sabiti olduğu sürece "değiştir–çalıştır–bak"
+    dışında bir kalibrasyon yolu yoktu: aynı veri üzerinde iki farklı
+    ayarı YAN YANA koşturmak imkânsızdı. `scripts/calibrate_aggression.py`
+    tam olarak bunu yapıyor — tek akıştan besleyip N ayarı aynı anda
+    skorluyor. Ölçüm zemini ortak olmadan iki sayı kıyaslanamaz (P-17).
+    """
+
+    # ─── Bileşen ağırlıkları (PLAN §6.5.3) ───
+    #
+    # ⚠ AĞIRLIKLAR GEREKÇELİ, KEYFİ DEĞİL
+    # En yüksek ağırlık yakınlık + karşılıklılık birleşiminde: kavganın
+    # olmazsa olmaz ön koşulu iki kişinin birbirine yakın ve dönük
+    # olması. Hızlı bilek tek başına egzersizdir.
+    #
+    # En düşük ağırlık duruşta: geniş duruş ve öne eğilme zayıf
+    # işaretler, yürüyen herkeste görülür.
+    a_yakinlik: float = 0.30
+    a_bilek: float = 0.25
+    a_yaklasma: float = 0.20
+    a_enerji: float = 0.15
+    a_durus: float = 0.10
+
+    # ─── Ölü bölge tabanları (ölçülen normal p90) ───
+    taban_bilek_hiz: float = 1.80
+    taban_bilek_sarsinti: float = 1.40
+    taban_enerji: float = 0.85
+    taban_yaklasma: float = 1.00
+
+    # ─── Doyum noktaları (bu değerde bileşen 1.0) ───
+    # Normalin p99'unun biraz üstü: p99 hâlâ normal davranıştır,
+    # doyum ancak onu aşan hareket için ayrılmalı.
+    doyum_bilek_hiz: float = 4.50
+    doyum_bilek_sarsinti: float = 3.50
+    doyum_enerji: float = 2.00
+    doyum_yaklasma: float = 2.50
+
+    # ─── Histerezis eşikleri ───
+    # Girme eşiği çıkma eşiğinden yüksek: skor sınırda salınırsa
+    # alarm açılıp kapanmasın.
+    esik_dikkat_gir: float = 0.35
+    esik_dikkat_cik: float = 0.25
+    esik_uyari_gir: float = 0.55
+    esik_uyari_cik: float = 0.40
+    esik_alarm_gir: float = 0.75
+    esik_alarm_cik: float = 0.55
+
+    # Zamansal yumuşatma (üstel hareketli ortalama).
+    # ⚠ Düşük değer = kararlı ama geç. 0.4 seçildi çünkü ERKEN UYARI
+    # hedefimiz var: fazla yumuşatmak avansı doğrudan yer.
+    ema_alfa: float = 0.4
+
+    # Skor bu tamlığın altında hesaplanmıyor.
+    # Saldırganlık iddiası ciddi; iki örnekten üretilmemeli.
+    asgari_tamlik: float = 0.3
+
+    # ─── Etkileşim kapısı ───
+    # Açıkken skor `etkilesim × şiddet` olarak çarpılır; etkileşim =
+    # max(yakınlık, yaklaşma). Kapalıyken saf ağırlıklı toplam.
+    #
+    # ⚠ Gerekçesi modülün kendi tanımında: "saldırganlık tanımı gereği
+    # ETKİLEŞİMLİDİR". Toplamsal yapı bunu söylüyor ama uygulamıyordu —
+    # yalnız koşan biri bilek + enerji + duruştan skor toplayabiliyordu.
+    # Çarpımsal kapı iddiayı koda geçirir.
+    #
+    # ⚠ Kapı YAKINLIK DEĞİL, max(yakınlık, yaklaşma): salt yakınlığa
+    # bağlamak erken uyarıyı öldürürdü — birbirine koşan iki kişi henüz
+    # yakın değildir, projenin özgün katkısı tam olarak o anı yakalamak.
+    etkilesim_kapisi: bool = True
+    # Kapı hiçbir zaman tam sıfırlamasın: ölçülemeyen çift bilgisi
+    # yüzünden gerçek bir olayı kaçırmayalım (bakış bileşeninde
+    # yaşanan hatanın tekrarı olmasın).
+    etkilesim_taban: float = 0.15
 
 
-def _doyum(deger: float | None, doyum: float) -> float:
-    """Değeri 0-1 aralığına doyurarak eşler."""
-    if deger is None:
+VARSAYILAN = Esikler()
+
+# Geriye dönük uyumluluk: mevcut kod ve testler bu adları kullanıyor.
+A_YAKINLIK = VARSAYILAN.a_yakinlik
+A_BILEK = VARSAYILAN.a_bilek
+A_YAKLASMA = VARSAYILAN.a_yaklasma
+A_ENERJI = VARSAYILAN.a_enerji
+A_DURUS = VARSAYILAN.a_durus
+DOYUM_BILEK_HIZ = VARSAYILAN.doyum_bilek_hiz
+DOYUM_BILEK_SARSINTI = VARSAYILAN.doyum_bilek_sarsinti
+DOYUM_ENERJI = VARSAYILAN.doyum_enerji
+DOYUM_YAKLASMA = VARSAYILAN.doyum_yaklasma
+ESIK_DIKKAT_GIR, ESIK_DIKKAT_CIK = VARSAYILAN.esik_dikkat_gir, VARSAYILAN.esik_dikkat_cik
+ESIK_UYARI_GIR, ESIK_UYARI_CIK = VARSAYILAN.esik_uyari_gir, VARSAYILAN.esik_uyari_cik
+ESIK_ALARM_GIR, ESIK_ALARM_CIK = VARSAYILAN.esik_alarm_gir, VARSAYILAN.esik_alarm_cik
+EMA_ALFA = VARSAYILAN.ema_alfa
+ASGARI_TAMLIK = VARSAYILAN.asgari_tamlik
+
+
+def _bant(deger: float | None, taban: float, doyum: float) -> float:
+    """Değeri [taban, doyum] aralığından 0-1'e eşler.
+
+    Tabanın altı SIFIR — "normal davranış kanıt değildir" ilkesi.
+    None de sıfır: eksik bilgi kanıt sayılamaz (person.py modül başlığı).
+    """
+    if deger is None or doyum <= taban:
         return 0.0
-    return min(1.0, max(0.0, deger / doyum))
+    return min(1.0, max(0.0, (deger - taban) / (doyum - taban)))
 
 
 @dataclass(slots=True)
@@ -149,8 +251,9 @@ class _IzDurumu:
 class TirmanmaSkorlayici:
     """Kişi + çift özelliklerinden tırmanma skoru üretir."""
 
-    def __init__(self) -> None:
+    def __init__(self, esikler: Esikler | None = None) -> None:
         self._izler: dict[tuple[str, int], _IzDurumu] = {}
+        self._e = esikler or VARSAYILAN
 
     def degerlendir(
         self,
@@ -179,7 +282,7 @@ class TirmanmaSkorlayici:
 
         cikti: list[TirmanmaSkoru] = []
         for kisi in kisiler:
-            if kisi.track_id < 0 or kisi.tamlik < ASGARI_TAMLIK:
+            if kisi.track_id < 0 or kisi.tamlik < self._e.asgari_tamlik:
                 continue
             cift = en_yakin.get(kisi.track_id)
             sonuc = self._skorla(camera, kisi, cift, simdi)
@@ -223,8 +326,11 @@ class TirmanmaSkorlayici:
             b["yakinlik"] = 0.0
 
         # ── 2. Bilek dinamiği ──
-        hiz = _doyum(kisi.bilek_hizi_azami, DOYUM_BILEK_HIZ)
-        sarsinti = _doyum(kisi.bilek_sarsintisi, DOYUM_BILEK_SARSINTI)
+        e = self._e
+        hiz = _bant(kisi.bilek_hizi_azami, e.taban_bilek_hiz, e.doyum_bilek_hiz)
+        sarsinti = _bant(
+            kisi.bilek_sarsintisi, e.taban_bilek_sarsinti, e.doyum_bilek_sarsinti
+        )
         # Sarsıntı hızdan daha ayırt edici: kontrollü bir hareket düzgün
         # hızlanır, vuruş ANİ sıçrar. Bu yüzden daha ağır.
         b["bilek"] = 0.4 * hiz + 0.6 * sarsinti
@@ -234,12 +340,14 @@ class TirmanmaSkorlayici:
         # birbirine yaklaşmasıyla BAŞLAR — alarm eşiğine varmadan önce
         # görebileceğimiz ilk şey bu.
         if cift is not None and cift.yaklasma_hizi is not None:
-            b["yaklasma"] = _doyum(max(0.0, -cift.yaklasma_hizi), DOYUM_YAKLASMA)
+            b["yaklasma"] = _bant(
+                max(0.0, -cift.yaklasma_hizi), e.taban_yaklasma, e.doyum_yaklasma
+            )
         else:
             b["yaklasma"] = 0.0
 
         # ── 4. Enerji + senkron ──
-        enerji = _doyum(kisi.hareket_enerjisi, DOYUM_ENERJI)
+        enerji = _bant(kisi.hareket_enerjisi, e.taban_enerji, e.doyum_enerji)
         senkron = (cift.senkron_enerji or 0.0) if cift is not None else 0.0
         # ⚠ Senkron TEK BAŞINA kullanılmıyor, enerjiyle ÇARPILIYOR.
         # Yan yana yürüyen iki kişinin hareketleri de korelasyonludur
@@ -254,17 +362,27 @@ class TirmanmaSkorlayici:
         b["durus"] = (kol + egim + durus) / 3.0
 
         ham = (
-            A_YAKINLIK * b["yakinlik"]
-            + A_BILEK * b["bilek"]
-            + A_YAKLASMA * b["yaklasma"]
-            + A_ENERJI * b["enerji"]
-            + A_DURUS * b["durus"]
+            e.a_yakinlik * b["yakinlik"]
+            + e.a_bilek * b["bilek"]
+            + e.a_yaklasma * b["yaklasma"]
+            + e.a_enerji * b["enerji"]
+            + e.a_durus * b["durus"]
         )
+
+        # ── Etkileşim kapısı ──
+        # Saldırganlık iki kişi arasında olur. Yalnız bir kişinin hızlı
+        # kol hareketi + yüksek enerjisi, kimseyle etkileşimi yoksa,
+        # saldırganlık kanıtı değildir — koşan, el sallayan, spor yapan
+        # herkes bu örüntüyü verir.
+        if e.etkilesim_kapisi:
+            etkilesim = max(b["yakinlik"], b["yaklasma"])
+            b["etkilesim"] = etkilesim
+            ham *= e.etkilesim_taban + (1.0 - e.etkilesim_taban) * etkilesim
 
         # ── Zamansal yumuşatma ──
         durum = self._izler.setdefault((camera, kisi.track_id), _IzDurumu())
         durum.son_gorulme = simdi
-        durum.ema = EMA_ALFA * ham + (1 - EMA_ALFA) * durum.ema
+        durum.ema = e.ema_alfa * ham + (1 - e.ema_alfa) * durum.ema
         durum.gecmis.append((simdi, durum.ema))
         # Yalnızca son 5 saniye tutuluyor — eğim bundan hesaplanıyor
         durum.gecmis = [(t, s) for t, s in durum.gecmis if simdi - t <= 5.0]
@@ -292,8 +410,7 @@ class TirmanmaSkorlayici:
             tamlik=min(kisi.tamlik, cift.tamlik if cift is not None else 1.0),
         )
 
-    @staticmethod
-    def _seviye(skor: float, mevcut: str) -> str:
+    def _seviye(self, skor: float, mevcut: str) -> str:
         """Histerezisli seviye kararı (PLAN §6.5.3).
 
         ⚠ HİSTEREZİS YALNIZCA AŞAĞI YÖNDE — test bunu ortaya çıkardı
@@ -301,7 +418,7 @@ class TirmanmaSkorlayici:
         çıkılabiliyordu, oradan "uyarı"ya, oradan "alarm"a. Yani skor
         bir anda 0.9'a fırlasa bile alarm seviyesine ulaşmak ÜÇ
         değerlendirme turu alıyordu — 4 FPS'te 750 ms gecikme.
-        
+
         Bu, tam da ölçmeye çalıştığımız şeyi yer: **erken uyarı
         avansı** (K8). Sistemin varlık sebebi olayı ERKEN söylemek.
 
@@ -311,20 +428,20 @@ class TirmanmaSkorlayici:
         aşağı yöndeki gecikme.
         """
         # ── Yukarı: anında, skor hangi seviyeyi gerektiriyorsa ──
-        if skor >= ESIK_ALARM_GIR:
+        if skor >= self._e.esik_alarm_gir:
             return "alarm"
-        if skor >= ESIK_UYARI_GIR:
+        if skor >= self._e.esik_uyari_gir:
             return "uyari" if mevcut != "alarm" else "alarm"
-        if skor >= ESIK_DIKKAT_GIR and mevcut in ("sakin", "dikkat"):
+        if skor >= self._e.esik_dikkat_gir and mevcut in ("sakin", "dikkat"):
             return "dikkat"
 
         # ── Aşağı: çıkma eşiğinin altına inene kadar seviyeyi koru ──
         if mevcut == "alarm":
-            return "alarm" if skor >= ESIK_ALARM_CIK else "uyari"
+            return "alarm" if skor >= self._e.esik_alarm_cik else "uyari"
         if mevcut == "uyari":
-            return "uyari" if skor >= ESIK_UYARI_CIK else "dikkat"
+            return "uyari" if skor >= self._e.esik_uyari_cik else "dikkat"
         if mevcut == "dikkat":
-            return "dikkat" if skor >= ESIK_DIKKAT_CIK else "sakin"
+            return "dikkat" if skor >= self._e.esik_dikkat_cik else "sakin"
         return "sakin"
 
     def buda(self, simdi: float, max_yas_s: float = 30.0) -> int:
@@ -345,6 +462,8 @@ __all__ = [
     "ESIK_ALARM_GIR",
     "ESIK_DIKKAT_GIR",
     "ESIK_UYARI_GIR",
+    "VARSAYILAN",
+    "Esikler",
     "TirmanmaSkorlayici",
     "TirmanmaSkoru",
 ]

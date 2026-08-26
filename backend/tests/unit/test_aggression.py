@@ -96,6 +96,54 @@ def sahne(
     )
 
 
+def akis(
+    kareler: list[tuple[float, list[tuple[int, float, bool, bool]]]],
+    esikler: object | None = None,
+) -> list:
+    """Sahneyi KARE KARE besler — canlı worker'ın yaptığı gibi.
+
+    ⚠ NEDEN `sahne` YETMİYOR
+    `sahne` tüm kareleri depoya yükleyip skorlayıcıyı BİR KEZ çağırıyor.
+    Skor üstel hareketli ortalamayla yumuşatıldığı için (EMA_ALFA=0.4)
+    tek çağrıda ham değerin ancak %40'ı görünür — skor hiç oturmaz.
+
+    Bu, bir regresyon testini sessizce işe yaramaz hâle getirmişti:
+    "yan yana geçen iki yaya" senaryosu eski ayarla 0.178 ölçülüyordu ve
+    testi geçiyordu, oysa aynı senaryonun oturmuş değeri 0.44 — dikkat
+    eşiğinin üstünde. Test yeşildi ama hatayı görmüyordu.
+
+    Ders: zamansal yumuşatması olan bir sistemi tek adımda test etmek,
+    sistemi test etmemektir.
+    """
+    depo = PencereDeposu()
+    skorlayici = (
+        TirmanmaSkorlayici(esikler)  # type: ignore[arg-type]
+        if esikler is not None
+        else TirmanmaSkorlayici()
+    )
+    son: list = []
+    for ts, kisiler in kareler:
+        for tid, x, kol, bakis in kisiler:
+            kp = iskelet(x, kol_yukari=kol, bakis_sag=bakis)
+            k = kutu(x)
+            depo.ekle(
+                "cam-01",
+                tid,
+                Ornek(
+                    ts=ts, bbox=k, kp=kp,
+                    olcek=sk.govde_boyu(kp, k), ayak=sk.ayak_noktasi(k),
+                ),
+            )
+        pencereler = depo.kamera_pencereleri("cam-01")
+        son = skorlayici.degerlendir(
+            "cam-01",
+            [cikar(p) for p in pencereler.values()],
+            pair.kamera_ciftleri(pencereler),
+            ts,
+        )
+    return son
+
+
 # ══════════════════════════════════════════════════════════════
 #  ⭐ Asıl ayrım: yalnız mı, etkileşimde mi?
 # ══════════════════════════════════════════════════════════════
@@ -161,6 +209,76 @@ class TestYalnizVsEtkilesim:
             "etkileşimli sahne yalnız sahneden yüksek skor almalıydı"
         )
         assert any(s.karsi_taraf is not None for s in skorlar)
+
+    def test_YAN_YANA_GECEN_iki_yaya_DIKKAT_bile_vermiyor(self) -> None:
+        """⚠ REGRESYON — 26.08.2026'da üretimde patlayan senaryo bu.
+
+        Ölçüm: **26.4 yanlış alarm/kamera-saat**, hedef ≤3 (K7). Kırılımda
+        en büyük kalem saldırganlıktı ve tek başına Oxford caddesinde
+        (cam-09) 10 dakikada 12 uyarı çıkıyordu. Orada kavga yok; sadece
+        yaya trafiği var.
+
+        Sebep testle değil ölçümle bulundu
+        (`benchmarks/features_20260826-175748.json`): hiçbir bileşenin
+        ölü bölgesi yoktu, sıradan bir yaya bileşenlerin çoğunu yarıdan
+        fazla dolduruyordu ve toplam 0.55'i (uyarı) aşıyordu.
+
+        Bu test o senaryoyu sabitliyor: iki kişi birbirine doğru NORMAL
+        hızda yürüyor, yan yana geçiyorlar, kolları yürüyüş temposunda
+        sallanıyor. Kavga yok — **dikkat seviyesi bile çıkmamalı.**
+
+        Testin sabitlediği şey bir sayı değil, bir ilke: normal davranış
+        kanıt değildir.
+        """
+        from sentinel.analytics.aggression import ESIK_DIKKAT_GIR
+
+        # Ölçülen normal yaya: gövde hızı p50 = 0.30 gövde/sn.
+        # Gövde boyu ~160 px olduğuna göre kare başına (0.25 sn)
+        # ~12 px. İkisi karşılıklı geliyor → kapanma ~24 px/kare.
+        kareler = []
+        sol, sag = 380.0, 560.0
+        for i, ts in enumerate([0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75]):
+            # Kollar yürüyüş temposunda: her karede yön değiştirmiyor,
+            # iki karede bir — gerçek yürüyüş bileği böyle salınır.
+            kol = (i // 2) % 2 == 1
+            kareler.append((ts, [(1, sol, kol, True), (2, sag, kol, False)]))
+            sol += 12.0
+            sag -= 12.0
+        # ⚠ Kare kare besleniyor: EMA'nın oturması şart (bkz. `akis`).
+        skorlar = akis(kareler)
+        assert skorlar
+
+        en_yuksek = max(s.skor for s in skorlar)
+        assert en_yuksek < ESIK_DIKKAT_GIR, (
+            "sıradan yürüyen iki yaya dikkat eşiğini bile aşmamalı, "
+            f"skor={en_yuksek:.3f} eşik={ESIK_DIKKAT_GIR}"
+        )
+
+    def test_ETKILESIM_KAPISI_yalniz_kisiyi_bastiriyor(self) -> None:
+        """Kapı açık/kapalı aynı sahnede kıyaslanıyor.
+
+        Yalnız bir kişinin şiddetli hareketi kapı açıkken belirgin
+        biçimde daha düşük skor almalı. Kapının VARLIK sebebi bu;
+        kapatılırsa test kırmızıya döner ve sebep görünür olur.
+        """
+        from dataclasses import replace
+
+        from sentinel.analytics.aggression import VARSAYILAN
+
+        kareler = [
+            (ts, [(1, 400.0, i % 2 == 1, True)])
+            for i, ts in enumerate([0.0, 0.25, 0.5, 0.75, 1.0, 1.25])
+        ]
+        acik = akis(kareler, VARSAYILAN)
+        kapali = akis(kareler, replace(VARSAYILAN, etkilesim_kapisi=False))
+
+        assert acik and kapali
+        assert acik[0].skor < kapali[0].skor, (
+            "etkileşim kapısı yalnız kişinin skorunu düşürmeliydi"
+        )
+        assert acik[0].bilesenler["etkilesim"] == 0.0, (
+            "çifti olmayan kişide etkileşim sıfır olmalı"
+        )
 
 
 # ══════════════════════════════════════════════════════════════

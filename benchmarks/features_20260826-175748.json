@@ -1,0 +1,1360 @@
+{
+ "olculdu": "2026-08-26T14:57:48.227164+00:00",
+ "sure_s": 200.1,
+ "kare": 10625,
+ "kamera_sayisi": 18,
+ "kp_toplam": 707591,
+ "kp_dusuk_guven_orani": 0.1626,
+ "genel": {
+  "bilek_hizi_azami": {
+   "n": 39921,
+   "p50": 0.869,
+   "p90": 1.798,
+   "p99": 4.012,
+   "azami": 8.729,
+   "kuyruk_orani": 2.23
+  },
+  "bilek_sarsintisi": {
+   "n": 38638,
+   "p50": 0.544,
+   "p90": 1.387,
+   "p99": 3.243,
+   "azami": 8.051,
+   "kuyruk_orani": 2.34
+  },
+  "hareket_enerjisi": {
+   "n": 40994,
+   "p50": 0.452,
+   "p90": 0.845,
+   "p99": 1.392,
+   "azami": 4.314,
+   "kuyruk_orani": 1.65
+  },
+  "govde_hizi": {
+   "n": 41456,
+   "p50": 0.299,
+   "p90": 0.659,
+   "p99": 0.939,
+   "azami": 3.177,
+   "kuyruk_orani": 1.43
+  },
+  "kol_yuksekligi_azami": {
+   "n": 39510,
+   "p50": 0.0,
+   "p90": 0.0,
+   "p99": 0.27,
+   "azami": 0.993,
+   "kuyruk_orani": 270123.89
+  },
+  "govde_egimi": {
+   "n": 40147,
+   "p50": 2.741,
+   "p90": 8.16,
+   "p99": 19.73,
+   "azami": 108.406,
+   "kuyruk_orani": 2.42
+  },
+  "govde_egimi_degisimi": {
+   "n": 40146,
+   "p50": 0.756,
+   "p90": 3.294,
+   "p99": 17.498,
+   "azami": 270.314,
+   "kuyruk_orani": 5.31
+  },
+  "en_boy_orani": {
+   "n": 44190,
+   "p50": 0.373,
+   "p90": 0.484,
+   "p99": 1.166,
+   "azami": 2.264,
+   "kuyruk_orani": 2.41
+  },
+  "tamlik": {
+   "n": 44190,
+   "p50": 0.917,
+   "p90": 1.0,
+   "p99": 1.0,
+   "azami": 1.0,
+   "kuyruk_orani": 1.0
+  }
+ },
+ "kamera_bazli": {
+  "cam-01": {
+   "bilek_hizi_azami": {
+    "n": 1437,
+    "p50": 1.75,
+    "p90": 5.687,
+    "p99": 7.612,
+    "azami": 7.903,
+    "kuyruk_orani": 1.34
+   },
+   "bilek_sarsintisi": {
+    "n": 1427,
+    "p50": 1.383,
+    "p90": 4.937,
+    "p99": 6.717,
+    "azami": 6.825,
+    "kuyruk_orani": 1.36
+   },
+   "hareket_enerjisi": {
+    "n": 1439,
+    "p50": 0.428,
+    "p90": 1.401,
+    "p99": 1.775,
+    "azami": 2.42,
+    "kuyruk_orani": 1.27
+   },
+   "govde_hizi": {
+    "n": 1457,
+    "p50": 0.113,
+    "p90": 0.717,
+    "p99": 1.181,
+    "azami": 1.556,
+    "kuyruk_orani": 1.65
+   },
+   "kol_yuksekligi_azami": {
+    "n": 1420,
+    "p50": 0.0,
+    "p90": 0.0,
+    "p99": 0.626,
+    "azami": 0.988,
+    "kuyruk_orani": 626353.89
+   },
+   "govde_egimi": {
+    "n": 1444,
+    "p50": 9.499,
+    "p90": 16.865,
+    "p99": 21.328,
+    "azami": 26.816,
+    "kuyruk_orani": 1.26
+   },
+   "govde_egimi_degisimi": {
+    "n": 1446,
+    "p50": 1.177,
+    "p90": 4.442,
+    "p99": 21.076,
+    "azami": 95.546,
+    "kuyruk_orani": 4.74
+   },
+   "en_boy_orani": {
+    "n": 1564,
+    "p50": 0.388,
+    "p90": 0.485,
+    "p99": 0.644,
+    "azami": 0.881,
+    "kuyruk_orani": 1.33
+   },
+   "tamlik": {
+    "n": 1564,
+    "p50": 1.0,
+    "p90": 1.0,
+    "p99": 1.0,
+    "azami": 1.0,
+    "kuyruk_orani": 1.0
+   }
+  },
+  "cam-02": {
+   "bilek_hizi_azami": {
+    "n": 493,
+    "p50": 0.861,
+    "p90": 2.277,
+    "p99": 3.858,
+    "azami": 4.171,
+    "kuyruk_orani": 1.69
+   },
+   "bilek_sarsintisi": {
+    "n": 480,
+    "p50": 0.599,
+    "p90": 1.705,
+    "p99": 3.18,
+    "azami": 3.338,
+    "kuyruk_orani": 1.86
+   },
+   "hareket_enerjisi": {
+    "n": 493,
+    "p50": 0.214,
+    "p90": 0.801,
+    "p99": 1.327,
+    "azami": 1.499,
+    "kuyruk_orani": 1.66
+   },
+   "govde_hizi": {
+    "n": 499,
+    "p50": 0.067,
+    "p90": 0.494,
+    "p99": 0.955,
+    "azami": 1.98,
+    "kuyruk_orani": 1.93
+   },
+   "kol_yuksekligi_azami": {
+    "n": 597,
+    "p50": 0.0,
+    "p90": 0.0,
+    "p99": 0.587,
+    "azami": 0.989,
+    "kuyruk_orani": 587392.01
+   },
+   "govde_egimi": {
+    "n": 600,
+    "p50": 8.678,
+    "p90": 13.993,
+    "p99": 19.163,
+    "azami": 23.629,
+    "kuyruk_orani": 1.37
+   },
+   "govde_egimi_degisimi": {
+    "n": 495,
+    "p50": 0.992,
+    "p90": 3.943,
+    "p99": 12.254,
+    "azami": 35.652,
+    "kuyruk_orani": 3.11
+   },
+   "en_boy_orani": {
+    "n": 623,
+    "p50": 0.424,
+    "p90": 0.491,
+    "p99": 0.533,
+    "azami": 0.59,
+    "kuyruk_orani": 1.09
+   },
+   "tamlik": {
+    "n": 623,
+    "p50": 0.75,
+    "p90": 1.0,
+    "p99": 1.0,
+    "azami": 1.0,
+    "kuyruk_orani": 1.0
+   }
+  },
+  "cam-03": {
+   "bilek_hizi_azami": {
+    "n": 1137,
+    "p50": 0.653,
+    "p90": 1.787,
+    "p99": 2.628,
+    "azami": 2.645,
+    "kuyruk_orani": 1.47
+   },
+   "bilek_sarsintisi": {
+    "n": 1106,
+    "p50": 0.477,
+    "p90": 1.295,
+    "p99": 1.993,
+    "azami": 2.426,
+    "kuyruk_orani": 1.54
+   },
+   "hareket_enerjisi": {
+    "n": 1169,
+    "p50": 0.284,
+    "p90": 0.778,
+    "p99": 1.312,
+    "azami": 3.35,
+    "kuyruk_orani": 1.69
+   },
+   "govde_hizi": {
+    "n": 1185,
+    "p50": 0.123,
+    "p90": 0.573,
+    "p99": 0.941,
+    "azami": 1.575,
+    "kuyruk_orani": 1.64
+   },
+   "kol_yuksekligi_azami": {
+    "n": 1089,
+    "p50": 0.0,
+    "p90": 0.0,
+    "p99": 0.555,
+    "azami": 0.975,
+    "kuyruk_orani": 555121.38
+   },
+   "govde_egimi": {
+    "n": 1145,
+    "p50": 6.266,
+    "p90": 13.647,
+    "p99": 18.039,
+    "azami": 23.916,
+    "kuyruk_orani": 1.32
+   },
+   "govde_egimi_degisimi": {
+    "n": 1174,
+    "p50": 0.959,
+    "p90": 3.544,
+    "p99": 12.505,
+    "azami": 36.129,
+    "kuyruk_orani": 3.53
+   },
+   "en_boy_orani": {
+    "n": 1268,
+    "p50": 0.363,
+    "p90": 0.447,
+    "p99": 0.65,
+    "azami": 0.933,
+    "kuyruk_orani": 1.45
+   },
+   "tamlik": {
+    "n": 1268,
+    "p50": 0.833,
+    "p90": 1.0,
+    "p99": 1.0,
+    "azami": 1.0,
+    "kuyruk_orani": 1.0
+   }
+  },
+  "cam-04": {
+   "bilek_hizi_azami": {
+    "n": 558,
+    "p50": 0.957,
+    "p90": 1.715,
+    "p99": 2.517,
+    "azami": 2.518,
+    "kuyruk_orani": 1.47
+   },
+   "bilek_sarsintisi": {
+    "n": 546,
+    "p50": 0.629,
+    "p90": 1.347,
+    "p99": 2.178,
+    "azami": 2.179,
+    "kuyruk_orani": 1.62
+   },
+   "hareket_enerjisi": {
+    "n": 561,
+    "p50": 0.428,
+    "p90": 0.645,
+    "p99": 1.153,
+    "azami": 1.332,
+    "kuyruk_orani": 1.79
+   },
+   "govde_hizi": {
+    "n": 575,
+    "p50": 0.29,
+    "p90": 0.512,
+    "p99": 0.985,
+    "azami": 1.344,
+    "kuyruk_orani": 1.93
+   },
+   "kol_yuksekligi_azami": {
+    "n": 577,
+    "p50": 0.0,
+    "p90": 0.0,
+    "p99": 0.442,
+    "azami": 0.866,
+    "kuyruk_orani": 441660.06
+   },
+   "govde_egimi": {
+    "n": 590,
+    "p50": 3.113,
+    "p90": 13.936,
+    "p99": 26.003,
+    "azami": 38.326,
+    "kuyruk_orani": 1.87
+   },
+   "govde_egimi_degisimi": {
+    "n": 571,
+    "p50": 0.796,
+    "p90": 3.072,
+    "p99": 11.125,
+    "azami": 31.614,
+    "kuyruk_orani": 3.62
+   },
+   "en_boy_orani": {
+    "n": 642,
+    "p50": 0.366,
+    "p90": 0.491,
+    "p99": 0.799,
+    "azami": 0.847,
+    "kuyruk_orani": 1.63
+   },
+   "tamlik": {
+    "n": 642,
+    "p50": 0.833,
+    "p90": 1.0,
+    "p99": 1.0,
+    "azami": 1.0,
+    "kuyruk_orani": 1.0
+   }
+  },
+  "cam-05": {
+   "bilek_hizi_azami": {
+    "n": 823,
+    "p50": 0.871,
+    "p90": 2.12,
+    "p99": 2.85,
+    "azami": 2.897,
+    "kuyruk_orani": 1.34
+   },
+   "bilek_sarsintisi": {
+    "n": 801,
+    "p50": 0.626,
+    "p90": 1.587,
+    "p99": 2.252,
+    "azami": 2.78,
+    "kuyruk_orani": 1.42
+   },
+   "hareket_enerjisi": {
+    "n": 832,
+    "p50": 0.422,
+    "p90": 0.917,
+    "p99": 1.554,
+    "azami": 1.802,
+    "kuyruk_orani": 1.69
+   },
+   "govde_hizi": {
+    "n": 849,
+    "p50": 0.249,
+    "p90": 0.835,
+    "p99": 1.31,
+    "azami": 1.718,
+    "kuyruk_orani": 1.57
+   },
+   "kol_yuksekligi_azami": {
+    "n": 840,
+    "p50": 0.0,
+    "p90": 0.0,
+    "p99": 0.359,
+    "azami": 0.914,
+    "kuyruk_orani": 358646.35
+   },
+   "govde_egimi": {
+    "n": 853,
+    "p50": 7.765,
+    "p90": 19.395,
+    "p99": 23.508,
+    "azami": 36.158,
+    "kuyruk_orani": 1.21
+   },
+   "govde_egimi_degisimi": {
+    "n": 832,
+    "p50": 1.155,
+    "p90": 3.998,
+    "p99": 18.068,
+    "azami": 66.036,
+    "kuyruk_orani": 4.52
+   },
+   "en_boy_orani": {
+    "n": 954,
+    "p50": 0.417,
+    "p90": 0.688,
+    "p99": 0.854,
+    "azami": 1.069,
+    "kuyruk_orani": 1.24
+   },
+   "tamlik": {
+    "n": 954,
+    "p50": 0.917,
+    "p90": 1.0,
+    "p99": 1.0,
+    "azami": 1.0,
+    "kuyruk_orani": 1.0
+   }
+  },
+  "cam-06": {
+   "kol_yuksekligi_azami": {
+    "n": 60,
+    "p50": 0.0,
+    "p90": 0.093,
+    "p99": 0.29,
+    "azami": 0.29,
+    "kuyruk_orani": 3.12
+   },
+   "govde_egimi": {
+    "n": 62,
+    "p50": 3.618,
+    "p90": 7.359,
+    "p99": 11.238,
+    "azami": 11.238,
+    "kuyruk_orani": 1.53
+   },
+   "en_boy_orani": {
+    "n": 65,
+    "p50": 0.322,
+    "p90": 0.428,
+    "p99": 0.515,
+    "azami": 0.515,
+    "kuyruk_orani": 1.21
+   },
+   "tamlik": {
+    "n": 65,
+    "p50": 0.083,
+    "p90": 0.083,
+    "p99": 0.083,
+    "azami": 0.083,
+    "kuyruk_orani": 1.0
+   }
+  },
+  "cam-09": {
+   "bilek_hizi_azami": {
+    "n": 9018,
+    "p50": 0.847,
+    "p90": 1.802,
+    "p99": 2.844,
+    "azami": 4.239,
+    "kuyruk_orani": 1.58
+   },
+   "bilek_sarsintisi": {
+    "n": 8929,
+    "p50": 0.441,
+    "p90": 1.306,
+    "p99": 2.275,
+    "azami": 3.78,
+    "kuyruk_orani": 1.74
+   },
+   "hareket_enerjisi": {
+    "n": 9073,
+    "p50": 0.533,
+    "p90": 0.878,
+    "p99": 1.292,
+    "azami": 3.026,
+    "kuyruk_orani": 1.47
+   },
+   "govde_hizi": {
+    "n": 9107,
+    "p50": 0.445,
+    "p90": 0.736,
+    "p99": 0.999,
+    "azami": 1.641,
+    "kuyruk_orani": 1.36
+   },
+   "kol_yuksekligi_azami": {
+    "n": 8952,
+    "p50": 0.0,
+    "p90": 0.0,
+    "p99": 0.261,
+    "azami": 0.993,
+    "kuyruk_orani": 261462.96
+   },
+   "govde_egimi": {
+    "n": 8967,
+    "p50": 2.844,
+    "p90": 7.409,
+    "p99": 14.56,
+    "azami": 61.243,
+    "kuyruk_orani": 1.97
+   },
+   "govde_egimi_degisimi": {
+    "n": 9014,
+    "p50": 0.693,
+    "p90": 2.617,
+    "p99": 12.226,
+    "azami": 84.214,
+    "kuyruk_orani": 4.67
+   },
+   "en_boy_orani": {
+    "n": 9517,
+    "p50": 0.403,
+    "p90": 0.503,
+    "p99": 0.986,
+    "azami": 2.264,
+    "kuyruk_orani": 1.96
+   },
+   "tamlik": {
+    "n": 9517,
+    "p50": 0.917,
+    "p90": 1.0,
+    "p99": 1.0,
+    "azami": 1.0,
+    "kuyruk_orani": 1.0
+   }
+  },
+  "cam-10": {
+   "bilek_hizi_azami": {
+    "n": 3848,
+    "p50": 1.002,
+    "p90": 1.742,
+    "p99": 2.92,
+    "azami": 3.51,
+    "kuyruk_orani": 1.68
+   },
+   "bilek_sarsintisi": {
+    "n": 3814,
+    "p50": 0.689,
+    "p90": 1.35,
+    "p99": 2.378,
+    "azami": 2.989,
+    "kuyruk_orani": 1.76
+   },
+   "hareket_enerjisi": {
+    "n": 3858,
+    "p50": 0.516,
+    "p90": 0.849,
+    "p99": 1.188,
+    "azami": 4.314,
+    "kuyruk_orani": 1.4
+   },
+   "govde_hizi": {
+    "n": 3871,
+    "p50": 0.397,
+    "p90": 0.696,
+    "p99": 0.895,
+    "azami": 1.333,
+    "kuyruk_orani": 1.29
+   },
+   "kol_yuksekligi_azami": {
+    "n": 3802,
+    "p50": 0.0,
+    "p90": 0.0,
+    "p99": 0.26,
+    "azami": 0.832,
+    "kuyruk_orani": 260357.13
+   },
+   "govde_egimi": {
+    "n": 3816,
+    "p50": 2.714,
+    "p90": 7.014,
+    "p99": 12.203,
+    "azami": 17.857,
+    "kuyruk_orani": 1.74
+   },
+   "govde_egimi_degisimi": {
+    "n": 3862,
+    "p50": 0.711,
+    "p90": 2.431,
+    "p99": 9.093,
+    "azami": 68.305,
+    "kuyruk_orani": 3.74
+   },
+   "en_boy_orani": {
+    "n": 4005,
+    "p50": 0.377,
+    "p90": 0.458,
+    "p99": 0.552,
+    "azami": 1.0,
+    "kuyruk_orani": 1.21
+   },
+   "tamlik": {
+    "n": 4005,
+    "p50": 1.0,
+    "p90": 1.0,
+    "p99": 1.0,
+    "azami": 1.0,
+    "kuyruk_orani": 1.0
+   }
+  },
+  "cam-11": {
+   "bilek_hizi_azami": {
+    "n": 2295,
+    "p50": 1.16,
+    "p90": 1.877,
+    "p99": 2.577,
+    "azami": 4.455,
+    "kuyruk_orani": 1.37
+   },
+   "bilek_sarsintisi": {
+    "n": 2221,
+    "p50": 0.803,
+    "p90": 1.368,
+    "p99": 2.4,
+    "azami": 4.411,
+    "kuyruk_orani": 1.76
+   },
+   "hareket_enerjisi": {
+    "n": 2307,
+    "p50": 0.495,
+    "p90": 0.867,
+    "p99": 1.298,
+    "azami": 3.423,
+    "kuyruk_orani": 1.5
+   },
+   "govde_hizi": {
+    "n": 2383,
+    "p50": 0.304,
+    "p90": 0.605,
+    "p99": 0.998,
+    "azami": 1.114,
+    "kuyruk_orani": 1.65
+   },
+   "kol_yuksekligi_azami": {
+    "n": 2175,
+    "p50": 0.0,
+    "p90": 0.0,
+    "p99": 0.128,
+    "azami": 0.648,
+    "kuyruk_orani": 127674.68
+   },
+   "govde_egimi": {
+    "n": 2204,
+    "p50": 2.716,
+    "p90": 6.25,
+    "p99": 9.295,
+    "azami": 19.706,
+    "kuyruk_orani": 1.49
+   },
+   "govde_egimi_degisimi": {
+    "n": 2325,
+    "p50": 0.836,
+    "p90": 3.749,
+    "p99": 13.741,
+    "azami": 44.407,
+    "kuyruk_orani": 3.67
+   },
+   "en_boy_orani": {
+    "n": 2592,
+    "p50": 0.381,
+    "p90": 0.458,
+    "p99": 0.606,
+    "azami": 0.852,
+    "kuyruk_orani": 1.32
+   },
+   "tamlik": {
+    "n": 2592,
+    "p50": 0.833,
+    "p90": 1.0,
+    "p99": 1.0,
+    "azami": 1.0,
+    "kuyruk_orani": 1.0
+   }
+  },
+  "cam-12": {
+   "bilek_hizi_azami": {
+    "n": 3729,
+    "p50": 0.883,
+    "p90": 1.897,
+    "p99": 2.65,
+    "azami": 3.65,
+    "kuyruk_orani": 1.4
+   },
+   "bilek_sarsintisi": {
+    "n": 3679,
+    "p50": 0.632,
+    "p90": 1.481,
+    "p99": 2.343,
+    "azami": 3.552,
+    "kuyruk_orani": 1.58
+   },
+   "hareket_enerjisi": {
+    "n": 3750,
+    "p50": 0.383,
+    "p90": 0.797,
+    "p99": 1.156,
+    "azami": 1.745,
+    "kuyruk_orani": 1.45
+   },
+   "govde_hizi": {
+    "n": 3775,
+    "p50": 0.208,
+    "p90": 0.602,
+    "p99": 0.889,
+    "azami": 1.518,
+    "kuyruk_orani": 1.48
+   },
+   "kol_yuksekligi_azami": {
+    "n": 3657,
+    "p50": 0.0,
+    "p90": 0.0,
+    "p99": 0.0,
+    "azami": 0.606,
+    "kuyruk_orani": 0.0
+   },
+   "govde_egimi": {
+    "n": 3712,
+    "p50": 1.805,
+    "p90": 4.614,
+    "p99": 9.2,
+    "azami": 18.21,
+    "kuyruk_orani": 1.99
+   },
+   "govde_egimi_degisimi": {
+    "n": 3761,
+    "p50": 0.54,
+    "p90": 2.104,
+    "p99": 9.28,
+    "azami": 21.688,
+    "kuyruk_orani": 4.41
+   },
+   "en_boy_orani": {
+    "n": 3949,
+    "p50": 0.371,
+    "p90": 0.452,
+    "p99": 0.599,
+    "azami": 0.862,
+    "kuyruk_orani": 1.33
+   },
+   "tamlik": {
+    "n": 3949,
+    "p50": 0.917,
+    "p90": 1.0,
+    "p99": 1.0,
+    "azami": 1.0,
+    "kuyruk_orani": 1.0
+   }
+  },
+  "cam-13": {
+   "bilek_hizi_azami": {
+    "n": 2316,
+    "p50": 0.885,
+    "p90": 1.621,
+    "p99": 2.503,
+    "azami": 8.729,
+    "kuyruk_orani": 1.54
+   },
+   "bilek_sarsintisi": {
+    "n": 2274,
+    "p50": 0.565,
+    "p90": 1.298,
+    "p99": 2.316,
+    "azami": 8.051,
+    "kuyruk_orani": 1.78
+   },
+   "hareket_enerjisi": {
+    "n": 2324,
+    "p50": 0.457,
+    "p90": 0.804,
+    "p99": 1.169,
+    "azami": 1.815,
+    "kuyruk_orani": 1.45
+   },
+   "govde_hizi": {
+    "n": 2332,
+    "p50": 0.316,
+    "p90": 0.661,
+    "p99": 0.855,
+    "azami": 1.407,
+    "kuyruk_orani": 1.29
+   },
+   "kol_yuksekligi_azami": {
+    "n": 2300,
+    "p50": 0.0,
+    "p90": 0.0,
+    "p99": 0.02,
+    "azami": 0.315,
+    "kuyruk_orani": 20249.0
+   },
+   "govde_egimi": {
+    "n": 2321,
+    "p50": 2.322,
+    "p90": 6.03,
+    "p99": 9.73,
+    "azami": 16.44,
+    "kuyruk_orani": 1.61
+   },
+   "govde_egimi_degisimi": {
+    "n": 2324,
+    "p50": 0.704,
+    "p90": 2.412,
+    "p99": 12.063,
+    "azami": 42.606,
+    "kuyruk_orani": 5.0
+   },
+   "en_boy_orani": {
+    "n": 2407,
+    "p50": 0.355,
+    "p90": 0.447,
+    "p99": 0.524,
+    "azami": 0.681,
+    "kuyruk_orani": 1.17
+   },
+   "tamlik": {
+    "n": 2407,
+    "p50": 1.0,
+    "p90": 1.0,
+    "p99": 1.0,
+    "azami": 1.0,
+    "kuyruk_orani": 1.0
+   }
+  },
+  "cam-14": {
+   "bilek_hizi_azami": {
+    "n": 2509,
+    "p50": 0.815,
+    "p90": 1.439,
+    "p99": 2.46,
+    "azami": 3.692,
+    "kuyruk_orani": 1.71
+   },
+   "bilek_sarsintisi": {
+    "n": 2461,
+    "p50": 0.508,
+    "p90": 1.11,
+    "p99": 2.206,
+    "azami": 3.393,
+    "kuyruk_orani": 1.99
+   },
+   "hareket_enerjisi": {
+    "n": 2520,
+    "p50": 0.443,
+    "p90": 0.757,
+    "p99": 1.122,
+    "azami": 2.779,
+    "kuyruk_orani": 1.48
+   },
+   "govde_hizi": {
+    "n": 2535,
+    "p50": 0.321,
+    "p90": 0.589,
+    "p99": 0.829,
+    "azami": 1.45,
+    "kuyruk_orani": 1.41
+   },
+   "kol_yuksekligi_azami": {
+    "n": 2385,
+    "p50": 0.0,
+    "p90": 0.0,
+    "p99": 0.0,
+    "azami": 0.697,
+    "kuyruk_orani": 0.0
+   },
+   "govde_egimi": {
+    "n": 2413,
+    "p50": 2.603,
+    "p90": 6.93,
+    "p99": 12.358,
+    "azami": 19.313,
+    "kuyruk_orani": 1.78
+   },
+   "govde_egimi_degisimi": {
+    "n": 2517,
+    "p50": 0.764,
+    "p90": 2.724,
+    "p99": 12.742,
+    "azami": 41.909,
+    "kuyruk_orani": 4.68
+   },
+   "en_boy_orani": {
+    "n": 2624,
+    "p50": 0.348,
+    "p90": 0.423,
+    "p99": 0.517,
+    "azami": 0.687,
+    "kuyruk_orani": 1.22
+   },
+   "tamlik": {
+    "n": 2624,
+    "p50": 1.0,
+    "p90": 1.0,
+    "p99": 1.0,
+    "azami": 1.0,
+    "kuyruk_orani": 1.0
+   }
+  },
+  "cam-15": {
+   "bilek_hizi_azami": {
+    "n": 2870,
+    "p50": 0.9,
+    "p90": 1.599,
+    "p99": 2.404,
+    "azami": 3.68,
+    "kuyruk_orani": 1.5
+   },
+   "bilek_sarsintisi": {
+    "n": 2783,
+    "p50": 0.588,
+    "p90": 1.288,
+    "p99": 2.055,
+    "azami": 3.208,
+    "kuyruk_orani": 1.59
+   },
+   "hareket_enerjisi": {
+    "n": 2893,
+    "p50": 0.488,
+    "p90": 0.814,
+    "p99": 1.017,
+    "azami": 2.702,
+    "kuyruk_orani": 1.25
+   },
+   "govde_hizi": {
+    "n": 2942,
+    "p50": 0.369,
+    "p90": 0.668,
+    "p99": 0.855,
+    "azami": 3.177,
+    "kuyruk_orani": 1.28
+   },
+   "kol_yuksekligi_azami": {
+    "n": 2747,
+    "p50": 0.0,
+    "p90": 0.0,
+    "p99": 0.075,
+    "azami": 0.487,
+    "kuyruk_orani": 74544.81
+   },
+   "govde_egimi": {
+    "n": 2819,
+    "p50": 2.213,
+    "p90": 5.411,
+    "p99": 9.615,
+    "azami": 15.932,
+    "kuyruk_orani": 1.78
+   },
+   "govde_egimi_degisimi": {
+    "n": 2901,
+    "p50": 0.671,
+    "p90": 2.38,
+    "p99": 11.088,
+    "azami": 39.056,
+    "kuyruk_orani": 4.66
+   },
+   "en_boy_orani": {
+    "n": 3083,
+    "p50": 0.342,
+    "p90": 0.412,
+    "p99": 0.491,
+    "azami": 0.661,
+    "kuyruk_orani": 1.19
+   },
+   "tamlik": {
+    "n": 3083,
+    "p50": 0.917,
+    "p90": 1.0,
+    "p99": 1.0,
+    "azami": 1.0,
+    "kuyruk_orani": 1.0
+   }
+  },
+  "cam-16": {
+   "bilek_hizi_azami": {
+    "n": 430,
+    "p50": 1.416,
+    "p90": 2.662,
+    "p99": 3.696,
+    "azami": 4.555,
+    "kuyruk_orani": 1.39
+   },
+   "bilek_sarsintisi": {
+    "n": 421,
+    "p50": 0.297,
+    "p90": 1.57,
+    "p99": 2.573,
+    "azami": 3.066,
+    "kuyruk_orani": 1.64
+   },
+   "hareket_enerjisi": {
+    "n": 433,
+    "p50": 0.602,
+    "p90": 1.402,
+    "p99": 1.878,
+    "azami": 2.113,
+    "kuyruk_orani": 1.34
+   },
+   "govde_hizi": {
+    "n": 434,
+    "p50": 0.238,
+    "p90": 0.335,
+    "p99": 0.574,
+    "azami": 0.676,
+    "kuyruk_orani": 1.71
+   },
+   "kol_yuksekligi_azami": {
+    "n": 433,
+    "p50": 0.0,
+    "p90": 0.0,
+    "p99": 0.373,
+    "azami": 0.373,
+    "kuyruk_orani": 372523.52
+   },
+   "govde_egimi": {
+    "n": 379,
+    "p50": 5.037,
+    "p90": 77.872,
+    "p99": 107.976,
+    "azami": 108.406,
+    "kuyruk_orani": 1.39
+   },
+   "govde_egimi_degisimi": {
+    "n": 392,
+    "p50": 8.398,
+    "p90": 128.016,
+    "p99": 165.993,
+    "azami": 270.314,
+    "kuyruk_orani": 1.3
+   },
+   "en_boy_orani": {
+    "n": 508,
+    "p50": 0.554,
+    "p90": 1.759,
+    "p99": 1.958,
+    "azami": 1.97,
+    "kuyruk_orani": 1.11
+   },
+   "tamlik": {
+    "n": 508,
+    "p50": 0.333,
+    "p90": 0.75,
+    "p99": 0.917,
+    "azami": 0.917,
+    "kuyruk_orani": 1.22
+   }
+  },
+  "cam-17": {
+   "bilek_hizi_azami": {
+    "n": 1596,
+    "p50": 0.738,
+    "p90": 1.809,
+    "p99": 3.114,
+    "azami": 4.429,
+    "kuyruk_orani": 1.72
+   },
+   "bilek_sarsintisi": {
+    "n": 1505,
+    "p50": 0.521,
+    "p90": 1.445,
+    "p99": 2.778,
+    "azami": 4.419,
+    "kuyruk_orani": 1.92
+   },
+   "hareket_enerjisi": {
+    "n": 1645,
+    "p50": 0.301,
+    "p90": 0.73,
+    "p99": 1.397,
+    "azami": 2.615,
+    "kuyruk_orani": 1.91
+   },
+   "govde_hizi": {
+    "n": 1727,
+    "p50": 0.116,
+    "p90": 0.456,
+    "p99": 0.962,
+    "azami": 1.939,
+    "kuyruk_orani": 2.11
+   },
+   "kol_yuksekligi_azami": {
+    "n": 1603,
+    "p50": 0.0,
+    "p90": 0.0,
+    "p99": 0.749,
+    "azami": 0.982,
+    "kuyruk_orani": 748862.28
+   },
+   "govde_egimi": {
+    "n": 1587,
+    "p50": 3.475,
+    "p90": 10.226,
+    "p99": 30.624,
+    "azami": 73.145,
+    "kuyruk_orani": 2.99
+   },
+   "govde_egimi_degisimi": {
+    "n": 1604,
+    "p50": 1.085,
+    "p90": 7.688,
+    "p99": 21.365,
+    "azami": 46.055,
+    "kuyruk_orani": 2.78
+   },
+   "en_boy_orani": {
+    "n": 1930,
+    "p50": 0.374,
+    "p90": 0.775,
+    "p99": 1.189,
+    "azami": 1.725,
+    "kuyruk_orani": 1.53
+   },
+   "tamlik": {
+    "n": 1930,
+    "p50": 0.667,
+    "p90": 1.0,
+    "p99": 1.0,
+    "azami": 1.0,
+    "kuyruk_orani": 1.0
+   }
+  },
+  "cam-18": {
+   "bilek_hizi_azami": {
+    "n": 3418,
+    "p50": 0.662,
+    "p90": 1.397,
+    "p99": 2.134,
+    "azami": 2.456,
+    "kuyruk_orani": 1.53
+   },
+   "bilek_sarsintisi": {
+    "n": 3148,
+    "p50": 0.4,
+    "p90": 1.108,
+    "p99": 1.863,
+    "azami": 2.409,
+    "kuyruk_orani": 1.68
+   },
+   "hareket_enerjisi": {
+    "n": 3578,
+    "p50": 0.344,
+    "p90": 0.755,
+    "p99": 1.017,
+    "azami": 1.467,
+    "kuyruk_orani": 1.35
+   },
+   "govde_hizi": {
+    "n": 3625,
+    "p50": 0.129,
+    "p90": 0.478,
+    "p99": 0.802,
+    "azami": 1.398,
+    "kuyruk_orani": 1.68
+   },
+   "kol_yuksekligi_azami": {
+    "n": 3464,
+    "p50": 0.0,
+    "p90": 0.0,
+    "p99": 0.459,
+    "azami": 0.963,
+    "kuyruk_orani": 458878.64
+   },
+   "govde_egimi": {
+    "n": 3738,
+    "p50": 2.058,
+    "p90": 5.81,
+    "p99": 12.119,
+    "azami": 22.437,
+    "kuyruk_orani": 2.09
+   },
+   "govde_egimi_degisimi": {
+    "n": 3586,
+    "p50": 0.727,
+    "p90": 3.343,
+    "p99": 14.228,
+    "azami": 62.861,
+    "kuyruk_orani": 4.26
+   },
+   "en_boy_orani": {
+    "n": 3935,
+    "p50": 0.312,
+    "p90": 0.413,
+    "p99": 0.512,
+    "azami": 0.877,
+    "kuyruk_orani": 1.24
+   },
+   "tamlik": {
+    "n": 3935,
+    "p50": 0.75,
+    "p90": 1.0,
+    "p99": 1.0,
+    "azami": 1.0,
+    "kuyruk_orani": 1.0
+   }
+  },
+  "cam-19": {
+   "bilek_hizi_azami": {
+    "n": 3196,
+    "p50": 0.787,
+    "p90": 1.611,
+    "p99": 2.275,
+    "azami": 3.033,
+    "kuyruk_orani": 1.41
+   },
+   "bilek_sarsintisi": {
+    "n": 2858,
+    "p50": 0.446,
+    "p90": 1.194,
+    "p99": 1.789,
+    "azami": 2.361,
+    "kuyruk_orani": 1.5
+   },
+   "hareket_enerjisi": {
+    "n": 3358,
+    "p50": 0.466,
+    "p90": 0.864,
+    "p99": 1.182,
+    "azami": 1.941,
+    "kuyruk_orani": 1.37
+   },
+   "govde_hizi": {
+    "n": 3399,
+    "p50": 0.218,
+    "p90": 0.561,
+    "p99": 0.864,
+    "azami": 2.175,
+    "kuyruk_orani": 1.54
+   },
+   "kol_yuksekligi_azami": {
+    "n": 3241,
+    "p50": 0.0,
+    "p90": 0.0,
+    "p99": 0.256,
+    "azami": 0.952,
+    "kuyruk_orani": 255861.95
+   },
+   "govde_egimi": {
+    "n": 3497,
+    "p50": 2.379,
+    "p90": 6.122,
+    "p99": 15.503,
+    "azami": 75.877,
+    "kuyruk_orani": 2.53
+   },
+   "govde_egimi_degisimi": {
+    "n": 3342,
+    "p50": 0.895,
+    "p90": 4.949,
+    "p99": 20.464,
+    "azami": 89.99,
+    "kuyruk_orani": 4.14
+   },
+   "en_boy_orani": {
+    "n": 3762,
+    "p50": 0.329,
+    "p90": 0.436,
+    "p99": 0.593,
+    "azami": 0.927,
+    "kuyruk_orani": 1.36
+   },
+   "tamlik": {
+    "n": 3762,
+    "p50": 0.583,
+    "p90": 1.0,
+    "p99": 1.0,
+    "azami": 1.0,
+    "kuyruk_orani": 1.0
+   }
+  },
+  "cam-20": {
+   "bilek_hizi_azami": {
+    "n": 248,
+    "p50": 0.393,
+    "p90": 1.032,
+    "p99": 1.339,
+    "azami": 1.339,
+    "kuyruk_orani": 1.3
+   },
+   "bilek_sarsintisi": {
+    "n": 185,
+    "p50": 0.238,
+    "p90": 0.488,
+    "p99": 0.731,
+    "azami": 0.734,
+    "kuyruk_orani": 1.5
+   },
+   "hareket_enerjisi": {
+    "n": 761,
+    "p50": 0.136,
+    "p90": 0.248,
+    "p99": 0.3,
+    "azami": 0.34,
+    "kuyruk_orani": 1.21
+   },
+   "govde_hizi": {
+    "n": 761,
+    "p50": 0.04,
+    "p90": 0.066,
+    "p99": 0.117,
+    "azami": 0.196,
+    "kuyruk_orani": 1.78
+   },
+   "kol_yuksekligi_azami": {
+    "n": 168,
+    "p50": 0.0,
+    "p90": 0.0,
+    "p99": 0.243,
+    "azami": 0.331,
+    "kuyruk_orani": 242535.63
+   },
+   "en_boy_orani": {
+    "n": 762,
+    "p50": 1.019,
+    "p90": 1.229,
+    "p99": 1.508,
+    "azami": 1.906,
+    "kuyruk_orani": 1.23
+   },
+   "tamlik": {
+    "n": 762,
+    "p50": 1.0,
+    "p90": 1.0,
+    "p99": 1.0,
+    "azami": 1.0,
+    "kuyruk_orani": 1.0
+   }
+  }
+ }
+}
