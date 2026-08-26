@@ -48,8 +48,10 @@ from typing import Any
 import numpy as np
 
 from sentinel import metrics
+from sentinel.analytics.aggression import TirmanmaSkorlayici, TirmanmaSkoru
 from sentinel.analytics.anomaly.normalcy import NormalProfilDeposu
 from sentinel.analytics.anomaly.rules import Anomali, KuralMotoru
+from sentinel.analytics.features import pair
 from sentinel.analytics.features import skeleton as sk
 from sentinel.analytics.features.person import cikar
 from sentinel.analytics.features.window import Ornek, PencereDeposu
@@ -83,6 +85,8 @@ class AnalyticsWorker:
         # Diskten yükleniyor: profil kaybı sistem körlüğü demek
         # (bkz. anomaly/normalcy.py · NormalProfilDeposu).
         self._normal = NormalProfilDeposu(PROJECT_ROOT / "data" / "profiles")
+        # SALDIRGANLIK — kişi + çift özelliklerinden tırmanma skoru
+        self._tirmanma = TirmanmaSkorlayici()
         # Kamera başına son değerlendirme anı — oyalanma birikimi için
         # gereken `dt`. Kameralar farklı hızlarda analiz edildiği için
         # (uyarlanabilir FPS) sabit adım kullanmak yanlış olurdu.
@@ -90,6 +94,7 @@ class AnalyticsWorker:
 
         self.islenen = 0
         self.anomaliler = 0
+        self.saldirganlik = 0
         self.by_camera: Counter[str] = Counter()
         self._ensure_group()
 
@@ -153,6 +158,7 @@ class AnalyticsWorker:
             if now - last_prune >= 30.0:
                 self._pencereler.buda(time.time())
                 self._kurallar.buda(time.time())
+                self._tirmanma.buda(time.time())
                 self._normal.kaydet()
                 last_prune = now
             if now - last_report >= stats_interval:
@@ -219,6 +225,17 @@ class AnalyticsWorker:
         onceki = self._son_degerlendirme.get(camera, ts)
         dt = max(0.0, min(5.0, ts - onceki))  # sıçramalara karşı sınırlı
         self._son_degerlendirme[camera] = ts
+
+        # ─── SALDIRGANLIK: çift özellikleri + tırmanma skoru ───
+        # ⚠ Kişi özellikleri "ne yapıyor" der, çift özellikleri "kiminle"
+        # der. Saldırganlık tanımı gereği etkileşimli olduğu için ikisi
+        # birlikte gerekiyor (analytics/features/pair.py).
+        kamera_pencereleri = self._pencereler.kamera_pencereleri(camera)
+        ciftler = pair.kamera_ciftleri(kamera_pencereleri)
+        skorlar = self._tirmanma.degerlendir(camera, ozellikler, ciftler, ts)
+        for skor in skorlar:
+            if skor.seviye in ("uyari", "alarm"):
+                self._tirmanma_yayinla(camera, skor, ts)
 
         bulgular = self._kurallar.degerlendir(camera, ozellikler, ts, dt)
 
@@ -313,6 +330,68 @@ class AnalyticsWorker:
 
         return bulgular
 
+    def _tirmanma_yayinla(
+        self, camera: str, skor: TirmanmaSkoru, ts: float
+    ) -> None:
+        """Tırmanma skorunu alarm akışına yazar.
+
+        ⚠ Yalnızca `uyari` ve `alarm` seviyeleri yayınlanıyor.
+        `dikkat` seviyesi operatöre gösterilmeye değmez — sistemde her
+        an onlarca kişi o seviyededir. Ama skor SÜREKLİ hesaplanıyor;
+        seviye eşiği yalnızca BİLDİRİM kapısı, ölçüm kapısı değil.
+        Erken uyarı avansı (K8) hesaplanırken tüm skor geçmişi kullanılacak.
+
+        Soğuma kural motorundan geçiyor: aynı kişi için saldırganlık ve
+        anomali alarmı ayrı ayrı bildirilmemeli.
+        """
+        # ⚠ Sözlüğe çevirmeden ÖNCE soğuma kontrolü: bastırılacak bir
+        # alarm için serileştirme yapmak boşuna iş.
+        if self._kurallar.saldirganlik_sogumada_mi(camera, skor.track_id, ts):
+            return
+        d = skor.to_dict()
+        self._client.xadd(
+            EVENT_STREAM,
+            {
+                "cam": camera,
+                "type": "aggression",
+                "ts": f"{ts:.6f}",
+                "data": json.dumps(
+                    {
+                        "cam": camera,
+                        "anomaly": "aggression",
+                        "severity": "alarm" if d["level"] == "alarm" else "warning",
+                        "track": d["track"],
+                        "score": d["score"],
+                        "evidence": {
+                            "tirmanma_skoru": d["score"],
+                            "tirmanma_egimi": d["slope"],
+                            **{f"b_{k}": v for k, v in skor.bilesenler.items()},
+                        },
+                        "completeness": d["completeness"],
+                        "against": d["against"],
+                    },
+                    separators=(",", ":"),
+                ),
+            },
+            maxlen=1000,
+            approximate=True,
+        )
+        self.anomaliler += 1
+        self.by_camera[camera] += 1
+        self.saldirganlik += 1
+        metrics.anomalies_total.labels(
+            cam=camera, type="aggression", severity=skor.seviye
+        ).inc()
+        log.info(
+            "saldirganlik",
+            cam=camera,
+            iz=d["track"],
+            karsi=d["against"],
+            skor=d["score"],
+            egim=d["slope"],
+            seviye=d["level"],
+        )
+
     def _yayinla(self, anomali: Anomali, ts: float) -> None:
         """Anomaliyi akışa yazar — API oradan okuyup panele iletecek."""
         self._client.xadd(
@@ -347,7 +426,8 @@ class AnalyticsWorker:
         print(
             f"  {self.islenen:>6} sonuç · {hiz:5.1f}/sn · "
             f"{self._pencereler.aktif_iz_sayisi:>3} aktif pencere · "
-            f"{self.anomaliler:>3} anomali · {self._kurallar.stats}",
+            f"{self.anomaliler:>3} anomali "
+            f"(saldırganlık {self.saldirganlik}) · {self._kurallar.stats}",
             flush=True,
         )
 

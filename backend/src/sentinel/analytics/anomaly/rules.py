@@ -590,6 +590,22 @@ class KuralMotoru:
         self.toplam[AnomaliTuru.OLAGANDISI] += 1
         return anomali
 
+    def saldirganlik_sogumada_mi(self, camera: str, track_id: int, simdi: float) -> bool:
+        """Saldırganlık bildirimi için iz soğuması.
+
+        ⚠ Kural motorundan geçiyor çünkü soğuma İZ BAZINDA ortak olmalı:
+        aynı kişi için hem "olağandışı" hem "saldırganlık" alarmı
+        çıkarsa operatöre aynı durum iki kez bildirilmiş olur.
+        Tek bir bastırma kapısı, iki ayrı mantık yazmaktan iyi.
+        """
+        durum = self._izler.setdefault((camera, track_id), _IzDurumu())
+        durum.son_gorulme = simdi
+        if durum.son_alarm is not None and simdi - durum.son_alarm < SOGUMA_IZ_S:
+            self.bastirilan += 1
+            return True
+        durum.son_alarm = simdi
+        return False
+
     # ─── Bakım ───────────────────────────────────────────────
 
     def buda(self, simdi: float, max_yas_s: float = 30.0) -> int:
