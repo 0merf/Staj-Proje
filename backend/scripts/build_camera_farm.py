@@ -119,6 +119,21 @@ PETS_BASE = "_sources/pets/Crowd_PETS09/S2/L1/Time_12-34"
 
 PEXELS = "_sources/pexels"
 
+# CUHK Avenue Dataset — kare seviyesinde YER GERÇEĞİ olan anomali seti.
+#
+# ⚠ NEDEN BU SET ÖZEL
+# Diğer kameralarımızın hiçbirinde "burada anomali var" diye etiket yok;
+# kurallarımızın doğru çalışıp çalışmadığını ancak gözle bakarak
+# değerlendirebiliyorduk. Avenue her karesi için piksel maskesi taşıyor:
+# maskede sıfırdan farklı piksel varsa o kare anomalidir.
+# Bu, K6 kriterinin (anomali ROC-AUC) gerçekten ÖLÇÜLEBİLMESİ demek.
+#
+# ⚠ İÇERİĞİ: koşma, nesne fırlatma, oyalanma, ters yön, çocuğun zıplaması.
+# DÜŞME İÇERMİYOR. Düşme kuralımız hâlâ yalnızca sentetik testlerle
+# doğrulanmış durumda; gerçek doğrulama için UR Fall / Le2i gerekiyor.
+# Bu kısıt raporda açıkça yazılacak.
+AVENUE = "archive/Avenue_Dataset/Avenue Dataset"
+
 CAMERA_PLAN: list[CameraSpec] = [
     # ── 01-08 · Normal sahne: VIRAT otopark/kampüs ──
     # Anomali modülünün "normal"i öğrenmesi için çoğunluk normal olmalı.
@@ -159,8 +174,19 @@ CAMERA_PLAN: list[CameraSpec] = [
     CameraSpec("cam-16", "frames", f"{PETS_BASE}/View_008", "Meydan — açı 8"),
     # ── 17-19 · Saldırganlık: RWF-2000 birleştirilmiş + ground-truth ──
     CameraSpec("cam-17", "rwf", "", "Test — kavga (seyrek)", clip_count=60, fight_ratio=0.10, seed=17),
-    CameraSpec("cam-18", "rwf", "", "Test — kavga (orta)", clip_count=60, fight_ratio=0.20, seed=18),
-    CameraSpec("cam-19", "rwf", "", "Test — kavga (yoğun)", clip_count=60, fight_ratio=0.35, seed=19),
+    # ── 18-19 · CUHK Avenue: YER GERÇEKLİ anomali doğrulaması ──
+    #
+    # ⚠ KONTROLLÜ DENEY TASARIMI — ikisi AYNI sahne, aynı kamera açısı
+    #   cam-18: yalnızca NORMAL kayıtlar   → kontrol grubu
+    #   cam-19: anomali içeren kayıtlar    → deney grubu
+    #
+    # Neden ikisi birden: tek başına "anomali kamerasında alarm çıktı"
+    # demek yetmez — sistem her şeye alarm veriyor olabilir. Aynı
+    # sahnenin normal hâlinde SESSİZ kalması, alarmın gerçekten olaya
+    # tepki verdiğinin kanıtı. Yanlış alarm oranı (K7) da buradan
+    # doğrudan okunuyor: cam-18'de çıkan her alarm yanlıştır.
+    CameraSpec("cam-18", "avenue", AVENUE, "Avenue — normal (kontrol)", seed=18),
+    CameraSpec("cam-19", "avenue", AVENUE, "Avenue — anomali (yer gerçekli)", seed=19),
     # ── 20 · TEK DEĞİŞİKLİK: yakın plan yüz (PLAN §7.1) ──
     #
     # Eskiden "RWF tamamı normal" idi. Değiştirilme sebebi: KADEME 2b'nin
@@ -387,11 +413,160 @@ def build_faces(spec: CameraSpec) -> dict[str, object]:
     return {"clips": kullanilan, "clip_count": len(secilen)}
 
 
+def build_avenue(spec: CameraSpec) -> dict[str, object]:
+    """CUHK Avenue kameralarını üretir + KARE SEVİYESİNDE yer gerçeği.
+
+    ⚠ BU BETİĞİN EN DEĞERLİ ÇIKTISI
+    Diğer kameralarımızda "burada anomali var" diye bir etiket yok;
+    kuralların doğru çalışıp çalışmadığını gözle değerlendiriyorduk.
+    Avenue her kare için piksel maskesi taşıyor ve maskede sıfırdan
+    farklı piksel varsa o kare anomalidir.
+
+    Maskeler `.mat` dosyalarında ve kare kare tutuluyor. Burada
+    kare→anomali ikili etiketine indirgeniyor, sonra birleştirilmiş
+    videodaki ZAMANA çevriliyor. Sonuç: "şu saniyeler arasında anomali
+    var" listesi — kurallarımızın çıktısıyla doğrudan karşılaştırılabilir.
+
+    ⚠ İKİ KAMERA, KONTROLLÜ DENEY
+      cam-18 (seed 18) → yalnızca `training_videos`  = NORMAL, kontrol
+      cam-19 (seed 19) → yalnızca `testing_videos`   = ANOMALİLİ, deney
+    Aynı sahne, aynı kamera açısı. Tek başına "anomali kamerasında alarm
+    çıktı" demek yetmez — sistem her şeye alarm veriyor olabilir. Aynı
+    sahnenin normal hâlinde SESSİZ kalması, alarmın gerçekten olaya tepki
+    verdiğinin kanıtı.
+    """
+    import scipy.io as sio
+
+    kok = DATA / spec.source
+    anomalili = spec.seed == 19
+    klip_dizin = kok / ("testing_videos" if anomalili else "training_videos")
+    klipler = sorted(klip_dizin.glob("*.avi"))
+    if not klipler:
+        raise FileNotFoundError(f"Avenue klibi yok: {klip_dizin}")
+
+    maske_dizin = (
+        DATA / "archive/ground_truth_demo/ground_truth_demo/testing_label_mask"
+    )
+
+    # Toplam süreyi MAX_SECONDS'a sığdır — döngüye alınacağı için
+    # fazlası gereksiz ve disk yiyor.
+    TMP.mkdir(parents=True, exist_ok=True)
+    satirlar: list[str] = []
+    segmentler: list[dict[str, object]] = []
+    imlec = 0.0
+    kullanilan: list[str] = []
+
+    for klip in klipler:
+        if imlec >= MAX_SECONDS:
+            break
+        sure = probe_duration(klip)
+        if sure <= 0:
+            continue
+
+        ara = f"_tmp/{spec.cam}_{klip.stem}.mp4"
+        run_ffmpeg(["-i", f"/data/{klip.relative_to(DATA).as_posix()}", *encode_args(ara)])
+        satirlar.append(f"file '/data/{ara}'")
+        kullanilan.append(klip.name)
+
+        # ─── Yer gerçeği: hangi kareler anomali? ───
+        if anomalili:
+            # ⚠ ADLANDIRMA UYUŞMAZLIĞI — sessiz hata kaynağıydı
+            # Videolar sıfır dolgulu (`01.avi`), maskeler değil
+            # (`1_label.mat`). İlk sürüm `klip.stem` kullanıyordu, dosya
+            # bulunamıyordu ve `if maske.is_file()` sessizce atlıyordu:
+            # betik "0 hata" diye başarı raporladı ama yer gerçeği BOŞ
+            # çıktı. Var olmayan bir dosyayı sessizce geçmek, olmayan
+            # veriyi "veri yok" sanmaya yol açıyor.
+            maske = maske_dizin / f"{int(klip.stem)}_label.mat"
+            if not maske.is_file():
+                raise FileNotFoundError(
+                    f"Yer gerçeği maskesi yok: {maske.name} (klip {klip.name}). "
+                    "Bu kameranın değeri yer gerçeğinde; maskesiz üretmek anlamsız."
+                )
+            vol = sio.loadmat(str(maske))["volLabel"]
+            # Her eleman bir karenin piksel maskesi; herhangi bir
+            # sıfırdan farklı piksel = o karede anomali var.
+            bayraklar = [bool(vol.flat[i].any()) for i in range(vol.size)]
+            fps = len(bayraklar) / sure if sure > 0 else TARGET_FPS
+            segmentler.extend(_araliklar(bayraklar, fps, imlec, klip.name))
+        imlec += sure
+
+    liste = TMP / f"{spec.cam}_avenue.txt"
+    liste.write_text("\n".join(satirlar) + "\n", encoding="utf-8")
+    run_ffmpeg(
+        [
+            "-f", "concat", "-safe", "0",
+            "-i", f"/data/_tmp/{spec.cam}_avenue.txt",
+            "-c", "copy", "-y", f"/data/videos/{spec.cam}.mp4",
+        ]
+    )
+
+    for klip in kullanilan:
+        (DATA / "_tmp" / f"{spec.cam}_{Path(klip).stem}.mp4").unlink(missing_ok=True)
+    liste.unlink(missing_ok=True)
+
+    if anomalili:
+        ANNOTATIONS.mkdir(parents=True, exist_ok=True)
+        (ANNOTATIONS / f"{spec.cam}.truth.json").write_text(
+            json.dumps(
+                {
+                    "camera": spec.cam,
+                    "source": "CUHK Avenue Dataset (testing split)",
+                    "citation": "Lu, Shi, Jia — Abnormal Event Detection at 150 FPS, ICCV 2013",
+                    "anomali_turleri": [
+                        "kosma", "nesne firlatma", "oyalanma", "ters yon", "ziplama",
+                    ],
+                    "not": "DUSME ICERMIYOR — dusme kurali icin UR Fall / Le2i gerekli",
+                    "total_duration_s": round(imlec, 3),
+                    "clips": kullanilan,
+                    "anomali_segment_sayisi": len(segmentler),
+                    "segments": segmentler,
+                },
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+    return {
+        "clips": len(kullanilan),
+        "duration_s": round(imlec, 1),
+        "anomali_segment": len(segmentler),
+    }
+
+
+def _araliklar(
+    bayraklar: list[bool], fps: float, ofset: float, klip: str
+) -> list[dict[str, object]]:
+    """Ardışık anomali karelerini zaman aralıklarına dönüştürür.
+
+    Kare kare etiket yerine aralık tutmak hem okunabilir hem de
+    karşılaştırması kolay: "12.4-15.8 sn arası anomali".
+    """
+    cikti: list[dict[str, object]] = []
+    basla: int | None = None
+    for i, bayrak in enumerate([*bayraklar, False]):
+        if bayrak and basla is None:
+            basla = i
+        elif not bayrak and basla is not None:
+            cikti.append(
+                {
+                    "start_s": round(ofset + basla / fps, 3),
+                    "end_s": round(ofset + i / fps, 3),
+                    "label": "anomaly",
+                    "clip": klip,
+                }
+            )
+            basla = None
+    return cikti
+
+
 BUILDERS = {
     "video": build_video,
     "frames": build_frames,
     "rwf": build_rwf,
     "faces": build_faces,
+    "avenue": build_avenue,
 }
 
 
