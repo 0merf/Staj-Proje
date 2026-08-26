@@ -90,6 +90,23 @@ PROFIL_ASGARI_ORNEK = 2000
 # 3σ, normal dağılımda örneklerin ~%0.3'üne denk gelir.
 SIGMA_ESIK = 3.0
 
+# ─── Ayırt edilebilirlik tabanları (z-skorun bölemeyeceği en küçük sapma) ───
+#
+# ⚠ Bunlar istatistik değil ÖLÇÜM HASSASİYETİ sayıları. Bir hücrede
+# gözlenen sapma bu değerin altındaysa, "değişkenlik yok" demiyoruz —
+# "değişkenliği ölçemiyoruz" diyoruz (bkz. `_Welford.z_skor`).
+#
+# Hız tabanı ölçümden geldi (benchmarks/features_20260826-175748.json):
+#   gövde hızı  p50 = 0.30 · p90 = 0.66 · p99 = 0.94 gövde/sn
+# 3 FPS örneklemede tek bir keypoint sıçraması ~0.1 gövde/sn'lik sahte
+# hız üretiyor. 0.15 seçildi: medyanın yarısı — bundan yakın iki hızı
+# ayırt ettiğimizi iddia edemeyiz.
+TABAN_SAPMA_HIZ = 0.15
+
+# Kişi sayısı tam sayı; 1 kişilik fark ölçülebilir en küçük fark.
+# Sapması 0.3 çıkan bir kamerada 2 kişi fazlası 6 sigma olurdu.
+TABAN_SAPMA_KISI = 1.0
+
 # Nadir hücre eşiği: toplam ziyaretin bu oranından az alan hücre
 # "buraya pek gidilmez" sayılıyor.
 NADIR_HUCRE_ORAN = 0.0005
@@ -123,16 +140,42 @@ class _Welford:
     def sapma(self) -> float:
         return math.sqrt(max(0.0, self.varyans))
 
-    def z_skor(self, x: float) -> float:
+    def z_skor(self, x: float, taban_sapma: float = 1e-3) -> float:
         """Bu değer ortalamadan kaç standart sapma uzakta?
 
-        Sapma sıfıra yakınsa (hep aynı değer görülmüş) bölme patlar.
-        O durumda küçük bir taban kullanılıyor — aksi hâlde tek bir
-        farklı gözlem sonsuz z-skor üretirdi.
+        ⚠ `taban_sapma` MATEMATİKSEL DEĞİL FİZİKSEL BİR TABAN
+        ---------------------------------------------------
+        Önceki sürüm sabit `1e-3` kullanıyordu; amacı yalnızca sıfıra
+        bölmeyi engellemekti. Ama bu, ölçüm gürültüsünü istatistiksel
+        kanıta çeviriyordu.
+
+        Canlı örnek (26.08.2026):
+
+            cam-17 · unusual · skor 0.898
+            hiz_sapmasi_sigma = 5.39 · bolge_normal_hiz = 0.06
+
+        O hücrede insanlar neredeyse hiç hareket etmiyor: ortalama 0.06
+        gövde/sn, sapma belki 0.02. Normal hızda yürüyen biri (0.17)
+        oraya girince z = 5.4 çıkıyor ve "olağandışı" ilan ediliyor.
+
+        İstatistik doğru, fizik yanlış: 0.06 ile 0.17 gövde/sn arasındaki
+        fark **bizim ölçme hassasiyetimizin altında.** 3 FPS'te, ~100 px
+        boyundaki bir insanda, tek bir keypoint sıçraması bu kadar fark
+        yaratıyor. Yani sapması küçük çıkan hücre "burada hiç değişkenlik
+        yok" demiyor, "burada yeterince örnek yok / hareket ölçülemeyecek
+        kadar küçük" diyor.
+
+        Çözüm: her büyüklüğün kendi **ayırt edilebilirlik eşiği** var ve
+        z-skor bunun altına inemez. Sapma tabanı, "bu iki değeri
+        birbirinden ayırt edemeyiz" sınırıdır.
+
+        ⚠ Varsayılan hâlâ 1e-3: bu fonksiyon genel amaçlı, tabanı bilen
+        taraf ÇAĞIRAN. Sessizce bir fizik varsayımı gömmek, sorunun
+        kendisiydi.
         """
         if self.n < 2:
             return 0.0
-        return abs(x - self.ortalama) / max(self.sapma, 1e-3)
+        return abs(x - self.ortalama) / max(self.sapma, taban_sapma)
 
     def to_dict(self) -> dict[str, float]:
         return {"n": self.n, "ort": self.ortalama, "m2": self.m2}
@@ -248,7 +291,7 @@ class KameraNormali:
         # ── 2. Hız: bu hücrede bu hız olağan mı? ──
         w = self.hiz.get((hy, hx))
         if hiz is not None and w is not None and w.n >= HUCRE_ASGARI_ORNEK:
-            z = w.z_skor(hiz)
+            z = w.z_skor(hiz, TABAN_SAPMA_HIZ)
             if z > SIGMA_ESIK:
                 skorlar.append(min(1.0, z / (SIGMA_ESIK * 2)))
                 kanit["hiz_sapmasi_sigma"] = round(z, 2)
@@ -273,7 +316,7 @@ class KameraNormali:
         """Kişi sayısı bu kamera için olağandışı mı?"""
         if not self.hazir or self.kisi_sayisi.n < PROFIL_ASGARI_ORNEK // 10:
             return 0.0, {}
-        z = self.kisi_sayisi.z_skor(float(kisi))
+        z = self.kisi_sayisi.z_skor(float(kisi), TABAN_SAPMA_KISI)
         if z <= SIGMA_ESIK:
             return 0.0, {}
         return min(1.0, z / (SIGMA_ESIK * 2)), {
