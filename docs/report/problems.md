@@ -33,6 +33,207 @@ ama **belirti / sebep / çözüm** üçlüsü mutlaka olsun.
 
 <!-- Yeni kayıtlar buraya, en yenisi en üstte -->
 
+### P-37 · Video herkese açıktı — korumayı kolay korunan yere koymuşum
+
+**Tarih:** 30.08.2026 · **Faz:** 1 / Gün 16 · **Kaybedilen süre:** —
+
+**Belirti:** API'ye kimlik doğrulama eklerken, uçları tek tek gözden
+geçirirken fark edildi: **video API'den geçmiyor.**
+
+Mimari kural 2 zaten bunu söylüyordu ve bilinçliydi:
+
+> *"Sunucu videoya kutu çizmez. Video WHEP ile ayrı gider, kutular
+> WebSocket'ten JSON olarak gider."*
+
+Yani tarayıcı doğrudan MediaMTX'e (8889) bağlanıyor. Ben API'yi
+korurken (kamera listesi, olay geçmişi, webcam açma) **görüntünün
+kendisini** hiç düşünmemişim. `mediamtx.yml` içinde `read` izni
+`ips: []` — yani herkese açık.
+
+**Kök sebep:** Güvenlik çalışmasını "hangi uçları yazdım" listesi
+üzerinden yürüttüm, "hangi veri değerli" listesi üzerinden değil.
+Kod tabanında görünen yüzey API'ydi; en mahrem çıktı ise başka bir
+süreçten servis ediliyordu ve o süreç benim yazdığım kod değildi.
+
+⚠ Genel ders: **koruma, kolay korunan yere değil değerli olana konur.**
+Bir sistemin en hassas çıktısı, çoğu zaman kendi yazdığınız kodun
+dışından akar.
+
+**Çözüm:** `read` izni yerel makine ve özel ağlara kısıtlandı.
+
+**⚠ Bu tam bir çözüm DEĞİL ve öyle raporlanmıyor.** IP kısıtı kimlik
+doğrulaması değildir: aynı makinedeki ya da aynı yerel ağdaki herkes
+hâlâ izleyebilir. Bu bir *derinlikli savunma* katmanı — port
+yanlışlıkla dışa açılırsa internetten okunamıyor.
+
+Tam çözüm iki yoldan biri:
+1. MediaMTX `authHTTPAddress` ile her okuma isteğini API'ye sormak.
+   ⚠ Tokenın **URL sorgu dizesinde** taşınmasını gerektiriyor ve sorgu
+   dizeleri sunucu günlüklerine, vekil kayıtlarına, tarayıcı geçmişine
+   düşüyor.
+2. **Caddy'yi tek giriş noktası yapmak** (PLAN §10). Hem API hem WHEP
+   onun arkasından geçer, kimlik tek yerde doğrulanır. Doğru mimari
+   cevap bu; iş açık.
+
+**Öğrenilen ders:** Bir güvenlik gözden geçirmesine "hangi uçlarım
+var" diye başlamak eksik. Doğru başlangıç sorusu: *"bu sistemde en
+değerli veri hangisi ve hangi yollardan çıkıyor?"*
+
+---
+
+### P-36 · Bir bozuk blok, ölçülmemiş bir şeyi ölçülmüş gösterdi
+
+**Tarih:** 30.08.2026 · **Faz:** 1 / Gün 16 · **Kaybedilen süre:** ~25 dakika (bir ölçüm koşusu)
+
+**Belirti:** Parti doldurma (`--batch-fill-ms`) özelliğinin etkisi
+dönüşümlü A/B ile ölçüldü ve özet **"-%15.2 verim"** dedi. Yani özellik
+zararlıydı.
+
+Blok blok bakınca tablo başkaydı:
+
+```
+[tur 1] fill=0    36.0 kare/sn · 5.56 kare/parti · dolu %46
+[tur 1] fill=60   51.7 kare/sn · 7.25 kare/parti · dolu %78
+[tur 2] fill=0    49.0 kare/sn · 3.83 kare/parti · dolu %20
+[tur 2] fill=60   20.4 kare/sn · 4.18 kare/parti · dolu  %0   ⬅ ?
+```
+
+**Kök sebep — ikisi birden:**
+
+1. **Ölçüm sırasında sisteme dokundum.** Son blok koşarken MediaMTX'i
+   yeniden başlattım (P-37'deki güvenlik düzeltmesi için). 20 kamera
+   birden yeniden bağlandı; o blokta ölçülen şey parti doldurma değil,
+   yeniden bağlanmaydı.
+
+2. **Betik ORTALAMA raporluyordu.** İki örnekten biri bozuk olunca
+   ortalama tümüyle o bozuk örneğin peşinden gitti.
+
+⚠ İkinci sebep birincisinden daha önemli. Ölçüm sırasında bir şeyin
+bozulması olağan; **bozulduğunu söylemeyen bir araç** ise her koşuda
+sessizce yanlış sonuç üretir.
+
+Üstelik geçerli bloklara bakınca bile sonuç çıkmıyor: fill=0 blokları
+36.0 ve 49.0 vermiş — aralarındaki fark, fill=60'ın (51.7) farkı kadar
+büyük. **Ölçülmek istenen etki, gürültünün içinde.**
+
+**Çözüm:** Betik artık
+- ortalama yerine **medyan** kullanıyor (tek aykırı bloğa dayanıklı),
+- **yayılımı** basıyor: `(max−min)/medyan`,
+- etki blok içi yayılımdan küçükse açıkça **"SONUÇSUZ"** yazıyor,
+- yayılım %15'i aşarsa uyarıyor: *"--tur artırın ya da ölçüm sırasında
+  sisteme DOKUNMAYIN (docker restart dâhil)"*.
+
+**Öğrenilen ders:** Bir ölçüm aracının en önemli özelliği,
+**ölçemediğini söyleyebilmesi.** İki örneğin ortalamasını, aralarında
+%40 fark varken tek bir sayı gibi raporlamak, ölçülmemiş bir şeyi
+ölçülmüş göstermektir — ve o sayı bir kez rapora girdiğinde veri gibi
+davranmaya başlar (P-33'ün aynısı).
+
+Ayrıca bu proje P-17'de aynı sınıf hatayı bir kez yaşamıştı (sıralı
+koşu). Dönüşümlü koşuya geçmek gerekliydi ama **yeterli değilmiş**:
+dönüşümlü koşu sistematik sürüklenmeyi çözüyor, tek seferlik bir
+bozulmayı çözmüyor.
+
+---
+
+### P-35 · `start_all.ps1` sistemin tamamını kaldırmıyordu
+
+**Tarih:** 30.08.2026 · **Faz:** 1 / Gün 16 · **Kaybedilen süre:** günlerce fark edilmedi
+
+**Belirti:** Alarm kalıcılığı eklenirken betik incelendi ve
+**analitik worker'ının hiç başlatılmadığı** görüldü. Betik 4 adımdı:
+docker → alım → çıkarım → API.
+
+Yani `start_all.ps1` ile başlatılan sistemde tespit ve takip
+çalışıyor, panel kutuları çiziyor — ama **hiçbir anomali
+üretilmiyordu.** Alarm paneli sonsuza dek boş kalıyordu.
+
+**Neden fark edilmedi:** Ben analitik worker'ını hep elle
+başlatıyordum. Betik "✓ hazır" diyordu ve söylediği her şey doğruydu;
+söylemediği şey eksikti.
+
+**Kök sebep:** Bileşen eklendikçe başlatma betiği güncellenmemiş.
+Belge ile gerçek arasındaki sapmanın en sinsi türü: **belge yalan
+söylemiyor, eksik konuşuyor.**
+
+**Çözüm:** Betik 7 adıma çıkarıldı (analitik + alarm worker'ları
+eklendi) ve ikisi de `Wait-Url` ile **doğrulanıyor** — açılmazsa
+uyarı basıyor. `stop_all.ps1`'in açık süreç listesi de eksikti
+(`analytics`, `alerting` yoktu); yalnızca venv yolu koşulu sayesinde
+kapanıyorlardı. Eksik bir listeyi "zaten çalışıyor" diye bırakmak,
+ilk koşul değiştiği gün sessizce bozulacak bir bağımlılık yaratır.
+
+⚠ **Yan bulgu — port çakışması:** Alarm worker'ına 9120 vermiştim,
+analitik worker zaten oradaydı. 9130'a alındı. Bu sınıf hata bu
+projede P-01'de de yaşandı ve hep aynı biçimde tezahür ediyor:
+**bileşen çalışır görünür, yalnızca gözlemlenemez olur.**
+
+**Öğrenilen ders:** Belgelenen başlatma yolu sistemin **tamamını**
+ayağa kaldırmalı. Kaldırmıyorsa, o belgeyi okuyan herkes (altı ay
+sonraki ben dâhil) eksik bir sistemi çalışıyor sanacak.
+
+---
+
+### P-34 · Üç SQL tuzağı ve "hiçbir şey yok" ile "bakmadım"ın aynı görünmesi
+
+**Tarih:** 30.08.2026 · **Faz:** 1 / Gün 16 · **Kaybedilen süre:** ~40 dakika
+
+Olay kalıcılığı eklenirken arka arkaya üç hata çıktı. Üçü de küçük,
+üçü de öğretici.
+
+**1. `SEMA.format()` → `IndexError`**
+
+Şema metni `kanit JSONB NOT NULL DEFAULT '{}'::jsonb` içeriyor.
+`str.format()` o `{}` ifadesini bir yer tutucu sanıp konumsal argüman
+aradı.
+
+*Ders:* SQL'de süslü parantez sık geçer (JSONB, dizi literalleri,
+`plpgsql` blokları). SQL şablonlarında `format` genel olarak yanlış
+araç — `replace` ya da parametreli sorgu kullanılmalı.
+
+**2. `split(";")` → `syntax error at end of input`**
+
+Şemayı tek metin yazıp `;` ile bölüyordum. Bir SQL **yorumunun
+içinde** noktalı virgül vardı:
+
+```sql
+-- ... daha az güvenilirdir; operatör bunu görmeli.
+```
+
+Bölme, ifadeyi yorumun ortasından kesti.
+
+*Ders:* SQL'i ayırıcıya bakarak bölmek, **dizeleri ve yorumları
+tanımayan bir ayrıştırıcı yazmaktır.** İfadeler artık ayrı ayrı
+tutuluyor — hem doğru hem okunaklı, her ifade kendi gerekçesiyle yan
+yana.
+
+**3. ⚠ En tehlikelisi: `/api/v1/events/ozet?saat=1` BOŞ dönüyordu**
+
+Saatlik özet uç noktası, alarmlar veritabanına yazılmış olmasına
+rağmen `{"toplam_alarm": 0}` diyordu.
+
+Sebep sessizdi: sürekli toplulaştırma yenileme politikası
+`end_offset => 1 hour` kullanıyor — yani **en son saat kasten
+özetlenmiyor** (yarım saatlik veriyi tam saat gibi göstermemek için,
+ki bu doğru bir karar). Materyalize edilmemiş bölge sorguya hiç
+girmediğinden operatör *"son 1 saatte hiçbir şey olmadı"* cevabı
+alıyordu.
+
+⚠ **Gözetim sisteminde en tehlikeli cevap budur.** *"Hiçbir şey yok"*
+ile *"bakmadım"* aynı görünüyorsa, sistem sessizce yanıltıyor demektir.
+Operatör alarm olmadığına inanıp başka yere bakar.
+
+*Çözüm:* `timescaledb.materialized_only = false` — görünüm,
+materyalize edilmiş eski veriyi ham tablodan gelen taze veriyle
+birleştiriyor. TimescaleDB'de bu özellik tam olarak bu senaryo için
+var.
+
+⚠ `ALTER` ayrıca çağrılıyor: `CREATE MATERIALIZED VIEW IF NOT EXISTS`
+var olan bir görünümü **değiştirmez.** Önceki sürümle kurulmuş bir
+veritabanı yükseltilirken bu satır olmasa hata kalıcı olurdu.
+
+---
+
 ### P-33 · "GPU boşta, o hâlde hızlandırmaya değmez" — boşta olmak ucuz olmak değildir
 
 **Tarih:** 26.08.2026 · **Faz:** 1 / Gün 15 · **Kaybedilen süre:** ~10 gün (yanlış karar olarak taşındı)

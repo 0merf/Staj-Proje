@@ -326,3 +326,228 @@ hiçbir şey sınamıyordu."*
 | K5 (F1) | ölçülmemişti | **0.712** — hedef 0.85, tutmuyor |
 | `detect` ileri geçiş payı | "önemsiz" varsayılıyordu | **%53 (3.37 ms/kare)** |
 | Test sayısı | 118 | 118 (2 yeni, 1 anlamlı hâle getirildi) |
+
+---
+---
+
+# İkinci bölüm — 30 Ağustos: sistemi TAMAMLAMA
+
+Buraya kadarki kısım ölçüm ve düzeltmeydi. Bu bölüm farklı: **eksik
+olan parçaları takmak.** Üçü de "Gün 1'den beri boş klasör" durumundaydı.
+
+---
+
+## 5 · ⭐ Alarmlar artık kaybolmuyor — KT4'ün çekirdeği
+
+### Sorun tek cümlede
+
+Bir alarm üretiliyordu, panel açıksa gösteriliyordu, **panel kapanınca
+yok oluyordu.**
+
+`db/`, `alerting/`, `storage/` klasörleri **Gün 1'den beri boş
+iskeletti.** Veritabanında tek tablo yoktu.
+
+Gözetim sisteminde operatörün asıl sorusu *"şu an ne oluyor"* değil:
+
+> **"Dün gece 03:00'te ne oldu?"**
+
+### Kurulan zincir
+
+```
+analytics worker → Valkey → alarm worker → PostgreSQL/TimescaleDB
+                      │
+                      └→ WebSocket → panel (canlı)
+```
+
+⚠ **Alarm worker'ı neden AYRI bir süreç?**
+
+Veritabanına yazmak ağ turu + disk fsync demek. Bunu analiz döngüsünün
+içine koymak iki şeyi birden bozardı: gecikme doğrudan artar, ve daha
+kötüsü **veritabanı yavaşlarsa ANALİZ yavaşlar.**
+
+Ayrı süreç bu bağı koparıyor: veritabanı tümden çökse bile tespit,
+takip, anomali ve panel çalışmaya devam ediyor. Kaybedilen şey alarm
+*geçmişi*, alarmın kendisi değil.
+
+**Videoda söylenecek cümle:** *"Yardımcı bir bileşenin arızası ana boru
+hattını durduramaz. Bu, sistemin her yerinde tekrarlanan bir ilke."*
+
+### Neden TimescaleDB, neden düz PostgreSQL değil
+
+Bu tablonun üç özelliği var ve üçü de zaman serisi: sadece ekleme
+yapılıyor, sorgular hep zaman aralıklı, ve eski veri değerini yitiriyor
+ama **özetini** yitirmiyor.
+
+```
+hypertable            → zaman dilimlerine otomatik bölme
+sürekli toplulaştırma → saatlik özet arka planda güncelleniyor
+saklama politikası    → 30 gün sonra ham satırlar siliniyor, özet kalıyor
+```
+
+### ⭐ Ve K7 artık sistemin sürekli çıktısı
+
+Bugüne kadar her K7 ölçümü için elle betik yazıp Valkey akışını
+dinledim. Artık:
+
+```
+GET /api/v1/events/ozet
+→ {"alarm_kamera_saat": 1.5, "k7_hedef": 3.0}
+```
+
+**Kriter, bir ölçüm koşusunun değil sistemin normal çıktısının
+parçası.**
+
+### Bu sırada üç hata yaptım — üçü de öğretici
+
+1. **`SEMA.format()` patladı.** SQL metni `'{}'::jsonb` içeriyordu ve
+   `format` onu yer tutucu sandı.
+2. **`split(";")` ifadeyi ortasından kesti.** SQL **yorumunun içinde**
+   noktalı virgül vardı. *Ayırıcıya bakarak SQL bölmek, dizeleri ve
+   yorumları tanımayan bir ayrıştırıcı yazmaktır.*
+3. **⚠ En tehlikelisi:** `/ozet?saat=1` boş dönüyordu. Sürekli
+   toplulaştırma son saati kasten özetlemiyor (doğru bir karar) ama
+   materyalize edilmemiş bölge sorguya hiç girmiyordu.
+
+   **Operatör "son 1 saatte hiçbir şey olmadı" cevabı alıyordu — oysa
+   alarmlar tabloya yazılmıştı.**
+
+   *Gözetim sisteminde en tehlikeli cevap budur: "hiçbir şey yok" ile
+   "bakmadım" aynı görünüyorsa sistem sessizce yanıltıyor demektir.*
+
+---
+
+## 6 · Olay klibi — alarmı kanıta çeviren şey
+
+Bir alarm satırı "cam-16'da 11:57'de düşme" diyor. Operatörün bir
+sonraki sorusu her zaman aynı: **"göster."**
+
+⚠ **Yeniden kodlama YOK — remux.** Klip, MediaMTX'in kaydettiği
+segmentlerden kesilip **kopyalanıyor**:
+
+```
+yeniden kodlama : ~1-3 sn/klip CPU, kalite kaybı, GPU'ya rakip
+remux           : ~32 ms/klip, bit birebir aynı
+```
+
+Bu fark 20 kamerada belirleyici: alarm patlamasında (bir olayda birden
+çok kamera alarm verir) yeniden kodlama, tam da sistemin en meşgul
+olduğu anda CPU'yu tüketirdi.
+
+⚠ **Pencere asimetrik: önce 10 sn, sonra 5 sn.** Operatörün asıl merak
+ettiği *"ne oldu da bu duruma gelindi"*, olayın kendisi değil.
+Tırmanma skorunun anlamı da orada.
+
+⚠ **Kaçınılmaz kısıt:** remux akışı çözmediği için kesim ancak bir
+anahtar karede başlayabilir — 1-2 saniyeye kadar sapma olabilir.
+Düzeltmenin tek yolu yeniden kodlamak ve o bedel karşılığını vermiyor.
+
+---
+
+## 7 · Güvenlik: Öncelik-1 ilan edilmişti, tek satır kod yoktu
+
+`PLAN.md` güvenliği Öncelik-1 diyordu ve `config.py` JWT ayarlarını Gün
+1'den beri taşıyordu. **API tamamen açıktı:** kamera listesi, olay
+geçmişi, **webcam açma/kapatma** — hepsi kimlik doğrulamasız.
+
+Tek hafifletici koşul her şeyin `127.0.0.1`'e bağlı olması. Bu bir
+savunma değil bir **tesadüf**.
+
+### Kurulanlar
+
+| | |
+|---|---|
+| Parola | **Argon2id** — MD5/SHA değil |
+| Token | JWT · erişim 15 dk + yenileme 7 gün |
+| Roller | admin > operator > viewer (hiyerarşik) |
+| Hız sınırı | Valkey'de, kullanıcı+IP başına |
+| Denetim izi | **veritabanında**, günlükte değil |
+
+⚠ **Neden Argon2id:** MD5/SHA **hızlı olmak için** tasarlandı ve parola
+hash'inde hız saldırganın işine yarar. Argon2id hem CPU hem **bellek**
+maliyeti dayatıyor — GPU'yla paralel kırma avantajını da siliyor.
+
+⚠ **Salt okunur ile yazan uçlar ayrıldı.** Olay geçmişi `viewer`'a
+açık; **webcam açmak `operator` istiyor.** Mahremiyet açısından fark
+büyük: biri geçmişe bakmak, diğeri **yeni bir kamera açmak.**
+
+⚠ **Token `localStorage`'da değil, `httponly` çerezde.** JavaScript
+okuyamıyor, yani XSS ile çalınamıyor. Bedeli: "girişli miyim" sorusu
+tokena bakarak değil **sunucuya sorularak** cevaplanıyor.
+
+⚠ **Zamanlama saldırısı kapatıldı:** kullanıcı yoksa da sahte bir
+hash'e karşı parola doğrulanıyor. Hemen dönmek, cevap süresinden "bu
+kullanıcı adı var mı" bilgisini sızdırırdı.
+
+⚠ **Varsayılan hesap YOK.** Birçok sistem ilk açılışta `admin/admin`
+yaratıyor ve bu sahada en sık sömürülen açıklardan biri.
+
+### Denetim izi neden veritabanında
+
+Bir gözetim sistemi insanları izliyor. *"Kim, ne zaman, hangi kamerayı
+izledi"* sorusunun cevabı olmadan **sistemin kendisi denetlenemez** hâle
+gelir — ve denetlenemeyen bir gözetim sistemi, izlediği kişilerden çok
+onu işletenlere ayrıcalık tanır.
+
+Günlük dosyası döner, silinir, biçimi değişir; tablo sorgulanabilir.
+
+### ⚠ Bilinen kısıt, dürüstçe
+
+**JWT iptal edilemez.** "Çıkış yap" gerçek bir iptal değil — çerezi
+siliyor, ama elde tutulan bir Bearer tokenı 15 dakika daha geçerli.
+Gerçek iptal `jti` kara listesi ister ve erişim tokenının kısa ömrü
+karşılığında **bilinçli olarak** yapılmadı. Yenileme tokenları için
+iptal *var* (`token_surumu` sayacı).
+
+---
+
+## 8 · Güvenlik gözden geçirmesinin kendi hatası
+
+Uçları tek tek korurken fark ettim: **video API'den geçmiyor.**
+
+Mimari kural 2 zaten bunu söylüyordu ve bilinçliydi — tarayıcı doğrudan
+MediaMTX'e bağlanıyor. Ben API'yi korurken **görüntünün kendisini** hiç
+düşünmemişim. `read` izni herkese açıktı.
+
+**Videoda söylenecek cümle:** *"Güvenlik çalışmasını 'hangi uçları
+yazdım' listesi üzerinden yürüttüm, 'hangi veri değerli' listesi
+üzerinden değil. Sistemin en mahrem çıktısı, benim yazmadığım bir
+sürecin içinden akıyordu. Koruma, kolay korunan yere değil değerli
+olana konur."*
+
+Yerel ağa kısıtlandı — ama bu **tam çözüm değil** ve raporda öyle
+yazılıyor: IP kısıtı kimlik doğrulaması değildir. Doğru cevap Caddy'yi
+tek giriş noktası yapmak.
+
+---
+
+## 9 · Bir ölçüm aracının en önemli özelliği: ölçemediğini söylemesi
+
+Parti doldurma (`--batch-fill-ms`) özelliğini ölçtüm. Dönüşümlü A/B —
+P-17'nin dersi zaten uygulanmıştı. Özet **"-%15.2 verim"** dedi.
+
+Blok blok bakınca:
+
+```
+[tur 1] fill=0    36.0 kare/sn · dolu %46
+[tur 1] fill=60   51.7 kare/sn · dolu %78
+[tur 2] fill=0    49.0 kare/sn · dolu %20
+[tur 2] fill=60   20.4 kare/sn · dolu  %0   ⬅ ?
+```
+
+Son blok koşarken **MediaMTX'i yeniden başlatmıştım** (güvenlik
+düzeltmesi için). 20 kamera birden yeniden bağlandı; o blokta ölçülen
+şey parti doldurma değil, yeniden bağlanmaydı.
+
+Ama asıl sorun bu değil. Asıl sorun: **betik ortalama raporluyordu** ve
+bir bozuk örnek özeti tersine çevirdi.
+
+Üstelik geçerli bloklara bakınca bile sonuç çıkmıyor: fill=0 blokları
+36.0 ve 49.0 vermiş — aradaki fark, fill=60'ın farkı kadar büyük.
+
+**Videoda söylenecek cümle:** *"İki örneğin ortalamasını, aralarında
+%40 fark varken tek bir sayı gibi raporlamak, ölçülmemiş bir şeyi
+ölçülmüş göstermektir. Dönüşümlü koşuya geçmiştim ama o sistematik
+sürüklenmeyi çözüyor, tek seferlik bir bozulmayı çözmüyor."*
+
+Betik artık medyan kullanıyor, yayılımı basıyor, ve etki gürültüden
+küçükse açıkça **"SONUÇSUZ"** yazıyor.
