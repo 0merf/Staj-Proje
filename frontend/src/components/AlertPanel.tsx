@@ -16,6 +16,7 @@
  * yanlış alarm sayısı değil, operatörün sistemi umursamamaya
  * başlamasıdır (PLAN §8.1 `contributing_signals`).
  */
+import { useEffect } from 'react'
 import { useStore } from '../store'
 import { ANOMALI_TR } from '../types'
 
@@ -89,6 +90,23 @@ function saat(rx: number): string {
 
 export function AlertPanel() {
   const alerts = useStore((s) => s.alerts)
+  const loadHistory = useStore((s) => s.loadHistory)
+  const historyLoaded = useStore((s) => s.historyLoaded)
+
+  // ⚠ AÇILIŞTA GEÇMİŞİ YÜKLE
+  // Panel kapalıyken üretilen alarmlar 30.08.2026'ya kadar
+  // görülemiyordu: panel her açıldığında liste boştu ve sistem hiç
+  // alarm üretmemiş gibi görünüyordu. Artık son 24 saat
+  // TimescaleDB'den geliyor.
+  //
+  // ⚠ Bir KEZ çalışıyor (`historyLoaded`): canlı akış zaten yeni
+  // olayları getiriyor, tekrar tekrar sorgulamak hem gereksiz hem de
+  // canlı kayıtları geçmiş kopyalarıyla karıştırma riski.
+  useEffect(() => {
+    if (!historyLoaded) void loadHistory()
+  }, [historyLoaded, loadHistory])
+
+  const canli = alerts.filter((a) => !a.gecmis).length
 
   return (
     <aside className="flex w-80 shrink-0 flex-col border-l border-line bg-panel/40">
@@ -97,6 +115,17 @@ export function AlertPanel() {
         <span className="rounded bg-panel px-1.5 py-0.5 text-xs text-muted">
           {alerts.length}
         </span>
+        {/* ⚠ Canlı ile geçmiş AYRI sayılıyor: "12 alarm var" cümlesi,
+            hepsi bu oturumda mı oldu yoksa dün geceden mi kaldı,
+            bilinmeden okunamaz. */}
+        {canli < alerts.length && (
+          <span
+            className="text-[10px] text-muted"
+            title="Bu oturumda canlı gelen / son 24 saatin geçmişinden yüklenen"
+          >
+            {canli} canlı · {alerts.length - canli} geçmiş
+          </span>
+        )}
         <span className="ml-auto text-[10px] uppercase tracking-wide text-muted">
           kapalı kameralar dâhil
         </span>
@@ -105,7 +134,7 @@ export function AlertPanel() {
       <div className="flex-1 overflow-y-auto">
         {alerts.length === 0 ? (
           <p className="px-3 py-6 text-center text-xs text-muted">
-            Henüz alarm yok.
+            {historyLoaded ? 'Son 24 saatte alarm yok.' : 'Geçmiş yükleniyor…'}
             <br />
             <span className="text-[10px]">
               Kural motoru düşme, koşma, oyalanma ve kalabalık arıyor.
@@ -132,6 +161,13 @@ export function AlertPanel() {
                     </span>
                   )}
                   <span className="ml-auto font-mono text-[10px] text-muted">
+                    {/* Geçmiş kayıtlarda nokta: operatör "şu an oluyor"
+                        ile "olmuştu"yu ayırt edebilmeli. */}
+                    {a.gecmis && (
+                      <span title="geçmişten yüklendi" className="mr-1">
+                        ·
+                      </span>
+                    )}
                     {saat(a.rx)}
                   </span>
                 </div>

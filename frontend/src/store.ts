@@ -15,7 +15,13 @@
  * ayarları gibi SEYREK değişen şeyleri yönetiyor.
  */
 import { create } from 'zustand'
-import type { Camera, TimedAlert, TimedResult, ViewMode } from './types'
+import type {
+  Camera,
+  HistoryEvent,
+  TimedAlert,
+  TimedResult,
+  ViewMode,
+} from './types'
 import { BUFFER_SIZE } from './lib/sync'
 
 /** Kamera adı → son N sonuç (eskiden yeniye). React dışında. */
@@ -86,10 +92,15 @@ interface State {
   videoLatencyMs: number | null
   /** Ölçülen analiz yolu gecikmesi (sunucu raporluyor). */
   aiLatencyMs: number | null
-  /** Son alarmlar — en yenisi başta. Sınırlı: panel bir olay
-   * günlüğü değil, canlı bir uyarı akışı. Kalıcı kayıt Gün 20'de
-   * PostgreSQL'e gidecek (PLAN §8.1). */
+  /** Son alarmlar — en yenisi başta.
+   *
+   * ⚠ 30.08.2026: artık YALNIZCA canlı akış değil. Panel açılışta
+   * `/api/v1/events` ile geçmişi de yüklüyor. Öncesinde panel
+   * kapalıyken olan hiçbir şey görülemiyordu ve panel her açıldığında
+   * sistem "hiç alarm üretmemiş" gibi görünüyordu. */
   alerts: TimedAlert[]
+  /** Geçmiş yüklendi mi (bir kez yükleniyor). */
+  historyLoaded: boolean
 
   setCameras: (c: Camera[]) => void
   setConnection: (c: State['connection']) => void
@@ -101,6 +112,7 @@ interface State {
   setVideoLatency: (ms: number) => void
   setAiLatency: (ms: number) => void
   pushAlert: (a: TimedAlert) => void
+  loadHistory: () => Promise<void>
 }
 
 export const useStore = create<State>((set) => ({
@@ -118,6 +130,7 @@ export const useStore = create<State>((set) => ({
   videoLatencyMs: null,
   aiLatencyMs: null,
   alerts: [],
+  historyLoaded: false,
 
   setCameras: (cameras) => set({ cameras }),
   setConnection: (connection) => set({ connection }),
@@ -143,13 +156,68 @@ export const useStore = create<State>((set) => ({
     })),
   pushAlert: (a) =>
     set((s) => ({
-      // En yenisi BAŞTA, en fazla 30 kayıt.
-      // ⚠ Panel bir olay GÜNLÜĞÜ değil, canlı uyarı akışı. Sınırsız
-      // biriktirmek belleği şişirir ve operatörün dikkatini eskiye
-      // dağıtır. Kalıcı kayıt Gün 20'de PostgreSQL'e gidecek
-      // (PLAN §8.1 `events` hypertable).
-      alerts: [a, ...s.alerts].slice(0, 30),
+      // En yenisi BAŞTA, en fazla 50 kayıt.
+      // ⚠ Panelde tutulan sayı bir GÖRÜNTÜLEME sınırı, saklama sınırı
+      // değil. Kalıcı kayıt TimescaleDB'de (30 gün) ve `/api/v1/events`
+      // ile sorgulanabiliyor. Sınırsız biriktirmek belleği şişirir ve
+      // operatörün dikkatini eskiye dağıtır.
+      alerts: [a, ...s.alerts].slice(0, 50),
     })),
+
+  /** Açılışta son 24 saatin alarmlarını yükler.
+   *
+   * ⚠ CANLI AKIŞLA ÇAKIŞMA: WebSocket bağlanmadan önce çağrılıyor ama
+   * yine de aynı olay iki kez gelebilir (geçmiş sorgusu ile ilk canlı
+   * mesaj arasındaki pencerede üretilenler). Tekilleştirme
+   * (kamera, ts, iz) üçlüsüne göre yapılıyor — olay kimliği yok.
+   *
+   * ⚠ HATA SESSİZ GEÇİLİYOR. Geçmiş yüklenemezse panel canlı akışla
+   * çalışmaya devam etmeli; yardımcı bir isteğin başarısızlığı asıl
+   * işlevi durdurmamalı. */
+  loadHistory: async () => {
+    try {
+      const r = await fetch('/api/v1/events?limit=50&saat=24')
+      if (!r.ok) return
+      const d = (await r.json()) as { olaylar: HistoryEvent[] }
+      set((s) => {
+        const gorulen = new Set(
+          s.alerts.map((a) => `${a.cam}|${a.ts.toFixed(3)}|${a.track}`),
+        )
+        const gecmis: TimedAlert[] = []
+        for (const o of d.olaylar) {
+          const anahtar = `${o.camera}|${o.ts.toFixed(3)}|${o.track}`
+          if (gorulen.has(anahtar)) continue
+          gorulen.add(anahtar)
+          gecmis.push({
+            type: 'alert',
+            cam: o.camera,
+            ts: o.ts,
+            anomaly: o.tur,
+            severity: o.ciddiyet,
+            track: o.track,
+            score: o.skor,
+            evidence: o.kanit ?? {},
+            completeness: o.tamlik ?? 0,
+            // ⚠ `rx` normalde varış anı (performance.now tabanlı).
+            // Geçmiş kayıtlarda "varış" diye bir şey yok; olayın kendi
+            // zamanını tarayıcı zaman tabanına çeviriyoruz ki liste
+            // doğru sıralansın ve saat doğru görünsün.
+            rx: o.ts * 1000 - performance.timeOrigin,
+            gecmis: true,
+          })
+        }
+        return {
+          historyLoaded: true,
+          alerts: [...s.alerts, ...gecmis]
+            .sort((a, b) => b.ts - a.ts)
+            .slice(0, 50),
+        }
+      })
+    } catch {
+      // Geçmiş yoksa canlı akışla devam — panel çalışmaya devam etmeli.
+      set({ historyLoaded: true })
+    }
+  },
   setAiLatency: (ms) =>
     set((s) => ({
       aiLatencyMs: s.aiLatencyMs === null ? ms : s.aiLatencyMs * 0.9 + ms * 0.1,

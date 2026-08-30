@@ -102,6 +102,28 @@ export interface Alert {
 /** Panelde gösterilen alarm — varış anı eklenmiş. */
 export interface TimedAlert extends Alert {
   rx: number
+  /** Canlı akıştan değil, veritabanı geçmişinden geldiyse `true`.
+   *  Operatör "şu an oluyor" ile "olmuştu"yu ayırt edebilmeli. */
+  gecmis?: boolean
+}
+
+/** `/api/v1/events` yanıtındaki tek kayıt.
+ *
+ * ⚠ Alan adları TÜRKÇE çünkü veritabanı şeması Türkçe (`db/schema.py`).
+ * Canlı WebSocket mesajı ise İngilizce alan adları kullanıyor — ikisi
+ * ayrı sözleşme ve karıştırılmamalı. Dönüşüm tek yerde yapılıyor
+ * (`store.ts · loadHistory`). */
+export interface HistoryEvent {
+  ts: number
+  camera: string
+  tur: string
+  ciddiyet: string
+  skor: number
+  track: number | null
+  kanit: Record<string, number> | null
+  tamlik: number | null
+  karsi_taraf: number | null
+  klip: string | null
 }
 
 /** Anomali türlerinin Türkçe karşılıkları ve renkleri. */
