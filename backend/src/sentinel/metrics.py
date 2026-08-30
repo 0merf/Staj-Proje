@@ -164,6 +164,17 @@ anomalies_total = Counter(
     ["cam", "type", "severity"],
 )
 
+# ⚠ ÜRETİLEN ile YAZILAN alarm sayısı AYRI ölçülüyor.
+# İkisi ayrışırsa veritabanı yolu tıkanmış demektir — ve bu, sistem
+# dışarıdan sağlıklı görünürken sessizce olur: panel canlı alarmları
+# göstermeye devam eder, yalnızca geçmiş birikmez.
+# `sentinel_anomalies_total` - `sentinel_olaylar_yazildi_total` farkı
+# tam olarak kaybedilen alarm geçmişidir.
+olaylar_yazildi = Counter(
+    "sentinel_olaylar_yazildi_total",
+    "Veritabanına kalıcı yazılan olay sayısı",
+)
+
 # ─── Boru hattı sağlığı ───────────────────────────────────────
 
 # Çıkarım worker'ının ÖLÇÜLEN tüketim hızı (kare/sn).

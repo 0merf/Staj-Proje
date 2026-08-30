@@ -13,11 +13,22 @@ Düşme, kural tabanlı anomali katmanının en önemli kuralı — hem güvenli
 açısından en kritik olay, hem de kanıt zinciri mimarisinin vitrini
 (en-boy oranı + gövde eğimi + eğim değişim hızı üçü birden aranıyor).
 
-Buna rağmen **26.08.2026'ya kadar gerçek bir düşme görüntüsünde hiç
-denenmemişti.** Doğrulaması yalnızca elle kurulmuş sentetik iskeletlerdi
-(`tests/unit/test_rules.py`). Sentetik test kuralın kendi mantığını
-sınar; kuralın gerçek dünyada ürettiği DEĞERLERİN eşiklere uyup
-uymadığını sınamaz. Elimizdeki diğer setlerin hiçbirinde düşme yok:
+Buna rağmen **26.08.2026'ya kadar hiç doğrulanmamıştı.**
+
+⚠ Bu satır ilk yazıldığında *"doğrulaması yalnızca sentetik
+iskeletlerdi (`tests/unit/test_rules.py`)"* diyordu. **Yanlıştı** — o
+dosya hiç var olmamıştı; Katman B'nin dört kuralının da tek bir birim
+testi yoktu. Cümle, kuralı yazan kişinin (benim) ne yaptığını
+hatırladığını sanmasıydı.
+
+Mimari kural 0'ın ("belgede yazan ile kodda olan aynı olmalı") en
+sinsi hâli bu: kod hatası derlemede ya da testte patlar, belge hatası
+patlamaz — sadece okuyan herkesi yanıltır. Düzeltildi ve testler
+gerçekten yazıldı (13 test, commit `cb37c38`).
+
+Sentetik test kuralın kendi *mantığını* sınar; kuralın gerçek dünyada
+ürettiği *değerlerin* eşiklere uyup uymadığını sınamaz. İkisi de
+gerekli. Elimizdeki diğer setlerin hiçbirinde düşme yok:
 
 | Set | İçerdiği anomali | Düşme? |
 |---|---|---|

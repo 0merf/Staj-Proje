@@ -4,8 +4,19 @@
 #   1. Altyapı (Docker)  — diğer her şey buna bağlı
 #   2. Alım worker'ı     — paylaşımlı bellek havuzunu O oluşturur (--owner)
 #   3. Çıkarım worker'ı  — havuza BAĞLANIR, önce havuz var olmalı
-#   4. API               — sonuç akışını dinler, panele yayınlar
-#   5. (opsiyonel) React geliştirme sunucusu
+#   4. Analitik worker'ı — çıkarım sonuçlarından anomali/saldırganlık üretir
+#   5. Alarm worker'ı    — olayları TimescaleDB'ye kalıcılaştırır
+#   6. API               — sonuç akışını dinler, panele yayınlar
+#   7. (opsiyonel) React geliştirme sunucusu
+#
+# ⚠ 30.08.2026 — ANALİTİK VE ALARM WORKER'LARI EKSİKTİ
+# Bu betik 4 adımdı ve analitik worker'ını hiç başlatmıyordu. Sonuç:
+# "başlattım" denen sistemde tespit ve takip çalışıyor ama HİÇBİR
+# ANOMALİ ÜRETİLMİYORDU — panel kutuları çiziyor, alarm paneli sonsuza
+# dek boş kalıyordu. Elle başlatıldığı için günlerce fark edilmedi.
+#
+# Mimari kural 0: belgelenen başlatma yolu sistemin TAMAMINI ayağa
+# kaldırmalı. Kaldırmıyorsa belge yalan söylüyor demektir.
 #
 # Bu betik kör beklemek yerine her adımı DOĞRULAR: bir bileşen
 # gerçekten ayağa kalkmadan sonrakine geçmez. Böylece "başlattım ama
@@ -70,18 +81,18 @@ Write-Host "═════════════════════"
 
 # ─── 1. Altyapı ───────────────────────────────────────────────
 if (-not $SkipDocker) {
-    Write-Host "`n[1/5] Docker altyapısı (Valkey, PostgreSQL, MediaMTX, Prometheus, Grafana)"
+    Write-Host "`n[1/7] Docker altyapısı (Valkey, PostgreSQL, MediaMTX, Prometheus, Grafana)"
     Push-Location $root
     docker compose up -d | Out-Null
     Pop-Location
     $up = (docker compose --project-directory $root ps --format "{{.Service}}" | Measure-Object).Count
     Write-Host "  ✓ $up servis ayakta" -ForegroundColor Green
 } else {
-    Write-Host "`n[1/5] Docker atlandı (-SkipDocker)"
+    Write-Host "`n[1/7] Docker atlandı (-SkipDocker)"
 }
 
 # ─── 2. Alım worker'ı (havuz sahibi) ─────────────────────────
-Write-Host "`n[2/5] Alım worker'ı — paylaşımlı bellek havuzunu O oluşturur"
+Write-Host "`n[2/7] Alım worker'ı — paylaşımlı bellek havuzunu O oluşturur"
 $ingest = @("run", "python", "-m", "sentinel.ingest.worker", "--owner",
             "--metrics-port", "9101", "--stats-interval", "300")
 if ($Cameras -gt 0) {
@@ -97,7 +108,7 @@ if (-not (Wait-Url -Url "http://127.0.0.1:9101/metrics" -Label "alım worker'ı"
 }
 
 # ─── 3. Çıkarım worker'ı ─────────────────────────────────────
-Write-Host "`n[3/5] GPU çıkarım worker'ı (TEK KOPYA — VRAM için zorunlu)"
+Write-Host "`n[3/7] GPU çıkarım worker'ı (TEK KOPYA — VRAM için zorunlu)"
 Start-Component -Name "inference" -Exe "uv" -ArgList @(
     "run", "python", "-m", "sentinel.inference.worker",
     "--batch-size", "$BatchSize", "--stats-interval", "300"
@@ -105,8 +116,32 @@ Start-Component -Name "inference" -Exe "uv" -ArgList @(
 # Model yükleme + ısınma: soğuk başlangıçta 40 sn'yi bulabiliyor.
 Wait-Url -Url "http://127.0.0.1:9110/metrics" -Label "çıkarım worker'ı" -LogName "inference" -TimeoutSec 120 | Out-Null
 
-# ─── 4. API ───────────────────────────────────────────────────
-Write-Host "`n[4/5] API + panel"
+# ─── 4. Analitik worker'ı ────────────────────────────────────
+# Çıkarım sonuçlarını okur, özellik pencerelerini besler, Katman A/B
+# anomalilerini ve tırmanma skorunu üretir.
+# ⚠ Çıkarım worker'ından SONRA: `inference.results` akışı olmadan
+# tüketici grubu kuracak bir şey yok.
+Write-Host "`n[4/7] Analitik worker'ı — anomali + saldırganlık"
+Start-Component -Name "analytics" -Exe "uv" -ArgList @(
+    "run", "python", "-m", "sentinel.analytics.worker", "--stats-interval", "300"
+) -Cwd $backend
+if (-not (Wait-Url -Url "http://127.0.0.1:9120/metrics" -Label "analitik worker'i" -LogName "analytics" -TimeoutSec 60)) {
+    Write-Host "  ! analitik worker'i acilmadi — HIC ANOMALI URETILMEYECEK" -ForegroundColor Yellow
+}
+
+# ─── 5. Alarm worker'ı ───────────────────────────────────────
+# Olayları TimescaleDB'ye yazar. ⚠ Bu bileşen olmadan sistem çalışır
+# ama alarm GEÇMİŞİ tutulmaz: panel kapandığında olay kaybolur.
+Write-Host "`n[5/7] Alarm worker'i — olaylari veritabanina yazar"
+Start-Component -Name "alerting" -Exe "uv" -ArgList @(
+    "run", "python", "-m", "sentinel.alerting.worker"
+) -Cwd $backend
+if (-not (Wait-Url -Url "http://127.0.0.1:9130/metrics" -Label "alarm worker'i" -LogName "alerting" -TimeoutSec 60)) {
+    Write-Host "  ! alarm worker'i acilmadi — olaylar KALICI OLMAYACAK" -ForegroundColor Yellow
+}
+
+# ─── 6. API ───────────────────────────────────────────────────
+Write-Host "`n[6/7] API + panel"
 Start-Component -Name "api" -Exe "uv" -ArgList @(
     "run", "uvicorn", "sentinel.api.main:app", "--host", "127.0.0.1", "--port", "8001"
 ) -Cwd $backend
@@ -114,7 +149,7 @@ Wait-Url -Url "http://127.0.0.1:8001/api/v1/system/live" -Label "API" -LogName "
 
 # ─── 5. React geliştirme sunucusu (opsiyonel) ────────────────
 if ($Dev) {
-    Write-Host "`n[5/5] React geliştirme sunucusu"
+    Write-Host "`n[7/7] React geliştirme sunucusu"
     $frontend = Join-Path $root "frontend"
     if (Test-Path (Join-Path $frontend "node_modules")) {
         Start-Component -Name "vite" -Exe "npm" -ArgList @("run", "dev") -Cwd $frontend
@@ -123,7 +158,7 @@ if ($Dev) {
         Write-Host "  ! node_modules yok — önce: cd frontend; npm install" -ForegroundColor Yellow
     }
 } else {
-    Write-Host "`n[5/5] React dev sunucusu atlandı (-Dev ile açılır)"
+    Write-Host "`n[7/7] React dev sunucusu atlandı (-Dev ile açılır)"
     Write-Host "      Derlenmiş arayüz zaten http://127.0.0.1:8001/app adresinde"
 }
 

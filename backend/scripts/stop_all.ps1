@@ -15,8 +15,18 @@ $killed = 0
 
 Get-CimInstance Win32_Process -Filter "Name='python.exe'" -ErrorAction SilentlyContinue |
     Where-Object {
+        # ⚠ Birinci koşul (venv yolu) pratikte hepsini yakalıyor;
+        # ikincisi bir GÜVENLİK AĞI, çünkü bir worker venv dışından
+        # (ör. elle `python -m ...`) başlatılmış olabilir.
+        #
+        # ⚠ Liste TAM olmalı. 30.08.2026'ya kadar yalnızca
+        # ingest|inference|api yazıyordu; analytics ve alerting
+        # eksikti ve yalnızca venv koşulu sayesinde kapanıyorlardı.
+        # Eksik bir listeyi "zaten çalışıyor" diye bırakmak, ilk
+        # koşul değiştiği gün sessizce bozulacak bir bağımlılık
+        # yaratır.
         $_.ExecutablePath -like "$venv*" -or
-        $_.CommandLine -match 'sentinel\.(ingest|inference|api)' -or
+        $_.CommandLine -match 'sentinel\.(ingest|inference|analytics|alerting|api)' -or
         $_.CommandLine -match 'uvicorn.*sentinel'
     } |
     ForEach-Object {

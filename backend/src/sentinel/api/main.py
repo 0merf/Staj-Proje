@@ -21,6 +21,7 @@ from fastapi.staticfiles import StaticFiles
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 from sentinel.api import cameras, health, webcam
+from sentinel.api.routers import olaylar as olaylar_router
 from sentinel.api.ws import live as ws_live
 from sentinel.api.ws.manager import broadcaster
 from sentinel.config import PROJECT_ROOT, settings
@@ -81,6 +82,8 @@ async def system_health() -> JSONResponse:
 
 
 app.include_router(ws_live.router)
+# Olay geçmişi — canlı WebSocket'in kalıcı karşılığı
+app.include_router(olaylar_router.router)
 
 
 @app.get("/api/v1/system/ws-stats", tags=["system"])
