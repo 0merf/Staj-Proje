@@ -41,10 +41,11 @@ log = get_logger(__name__)
 
 EKLE = text("""
 INSERT INTO olaylar
-    (ts, camera, tur, ciddiyet, skor, track_id, kanit, tamlik, karsi_taraf)
+    (ts, camera, tur, ciddiyet, skor, track_id, kanit, tamlik,
+     karsi_taraf, klip_anahtar)
 VALUES
     (:ts, :camera, :tur, :ciddiyet, :skor, :track_id,
-     CAST(:kanit AS jsonb), :tamlik, :karsi_taraf)
+     CAST(:kanit AS jsonb), :tamlik, :karsi_taraf, :klip_anahtar)
 """)
 
 
@@ -61,6 +62,10 @@ class Olay:
     kanit: dict[str, Any] | None = None
     tamlik: float | None = None
     karsi_taraf: int | None = None
+    # Nesne deposu anahtarı. Alarm worker'ı klip kesebildiyse dolu.
+    # ⚠ INSERT'e giriyor, sonradan UPDATE edilmiyor: olay kaydı bir
+    # denetim izi ve değişmemeli.
+    klip_anahtar: str | None = None
 
     @classmethod
     def akistan(cls, alanlar: dict[str, str]) -> Olay | None:
@@ -109,6 +114,7 @@ class Olay:
             "kanit": json.dumps(self.kanit or {}, ensure_ascii=False),
             "tamlik": self.tamlik,
             "karsi_taraf": self.karsi_taraf,
+            "klip_anahtar": self.klip_anahtar,
         }
 
 

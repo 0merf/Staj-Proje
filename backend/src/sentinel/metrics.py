@@ -175,6 +175,15 @@ olaylar_yazildi = Counter(
     "Veritabanına kalıcı yazılan olay sayısı",
 )
 
+# ⚠ Klip sayısı ciddi olay sayısından AZ olabilir ve bu normaldir:
+# kayıt kapalıysa (varsayılan) hiç klip üretilmez. Sıfır klip, bozuk
+# bir klip yazıcısı değil KAPALI bir kayıt anlamına gelebilir —
+# ikisini ayırt etmek için `MEDIAMTX_RECORD` değerine bakılmalı.
+klipler_uretildi = Counter(
+    "sentinel_klipler_uretildi_total",
+    "Olay klibi olarak kesilen video sayısı",
+)
+
 # ─── Boru hattı sağlığı ───────────────────────────────────────
 
 # Çıkarım worker'ının ÖLÇÜLEN tüketim hızı (kare/sn).

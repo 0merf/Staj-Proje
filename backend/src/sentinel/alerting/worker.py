@@ -44,12 +44,14 @@ import asyncio
 import signal
 import sys
 import time
+from dataclasses import replace
 from types import FrameType
 from typing import cast
 
 from sentinel import metrics
+from sentinel.alerting import klip as klip_modulu
 from sentinel.bus.streams import connect
-from sentinel.config import get_settings
+from sentinel.config import PROJECT_ROOT, get_settings
 from sentinel.db import olaylar as olay_deposu
 from sentinel.db.engine import kapat as motoru_kapat
 from sentinel.db.engine import motor
@@ -60,6 +62,12 @@ log = get_logger(__name__)
 
 AKIS = "analytics.events"
 GRUP = "alarm"
+
+# ⚠ KLİP YALNIZCA CİDDİ OLAYLAR İÇİN
+# `attention` seviyesinde saatte onlarca olay üretiliyor; hepsine klip
+# kesmek diski de CPU'yu da boşuna harcar ve önemli klipleri gürültüde
+# boğar. Klip bir KANIT; kanıt, iddianın ciddi olduğu yerde gerekir.
+KLIPLI_CIDDIYET = frozenset({"warning", "alarm"})
 
 _dur = False
 
@@ -79,8 +87,13 @@ class AlarmWorker:
         worker_id: str = "alarm-0",
         block_ms: int = 1000,
         batch: int = 50,
+        klip: bool = True,
     ) -> None:
         self._client = connect()
+        self._klip_acik = klip
+        self._kayit_koku = PROJECT_ROOT / "data" / "recordings"
+        self._klip_dizini = PROJECT_ROOT / "data" / "clips"
+        self.klip_uretildi = 0
         self._worker_id = worker_id
         self._block_ms = block_ms
         self._batch = batch
@@ -136,6 +149,7 @@ class AlarmWorker:
                     yazilan=self.yazilan,
                     atlanan=self.atlanan,
                     basarisiz=self.basarisiz,
+                    klip=self.klip_uretildi,
                 )
                 son_rapor = simdi
             if sure and simdi - basladi >= sure:
@@ -167,6 +181,12 @@ class AlarmWorker:
                 toplu.append(olay)
                 kimlikler.append(kimlik)
 
+        # ⚠ KLİP YAZIMDAN ÖNCE: `klip_anahtar` sütunu INSERT'e giriyor.
+        # Sonradan UPDATE etmek ikinci bir tur ve olayları güncellenebilir
+        # kılmak demekti; olay kaydı bir denetim izi, değişmemeli.
+        if self._klip_acik:
+            toplu = [self._klip_ekle(o) for o in toplu]
+
         if toplu:
             yazilan = await olay_deposu.yaz(toplu)
             if yazilan == 0:
@@ -182,10 +202,36 @@ class AlarmWorker:
             self._client.xack(AKIS, GRUP, *kimlikler)
 
 
+    def _klip_ekle(self, olay: olay_deposu.Olay) -> olay_deposu.Olay:
+        """Ciddi olaylar için klip keser, anahtarı olaya ekler.
+
+        ⚠ Klip üretilemezse olay AYNEN dönüyor (`klip_anahtar=None`).
+        Kanıtı olmayan bir alarm hâlâ bir alarmdır; klip yüzünden alarm
+        kaybetmek yanlış takas olurdu.
+        """
+        if olay.ciddiyet not in KLIPLI_CIDDIYET:
+            return olay
+        anahtar = klip_modulu.klip_anahtari(
+            olay.camera, olay.ts.timestamp(), olay.tur
+        )
+        uretilen = klip_modulu.klip_cikar(
+            kayit_koku=self._kayit_koku,
+            camera=olay.camera,
+            olay_ts=olay.ts.timestamp(),
+            hedef=self._klip_dizini / anahtar,
+        )
+        if uretilen is None:
+            return olay
+        self.klip_uretildi += 1
+        metrics.klipler_uretildi.inc()
+        return replace(olay, klip_anahtar=anahtar)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Alarm worker'ı — olayları kalıcılaştırır")
     ap.add_argument("--worker-id", default="alarm-0")
     ap.add_argument("--batch", type=int, default=50)
+    ap.add_argument("--no-klip", action="store_true", help="olay klibi kesme")
     ap.add_argument("--duration", type=float, default=None)
     # ⚠ 9130 — 9120 ANALİTİK worker'ında kullanılıyor.
     # İlk sürümde ikisi de 9120 idi; ikinci açılan sessizce metrik
@@ -200,7 +246,9 @@ def main() -> int:
     signal.signal(signal.SIGTERM, _sinyal)
     metrics.serve_metrics(args.metrics_port)
 
-    worker = AlarmWorker(worker_id=args.worker_id, batch=args.batch)
+    worker = AlarmWorker(
+        worker_id=args.worker_id, batch=args.batch, klip=not args.no_klip
+    )
     asyncio.run(worker.calistir(sure=args.duration))
     return 0
 
