@@ -33,6 +33,111 @@ ama **belirti / sebep / çözüm** üçlüsü mutlaka olsun.
 
 <!-- Yeni kayıtlar buraya, en yenisi en üstte -->
 
+### P-38 · Bir çökme, paylaşımlı bellek havuzunu KALICI olarak küçültüyordu
+
+**Tarih:** 30.08.2026 · **Faz:** 1 / Gün 16 · **Kaybedilen süre:** ~1 saat (+ bir ölçüm koşusu boşa gitti)
+
+**Belirti:** Parti doldurma ölçümü koşarken sonuç `0.0 kare/sn` çıktı.
+Bütün süreçler ayaktaydı, panel bağlıydı, sağlık kontrolü yeşildi.
+
+```
+bos slot        : 0 / 48
+frames.ready    : 95 mesaj, sabit (büyümüyor)
+bekleyen        : 48
+frames_dropped_total{reason="no_slot"}  →  her kamerada binlerce
+```
+
+**Kök sebep:** Tüketici grubunda `XREADGROUP` ile okunan her mesaj, ACK
+gelene kadar o tüketiciye **asılı (pending)** kalır. Çıkarım worker'ı
+sert kapatıldığında (ölçüm betiği `Stop-Process -Force` kullanıyor)
+elindeki mesajlar asılı kalıyor ve **paylaşımlı bellek slotları havuza
+geri dönmüyordu.**
+
+Yeni worker `>` ile yalnızca YENİ mesajları okuduğu için o slotlar
+sonsuza dek kayboluyordu. Ölçüm betiği worker'ı defalarca yeniden
+başlattığı için havuz adım adım tükendi ve sonunda sıfırlandı.
+
+⚠ **Arıza SESSİZ ve bu en kötü tarafı.** Alım worker'ı slot bulamayınca
+kareyi atıyor ve *bunu doğru yapıyor* — `no_slot` tasarlanmış bir geri
+basınç yolu. Dışarıdan bakan hiçbir gösterge "sistem durdu" demiyor;
+yalnızca hiçbir şey işlenmiyor.
+
+⚠ Gün 23'te 24 saatlik dayanıklılık koşusu var. Tek bir çökmenin havuzu
+kalıcı olarak küçülttüğü bir sistemde o koşu anlamsız.
+
+**Çözüm — iki aşamalı, ve birincisi yetmedi:**
+
+**1. `XAUTOCLAIM` ile asılı mesajları sahiplenip slotlarını bırakmak.**
+Açılışta (1 sn eşik) ve koşu sırasında 60 saniyede bir (30 sn eşik).
+
+⚠ Eşik neden büyük: "bu mesajı işleyen tüketici ölmüştür" varsayımının
+gerekçesi bu. Kısa tutulursa yavaş ama **sağ** bir tüketicinin
+mesajları elinden alınır ve aynı kare iki kez işlenir.
+
+Bu aşama **48 slotun yalnızca 5'ini** kurtardı. Çünkü akış `maxlen` ile
+sınırlı: asılı bir mesaj o sırada akıştan düşmüş olabiliyor ve
+`xautoclaim` onu boş alanlarla döndürüyor — **slot numarası artık
+bilinmiyor.**
+
+**2. Muhasebe.** Bir slot üç yerden birinde olmak zorunda:
+
+```
+(a) boş listede
+(b) henüz işlenmemiş bir mesajın referansında
+(c) tüketicinin elinde (işlenmekte)
+```
+
+Üçünde de olmayan slot sızmıştır. Açılışta (c) boş olduğu için hesap
+kapalı.
+
+**⚠ Ve burada ikinci bir hata yaptım — öğretici olan bu:**
+
+İlk uygulamada (b) için akışın **tamamını** taradım. Çalışmadı ve
+sebebi ancak sayılara bakınca göründü:
+
+```
+akıştaki mesaj : 99
+farklı slot    : 48
+boş slot       : 0/48
+```
+
+99 mesaj 48 slota işaret ediyordu — yani slotlar tekrar kullanılmıştı.
+Sebep: **`XACK` bir mesajı akıştan SİLMİYOR**, yalnızca bekleyen
+listesinden çıkarıyor. Akıştan düşme ancak `maxlen` budamasıyla oluyor.
+
+Yani akışın tamamını taramak, çoktan işlenmiş ve slotu çoktan iade
+edilmiş mesajları da "kullanımda" saymak demekti. O tarama **hiçbir
+zaman sızıntı bulamazdı** — her slot her zaman "birinde görünüyordu".
+
+Doğrusu iki küme: henüz teslim edilmemiş kayıtlar (grubun
+`last-delivered-id` değerinden sonrası) + teslim edilmiş ama
+ACK'lenmemiş kayıtlar (`XPENDING`).
+
+**Doğrulama** (gerçek sızıntı üzerinde, sentetik değil):
+
+```
+       ÖNCE          SONRA
+boş slot        0/48    36/48
+işlenmemiş      —          13    (36 + 13 = 49 ≈ 48 ✓)
+akış           sabit    75 → 100 (üretim yeniden başladı)
+```
+
+**Öğrenilen dersler:**
+
+1. **Bir kaynağın sahibi ölürse kaynak kaybolur.** Dağıtık bir sistemde
+   "ödünç alınan" her kaynağın bir geri kazanma yolu olmalı; yoksa her
+   çökme sistemi biraz daha küçültür.
+
+2. **Sessiz bozulma, gürültülü çökmeden tehlikelidir.** Sistem
+   çökseydi 30 saniyede fark ederdim. "Çalışıyor ama hiçbir şey
+   yapmıyor" durumu ancak ölçüm sıfır çıkınca görüldü.
+
+3. **Bir API'nin ne yaptığını değil, ne YAPMADIĞINI da bilmek
+   gerekiyor.** `XACK`'in adı "acknowledge"; sildiğini varsaymak
+   makul görünüyordu ve o varsayım muhasebeyi tümden işlevsiz kıldı.
+
+---
+
 ### P-37 · Video herkese açıktı — korumayı kolay korunan yere koymuşum
 
 **Tarih:** 30.08.2026 · **Faz:** 1 / Gün 16 · **Kaybedilen süre:** —

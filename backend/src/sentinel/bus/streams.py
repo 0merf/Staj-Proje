@@ -86,6 +86,45 @@ class SlotAllocator:
     def available(self) -> int:
         return int(self._client.llen(self._key))  # type: ignore[arg-type]
 
+    def sizanlari_geri_al(self, kullanimdaki: set[int]) -> list[int]:
+        """Hiçbir yerde görünmeyen slotları havuza döndürür.
+
+        ⚠ NEDEN `sahipsizleri_topla` YETMEDİ
+        `XAUTOCLAIM` yalnızca AKIŞTA HÂLÂ DURAN asılı mesajları
+        kurtarabiliyor. Akış sınırlı (`maxlen`) olduğu için asılı bir
+        mesaj, o sırada akıştan düşmüş olabilir: `xautoclaim` onu boş
+        alanlarla döndürüyor, yani **slot numarası artık bilinmiyor.**
+
+        30.08.2026'da ölçülen durum tam olarak buydu: 48 asılı mesajın
+        yalnızca 5'i kurtarılabildi, 43'ünün slotu kayıptı ve havuz
+        5 slotla dönmeye devam etti.
+
+        ⚠ ÇÖZÜM: SAYMAK YERİNE MUHASEBE
+        Bir slot şu üç yerden birinde olmak ZORUNDA:
+          (a) boş listede
+          (b) akıştaki bir mesajın referansında
+          (c) bir tüketicinin elinde (işlenmekte)
+
+        Üçünde de olmayan slot sızmıştır. (a) ve (b) doğrudan okunuyor;
+        (c) çağıran tarafından veriliyor.
+
+        ⚠ TEK TÜKETİCİ VARSAYIMINA DAYANIYOR ve o varsayım mimari kural
+        3'ün kendisi: "modeller tek süreçte tek kopya". İki çıkarım
+        worker'ı olsaydı, birinin elindeki slotu diğeri sızmış sanıp
+        havuza atardı ve aynı slota iki kare birden yazılırdı.
+        Bu yüzden yalnızca AÇILIŞTA çağrılıyor: o an bu worker'ın
+        elinde hiçbir şey yok ve ikinci bir worker varsa zaten mimari
+        ihlal edilmiş demektir.
+        """
+        gorulen: set[int] = set()
+        for ham in self._client.lrange(self._key, 0, -1):  # type: ignore[union-attr]
+            try:
+                gorulen.add(int(ham))
+            except (TypeError, ValueError):
+                continue
+        gorulen |= kullanimdaki
+        return [s for s in range(self._slot_count) if s not in gorulen]
+
 
 # ══════════════════════════════════════════════════════════════
 #  Kare meta veri akışı
@@ -258,10 +297,130 @@ class FrameStream:
         if message_ids:
             self._client.xack(self._stream, group, *message_ids)
 
+    def sahipsizleri_topla(
+        self, group: str, consumer: str, *, bosta_ms: int = 30_000, adet: int = 200
+    ) -> list[FrameMessage]:
+        """Ölmüş bir tüketicide asılı kalan mesajları geri alır.
+
+        ⚠ BU OLMADAN BİR ÇÖKÜŞ HAVUZU KALICI OLARAK KÜÇÜLTÜYOR
+        --------------------------------------------------------
+        Tüketici grubunda `XREADGROUP` ile okunan her mesaj, ACK
+        gelene kadar o tüketiciye **asılı (pending)** kalır. Çıkarım
+        worker'ı sert kapatılırsa (kill, çökme, elektrik) elindeki
+        mesajlar asılı kalır ve **onların paylaşımlı bellek slotları
+        havuza geri dönmez.**
+
+        Yeni worker `>` ile yalnızca YENİ mesajları okuduğu için o
+        slotlar sonsuza dek kaybolur. 30.08.2026'da ölçüldü:
+
+            48 slotun 48'i sızmış · boş slot 0/48 · üretim durmuş
+
+        Ve arıza **sessiz**: alım worker'ı slot bulamayınca kareyi
+        atıyor (`reason="no_slot"`), süreçlerin hepsi ayakta görünüyor,
+        panel bağlı — sadece hiçbir şey işlenmiyor.
+
+        ⚠ NEDEN `XAUTOCLAIM`
+        Beklemedeki mesajları listeleyip tek tek sahiplenmek yerine tek
+        atomik çağrı: hem daha az tur, hem de iki worker aynı anda
+        toplamaya kalkarsa yarış durumu yok.
+
+        ⚠ `bosta_ms` NEDEN BÜYÜK (30 sn)
+        Bu eşik "bu mesajı işleyen tüketici ölmüştür" varsayımının
+        gerekçesi. Kısa tutulursa, YAVAŞ ama sağ bir tüketicinin
+        mesajları elinden alınır ve aynı kare iki kez işlenir. Normal
+        işleme süresi milisaniyeler; 30 saniye rahat bir pay.
+        """
+        try:
+            _sonraki, kayitlar, _silinen = self._client.xautoclaim(
+                self._stream, group, consumer, min_idle_time=bosta_ms, count=adet
+            )
+        except ResponseError as exc:
+            if "NOGROUP" in str(exc):
+                return []
+            raise
+        cikti: list[FrameMessage] = []
+        for message_id, fields in kayitlar or []:
+            if not fields:
+                # ⚠ Akıştan düşmüş (maxlen) ama hâlâ asılı olan kayıt:
+                # `xautoclaim` bunu boş alanlarla döndürüyor. Slotu
+                # bilinmediği için kurtarılamaz; ACK'lenip listeden
+                # düşürülüyor, yoksa sonsuza dek toplanmaya çalışılır.
+                self._client.xack(self._stream, group, message_id)
+                continue
+            cikti.append(FrameMessage.from_fields(message_id, fields))
+        return cikti
+
     @property
     def depth(self) -> int:
         """Akıştaki mesaj sayısı — geri basınç göstergesi."""
         return int(self._client.xlen(self._stream))  # type: ignore[arg-type]
+
+    def islenmemis_slotlar(self, group: str) -> set[int]:
+        """Henüz İŞLENMEMİŞ mesajların işaret ettiği slot numaraları.
+
+        Slot muhasebesinin (b) kalemi (bkz.
+        `SlotAllocator.sizanlari_geri_al`).
+
+        ⚠ "AKIŞTAKİ" DEĞİL "İŞLENMEMİŞ" — ilk sürümün hatası buydu
+        `XACK` bir mesajı akıştan **SİLMİYOR**, yalnızca tüketicinin
+        bekleyen listesinden çıkarıyor. Akıştan düşme ancak `maxlen`
+        budamasıyla oluyor.
+
+        Bu yüzden akışın tamamını taramak, çoktan işlenmiş ve slotu
+        ÇOKTAN İADE EDİLMİŞ mesajları da "kullanımda" saymak demekti:
+
+            akıştaki mesaj 99 · farklı slot 48 · boş slot 0/48
+
+        99 mesaj 48 slota işaret ediyordu, yani slotlar tekrar
+        kullanılmıştı. O tarama hiçbir zaman sızıntı bulamazdı —
+        her slot her zaman "birinde görünüyordu".
+
+        Doğrusu iki küme:
+          · henüz TESLİM EDİLMEMİŞ mesajlar (grubun `last-delivered-id`
+            değerinden sonrası)
+          · TESLİM EDİLMİŞ ama ACK'lenmemiş mesajlar (bekleyenler)
+
+        İkisi birlikte "slotu hâlâ tutulan" mesajları veriyor.
+        """
+        slotlar: set[int] = set()
+
+        # (b1) Henüz teslim edilmemiş kayıtlar
+        son_teslim = "0-0"
+        try:
+            for g in self._client.xinfo_groups(self._stream):  # type: ignore[union-attr]
+                if g.get("name") == group:
+                    son_teslim = str(g.get("last-delivered-id", "0-0"))
+                    break
+        except ResponseError:
+            return slotlar
+
+        for _mid, alanlar in self._client.xrange(  # type: ignore[union-attr]
+            self._stream, min=f"({son_teslim}", max="+"
+        ):
+            try:
+                slotlar.add(int(alanlar["slot"]))
+            except (KeyError, TypeError, ValueError):
+                continue
+
+        # (b2) Teslim edilmiş ama ACK'lenmemiş (bekleyen) kayıtlar
+        try:
+            bekleyenler = self._client.xpending_range(
+                self._stream, group, min="-", max="+", count=1000
+            )
+        except ResponseError:
+            bekleyenler = []
+        for kayit in bekleyenler or []:
+            mid = kayit.get("message_id")
+            if not mid:
+                continue
+            for _m, alanlar in self._client.xrange(  # type: ignore[union-attr]
+                self._stream, min=mid, max=mid
+            ):
+                try:
+                    slotlar.add(int(alanlar["slot"]))
+                except (KeyError, TypeError, ValueError):
+                    continue
+        return slotlar
 
     @property
     def name(self) -> str:

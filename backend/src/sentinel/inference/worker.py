@@ -266,6 +266,10 @@ class InferenceWorker:
         self._results = ResultStream(self._client)
         self._allocator = SlotAllocator(self._client, settings.shm_slot_count)
         self._frames.ensure_group(GROUP)
+        # ⚠ Önceki koşudan kalan asılı mesajların slotlarını kurtar.
+        # Bunsuz her sert kapanma havuzu kalıcı olarak küçültüyor
+        # (bkz. `_sahipsizleri_kurtar`).
+        self._sahipsiz_son_tarama = 0.0
 
         try:
             self._pool = FramePool(
@@ -330,7 +334,28 @@ class InferenceWorker:
         self._capacity_window_processed = 0
         deadline = started + duration if duration else None
 
+        # ⚠ AÇILIŞTA İKİ AŞAMALI KURTARMA
+        #
+        # 1. Asılı mesajları sahiplen ve slotlarını bırak. Bu, AKIŞTA
+        #    hâlâ duran mesajları kurtarıyor.
+        # 2. Muhasebe: akış sınırlı olduğu için asılı bir mesaj o sırada
+        #    akıştan düşmüş olabilir ve slot numarası artık bilinmiyor.
+        #    30.08.2026'da 48 asılı mesajın yalnızca 5'i birinci aşamayla
+        #    kurtarılabildi. İkinci aşama "hiçbir yerde görünmeyen slot
+        #    sızmıştır" muhasebesini yapıyor.
+        self._sahipsizleri_kurtar(ilk=True)
+        self._sizan_slotlari_kurtar()
+
         while not _stop:
+            # ⚠ Düzenli tarama: bu worker koşarken BAŞKA bir tüketici
+            # ölmüş olabilir (ölçüm betikleri worker'ı yeniden
+            # başlatıyor). 60 saniyede bir bakmak, sızıntının havuzu
+            # tüketmesine izin vermeyecek kadar sık.
+            simdi_mono = time.monotonic()
+            if simdi_mono - self._sahipsiz_son_tarama >= 60.0:
+                self._sahipsizleri_kurtar()
+                self._sahipsiz_son_tarama = simdi_mono
+
             # ⚠ BEKLEME SÜRESİ AYRI ÖLÇÜLÜYOR
             # "Kare başına 16 ms harcıyoruz ama 62 değil 25 FPS alıyoruz"
             # açığını kapatmak için: döngünün ne kadarı iş, ne kadarı
@@ -365,6 +390,88 @@ class InferenceWorker:
         self._finish(time.monotonic() - started)
 
     # ─── İç işler ────────────────────────────────────────────
+
+    def _sahipsizleri_kurtar(self, *, ilk: bool = False) -> int:
+        """Ölmüş bir tüketicide asılı kalan slotları havuza döndürür.
+
+        ⚠ NEDEN BU FONKSİYON VAR — 30.08.2026'da ölçülen arıza
+        Çıkarım worker'ı sert kapatıldığında elindeki mesajlar tüketici
+        grubunda asılı kalıyor ve **paylaşımlı bellek slotları havuza
+        geri dönmüyordu.** Yeni worker `>` ile yalnızca yeni mesajları
+        okuduğu için o slotlar sonsuza dek kayboluyordu:
+
+            48 slotun 48'i sızmış · boş slot 0/48 · üretim durmuş
+
+        Arıza SESSİZ: tüm süreçler ayakta, panel bağlı, alım worker'ı
+        slot bulamadığı için kareleri atıyor — ve sistem hiçbir şey
+        işlemiyor.
+
+        ⚠ KARE İŞLENMİYOR, YALNIZCA SLOT KURTARILIYOR
+        Kurtarılan mesajlar saniyelerce beklemiş, yani ZATEN BAYAT
+        (`max_frame_age_ms` = 400 ms). "Eski kare değersizdir" ilkesi
+        gereği işlenmeden atılıyor; kurtarılan şey slotun kendisi.
+
+        ⚠ Açılışta `bosta_ms` KÜÇÜK (1 sn), sonra BÜYÜK (30 sn).
+        Açılışta gruptaki her asılı mesaj tanımı gereği ölü bir
+        tüketiciye ait — bu worker henüz hiçbir şey okumadı. Koşu
+        sırasında ise kısa eşik, yavaş ama SAĞ bir tüketicinin
+        mesajlarını elinden alıp aynı kareyi iki kez işletirdi.
+        """
+        toplam = 0
+        while True:
+            kurtarilan = self._frames.sahipsizleri_topla(
+                GROUP,
+                self._worker_id,
+                bosta_ms=1_000 if ilk else 30_000,
+            )
+            if not kurtarilan:
+                break
+            self._release(kurtarilan)
+            toplam += len(kurtarilan)
+            metrics.frames_dropped.labels(cam="?", reason="sahipsiz").inc(
+                len(kurtarilan)
+            )
+            if len(kurtarilan) < 200:
+                break
+        if toplam:
+            log.warning(
+                "sahipsiz_slotlar_kurtarildi",
+                adet=toplam,
+                bos_slot=self._allocator.available,
+                sebep="onceki tuketici ACK'lemeden kapanmis",
+            )
+        return toplam
+
+    def _sizan_slotlari_kurtar(self) -> int:
+        """Muhasebeyle kayıp slotları havuza döndürür — YALNIZCA açılışta.
+
+        Bir slot üç yerden birinde olmak zorunda: boş listede, akıştaki
+        bir mesajın referansında, ya da bir tüketicinin elinde. Üçünde
+        de yoksa sızmıştır.
+
+        ⚠ NEDEN YALNIZCA AÇILIŞTA
+        Üçüncü kalem ("bir tüketicinin elinde") ancak bu worker'ın
+        kendi elindekiler bilindiğinde hesaplanabiliyor. Açılışta o
+        küme BOŞ — henüz hiçbir şey okumadık. Koşu sırasında çağırmak,
+        işlemekte olduğumuz karelerin slotlarını havuza atmak olurdu.
+
+        ⚠ TEK ÇIKARIM WORKER'I varsayımına dayanıyor ve o varsayım
+        mimari kural 3'ün kendisi ("modeller tek süreçte tek kopya").
+        İkinci bir worker varsa zaten mimari ihlal edilmiş demektir.
+        """
+        sizan = self._allocator.sizanlari_geri_al(
+            self._frames.islenmemis_slotlar(GROUP)
+        )
+        if not sizan:
+            return 0
+        self._allocator.release_many(sizan)
+        log.warning(
+            "sizan_slotlar_geri_alindi",
+            adet=len(sizan),
+            bos_slot=self._allocator.available,
+            sebep="asili mesajlar akistan dusmus, slot numaralari kayipti",
+        )
+        return len(sizan)
 
     def _partiyi_doldur(self, batch: list) -> list:  # type: ignore[type-arg]
         """Parti hedefe ulaşana ya da süre dolana kadar kare toplar.
