@@ -53,7 +53,7 @@ from sentinel.analytics.anomaly.normalcy import NormalProfilDeposu
 from sentinel.analytics.anomaly.rules import Anomali, KuralMotoru
 from sentinel.analytics.features import pair
 from sentinel.analytics.features import skeleton as sk
-from sentinel.analytics.features.person import cikar
+from sentinel.analytics.features.person import KisiOzellikleri, cikar
 from sentinel.analytics.features.window import Ornek, PencereDeposu
 from sentinel.bus.streams import connect
 from sentinel.config import PROJECT_ROOT, settings
@@ -237,7 +237,18 @@ class AnalyticsWorker:
             if skor.seviye in ("uyari", "alarm"):
                 self._tirmanma_yayinla(camera, skor, ts)
 
-        bulgular = self._kurallar.degerlendir(camera, ozellikler, ts, dt)
+        # ⚠ KATMAN A → KATMAN B'ye TEK YÖNLÜ BİLGİ AKIŞI
+        # Oyalanma kuralı "burada durulur mu" sorusunun cevabını
+        # öğrenilmiş profilden alıyor (rules.py · _oyalanma). Bağlantı
+        # burada kuruluyor, kural motorunun içinde değil: iki katman
+        # birbirini import etmemeli, füzyon noktası worker.
+        bulgular = self._kurallar.degerlendir(
+            camera,
+            ozellikler,
+            ts,
+            dt,
+            self._oyalanma_normali(camera, tespitler, ozellikler, veri),
+        )
 
         # ─── KATMAN A: kamera normaline göre skorla ───
         bulgular.extend(
@@ -246,6 +257,34 @@ class AnalyticsWorker:
 
         for bulgu in bulgular:
             self._yayinla(bulgu, ts)
+
+    def _oyalanma_normali(
+        self,
+        camera: str,
+        tespitler: list[dict[str, Any]],
+        ozellikler: list[KisiOzellikleri],
+        veri: dict[str, Any],
+    ) -> dict[int, float | None]:
+        """İz kimliği → bulunduğu hücrede durağan gözlemlerin oranı.
+
+        Yalnızca hâlihazırda oyalanıyor görünen kişiler için hesaplanıyor:
+        kare başına 20 kişi varken hepsi için profil sorgulamak boşuna iş,
+        oyalanma kuralı zaten yalnızca duranlarla ilgileniyor.
+        """
+        kare_w = float(veri.get("w", 0) or 0)
+        kare_h = float(veri.get("h", 0) or 0)
+        if kare_w <= 0 or kare_h <= 0:
+            return {}
+        profil = self._normal.al(camera)
+        cikti: dict[int, float | None] = {}
+        for d, ozellik in zip(tespitler, ozellikler, strict=False):
+            if ozellik.oyalanma_s <= 0.0 or ozellik.track_id < 0:
+                continue
+            bbox = [float(v) for v in d["bbox"]]
+            cikti[ozellik.track_id] = profil.oyalanma_olagan_mi(
+                (bbox[0] + bbox[2]) / 2.0, bbox[3], kare_w, kare_h
+            )
+        return cikti
 
     def _katman_a(
         self,
@@ -295,7 +334,14 @@ class AnalyticsWorker:
             # Tersi olsaydı gözlem kendi normalini yükseltip kendini
             # olağan gösterirdi — özellikle nadir hücrelerde.
             skor, kanit = profil.skorla(ayak_x, ayak_y, kare_w, kare_h, hiz, yon)
-            profil.ogren(ayak_x, ayak_y, kare_w, kare_h, hiz, yon)
+            # ⚠ `oyalanma_s > 0` = kişi 3 sn'lik pencerede yarım gövde
+            # boyundan az yer değiştirdi (person.py). Bu gözlem hücrenin
+            # "burada durulur mu" istatistiğini besliyor: oyalanma kuralı
+            # tek başına süreye bakmasın, bağlama da baksın.
+            profil.ogren(
+                ayak_x, ayak_y, kare_w, kare_h, hiz, yon,
+                duragan=ozellik.oyalanma_s > 0.0,
+            )
 
             # ⚠ KATMAN A EŞİĞİ 0.5 DEĞİL 0.85 — ölçümle düzeltildi
             #

@@ -198,6 +198,20 @@ class KameraNormali:
     hiz: dict[tuple[int, int], _Welford] = field(default_factory=dict)
     # Hücre başına yön histogramı
     yon: dict[tuple[int, int], np.ndarray] = field(default_factory=dict)
+    # ⚠ Hücre başına DURAĞAN gözlem sayısı — PLAN §6.4 "oyalanma süresi"
+    #
+    # NEDEN: "45 saniyedir aynı yerde duruyor" tek başına anomali
+    # DEĞİLDİR. Bankta oturan, vitrine bakan, otobüs bekleyen insan da
+    # aynı ölçüyü verir. Anomali olan, insanların normalde DURMADIĞI
+    # bir yerde durmaktır.
+    #
+    # Süre dağılımı yerine ORAN tutuluyor: bu hücredeki gözlemlerin
+    # yüzde kaçı durağandı. Daha ucuz (tek sayaç), daha sağlam (izin
+    # ne zaman başlayıp bittiğini bilmek gerekmiyor) ve sorulan soruyu
+    # doğrudan cevaplıyor: "burada durulur mu?"
+    duraganlik: np.ndarray = field(
+        default_factory=lambda: np.zeros((IZGARA_Y, IZGARA_X), dtype=np.int64)
+    )
     # Kamera geneli kişi sayısı
     kisi_sayisi: _Welford = field(default_factory=_Welford)
     toplam_ornek: int = 0
@@ -213,6 +227,7 @@ class KameraNormali:
         kare_h: float,
         hiz: float | None,
         yon_rad: float | None,
+        duragan: bool = False,
     ) -> None:
         """Tek bir kişi gözlemini profile işler.
 
@@ -226,6 +241,8 @@ class KameraNormali:
 
         self.ziyaret[hy, hx] += 1
         self.toplam_ornek += 1
+        if duragan:
+            self.duraganlik[hy, hx] += 1
 
         if hiz is not None:
             self.hiz.setdefault((hy, hx), _Welford()).ekle(hiz)
@@ -312,6 +329,29 @@ class KameraNormali:
             return 0.0, {}
         return max(skorlar), kanit
 
+    def oyalanma_olagan_mi(
+        self, ayak_x: float, ayak_y: float, kare_w: float, kare_h: float
+    ) -> float | None:
+        """Bu hücrede durmak olağan mı? → durağan gözlem oranı (0-1).
+
+        `None` dönerse "bilmiyoruz": ya profil hazır değil ya da hücre
+        yeterince gözlem görmemiş. ⚠ Çağıran taraf `None`'ı "olağan
+        değil" saymamalı — eksik bilgi kanıt değildir.
+
+        Yorum:
+            0.40 → burada insanlar sık durur (bank, vitrin, giriş)
+            0.02 → burası bir geçiş yolu; burada durmak sıra dışı
+        """
+        if not self.hazir:
+            return None
+        hx, hy = self._hucre(ayak_x, ayak_y, kare_w, kare_h)
+        if hx < 0:
+            return None
+        n = int(self.ziyaret[hy, hx])
+        if n < HUCRE_ASGARI_ORNEK:
+            return None
+        return float(self.duraganlik[hy, hx]) / n
+
     def kisi_skoru(self, kisi: int) -> tuple[float, dict[str, float]]:
         """Kişi sayısı bu kamera için olağandışı mı?"""
         if not self.hazir or self.kisi_sayisi.n < PROFIL_ASGARI_ORNEK // 10:
@@ -350,6 +390,7 @@ class KameraNormali:
             # Sözlük anahtarları JSON'da string olmak zorunda
             "hiz": {f"{k[0]},{k[1]}": v.to_dict() for k, v in self.hiz.items()},
             "yon": {f"{k[0]},{k[1]}": v.tolist() for k, v in self.yon.items()},
+            "duraganlik": self.duraganlik.tolist(),
         }
 
     @classmethod
@@ -367,6 +408,12 @@ class KameraNormali:
         p.guncelleme = float(d.get("guncelleme", time.time()))
         p.ziyaret = np.asarray(d["ziyaret"], dtype=np.int64)
         p.kisi_sayisi = _Welford.from_dict(d["kisi_sayisi"])
+        # ⚠ Eski profillerde bu alan yok — sıfırdan öğrenilir, profilin
+        # geri kalanı korunur. Şema değişikliği yüzünden saatlerce
+        # öğrenilmiş bir profili çöpe atmak kabul edilemez.
+        duragan = d.get("duraganlik")
+        if duragan is not None:
+            p.duraganlik = np.asarray(duragan, dtype=np.int64)
         for anahtar, veri in d.get("hiz", {}).items():
             y, x = (int(v) for v in anahtar.split(","))
             p.hiz[(y, x)] = _Welford.from_dict(veri)

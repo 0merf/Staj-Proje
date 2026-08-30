@@ -111,6 +111,11 @@ KOSMA_MIN_TAMLIK = 0.5
 OYALANMA_SANIYE = 45.0
 # Kişi bu kadar yer değiştirmediyse "aynı yerde" sayılıyor (gövde boyu).
 OYALANMA_YARICAP = 0.6
+# Bir hücrede gözlemlerin bu oranından fazlası durağansa, orası
+# "insanların durduğu bir yer" sayılıyor ve oyalanma alarmı verilmiyor.
+# 0.15: her yedi gözlemden biri. Bank, vitrin önü, giriş kapısı bu
+# oranı rahat aşar; geçiş yolları aşmaz.
+OYALANMA_OLAGAN_ORAN = 0.15
 
 # ─── Kalabalık ───
 # ⚠ Mutlak eşik YOK — kamera başına öğrenilen taban çizgisi kullanılıyor.
@@ -276,6 +281,7 @@ class KuralMotoru:
         ozellikler: list[KisiOzellikleri],
         simdi: float,
         dt: float,
+        oyalanma_normali: dict[int, float | None] | None = None,
     ) -> list[Anomali]:
         """Bir kameranın bir anına ait özellik vektörlerini değerlendirir.
 
@@ -284,7 +290,18 @@ class KuralMotoru:
                 Oyalanma birikimi buna göre yapılıyor — kameralar farklı
                 hızlarda analiz edildiği için sabit bir adım kullanmak
                 yanlış olurdu (uyarlanabilir FPS, PLAN §5.2).
+            oyalanma_normali: iz kimliği → o kişinin bulunduğu hücrede
+                gözlemlerin kaçta kaçının durağan olduğu (0-1), ya da
+                bilinmiyorsa `None`.
+
+                ⚠ NEDEN DIŞARIDAN GELİYOR
+                Bu bilgi Katman A'nın (öğrenilmiş profil) malı. Katman B
+                onu `import` etseydi iki katman birbirine bağlanırdı;
+                oysa Katman B'nin tek başına — profil olmadan, ilk
+                saniyeden — çalışabilmesi tasarımın kendisi. Katmanları
+                birleştiren yer worker, yani füzyonun olacağı yer.
         """
+        oyalanma_normali = oyalanma_normali or {}
         bulgular: list[Anomali] = []
 
         for ozellik in ozellikler:
@@ -302,7 +319,9 @@ class KuralMotoru:
             for bulgu in (
                 self._dusme(camera, ozellik, durum),
                 self._kosma(camera, ozellik, durum),
-                self._oyalanma(camera, ozellik, durum),
+                self._oyalanma(
+                    camera, ozellik, durum, oyalanma_normali.get(ozellik.track_id)
+                ),
             ):
                 if bulgu is None:
                     continue
@@ -488,8 +507,32 @@ class KuralMotoru:
             durum.oyalanma_s = 0.0
 
     def _oyalanma(
-        self, camera: str, o: KisiOzellikleri, durum: _IzDurumu
+        self,
+        camera: str,
+        o: KisiOzellikleri,
+        durum: _IzDurumu,
+        bolge_duragan_oran: float | None = None,
     ) -> Anomali | None:
+        """Oyalanma — süre TEK BAŞINA yetmez, yer de sorulur.
+
+        ⚠ 26.08.2026 — KURAL BİR KANIT DAHA İSTİYOR
+        Önceki hâli yalnızca süreye bakıyordu: "45 saniyedir aynı
+        yerde" → alarm. Canlı ölçümde bu, VIRAT otoparkında ve Avenue
+        gezinti yolunda yanlış alarm üretiyordu — bankta oturan,
+        vitrine bakan, birini bekleyen insan da aynı ölçüyü verir.
+
+        Süre uzunluğu bir anomali değil, bir GÖZLEMDİR. Anomali olan,
+        insanların normalde DURMADIĞI bir yerde durmaktır. Bu, mimari
+        kural 7'nin ("her kameranın normali ayrı") mekân boyutundaki
+        karşılığı ve PLAN §6.4'ün "oyalanma süresi — hücre başına
+        dağılım" maddesi.
+
+        ⚠ `None` gelirse (profil hazır değil, hücre az gözlenmiş) kural
+        ESKİ DAVRANIŞINA döner: süreye bakıp alarm verir. Eksik bilgi
+        yüzünden susmak, sistemin ilk saatlerinde oyalanmayı tümden
+        kör etmek olurdu — Katman B'nin varlık sebebi profil olmadan da
+        çalışabilmesi.
+        """
         if durum.oyalanma_s < OYALANMA_SANIYE:
             if durum.oyalanma_s == 0.0:
                 durum.aktif.discard(AnomaliTuru.OYALANMA)
@@ -497,15 +540,32 @@ class KuralMotoru:
 
         if AnomaliTuru.OYALANMA in durum.aktif:
             return None
-        durum.aktif.add(AnomaliTuru.OYALANMA)
 
+        kanit: dict[str, float] = {
+            "oyalanma_saniye": durum.oyalanma_s,
+            "esik": OYALANMA_SANIYE,
+        }
+        skor = min(1.0, durum.oyalanma_s / (OYALANMA_SANIYE * 3))
+
+        if bolge_duragan_oran is not None:
+            kanit["bolgede_duranlarin_orani"] = round(bolge_duragan_oran, 3)
+            if bolge_duragan_oran >= OYALANMA_OLAGAN_ORAN:
+                # Burası zaten durulan bir yer — kayda değer bir şey yok.
+                # ⚠ `aktif`e EKLENMİYOR: kişi buradan çıkıp durulmayan
+                # bir hücreye geçerse alarm verilebilmeli.
+                self.bastirilan += 1
+                return None
+            # Ne kadar sıra dışı bir yerse skor o kadar yüksek
+            skor *= 1.0 - bolge_duragan_oran / OYALANMA_OLAGAN_ORAN
+
+        durum.aktif.add(AnomaliTuru.OYALANMA)
         return Anomali(
             camera=camera,
             tur=AnomaliTuru.OYALANMA,
             ciddiyet=CIDDIYET[AnomaliTuru.OYALANMA],
             track_id=o.track_id,
-            skor=min(1.0, durum.oyalanma_s / (OYALANMA_SANIYE * 3)),
-            kanit={"oyalanma_saniye": durum.oyalanma_s, "esik": OYALANMA_SANIYE},
+            skor=skor,
+            kanit=kanit,
             tamlik=o.tamlik,
         )
 
