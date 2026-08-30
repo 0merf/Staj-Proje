@@ -15,10 +15,37 @@ logDestinations: [stdout]
 # MediaMTX v1.x varsayılan olarak api/metrics erişimini KAPALI tutar
 # (iyi bir güvenlik varsayılanı). Yönetim erişimini yalnızca yerel
 # ağlara açıyoruz — dış dünyaya asla.
+#
+# ⚠ 30.08.2026 — `ips: []` (HERKESE AÇIK) KAPATILDI
+#
+# API'ye kimlik doğrulama eklenirken şu fark edildi: video API'den
+# GEÇMİYOR. Tarayıcı WHEP ile doğrudan MediaMTX'e (8889) bağlanıyor —
+# yani meta veriyi (kamera listesi, alarmlar) korurken **asıl hassas
+# şeyi, görüntünün kendisini** korumasız bırakmıştık.
+#
+# Sistemin en mahrem çıktısını en az korumak, güvenlik çalışmasının
+# klasik hatası: koruma, kolay korunan yere değil değerli olana
+# konur.
+#
+# ⚠ BU TAM BİR ÇÖZÜM DEĞİL, DÜRÜSTÇE YAZILIYOR
+# IP kısıtı kimlik doğrulaması değildir: aynı makinedeki ya da aynı
+# yerel ağdaki herkes hâlâ izleyebilir. Tam çözüm MediaMTX'in
+# `authHTTPAddress` özelliğiyle her okuma isteğini bizim API'mize
+# sormaktır — ama o, tokenın URL sorgu dizesinde taşınmasını gerektiriyor
+# ve sorgu dizeleri sunucu günlüklerine, vekil kayıtlarına ve tarayıcı
+# geçmişine düşüyor.
+#
+# Doğru mimari çözüm Caddy'yi TEK GİRİŞ NOKTASI yapmak (PLAN §10):
+# hem API hem WHEP onun arkasından geçer ve kimlik tek yerde
+# doğrulanır. Bu iş açık; o gelene kadar IP kısıtı bir DERİNLİKLİ
+# SAVUNMA katmanı — port yanlışlıkla dışa açılırsa internetten
+# okunamıyor.
 authInternalUsers:
-  # Yayın ve izleme: iç ağdan serbest (worker'lar ve tarayıcı)
+  # Yayın ve izleme: yalnızca yerel makine ve özel ağlar.
+  # Docker konteynerleri 172.16/12 aralığından geliyor; ingest
+  # worker'ı host'tan (127.0.0.1) bağlanıyor.
   - user: any
-    ips: []
+    ips: ["127.0.0.1/32", "::1/128", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
     permissions:
       - action: publish
       - action: read

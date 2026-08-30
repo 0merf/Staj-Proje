@@ -1,0 +1,62 @@
+{
+ "olculdu": "2026-08-30T09:33:08.972840+00:00",
+ "isinma_s": 110.0,
+ "pencere_s": 240.0,
+ "tur": 2,
+ "bloklar": [
+  {
+   "fill_ms": 0.0,
+   "parti": 1554.0,
+   "kare": 8633.0,
+   "kare_per_parti": 5.555341055341056,
+   "verim_kare_sn": 35.97083333333333,
+   "dolu_parti_orani": 0.4575289575289575,
+   "gecikme_ort_ms": 279.52563203547686,
+   "tur": 0.0
+  },
+  {
+   "fill_ms": 60.0,
+   "parti": 1712.0,
+   "kare": 12410.0,
+   "kare_per_parti": 7.248831775700935,
+   "verim_kare_sn": 51.708333333333336,
+   "dolu_parti_orani": 0.7844626168224299,
+   "gecikme_ort_ms": 187.96823854700006,
+   "tur": 0.0
+  },
+  {
+   "fill_ms": 0.0,
+   "parti": 3070.0,
+   "kare": 11761.0,
+   "kare_per_parti": 3.830944625407166,
+   "verim_kare_sn": 49.00416666666667,
+   "dolu_parti_orani": 0.2,
+   "gecikme_ort_ms": 134.65490299028005,
+   "tur": 1.0
+  },
+  {
+   "fill_ms": 60.0,
+   "parti": 1170.0,
+   "kare": 4888.0,
+   "kare_per_parti": 4.177777777777778,
+   "verim_kare_sn": 20.366666666666667,
+   "dolu_parti_orani": 0.0,
+   "gecikme_ort_ms": 171.6599196146826,
+   "tur": 1.0
+  }
+ ],
+ "ozet": {
+  "0": {
+   "verim_kare_sn": 42.49,
+   "kare_per_parti": 4.69,
+   "dolu_parti_orani": 0.3288,
+   "gecikme_ort_ms": 207.1
+  },
+  "60": {
+   "verim_kare_sn": 36.04,
+   "kare_per_parti": 5.71,
+   "dolu_parti_orani": 0.3922,
+   "gecikme_ort_ms": 179.8
+  }
+ }
+}
