@@ -32,9 +32,10 @@ import time
 from typing import Any
 from urllib.parse import urlsplit
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from starlette.websockets import WebSocketState
 
+from sentinel.api.guvenlik import token_coz
 from sentinel.api.ws.manager import Client, broadcaster
 from sentinel.config import settings
 from sentinel.logging import get_logger
@@ -254,7 +255,33 @@ async def live_feed(websocket: WebSocket) -> None:
         await websocket.close(code=CLOSE_POLICY_VIOLATION, reason="origin not allowed")
         return
 
+    # ⚠ ORIGIN DOĞRULAMASI KİMLİK DOĞRULAMASI DEĞİL
+    # `Origin` yalnızca "bu istek hangi sayfadan geldi" der; tarayıcı
+    # dışı bir istemci onu istediği gibi yazabilir. Kimin bağlandığını
+    # ancak token söyler.
+    #
+    # ⚠ TOKEN ÇEREZDEN OKUNUYOR, başlıktan değil. Tarayıcının WebSocket
+    # API'si özel başlık eklemeye izin vermiyor; çerez ise el sıkışmada
+    # kendiliğinden gidiyor. Bu yüzden erişim tokenı `httponly` çerez
+    # olarak da veriliyor (routers/oturum.py · _cerez_koy).
+    #
+    # ⚠ 1008 (policy violation) ile kapatılıyor, kabul edilmeden.
+    # Kabul edip sonra kapatmak, kimliksiz istemciye bir an için de
+    # olsa açık bir kanal vermek demekti.
+    token = websocket.cookies.get("sentinel_token")
+    if not token:
+        log.warning("ws_kimliksiz_reddedildi", origin=origin or "(yok)")
+        await websocket.close(code=CLOSE_POLICY_VIOLATION, reason="authentication required")
+        return
+    try:
+        govde = token_coz(token)
+    except HTTPException:
+        log.warning("ws_gecersiz_token", origin=origin or "(yok)")
+        await websocket.close(code=CLOSE_POLICY_VIOLATION, reason="invalid token")
+        return
+
     await websocket.accept()
+    log.info("ws_baglandi", kullanici=govde.get("sub"), rol=govde.get("rol"))
     client = Client(websocket=websocket)
     broadcaster.add(client)
 

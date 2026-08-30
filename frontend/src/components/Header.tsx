@@ -2,7 +2,11 @@ import { useStore } from '../store'
 import { ViewModeToggle } from './ViewModeToggle'
 import { SyncControl } from './SyncControl'
 
-export function Header() {
+interface HeaderProps {
+  kullanici: { kullanici_adi: string; rol: string }
+}
+
+export function Header({ kullanici }: HeaderProps) {
   const connection = useStore((s) => s.connection)
   const cameras = useStore((s) => s.cameras)
   const playing = useStore((s) => s.playing.size)
@@ -39,6 +43,31 @@ export function Header() {
             className="rounded-md border border-line px-3 py-1 text-xs text-muted hover:text-ink"
           >
             {playing === cameras.length ? 'hepsini kapat' : 'hepsini aç'}
+          </button>
+
+          {/* ⚠ ROL GÖSTERİLİYOR — süs değil.
+              Operatör hangi yetkiyle bağlı olduğunu bilmeli: `viewer`
+              iken webcam düğmesinin neden 403 döndüğü, rol görünmüyorsa
+              anlaşılmaz bir hataya dönüşür. */}
+          <span className="flex items-center gap-1.5 border-l border-line pl-4 text-xs text-muted">
+            <span className="text-ink">{kullanici.kullanici_adi}</span>
+            <span className="rounded bg-panel px-1.5 py-0.5 text-[10px] uppercase">
+              {kullanici.rol}
+            </span>
+          </span>
+          <button
+            onClick={() => {
+              // ⚠ Çıkış sunucu çerezini siliyor; sayfa yenilenerek
+              // tüm istemci durumu (kamera listesi, alarmlar, açık
+              // WebSocket) da temizleniyor. Elle sıfırlamak, ileride
+              // eklenecek her yeni durum alanını unutma riski taşırdı.
+              void fetch('/api/v1/auth/logout', { method: 'POST' }).finally(() =>
+                window.location.reload(),
+              )
+            }}
+            className="rounded-md border border-line px-2 py-1 text-xs text-muted hover:text-ink"
+          >
+            çıkış
           </button>
         </div>
       </div>

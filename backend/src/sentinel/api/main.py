@@ -12,16 +12,18 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import FastAPI, Response
+from fastapi import Depends, FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 from sentinel.api import cameras, health, webcam
+from sentinel.api.guvenlik import Kullanici, Rol, mevcut_kullanici, rol_gerekli
 from sentinel.api.routers import olaylar as olaylar_router
+from sentinel.api.routers import oturum as oturum_router
 from sentinel.api.ws import live as ws_live
 from sentinel.api.ws.manager import broadcaster
 from sentinel.config import PROJECT_ROOT, settings
@@ -45,6 +47,28 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     # Sonuç yayıncısı: inference.results akışını TEK okuyucu takip eder,
     # WebSocket istemcilerine dağıtır (api/ws/manager.py)
     await broadcaster.start()
+
+    # ⚠ Kullanıcı ve denetim tabloları AÇILIŞTA kuruluyor (idempotent).
+    # Elle migration gerektiren bir sistem, bir bileşen yeniden
+    # başladığında sessizce çalışmaz duruma gelir.
+    #
+    # ⚠ Başarısızlık API'yi DURDURMUYOR: veritabanı geçici olarak
+    # erişilemezse panelin video ve canlı analiz yolu çalışmaya devam
+    # etmeli. Giriş uçları o sırada 503 dönecek — ki doğrusu da bu.
+    try:
+        from sentinel.db import kullanicilar
+        from sentinel.db.engine import motor
+
+        async with motor().begin() as baglanti:
+            await kullanicilar.semayi_kur(baglanti)
+        log.info("kullanici_semasi_hazir")
+    except Exception as exc:
+        log.error(
+            "kullanici_semasi_kurulamadi",
+            error=f"{type(exc).__name__}: {exc}",
+            etki="giris uclari calismayacak",
+        )
+
     yield
     await broadcaster.stop()
     log.info("sentinel_kapatiliyor")
@@ -74,8 +98,25 @@ app.add_middleware(
 # ─── Sağlık ve durum ─────────────────────────────────────────
 
 
+# ⚠ HANGİ UÇ NEDEN KORUNUYOR — karar tablosu
+#
+#   /system/live      AÇIK      canlılık probu; yalnızca "ayaktayım" der.
+#                               `start_all.ps1` bununla doğruluyor ve
+#                               izleme sistemleri kimlik taşımaz.
+#   /metrics          AÇIK      Prometheus kazıyor. 127.0.0.1'e bağlı;
+#                               dışa açılırsa Caddy'de korunacak (PLAN §10).
+#   /system/health    viewer    servis sürümlerini ve iç durumu sızdırıyor
+#   /system/config    viewer    kamera sayısı, FPS, iç yapılandırma
+#   /cameras          viewer    kamera listesi
+#   /events*          viewer    olay geçmişi
+#   /cameras/webcam/* OPERATOR  ⚠ YENİ bir kamera açıyor — mahremiyet
+#                               açısından okumaktan tamamen farklı
+#   /auth/denetim     admin     kimin ne zaman çalıştığını gösteriyor
+#   /debug/trace      operator  diske dosya yazıyor
 @app.get("/api/v1/system/health", tags=["system"])
-async def system_health() -> JSONResponse:
+async def system_health(
+    _: Annotated[Kullanici, Depends(mevcut_kullanici)],
+) -> JSONResponse:
     """Tüm altyapı servislerinin gerçek sağlık durumu."""
     result = await health.check_all()
     return JSONResponse(result, status_code=200 if result["healthy"] else 503)
@@ -83,17 +124,23 @@ async def system_health() -> JSONResponse:
 
 app.include_router(ws_live.router)
 # Olay geçmişi — canlı WebSocket'in kalıcı karşılığı
+app.include_router(oturum_router.router)
 app.include_router(olaylar_router.router)
 
 
 @app.get("/api/v1/system/ws-stats", tags=["system"])
-async def ws_stats() -> dict[str, Any]:
+async def ws_stats(
+    _: Annotated[Kullanici, Depends(mevcut_kullanici)],
+) -> dict[str, Any]:
     """WebSocket yayıncı istatistikleri."""
     return broadcaster.stats()
 
 
 @app.get("/api/v1/cameras", tags=["cameras"])
-async def list_cameras(include_test: bool = False) -> dict[str, Any]:
+async def list_cameras(
+    _: Annotated[Kullanici, Depends(mevcut_kullanici)],
+    include_test: bool = False,
+) -> dict[str, Any]:
     """Tanımlı tüm kameralar + anlık yayın durumu.
 
     Varsayılan olarak **20 çiftlik kamerası + 1 canlı webcam** döner.
@@ -108,13 +155,18 @@ async def list_cameras(include_test: bool = False) -> dict[str, Any]:
 
 
 @app.get("/api/v1/cameras/webcam", tags=["cameras"])
-async def webcam_status() -> dict[str, Any]:
+async def webcam_status(
+    _: Annotated[Kullanici, Depends(mevcut_kullanici)],
+) -> dict[str, Any]:
     """Webcam yayını çalışıyor mu?"""
     return webcam.controller.status()
 
 
 @app.post("/api/v1/cameras/webcam/start", tags=["cameras"])
-async def webcam_start(device: int = 0) -> JSONResponse:
+async def webcam_start(
+    kullanici: Annotated[Kullanici, Depends(rol_gerekli(Rol.OPERATOR))],
+    device: int = 0,
+) -> JSONResponse:
     """Webcam yayınını başlatır (cam-21-live).
 
     ⚠ Kamera yalnızca bu çağrıyla açılır — kendiliğinden açılmaz.
@@ -128,7 +180,9 @@ async def webcam_start(device: int = 0) -> JSONResponse:
 
 
 @app.post("/api/v1/cameras/webcam/stop", tags=["cameras"])
-async def webcam_stop() -> dict[str, Any]:
+async def webcam_stop(
+    kullanici: Annotated[Kullanici, Depends(rol_gerekli(Rol.OPERATOR))],
+) -> dict[str, Any]:
     """Webcam yayınını durdurur."""
     return webcam.controller.stop()
 
@@ -140,7 +194,9 @@ async def liveness() -> dict[str, Any]:
 
 
 @app.get("/api/v1/system/config", tags=["system"])
-async def public_config() -> dict[str, Any]:
+async def public_config(
+    _: Annotated[Kullanici, Depends(mevcut_kullanici)],
+) -> dict[str, Any]:
     """Arayüzün ihtiyaç duyduğu, sır İÇERMEYEN ayarlar."""
     return {
         "env": settings.sentinel_env,
@@ -182,7 +238,10 @@ def _safe_name(value: str, *, fallback: str = "bilinmeyen", limit: int = 32) -> 
 
 
 @app.post("/api/v1/debug/trace", include_in_schema=False)
-async def save_trace(payload: dict[str, Any]) -> dict[str, Any]:
+async def save_trace(
+    payload: dict[str, Any],
+    _: Annotated[Kullanici, Depends(rol_gerekli(Rol.OPERATOR))],
+) -> dict[str, Any]:
     """Panelin kaydettiği kutu yörüngesini diske yazar.
 
     Neden var: "kutular takılıyor" gibi bir şikâyeti gözle teşhis etmek

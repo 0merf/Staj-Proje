@@ -21,8 +21,9 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
+from sentinel.api.guvenlik import Kullanici, mevcut_kullanici
 from sentinel.db import olaylar as depo
 from sentinel.logging import get_logger
 
@@ -40,6 +41,7 @@ TUR_DESENI = r"^[a-z_]{1,32}$"
 
 @router.get("")
 async def olay_listesi(
+    _: Annotated[Kullanici, Depends(mevcut_kullanici)],
     limit: Annotated[int, Query(ge=1, le=1000)] = 100,
     camera: Annotated[str | None, Query(pattern=KAMERA_DESENI)] = None,
     tur: Annotated[str | None, Query(pattern=TUR_DESENI)] = None,
@@ -84,6 +86,7 @@ async def olay_listesi(
 
 @router.get("/ozet")
 async def saatlik(
+    _: Annotated[Kullanici, Depends(mevcut_kullanici)],
     saat: Annotated[int, Query(ge=1, le=24 * 30)] = 24,
 ) -> dict[str, Any]:
     """Saatlik alarm özeti — K7 kriterinin sürekli hâli.

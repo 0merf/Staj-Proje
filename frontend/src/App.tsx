@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { Giris } from './components/Giris'
 import { Header } from './components/Header'
 import { CameraTile } from './components/CameraTile'
 import { AlertPanel } from './components/AlertPanel'
@@ -6,7 +7,44 @@ import { useLiveResults } from './hooks/useLiveResults'
 import { useStore } from './store'
 import type { Camera } from './types'
 
+/** Oturum durumu.
+ *
+ * ⚠ `null` = HENÜZ BİLİNMİYOR, `false` = giriş yapılmamış.
+ * İkisini tek bir boolean'a sıkıştırmak, sayfa açılırken bir an için
+ * giriş ekranını göstermek demekti — kullanıcı zaten girişliyse bu
+ * "atıldım mı?" izlenimi verirdi.
+ */
+type Oturum = { kullanici_adi: string; rol: string } | false | null
+
 export default function App() {
+  const [oturum, setOturum] = useState<Oturum>(null)
+
+  // ⚠ "Girişli miyim" sorusu SUNUCUYA soruluyor, tokena bakılarak
+  // değil. Token `httponly` çerezde ve JavaScript onu okuyamıyor
+  // (components/Giris.tsx). Bu, tokenı localStorage'da tutmanın
+  // XSS riskinden kaçınmanın bedeli — ve ucuz bir bedel.
+  const oturumKontrol = useCallback(() => {
+    fetch('/api/v1/auth/ben')
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('yetkisiz'))))
+      .then((d: { kullanici_adi: string; rol: string }) => setOturum(d))
+      .catch(() => setOturum(false))
+  }, [])
+
+  useEffect(oturumKontrol, [oturumKontrol])
+
+  if (oturum === null) {
+    return (
+      <div className="flex h-screen items-center justify-center text-sm text-muted">
+        Oturum kontrol ediliyor…
+      </div>
+    )
+  }
+  if (oturum === false) return <Giris onSuccess={oturumKontrol} />
+
+  return <Panel kullanici={oturum} />
+}
+
+function Panel({ kullanici }: { kullanici: { kullanici_adi: string; rol: string } }) {
   useLiveResults()
   const cameras = useStore((s) => s.cameras)
   const setCameras = useStore((s) => s.setCameras)
@@ -32,7 +70,7 @@ export default function App() {
 
   return (
     <div className="flex h-screen flex-col">
-      <Header />
+      <Header kullanici={kullanici} />
       {/* ⚠ Alarm paneli SABİT, kamera ızgarası kayar.
           Alarm kaçırılmaması gereken tek şey; onu kaydırma alanının
           içine koysaydık operatör aşağı indiğinde görünmez olurdu. */}
