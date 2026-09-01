@@ -37,7 +37,7 @@ from starlette.websockets import WebSocketState
 
 from sentinel.api.guvenlik import token_coz
 from sentinel.api.ws.manager import Client, broadcaster
-from sentinel.config import settings
+from sentinel.config import get_settings, settings
 from sentinel.logging import get_logger
 
 log = get_logger(__name__)
@@ -160,17 +160,57 @@ def _parts(url: str) -> tuple[str, str | None, int | None] | None:
         return None
 
 
-def authorize_cameras(requested: list[str]) -> list[str]:
-    """İstemcinin istediği kameralardan izin verilenleri döndürür.
+def _tanimli_kameralar() -> frozenset[str]:
+    """Sistemde TANIMLI kamera adları.
 
-    ⚠ İstemcinin gönderdiği listeye ASLA olduğu gibi güvenilmez (G07).
-    Şu an kimlik doğrulama yok, bu yüzden yalnızca biçim doğrulaması
-    yapılıyor. Faz 1'de `user_camera_access` sorgusu buraya girecek.
+    ⚠ MediaMTX'e sorulmuyor, yapılandırmadan üretiliyor. MediaMTX'e
+    sormak, bir dış servisin döndürdüğü listeyi yetki kararına temel
+    yapmak olurdu; o servis ele geçirilirse yetki sınırı da gider.
+    Yapılandırma bizim kontrolümüzde.
     """
+    n = get_settings().camera_count
+    # ⚠ `cam-21-live` adı MediaMTX yapılandırmasında sabit
+    # (infra/mediamtx/mediamtx.yml · `source: publisher`) ve
+    # `scripts/publish_webcam.py` onu kullanıyor. Buraya elle yazmak
+    # bir kopya — ama alternatifi MediaMTX'e sormaktı ve bir dış
+    # servisin cevabını yetki kararına temel yapmak daha kötü.
+    return frozenset([f"cam-{i:02d}" for i in range(1, n + 1)] + ["cam-21-live"])
+
+
+def authorize_cameras(requested: list[str]) -> list[str]:
+    """İstemcinin istediği kameralardan izin verilenleri döndürür (G07).
+
+    ⚠ İSTEMCİNİN GÖNDERDİĞİ LİSTEYE ASLA GÜVENİLMEZ
+    WebSocket'te istemci istediği mesajı gönderebilir; abonelik listesi
+    bir İSTEK, bir bildirim değil.
+
+    ⚠ 01.09.2026 — BİÇİM DOĞRULAMASI YETMİYORDU
+    Önceki sürüm yalnızca "harf-rakam-tire, 1-64 karakter" diye
+    bakıyordu; `cam-99` ya da `admin-panel` gibi var olmayan adlar
+    geçiyordu. Tek başına ciddi bir açık değil (olmayan kameradan veri
+    akmaz) ama yetki kontrolünün ilkesi ihlal ediliyordu: **beyaz liste
+    kara listeye yeğlenir.** Bilinen iyileri saymak, kötüleri tahmin
+    etmekten güvenlidir.
+
+    Ayrıca sessiz bir hata kaynağıydı: yazım hatası yapan bir istemci
+    "abone oldum" cevabı alıp hiç veri görmüyordu.
+
+    ⚠ AÇIK İŞ — G05 (kamera bazlı yetki)
+    Burada henüz KULLANICIYA göre kısıt yok: her doğrulanmış kullanıcı
+    tüm kameralara abone olabiliyor. PLAN §11.1 G05 bir
+    `user_camera_access` tablosu istiyor (hassas alanlar kısıtlansın).
+    Tablo yok, bu yüzden kısıt da yok — ve bu eksik raporda böyle
+    yazılacak, "yapıldı" diye değil.
+    """
+    tanimli = _tanimli_kameralar()
     clean: list[str] = []
     for name in requested[:MAX_SUBSCRIPTIONS]:
-        if isinstance(name, str) and 1 <= len(name) <= 64 and name.replace("-", "").isalnum():
+        if not isinstance(name, str):
+            continue
+        if name in tanimli:
             clean.append(name)
+        else:
+            log.debug("bilinmeyen_kamera_abonelik_reddedildi", istenen=name[:64])
     return clean
 
 

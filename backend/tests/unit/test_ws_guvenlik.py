@@ -112,14 +112,35 @@ class TestOriginDogrulamasi:
 
 
 class TestKameraYetkilendirmesi:
-    """İstemcinin gönderdiği listeye ASLA olduğu gibi güvenilmez."""
+    """İstemcinin gönderdiği listeye ASLA olduğu gibi güvenilmez (G07).
 
-    def test_normal_kamera_adlari_geciyor(self) -> None:
+    ⚠ 01.09.2026 — SÖZLEŞME DEĞİŞTİ: biçim → BEYAZ LİSTE
+    Önceki sürüm yalnızca "harf-rakam-tire" diye bakıyordu ve `cam-99`
+    gibi var olmayan adlar geçiyordu. Tek başına ciddi bir açık değil
+    (olmayan kameradan veri akmaz) ama yetki kontrolünün ilkesi
+    ihlal ediliyordu: **bilinen iyileri saymak, kötüleri tahmin
+    etmekten güvenlidir.**
+
+    Bu sınıftaki testler o eski sözleşmeyi kodluyordu; yeni davranışa
+    göre güncellendi. Test bir sözleşmedir ve sözleşme değişince test
+    de değişmeli — ama değişikliğin GEREKÇESİ yazılmalı, yoksa
+    "testi geçirmek için testi değiştirdim" ile ayırt edilemez.
+    """
+
+    def test_TANIMLI_kamera_adlari_geciyor(self) -> None:
         assert authorize_cameras(["cam-01", "cam-20", "cam-21-live"]) == [
             "cam-01",
             "cam-20",
             "cam-21-live",
         ]
+
+    def test_TANIMSIZ_kamera_adi_ELENIYOR(self) -> None:
+        """⚠ Yeni davranış. `cam-99` biçim olarak kusursuz ama YOK.
+
+        Eski sürümde geçiyordu ve istemci "abone oldum" cevabı alıp
+        hiç veri görmüyordu — sessiz bir hata kaynağı.
+        """
+        assert authorize_cameras(["cam-99", "cam-01", "admin-panel"]) == ["cam-01"]
 
     def test_bicimsiz_adlar_eleniyor(self) -> None:
         """Yol ayracı, joker ve boşluk içeren adlar geçmemeli."""
@@ -131,8 +152,13 @@ class TestKameraYetkilendirmesi:
         assert authorize_cameras([1, None, {"a": 1}, ["x"], "cam-05"]) == ["cam-05"]  # type: ignore[list-item]
 
     def test_abonelik_sayisi_sinirli(self) -> None:
-        """Sınırsız abonelik = tek istemcinin sunucuyu boğması (G13/G14)."""
-        cok = [f"cam-{i:04d}" for i in range(MAX_SUBSCRIPTIONS + 50)]
+        """Sınırsız abonelik = tek istemcinin sunucuyu boğması (G13/G14).
+
+        ⚠ Sınır DOĞRULAMADAN ÖNCE uygulanıyor: istemci 10 000 ad
+        gönderirse hepsini beyaz listeye karşı sınamak da bir yük
+        olurdu. Kesme önce, doğrulama sonra.
+        """
+        cok = ["cam-01"] * (MAX_SUBSCRIPTIONS + 50)
         assert len(authorize_cameras(cok)) == MAX_SUBSCRIPTIONS
 
     def test_bos_liste_bos_donuyor(self) -> None:
