@@ -56,6 +56,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import statistics
 import sys
 import time
@@ -115,6 +116,7 @@ def _klip_skorla(
     ornek_fps: float,
     imgsz: int,
     kamera: str = "avenue",
+    sadece_ogren: bool = False,
 ) -> list[tuple[float, float, float, float, float]]:
     """Bir klibi boru hattından geçirir.
 
@@ -123,6 +125,19 @@ def _klip_skorla(
 
     ⚠ Bileşenler de dönüyor: füzyonun bileşenlerinden daha iyi olup
     olmadığını görmeden füzyonu savunmak mümkün değil.
+
+    ⚠ `sadece_ogren=True` — ISITMA İÇİN HIZLI YOL
+    Isıtma aşamasında yalnızca profil besleniyor; çift özellikleri,
+    tırmanma skoru, kural motoru ve füzyon HESAPLANMIYOR.
+
+    Ölçüldü: ilk sürüm ısıtmayı tam boru hattıyla yapıyordu ve
+    15 328 kare **47 dakika** sürdü (kare başına ~184 ms — canlı
+    hattın ~25 ms'inin 7 katı). Sebep, canlı hatta kamera başına
+    ~3 FPS koşan O(n²) çift özelliklerinin burada 25 FPS'te
+    koşması.
+
+    Profilin öğrendiği şey yalnızca konum, hız ve durağanlık. Bunlar
+    için tespit + takip + poz yeterli; gerisi ısıtmada boşuna iş.
     """
     import cv2
 
@@ -191,42 +206,59 @@ def _klip_skorla(
                     ),
                 )
             kisiler = [cikar(depo.al(kamera, t.track_id)) for t in izler]  # type: ignore[arg-type]
-            ciftler = pair.kamera_ciftleri(depo.kamera_pencereleri(kamera))
-            skorlar = tirmanma.degerlendir(kamera, kisiler, ciftler, ts)
-            bulgular = kurallar.degerlendir(kamera, kisiler, ts, dt)
-
-            tirmanma_map = {s.track_id: s.skor for s in skorlar}
+            tirmanma_map: dict[int, float] = {}
             kural_map: dict[int, float] = {}
-            for b in bulgular:
-                if b.track_id is not None and b.track_id >= 0:
-                    kural_map[b.track_id] = max(kural_map.get(b.track_id, 0.0), b.skor)
+            if not sadece_ogren:
+                ciftler = pair.kamera_ciftleri(depo.kamera_pencereleri(kamera))
+                skorlar = tirmanma.degerlendir(kamera, kisiler, ciftler, ts)
+                bulgular = kurallar.degerlendir(kamera, kisiler, ts, dt)
+                tirmanma_map = {s.track_id: s.skor for s in skorlar}
+                for b in bulgular:
+                    if b.track_id is not None and b.track_id >= 0:
+                        kural_map[b.track_id] = max(
+                            kural_map.get(b.track_id, 0.0), b.skor
+                        )
 
             kare_h, kare_w = kare.shape[:2]
             for iz, ozellik in zip(izler, kisiler, strict=False):
-                bbox = (
+                # ⚠ Isıtmadaki ile AYNI koordinat uzayı — kaynak kare.
+                # İkisi ayrışırsa profil, öğrendiğinden başka bir yerle
+                # karşılaştırılır.
+                bbox = _lb.to_source_box(
                     iz.detection.x1, iz.detection.y1,
                     iz.detection.x2, iz.detection.y2,
                 )
                 ayak_x = (bbox[0] + bbox[2]) / 2.0
-                anomali_skor, _kanit = profil.skorla(
-                    ayak_x, bbox[3], float(kare_w), float(kare_h),
-                    ozellik.govde_hizi, None,
-                )
+                # ⚠ Isıtmada SKORLAMA da atlanıyor: profil henüz hazır
+                # değil, dönecek değer zaten 0.0 olurdu.
+                # Isıtmadaki ile AYNI yön hesabı — ikisi ayrışırsa
+                # profil öğrendiğinden başka bir şeyle karşılaştırılır.
+                yon = None
+                if abs(iz.velocity_x) > 1.0 or abs(iz.velocity_y) > 1.0:
+                    yon = math.atan2(iz.velocity_y, iz.velocity_x)
+
+                anomali_skor = 0.0
+                if not sadece_ogren:
+                    anomali_skor, _kanit = profil.skorla(
+                        ayak_x, bbox[3], float(kare_w), float(kare_h),
+                        ozellik.govde_hizi, yon,
+                    )
                 profil.ogren(
                     ayak_x, bbox[3], float(kare_w), float(kare_h),
-                    ozellik.govde_hizi, None,
+                    ozellik.govde_hizi, yon,
                     duragan=ozellik.oyalanma_s > 0.0,
                 )
-                sinyaller = fusion.Sinyaller(
-                    saldirganlik=tirmanma_map.get(iz.track_id, 0.0),
-                    anomali=anomali_skor,
-                    kural=kural_map.get(iz.track_id, 0.0),
-                )
-                sonuc = fuzyon.degerlendir(
-                    kamera, iz.track_id, sinyaller, ozellik.tamlik, ts
-                )
-                if sonuc is not None:
-                    risk_azami = max(risk_azami, sonuc.risk)
+                if not sadece_ogren:
+                    sinyaller = fusion.Sinyaller(
+                        saldirganlik=tirmanma_map.get(iz.track_id, 0.0),
+                        anomali=anomali_skor,
+                        kural=kural_map.get(iz.track_id, 0.0),
+                    )
+                    sonuc = fuzyon.degerlendir(
+                        kamera, iz.track_id, sinyaller, ozellik.tamlik, ts
+                    )
+                    if sonuc is not None:
+                        risk_azami = max(risk_azami, sonuc.risk)
                 a_azami = max(a_azami, anomali_skor)
                 s_azami = max(s_azami, tirmanma_map.get(iz.track_id, 0.0))
                 k_azami = max(k_azami, kural_map.get(iz.track_id, 0.0))
@@ -237,6 +269,160 @@ def _klip_skorla(
 
     cap.release()
     return cikti
+
+
+def _profili_isit(
+    yol: Path,
+    *,
+    dedektor: Any,
+    poz: Any,
+    ornek_fps: float,
+    imgsz: int,
+    kamera: str = "avenue",
+) -> int:
+    """Profili besler — YALIN yol, özellik makinesi kurulmadan.
+
+    ⚠ NEDEN AYRI BİR FONKSİYON
+    İlk sürüm ısıtmayı tam boru hattıyla (`_klip_skorla`) yapıyordu ve
+    15 328 kare **56 dakikada bitmedi** — kare başına ~184 ms, canlı
+    hattın ~25 ms'inin 7 katı.
+
+    Sebep ölçek değişiminde: `PencereDeposu` 3 saniyelik pencere
+    tutuyor. Canlı hat kamera başına ~3 FPS koşuyor, yani pencerede
+    ~12 örnek var. Isıtma 25 FPS'te koşunca pencere **75 örneğe**
+    çıktı ve `cikar()` her karede o pencerenin tamamını dolaşıyor
+    (`_tum_keypoint_hizlari`: 17 eklem × 74 çift).
+
+    Sonuç: 6× büyük pencere × 6× sık çağrı = **36× maliyet.**
+
+    ⚠ Bu, "örnekleme hızını artırmak maliyeti doğrusal artırır"
+    varsayımının çürüdüğü yer. Pencere tabanlı bir sistemde hız
+    artışı KAREsel etki yapıyor.
+
+    Profilin öğrendiği şey yalnızca `(ayak noktası, hız, durağanlık)`.
+    Bunun için pencereye gerek yok — ama ARDIŞIK İKİ KARE DE YETMİYOR.
+
+    ⚠ İLK SÜRÜM HIZI ARDIŞIK KAREDEN HESAPLIYORDU VE YANLIŞTI
+    Tanı betiği (`scripts/diagnose_katman_a.py`) ortaya çıkardı:
+
+        öğrenilen hız p50 : 1.645 gövde/sn   (canlı ölçüm: 0.30)
+        hücre sapması p50 : 4.734 gövde/sn   (fiziksel olarak saçma)
+
+    Bir insan hızını saniyede 4.7 gövde boyu değiştiremez. O sayı
+    hareket değil GÜRÜLTÜ.
+
+    Sebep ölçek: 25 FPS'te iki kare arası 0.04 sn. Yürüyen bir insan o
+    sürede ~3 piksel yer değiştiriyor; takipçinin konum gürültüsü ise
+    5-20 piksel. **Gürültü sinyalden büyük.**
+
+    ⚠ Bu, "daha yüksek kare hızı = daha iyi ölçüm" sezgisinin
+    çürüdüğü yer: yer değiştirme `dt` ile küçülüyor, gürültü
+    küçülmüyor. Kare hızını artırmak hız ölçümünü İYİLEŞTİRMİYOR,
+    bozuyor.
+
+    Canlı boru hattı bunu zaten doğru yapıyor (`person.py`): ardışık
+    fark yerine pencere üzerinden **medyan**. Burada da aynı ilke
+    uygulanıyor — hız sabit bir zaman TABANI üzerinden ölçülüyor.
+    """
+    import cv2
+
+    from sentinel.analytics.anomaly.normalcy import KameraNormali
+    from sentinel.core.preprocess import letterbox
+    from sentinel.inference.tracker.botsort import BotSortTracker
+
+    cap = cv2.VideoCapture(str(yol))
+    kaynak_fps = cap.get(cv2.CAP_PROP_FPS) or 25.0
+    adim = max(1, round(kaynak_fps / ornek_fps))
+    takipci = BotSortTracker(frame_rate=int(max(1, ornek_fps)))
+    profil = _PROFIL.setdefault(kamera, KameraNormali(camera=kamera))
+
+    # ⚠ HIZ TABANI — ardışık kare DEĞİL, sabit bir zaman aralığı.
+    # Canlı hattın kamera başına ~3 FPS'ine karşılık gelen aralık;
+    # bu süre içinde yürüyen bir insan ~50 piksel yol alıyor ve
+    # takip gürültüsü (5-20 px) artık baskın değil.
+    hiz_tabani_s = 0.3
+
+    # iz kimliği → (zaman, ayak_x, ayak_y, gövde_yüksekliği)
+    onceki: dict[int, tuple[float, float, float, float]] = {}
+    eklenen = 0
+    kare_no = 0
+    while True:
+        ok, kare = cap.read()
+        if not ok:
+            break
+        if kare_no % adim:
+            kare_no += 1
+            continue
+        hazir, lb = letterbox(kare, imgsz)
+        ts = kare_no / kaynak_fps
+        kare_h, kare_w = kare.shape[:2]
+
+        izler = takipci.update(kamera, dedektor.detect([hazir])[0], ts)
+        profil.kare_ogren(len(izler))
+        for iz in izler:
+            d = iz.detection
+            # ⚠ KOORDİNAT UZAYI — sessiz ama ölümcül bir hataydı
+            # Tespitler MODEL uzayında (640×640 letterbox), profil ise
+            # ızgarayı KAYNAK kare boyutlarıyla (640×360) hesaplıyordu.
+            # Yani her konum yanlış hücreye düşüyordu: dolgu bandı
+            # yüzünden y ekseni 140 piksel kaymış, alt hücreler
+            # tümüyle kadraj dışına taşmıştı.
+            #
+            # Canlı boru hattı bunu doğru yapıyor (`to_source_box` ile
+            # geri eşleme); ölçüm betiğinde o adım atlanmıştı.
+            sx1, sy1, sx2, sy2 = lb.to_source_box(d.x1, d.y1, d.x2, d.y2)
+            ayak_x = (sx1 + sx2) / 2.0
+            ayak_y = sy2
+            # ⚠ Gövde boyu kutu yüksekliğinden. Poz iskeletinden daha
+            # kaba ama ısıtma için yeterli — ve poz çağrısını tamamen
+            # elemek ısıtmayı bir kat daha hızlandırıyor.
+            boy = max(sy2 - sy1, 1.0)
+
+            hiz = None
+            duragan = False
+            gecmis = onceki.get(iz.track_id)
+            if gecmis is not None:
+                dt = ts - gecmis[0]
+                # ⚠ Taban dolmadıysa referans GÜNCELLENMİYOR — bir
+                # sonraki karede aynı referansa göre daha uzun bir
+                # aralık ölçülecek. Her karede referansı güncellemek,
+                # tam da düzeltmeye çalıştığımız ardışık-kare hatasını
+                # geri getirirdi.
+                if dt >= hiz_tabani_s:
+                    if dt <= 1.5:
+                        mesafe = (
+                            (ayak_x - gecmis[1]) ** 2 + (ayak_y - gecmis[2]) ** 2
+                        ) ** 0.5
+                        olcek = max(gecmis[3], 1.0)
+                        hiz = mesafe / dt / olcek
+                        # `person.py` ile aynı ölçüt: pencere boyunca
+                        # yarım gövde boyundan az yer değiştirme.
+                        duragan = (mesafe / olcek) < 0.5
+                    onceki[iz.track_id] = (ts, ayak_x, ayak_y, boy)
+            else:
+                onceki[iz.track_id] = (ts, ayak_x, ayak_y, boy)
+
+            # ⚠ YÖN — Katman A'nın üçüncü kolu, ilk sürümde ÖLÜYDÜ
+            # `yon=None` geçiliyordu, yani "ters yön" testi hiç
+            # çalışmıyordu. Avenue'nun anomali türlerinden biri tam
+            # olarak ters yön; o kolu kapalı bırakmak, ölçülen şeyin
+            # bir parçasını görmezden gelmekti.
+            #
+            # Takipçi hız vektörü veriyor (ayak noktasından). Çok küçük
+            # hızda yön anlamsız — duran bir kişinin "yönü" gürültüdür.
+            yon = None
+            if abs(iz.velocity_x) > 1.0 or abs(iz.velocity_y) > 1.0:
+                yon = math.atan2(iz.velocity_y, iz.velocity_x)
+
+            profil.ogren(
+                ayak_x, ayak_y, float(kare_w), float(kare_h), hiz, yon,
+                duragan=duragan,
+            )
+            eklenen += 1
+        kare_no += 1
+
+    cap.release()
+    return eklenen
 
 
 # Klip başına değil KAMERA başına profil: Avenue'nun tüm klipleri aynı
@@ -362,7 +548,7 @@ def main() -> int:
             f"{args.isinma_fps:.0f} FPS örnekleme"
         )
         for i, yol in enumerate(egitim, 1):
-            _klip_skorla(
+            _profili_isit(
                 yol, dedektor=dedektor, poz=poz,
                 ornek_fps=args.isinma_fps, imgsz=args.imgsz,
                 kamera="avenue",

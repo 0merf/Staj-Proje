@@ -33,6 +33,135 @@ ama **belirti / sebep / çözüm** üçlüsü mutlaka olsun.
 
 <!-- Yeni kayıtlar buraya, en yenisi en üstte -->
 
+### P-39 · K6 = 0.483 → 0.867: farkı yaratan model değil, ÖLÇÜM ARACIYDI
+
+**Tarih:** 01.09.2026 · **Faz:** 2 / Gün 17 · **Kaybedilen süre:** ~2 saat (+ bir 56 dakikalık boşa koşu)
+
+**Belirti:** K6 kriteri (anomali ROC-AUC ≥ 0.75) ilk kez ölçüldü ve
+**0.483** çıktı — şans seviyesinin altı. Katman A skorlarının yalnızca
+%2.8'i sıfırdan farklıydı.
+
+Yani ölçüm *"sistem anomaliyi ayırt edemiyor"* demiyordu; **"sistem
+hiçbir şey söylemiyor"** diyordu. İkisi çok farklı ve ikincisi
+neredeyse her zaman ölçümün kendisini işaret eder.
+
+**Araştırma:** Altı hata çıktı, hiçbiri modelde değildi.
+
+**1 · Profil ısınmamıştı.** `PROFIL_ASGARI_ORNEK = 2000` eşiğine
+ulaşılmadan Katman A hiçbir skor üretmiyor. İlk koşuda AUC tam
+**0.500** çıktı — yani ölçüm hiçbir şey ölçmedi.
+*Düzeltme:* Avenue'nun eğitim bölümüyle (tanımı gereği tümü normal)
+ısıtma. Sistem sahada da böyle kurulur: temiz bir dönem izlenir,
+sonra izlemeye geçilir.
+
+**2 · Etiketsiz klipler ölçüme katılıyordu.** `10.avi` "0 anomali
+segmenti" diye işlendi, oysa Avenue'nun test bölümündeki her klip
+tanımı gereği anomali içerir — bizim yer gerçeğimiz yalnızca 01-09'u
+kapsıyordu. Etiketsiz klibi katmak, içindeki **gerçek** anomalileri
+"normal" diye etiketlemek demek: sistem onları doğru bulduğunda
+**ceza alıyor.** Ölçüm, ölçtüğü şeyi cezalandırır hâle geliyor.
+*Düzeltme:* 12 klip ölçüm dışı, açıkça raporlanıyor.
+
+**3 · Isıtma 56 dakikada bitmedi.** Tam boru hattıyla yapılıyordu ve
+15 328 kare, kare başına ~184 ms sürüyordu — canlı hattın ~25 ms'inin
+**7 katı.**
+
+⚠ Sebep ölçek değişimindeydi: `PencereDeposu` 3 saniyelik pencere
+tutuyor. Canlı hat kamera başına ~3 FPS koşuyor → pencerede ~12 örnek.
+Isıtma 25 FPS'te koşunca pencere **75 örneğe** çıktı ve `cikar()` her
+karede o pencerenin tamamını dolaşıyor. **6× büyük pencere × 6× sık
+çağrı = 36× maliyet.**
+
+Bu, *"örnekleme hızını artırmak maliyeti doğrusal artırır"*
+varsayımının çürüdüğü yer. Pencere tabanlı bir sistemde hız artışı
+**karesel** etki yapıyor.
+*Düzeltme:* Isıtma için yalın yol — pencere/özellik makinesi hiç
+kurulmuyor. **56 dk → 4 dk.**
+
+**4 · Hız ardışık kareden hesaplanıyordu.** Tanı betiği fiziksel
+olarak imkânsız bir sayı gösterdi:
+
+```
+öğrenilen hız p50 : 1.645 gövde/sn   (canlı ölçüm: 0.30)
+hücre sapması p50 : 4.734 gövde/sn
+```
+
+Bir insan hızını saniyede 4.7 gövde boyu değiştiremez. 25 FPS'te iki
+kare arası 0.04 sn; yürüyen insan ~3 piksel yer değiştiriyor, takip
+gürültüsü ise 5-20 piksel. **Gürültü sinyalden büyük.**
+
+⚠ *"Daha yüksek kare hızı = daha iyi ölçüm"* sezgisinin çürüdüğü yer:
+yer değiştirme `dt` ile küçülüyor, gürültü küçülmüyor.
+*Düzeltme:* Sabit zaman tabanı (0.3 sn). Canlı hat bunu zaten doğru
+yapıyordu (`person.py`: pencere üzerinden **medyan**).
+
+**5 · ⭐ ASIL SUÇLU — koordinat uzayı karışıktı.** Tespitler **model
+uzayında** (640×640 letterbox) geliyor, profil ise ızgarayı **kaynak
+kare** boyutlarıyla (640×360) hesaplıyordu. Dolgu bandı yüzünden y
+ekseni 140 piksel kaymış, alt hücreler tümüyle kadraj dışına taşmıştı.
+
+Canlı boru hattı bunu doğru yapıyor (`Letterbox.to_source_box` ile geri
+eşleme — Gün 8'de 2240 tespitte, 0 hatalı kutuyla doğrulanmıştı);
+**ölçüm betiğinde o adım atlanmıştı.**
+
+*Düzeltmenin etkisi:*
+
+| | Önce | Sonra |
+|---|---|---|
+| Ziyaret edilen hücre | 77 (%13) | **229 (%40)** |
+| Hız istatistiği yapabilen hücre | 35 | **117** |
+| Öğrenilen hız p50 | 1.645 | **0.527** (canlı 0.30 ile uyumlu) |
+| Katman A skor üretimi | %1.1 | **%40.7** |
+
+**6 · Yön testi ölüydü.** Değerlendirme yolunda `yon=None`
+geçiliyordu — Katman A'nın üç kolundan biri (ters yön) hiç
+çalışmıyordu. Avenue'nun anomali türlerinden biri tam olarak ters yön.
+
+**Sonuç:**
+
+```
+              ÖNCE     SONRA
+füzyon        0.483    0.867   ✅ K6 TUTUYOR (hedef ≥0.75)
+katman_a      0.493    0.789
+```
+
+⚠ **Hiçbir modele, eşiğe ya da ağırlığa dokunulmadı.** 0.384'lük fark
+tümüyle ölçüm aracının düzeltilmesinden geldi.
+
+⭐ **Füzyon kendini haklı çıkardı:** en iyi tek bileşen 0.789, füzyon
+0.867. Bileşeninden kötü bir füzyon, karmaşıklığı boşuna eklemiş
+olurdu — betik bunu açıkça raporluyor.
+
+**Öğrenilen dersler:**
+
+1. **Ölçüm aracına, ölçtüğü şeye gösterdiğin şüpheyi göster.** Bu
+   projede aynı sınıf hata üçüncü kez çıktı: P-17 (sıralı koşu),
+   P-36 (bozuk blok özeti tersine çevirdi), şimdi P-39. Üçünde de
+   *sistem* suçlanmaya hazırdı, suçlu *ölçüm* çıktı.
+
+2. **"Hiç sinyal yok" ile "yanlış sinyal" farklı teşhislerdir.**
+   AUC'nin tam 0.500 çıkması bir sonuç değil, bir uyarıdır: skorların
+   hepsi eşitse ölçüm çalışmıyordur.
+
+3. **Bir sayının FİZİKSEL olarak mümkün olup olmadığına bak.**
+   "Sapma 4.7 gövde/sn" hatayı tek başına ele veriyordu; istatistiğe
+   bakmadan önce fiziğe bakmak gerekiyordu.
+
+4. **Üretim yolunda çözülmüş bir problem, ölçüm yolunda yeniden
+   çözülmez — ORADAN ÇAĞRILIR.** Koordinat geri eşlemesi canlı hatta
+   Gün 8'de doğrulanmıştı; ölçüm betiği onu kullanmak yerine atlamıştı.
+
+**⚠ Dürüstlük notu:** `kural` bileşeni AUC 0.500 — Katman B kuralları
+Avenue'da **hiç ateşlemiyor.** Sebep veri setinin doğasında: Avenue'nun
+anomalileri çanta fırlatma, bisiklet, ters yön; bizim kurallarımız
+düşme/koşma/kalabalık arıyor ve boru hattımız yalnızca **insan**
+tespit ediyor. Fırlatılan bir çanta bizim için görünmez.
+
+K6'yı taşıyan şey neredeyse tümüyle Katman A (öğrenilmiş kamera
+normali). Bu bir kusur değil, kapsamın dürüst sınırı.
+
+---
+
 ### P-38 · Bir çökme, paylaşımlı bellek havuzunu KALICI olarak küçültüyordu
 
 **Tarih:** 30.08.2026 · **Faz:** 1 / Gün 16 · **Kaybedilen süre:** ~1 saat (+ bir ölçüm koşusu boşa gitti)
