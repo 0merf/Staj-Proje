@@ -34,14 +34,21 @@ scrape_configs:
         labels:
           component: api
 
+  # ⚠ 01.09.2026 — DÖRT HEDEF ÜÇÜ ÖLÜYDÜ
+  # Bu liste "4 ingest worker" tasarımından kalmıştı. O tasarım
+  # değişti (tek süreç + kamera başına thread, çünkü FramePool tek
+  # nesne olarak paylaşılabiliyor ve PyAV/OpenCV GIL'i bırakıyor) ama
+  # kazıma yapılandırması güncellenmemişti.
+  #
+  # Sonucu: Prometheus hedef listesinde ASLA ayağa kalkmayacak üç
+  # hedef sürekli DOWN görünüyordu. Zararsız gibi duruyor ama
+  # gözlem sisteminin en değerli özelliğini bozar — "kırmızı bir şey
+  # varsa bakılır" alışkanlığını. Hep kırmızı duran bir gösterge,
+  # olmayan göstergeden kötüdür (aynı ders: çalışmayan kalite kapısı).
   - job_name: sentinel-ingest
     metrics_path: /metrics
     static_configs:
-      - targets:
-          - "host.docker.internal:9101"
-          - "host.docker.internal:9102"
-          - "host.docker.internal:9103"
-          - "host.docker.internal:9104"
+      - targets: ["host.docker.internal:9101"]
         labels:
           component: ingest
 
@@ -51,6 +58,19 @@ scrape_configs:
       - targets: ["host.docker.internal:9110"]
         labels:
           component: inference
+
+  # ⚠ 01.09.2026 — ALARM WORKER'I HİÇ KAZINMIYORDU
+  # `sentinel_olaylar_yazildi_total` metriği vardı, üretiliyordu, ama
+  # Prometheus'a hiç ulaşmıyordu. Grafana panosundaki "üretilen vs
+  # kaydedilen alarm" karşılaştırması kalıcı olarak yarım kalırdı —
+  # ve o karşılaştırmanın amacı tam da veritabanı yolunun sessizce
+  # tıkandığını görmekti.
+  - job_name: sentinel-alerting
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["host.docker.internal:9130"]
+        labels:
+          component: alerting
 
   - job_name: sentinel-analytics
     metrics_path: /metrics
