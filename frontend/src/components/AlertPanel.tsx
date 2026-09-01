@@ -79,6 +79,21 @@ const KANIT_TR: Record<string, [etiket: string, birim: string]> = {
   // Çarpımsal kapı: yalnız bir kişinin hızlı hareketi saldırganlık
   // değildir. Sıfırsa skor da bastırılıyor.
   b_etkilesim: ['etkileşim kapısı', ''],
+
+  // ─── FÜZYON kanıtları (analytics/fusion.py) ───
+  //
+  // ⚠ `katkida_bulunan_sinyal` süs değil, güven ölçüsü.
+  // Tek sinyalli bir 0.4 ile üç sinyalli bir 0.4 aynı şey değil:
+  // ikincisi çok daha ikna edici. Füzyon alarmı zaten iki sinyalin
+  // altında hiç yayınlanmıyor, ama operatör kaç sinyalin birleştiğini
+  // görmeli.
+  risk_skoru: ['birleşik risk', ''],
+  katkida_bulunan_sinyal: ['birleşen sinyal sayısı', ' adet'],
+  s_saldirganlik: ['· saldırganlık', ''],
+  s_anomali: ['· kamera normalinden sapma', ''],
+  s_kural: ['· kural ihlali', ''],
+  s_ifade: ['· yüz ifadesi', ''],
+  s_kalabalik: ['· kalabalık', ''],
 }
 
 function saat(rx: number): string {

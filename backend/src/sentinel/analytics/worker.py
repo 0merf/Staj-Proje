@@ -48,13 +48,15 @@ from typing import Any
 import numpy as np
 
 from sentinel import metrics
+from sentinel.analytics import fusion
 from sentinel.analytics.aggression import TirmanmaSkorlayici, TirmanmaSkoru
 from sentinel.analytics.anomaly.normalcy import NormalProfilDeposu
-from sentinel.analytics.anomaly.rules import Anomali, KuralMotoru
+from sentinel.analytics.anomaly.rules import Anomali, AnomaliTuru, KuralMotoru
 from sentinel.analytics.features import pair
 from sentinel.analytics.features import skeleton as sk
 from sentinel.analytics.features.person import KisiOzellikleri, cikar
 from sentinel.analytics.features.window import Ornek, PencereDeposu
+from sentinel.analytics.fusion import RiskFuzyonu, RiskSonucu
 from sentinel.bus.streams import connect
 from sentinel.config import PROJECT_ROOT, settings
 from sentinel.logging import configure_logging, get_logger
@@ -87,6 +89,8 @@ class AnalyticsWorker:
         self._normal = NormalProfilDeposu(PROJECT_ROOT / "data" / "profiles")
         # SALDIRGANLIK — kişi + çift özelliklerinden tırmanma skoru
         self._tirmanma = TirmanmaSkorlayici()
+        # FÜZYON — beş sinyali tek risk skorunda birleştirir (PLAN §6.6)
+        self._fuzyon = RiskFuzyonu()
         # Kamera başına son değerlendirme anı — oyalanma birikimi için
         # gereken `dt`. Kameralar farklı hızlarda analiz edildiği için
         # (uyarlanabilir FPS) sabit adım kullanmak yanlış olurdu.
@@ -95,6 +99,11 @@ class AnalyticsWorker:
         self.islenen = 0
         self.anomaliler = 0
         self.saldirganlik = 0
+        self.fuzyon_alarm = 0
+        # ⚠ Bastırılan füzyon alarmı sayısı AYRI tutuluyor: "füzyon
+        # çalışıyor ama tek sinyalli olduğu için susuyor" ile "füzyon
+        # hiç skor üretmiyor" arasındaki farkı ancak bu sayaç gösterir.
+        self.fuzyon_bastirilan = 0
         self.by_camera: Counter[str] = Counter()
         self._ensure_group()
 
@@ -251,12 +260,20 @@ class AnalyticsWorker:
         )
 
         # ─── KATMAN A: kamera normaline göre skorla ───
-        bulgular.extend(
-            self._katman_a(camera, ozellikler, tespitler, veri, ts)
-        )
+        # ⚠ ARTIK ALARM ÜRETMİYOR, SKOR ÜRETİYOR (30.08.2026)
+        # Katman A istatistiksel bir sapma sinyali. Tek başına alarm
+        # vermesi kontrol kamerasında saatte 90 alarma yol açıyordu ve
+        # kod bunu "geçici bir kısıtlama, kalıcı çözüm füzyon" diye
+        # yazıyordu. Kalıcı çözüm geldi: skor füzyona giriyor.
+        anomali_skorlari = self._katman_a(camera, ozellikler, tespitler, veri, ts)
 
         for bulgu in bulgular:
             self._yayinla(bulgu, ts)
+
+        # ─── FÜZYON: beş sinyal, tek risk skoru (PLAN §6.6) ───
+        self._fuzyon_degerlendir(
+            camera, ozellikler, skorlar, bulgular, anomali_skorlari, ts
+        )
 
     def _oyalanma_normali(
         self,
@@ -293,8 +310,14 @@ class AnalyticsWorker:
         tespitler: list[dict[str, Any]],
         veri: dict[str, Any],
         ts: float,
-    ) -> list[Anomali]:
+    ) -> dict[int, tuple[float, dict[str, float]]]:
         """Kamera normaline göre olağandışılık (PLAN §6.4 Katman A).
+
+        ⚠ İZ KİMLİĞİ → (skor, kanıt) DÖNDÜRÜYOR, alarm listesi DEĞİL.
+        30.08.2026'ya kadar burası doğrudan alarm üretiyordu ve eşiği
+        0.85'e çekmek zorunda kalmıştık. Artık skor füzyona giriyor
+        (`analytics/fusion.py`), eşik orada ve sinyaller birlikte
+        değerlendiriliyor.
 
         ⚠ ÖNCE ÖĞREN, SONRA SKORLA — ve sıra önemli.
         Profil `hazir` değilken skor üretmiyor; yalnızca öğreniyor.
@@ -313,10 +336,10 @@ class AnalyticsWorker:
         kare_w = float(veri.get("w", 0) or 0)
         kare_h = float(veri.get("h", 0) or 0)
         if kare_w <= 0 or kare_h <= 0:
-            return []
+            return {}
 
         profil.kare_ogren(len(tespitler))
-        bulgular: list[Anomali] = []
+        cikti: dict[int, tuple[float, dict[str, float]]] = {}
 
         for d, ozellik in zip(tespitler, ozellikler, strict=False):
             bbox = [float(v) for v in d["bbox"]]
@@ -343,38 +366,131 @@ class AnalyticsWorker:
                 duragan=ozellik.oyalanma_s > 0.0,
             )
 
-            # ⚠ KATMAN A EŞİĞİ 0.5 DEĞİL 0.85 — ölçümle düzeltildi
-            #
-            # İlk eşik 0.5'ti ve canlı ölçüm şunu gösterdi: 63 alarmın
-            # 49'u (%78) Katman A'dan geliyordu ve kontrol kamerasında
-            # (cam-18, tamamı normal) saatte 90 alarm çıkıyordu.
-            # K7 kriteri kamera-saat başına ≤3 diyor.
-            #
-            # ⚠ AMA ASIL MESELE EŞİK DEĞİL, MİMARİ
-            # Katman A istatistiksel bir SAPMA sinyali, fiziksel bir
-            # olay değil. PLAN §6.6 onu füzyona 0.25 ağırlıkla giren bir
-            # GİRDİ olarak tanımlıyor — tek başına alarm üreten bir
-            # kaynak olarak değil. "Bu kişi normalden 3σ hızlı" tek
-            # başına operatörü rahatsız etmeye değmez; ama saldırganlık
-            # skoru da yüksekse birlikte anlam kazanır.
-            #
-            # Füzyon katmanı Gün 19'da gelecek. O zamana kadar Katman A
-            # yalnızca ÇOK belirgin sapmalarda (0.85+) ve kanıtı güçlü
-            # olduğunda (tamlık ≥0.5) alarm üretiyor. Bu geçici bir
-            # kısıtlama, kalıcı çözüm füzyon.
-            if skor >= 0.85 and ozellik.tamlik >= 0.5 and ozellik.track_id >= 0:
-                bulgu = self._kurallar.olagandisi_bildir(
-                    camera=camera,
-                    track_id=ozellik.track_id,
-                    skor=skor,
-                    kanit=kanit,
-                    tamlik=ozellik.tamlik,
-                    simdi=ts,
-                )
-                if bulgu is not None:
-                    bulgular.append(bulgu)
+            # ⚠ EŞİK YOK — skorun tamamı füzyona gidiyor.
+            # Eşik koymak, füzyonun birleştirebileceği zayıf sinyalleri
+            # daha kaynağında yok etmek olurdu. Karar füzyonun işi.
+            if ozellik.track_id >= 0:
+                cikti[ozellik.track_id] = (skor, kanit)
 
-        return bulgular
+        return cikti
+
+    def _fuzyon_degerlendir(
+        self,
+        camera: str,
+        ozellikler: list[KisiOzellikleri],
+        tirmanma: list[TirmanmaSkoru],
+        bulgular: list[Anomali],
+        anomali_skorlari: dict[int, tuple[float, dict[str, float]]],
+        ts: float,
+    ) -> None:
+        """Beş sinyali iz bazında birleştirir (PLAN §6.6).
+
+        ⚠ NEDEN DOĞRUDAN ALARMLAR DA GİRDİ OLUYOR
+        Bir düşme zaten kendi alarmını verdi (yukarıda yayınlandı).
+        Yine de füzyona giriyor çünkü füzyonun işi "bu kişi ne kadar
+        riskli" sorusuna cevap vermek; düşen bir kişi risklidir ve
+        risk skoru bunu yansıtmalı. İki alarm çıkması bir tekrar değil:
+        biri "düştü" der, diğeri "bu kişi genel olarak riskli" der ve
+        operatör için ikisi farklı bilgidir.
+
+        ⚠ İFADE SİNYALİ ŞU AN HEP 0
+        KADEME 2b çalışıyor ama bu kamera çiftliğinde yüzler ~15 piksel
+        ve sınıflandırma üretmiyor (2700 aday → 0). Bağlantı yeri
+        hazır; gerçek bir kurulumda beslendiğinde kod değişikliği
+        gerekmeyecek.
+        """
+        # İz kimliği → o izin sinyalleri
+        tirmanma_map = {s.track_id: s.skor for s in tirmanma}
+
+        # Kural sinyali: bu izde ateşleyen kuralların EN YÜKSEĞİ.
+        # ⚠ Toplam değil azami — iki kural birden ateşlemek, birinin
+        # iki katı kadar riskli demek değil.
+        kural_map: dict[int, float] = {}
+        for b in bulgular:
+            if b.track_id is not None and b.track_id >= 0:
+                kural_map[b.track_id] = max(kural_map.get(b.track_id, 0.0), b.skor)
+
+        # Kalabalık KAMERA seviyesinde bir sinyal, iz seviyesinde değil:
+        # aynı kameradaki herkes aynı kalabalığın içinde.
+        kalabalik = max(
+            (b.skor for b in bulgular if b.tur is AnomaliTuru.KALABALIK), default=0.0
+        )
+
+        for ozellik in ozellikler:
+            iz = ozellik.track_id
+            if iz < 0:
+                continue
+            anomali_skor, _kanit = anomali_skorlari.get(iz, (0.0, {}))
+            sinyaller = fusion.Sinyaller(
+                saldirganlik=tirmanma_map.get(iz, 0.0),
+                anomali=anomali_skor,
+                kural=kural_map.get(iz, 0.0),
+                ifade=0.0,
+                kalabalik=kalabalik,
+            )
+            sonuc = self._fuzyon.degerlendir(
+                camera, iz, sinyaller, ozellik.tamlik, ts
+            )
+            if sonuc is not None and sonuc.seviye in ("uyari", "alarm"):
+                self._risk_yayinla(camera, sonuc, ts)
+
+    def _risk_yayinla(self, camera: str, sonuc: RiskSonucu, ts: float) -> None:
+        """Füzyon riskini alarm akışına yazar.
+
+        ⚠ TEK SİNYALLİ RİSK YAYINLANMIYOR
+        Füzyonun varlık sebebi sinyalleri BİRLEŞTİRMEK. Tek bir
+        sinyalin yükselttiği bir risk skoru, o sinyalin kendi alarmının
+        kopyasından başka bir şey değil — ve operatöre aynı olayı iki
+        kez göstermek, K7'nin asıl riskini (operatörün sistemi
+        umursamamaya başlaması) doğrudan besler.
+        """
+        if sonuc.katkida_bulunan < 2:
+            self.fuzyon_bastirilan += 1
+            return
+        if self._kurallar.saldirganlik_sogumada_mi(camera, sonuc.track_id, ts):
+            return
+
+        d = sonuc.to_dict()
+        self._client.xadd(
+            EVENT_STREAM,
+            {
+                "cam": camera,
+                "type": "risk",
+                "ts": f"{ts:.6f}",
+                "data": json.dumps(
+                    {
+                        "cam": camera,
+                        "anomaly": "risk",
+                        "severity": "alarm" if d["level"] == "alarm" else "warning",
+                        "track": d["track"],
+                        "score": d["risk"],
+                        "evidence": {
+                            "risk_skoru": d["risk"],
+                            "katkida_bulunan_sinyal": d["katkida_bulunan"],
+                            **{k: v for k, v in d.items() if k.startswith("s_")},
+                        },
+                        "completeness": d["completeness"],
+                    },
+                    separators=(",", ":"),
+                ),
+            },
+            maxlen=1000,
+            approximate=True,
+        )
+        self.anomaliler += 1
+        self.by_camera[camera] += 1
+        self.fuzyon_alarm += 1
+        metrics.anomalies_total.labels(
+            cam=camera, type="risk", severity=sonuc.seviye
+        ).inc()
+        log.info(
+            "risk",
+            cam=camera,
+            iz=d["track"],
+            risk=d["risk"],
+            sinyal=d["katkida_bulunan"],
+            seviye=d["level"],
+        )
 
     def _tirmanma_yayinla(
         self, camera: str, skor: TirmanmaSkoru, ts: float

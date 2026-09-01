@@ -1,0 +1,43 @@
+{
+ "olculdu": "2026-09-01T08:32:56.514726+00:00",
+ "kriter": "K6",
+ "hedef_auc": 0.75,
+ "veri_seti": "CUHK Avenue (testing)",
+ "klip_sayisi": 9,
+ "ornekleme_fps": 4.0,
+ "kare_toplam": 1439,
+ "kare_anomali": 69,
+ "kare_normal": 1370,
+ "sure_s": 70.3,
+ "sonuc": {
+  "fuzyon": {
+   "auc": 0.4825,
+   "anomali_p50": 0.0377,
+   "normal_p50": 0.0367,
+   "anomali_p90": 0.0712,
+   "sifir_olmayan_oran": 0.9812
+  },
+  "katman_a": {
+   "auc": 0.4877,
+   "anomali_p50": 0.0,
+   "normal_p50": 0.0,
+   "anomali_p90": 0.0,
+   "sifir_olmayan_oran": 0.0535
+  },
+  "saldirganlik": {
+   "auc": 0.4647,
+   "anomali_p50": 0.0925,
+   "normal_p50": 0.0938,
+   "anomali_p90": 0.1828,
+   "sifir_olmayan_oran": 0.9812
+  },
+  "kural": {
+   "auc": 0.4996,
+   "anomali_p50": 0.0,
+   "normal_p50": 0.0,
+   "anomali_p90": 0.0,
+   "sifir_olmayan_oran": 0.0007
+  }
+ },
+ "k6_tutuyor": false
+}

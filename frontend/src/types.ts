@@ -136,4 +136,9 @@ export const ANOMALI_TR: Record<string, string> = {
   // Diğerleri "şu fiziksel olay oldu" der; bu "bu kameranın normali
   // böyle değil" der. Adlandırma bu farkı taşımalı.
   unusual: 'olağandışı',
+  // ⚠ FÜZYON — beş sinyalin birleşimi (analytics/fusion.py).
+  // Diğerleri "şu olay oldu" der; bu "bu kişi genel olarak riskli"
+  // der. Adlandırma farkı taşımalı: operatör tek bir gözleme mi
+  // yoksa bir birikime mi baktığını bilmeli.
+  risk: 'RİSK (birleşik)',
 }
