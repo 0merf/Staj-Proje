@@ -148,9 +148,25 @@ end_to_end_latency = Histogram(
     buckets=(0.05, 0.1, 0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 5.0),
 )
 
+# ⚠ 03.09.2026 — BU İKİ METRİK TANIMLIYDI AMA HİÇ DOLDURULMUYORDU
+# `gpu_memory_used` Gün 1'den beri tanımlıydı ve hiçbir yerde `.set()`
+# çağrılmıyordu; yani Prometheus'ta sürekli 0 duruyordu. Sonucu K4
+# ölçümünde ortaya çıktı: dayanıklılık koşusu "VRAM: None" yazdı.
+#
+# Etkisi gözlemden büyük: PLAN §13.2 dört Grafana panosu tanımlıyor ve
+# bunlardan **GPU panosu** tam olarak bu iki metriğe dayanıyordu.
+# Metrik olmayınca pano da kurulamadı — ve panonun yokluğu, metriğin
+# eksikliğinden daha görünürdü. Yani eksik, görünür bir belirti
+# üretmediği için 17 gün fark edilmedi.
 gpu_memory_used = Gauge(
     "sentinel_gpu_memory_used_bytes",
-    "Kullanılan VRAM",
+    "Ayrılmış VRAM (PyTorch ayırıcısının rezerve ettiği)",
+)
+
+gpu_utilization = Gauge(
+    "sentinel_gpu_utilization",
+    "GPU çekirdek kullanımı (0-100). ⚠ P-33: DÜŞÜK OLMASI 'ucuz' DEMEK "
+    "DEĞİL — bu sayı görev döngüsünü ölçer, çağrı maliyetini değil",
 )
 
 # ─── Analitik katmanı ─────────────────────────────────────────
@@ -162,6 +178,29 @@ anomalies_total = Counter(
     "sentinel_anomalies_total",
     "Kural tabanlı anomali tespitleri (KATMAN B)",
     ["cam", "type", "severity"],
+)
+
+# Füzyon katmanının ürettiği anlık risk skoru — kamera başına AZAMİ.
+# ⚠ PLAN §13.1'de tanımlıydı, 03.09.2026'ya kadar kodda yoktu.
+# Eksikliği görünmezdi çünkü alarmlar zaten sayılıyordu; ama alarm
+# EŞİĞİ GEÇEN riski gösterir, bu gauge eşiğin ALTINDAKİNİ de gösterir.
+# Fark operasyonel: "sistem sessiz" ile "sistem sessiz ama risk
+# tırmanıyor" arasındaki ayrım tam olarak erken uyarının konusu (K8).
+risk_score = Gauge(
+    "sentinel_risk_score",
+    "Füzyon risk skoru — kameradaki azami (0-1). Eşiğin altını da gösterir",
+    ["cam"],
+)
+
+# ⚠ BASTIRILAN ALARM SAYISI — K7'nin canlı kanıtı
+# `analytics/worker.py` bu sayacı (`fuzyon_bastirilan`) zaten tutuyordu
+# ama Prometheus'a hiç vermiyordu. Yani "tek sinyalli riski yayınlama"
+# kuralının kaç alarmı önlediği yalnızca worker kapanırken loga
+# düşüyordu. K7 anlatısının en güçlü sayısı dışarı çıkmıyordu.
+false_alarm_suppressed = Counter(
+    "sentinel_false_alarm_suppressed_total",
+    "Kural gereği yayınlanmayan alarm — sebebiyle birlikte",
+    ["reason"],  # tek_sinyal | dusuk_tamlik | sogumada
 )
 
 # ⚠ ÜRETİLEN ile YAZILAN alarm sayısı AYRI ölçülüyor.
@@ -213,6 +252,36 @@ worker_up = Gauge(
 )
 
 
+# ─── API ve güvenlik ──────────────────────────────────────────
+#
+# ⚠ 03.09.2026 — PLAN §13.2'NİN "GÜVENLİK PANOSU" KURULAMIYORDU
+# Dört Grafana panosundan biri güvenlik panosu: başarısız girişler,
+# yetki reddi, dışa aktarma hacmi. Üçünün de metriği yoktu.
+#
+# Bu, gözetim sistemi için sıradan bir eksik değil: G20 hesap
+# kilitleme ve G28 "başarısız giriş serisi uyarısı" ikisi de bu
+# sayaca dayanıyor. Kilitleme kodda VARDI (`routers/oturum.py`), ama
+# kilidin kaç kez devreye girdiğini kimse göremiyordu. Çalışan ama
+# gözlemlenemeyen bir savunma, ilk sessiz arızasına kadar çalışır.
+
+http_requests = Counter(
+    "sentinel_http_requests_total",
+    "HTTP istekleri — yöntem, yol şablonu ve durum koduna göre",
+    ["method", "path", "status"],
+)
+
+ws_connections_active = Gauge(
+    "sentinel_ws_connections_active",
+    "Açık WebSocket bağlantısı sayısı",
+)
+
+auth_failures = Counter(
+    "sentinel_auth_failures_total",
+    "Kimlik/yetki reddi — sebebiyle. G20 ve G28'in gözlem tabanı",
+    ["reason"],  # kimlik_hatali | kilitli | token_gecersiz | yetkisiz | ws_kimliksiz
+)
+
+
 def serve_metrics(port: int) -> None:
     """Prometheus'un kazıyacağı /metrics uç noktasını açar."""
     start_http_server(port)
@@ -220,6 +289,7 @@ def serve_metrics(port: int) -> None:
 
 __all__ = [
     "anomalies_total",
+    "auth_failures",
     "batch_size",
     "camera_fps",
     "camera_target_fps",
@@ -228,21 +298,28 @@ __all__ = [
     "detections_found",
     "end_to_end_latency",
     "expressions_classified",
+    "false_alarm_suppressed",
     "frames_dropped",
     "frames_published",
     "frames_received",
     "gate_decisions",
     "gate_duration",
     "gpu_memory_used",
+    "gpu_utilization",
+    "http_requests",
     "inference_duration",
+    "klipler_uretildi",
     "motion_gate_ratio",
+    "olaylar_yazildi",
     "pipeline_capacity",
     "pose_crops",
     "queue_depth",
+    "risk_score",
     "serve_metrics",
     "shm_slots_free",
     "short_tracks",
     "track_lifetime",
     "tracks_started",
     "worker_up",
+    "ws_connections_active",
 ]

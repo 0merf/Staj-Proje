@@ -54,13 +54,25 @@ Detaylar: PLAN.md §4
 
 ## Teknoloji Yığını
 
-**Arka uç:** Python 3.13 · FastAPI · PyAV · Valkey · PostgreSQL 17 + TimescaleDB · Garage
-**YZ:** YOLO26 (tespit + poz) · BoT-SORT · YuNet + EmotiEffLib · TensorRT FP16
-**Ön yüz:** React 19 · TypeScript · Vite 7 · Tailwind CSS 4 · shadcn/ui · Zustand
+**Arka uç:** Python 3.13 · FastAPI · PyAV · Valkey · PostgreSQL 17 + TimescaleDB
+**YZ:** YOLO26 (tespit + poz) · BoT-SORT · YuNet + EmotiEffLib · PyTorch FP16
+**Ön yüz:** React 19 · TypeScript · Vite 7 · Tailwind CSS 4 · Zustand
 **Medya:** MediaMTX (RTSP → WebRTC/WHEP, yeniden kodlamasız)
-**Altyapı:** Docker Compose · Caddy · Prometheus · Grafana
+**Altyapı:** Docker Compose · Prometheus · Grafana
 
-Her seçimin gerekçesi: PLAN.md §3
+Her seçimin gerekçesi: `docs/decisions/` (ADR) ve PLAN.md §3
+
+### ⚠ Planlanıp KULLANILMAYANLAR — dürüstlük notu
+
+Bu liste 03.09.2026'da gerçekle hizalandı. Önceki hâli üç teknolojiyi
+kullanılıyormuş gibi sayıyordu:
+
+| Teknoloji | Durum | Gerekçe |
+|---|---|---|
+| **TensorRT** | ölçüldü, **üretimde değil** | 1.40× hızlanma ölçüldü ve tespitler birebir aynı çıktı; ama motor sabit parti istiyor ve canlı parti dağılımı (ortalama 5.52) buna uymuyor → `docs/decisions/0006-tensorrt.md` |
+| **Garage** (S3) | **hiç kullanılmadı** | Klipler yerel diskte (`data/clips/`). Nesne deposu tek makineli bir kurulumda kazandırdığından fazla işletme yükü getiriyordu |
+| **Caddy** (TLS) | **kurulmadı** | Açık iş. Her şey `127.0.0.1`'e bağlı olduğu için TLS'siz çalışıyor; tek giriş noktası olmadığı bilinen bir eksik (K9: 14/19) |
+| **Alembic** | bağımlılık kurulu, **kullanılmıyor** | Tek tablolu şema + TimescaleDB'ye özgü çağrılar; şema açılışta idempotent SQL ile kuruluyor (`db/schema.py`) |
 
 ---
 
@@ -90,14 +102,37 @@ docker compose ps          # tümü healthy olmalı
 # 3. Arka uç
 cd backend
 uv sync
-uv run alembic upgrade head
-uv run uvicorn sentinel.api.main:app --reload
+# ⚠ Şema için ayrı bir migration adımı YOK: tablolar, hypertable ve
+#   politikalar her açılışta idempotent olarak kuruluyor
+#   (db/schema.py · db/kullanicilar.py). Alembic kullanılmıyor.
 
-# 4. Ön yüz (yeni terminal)
+# ⚠ PORT 8001 — 8000 DEĞİL. Aynı makinede başka bir proje 8000'i
+#   kullanıyor (P-01). Portu yazmadan başlatmak sessizce çakışır.
+uv run uvicorn sentinel.api.main:app --port 8001 --reload
+
+# 4. İlk admin kullanıcıyı oluştur (parola bir kez ekrana yazılır)
+uv run python scripts/kullanici_ekle.py admin --rol admin --uret
+
+# 5. Ön yüz (yeni terminal)
 cd frontend
 npm install
-npm run dev                # http://localhost:5173
+npm run dev                # http://127.0.0.1:5173
 ```
+
+⚠ **`localhost` değil `127.0.0.1` yazın.** İkisi tarayıcı için AYRI
+kökendir; `localhost` üzerinden açılan panel, `127.0.0.1`'e kurulmuş
+WebSocket köken doğrulamasına takılır (P-11 ve P-21 — aynı hata iki
+kez yaşandı).
+
+### Tüm sistemi tek komutla başlatmak
+
+```powershell
+pwsh backend/scripts/start_all.ps1   # 7 adım, her adım doğrulanıyor
+pwsh backend/scripts/stop_all.ps1
+```
+
+⚠ Docker konteynerleri bilgisayar açılınca kendiliğinden gelir,
+**Python bileşenleri gelmez.**
 
 ### Kamera çiftliği (20 sahte kamera)
 
@@ -112,12 +147,30 @@ docker compose restart mediamtx
 
 ## ⚠️ Güvenlik Notları
 
-- `.env` dosyası **asla** commit edilmez
-- Üretimde Valkey / PostgreSQL / Garage portları host'a **açılmaz**
+**Yapılanlar:**
+- `.env` dosyası **asla** commit edilmez (`.gitignore`)
+- Kimlik doğrulama: Argon2id parola + JWT (15 dk erişim / 7 gün yenileme),
+  token `httpOnly` çerezde — `localStorage` hiç kullanılmıyor
+- Rol tabanlı yetki: `viewer` < `operator` < `admin`
+- Giriş hız sınırı + hesap kilitleme, kullanıcı adı sızdırmayan hata mesajı
+- WebSocket `Origin` doğrulaması + çerezden kimlik + kullanıcı başına
+  bağlantı sınırı
 - Yüz görüntüleri **saklanmaz** — yalnızca etiket ve güven skoru
-- Tüm kamera görüntüleme ve klip dışa aktarma işlemleri **denetim kaydına** yazılır
+  (`STORE_FACE_CROPS=true` yapılırsa uygulama açılmıyor)
+- Denetim izi PostgreSQL'de ve **sadece-ekleme** (DB trigger UPDATE /
+  DELETE / TRUNCATE engelliyor)
 
-Tam güvenlik planı: PLAN.md §11
+**Yapılmayanlar — açıkça:**
+- ❌ TLS / Caddy ters proxy yok. Her şey `127.0.0.1`'e bağlı; bu bir
+  savunma değil bir kurulum tesadüfü
+- ❌ Kamera bazlı yetki yok: doğrulanmış her kullanıcı tüm kameraları
+  görebiliyor (`user_camera_access` tablosu yazılmadı)
+- ❌ Altyapı portları (5433, 6379) host'a bağlı — dış ağa kapalı ama açık
+- 🟡 Denetim izi **giriş/çıkış, webcam açma-kapatma ve klip
+  görüntülemeyi** kapsıyor; canlı ızgarada kamera izlemeyi kapsamıyor
+- ⬜ Yüz bulanıklaştırma **kapsam dışı** (ticari kurulum değil)
+
+Tam güvenlik planı: PLAN.md §11 · Ölçülen durum: K9 = 14/19
 KVKK ve etik: PLAN.md §12
 
 ---

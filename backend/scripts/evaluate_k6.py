@@ -23,6 +23,46 @@ bileşenlerinden daha iyi olup olmadığı, füzyonun kendisini haklı
 çıkaran ya da çürüten sayıdır. Bileşeninden kötü bir füzyon,
 karmaşıklığı boşuna eklemiş demektir.
 
+⚠⚠ 03.09.2026 — BU KARŞILAŞTIRMA ELMAYLA ARMUTTU (P-41)
+--------------------------------------------------------
+İlk ölçüm şu sonucu verdi ve rapora "füzyon kendini haklı çıkardı"
+diye yazılmak üzereydi:
+
+    katman_a  0.789
+    füzyon    0.867   ⬅ "demek ki birleştirme kazandırıyor"
+
+**Bu çıkarım desteklenmiyordu.** Karşılaştırılan iki sayı aynı
+işlemden geçmemişti:
+
+    katman_a  = HAM, kare başına anomali skoru
+    füzyon    = EMA(α=0.4) ile ZAMANSAL YUMUŞATILMIŞ ağırlıklı toplam
+
+Yani füzyona iki şey birden eklenmişti — sinyal birleştirme VE
+zamansal yumuşatma — ve ölçüm ikisini ayırmıyordu.
+
+Elde olan sayılar ikinciyi işaret ediyordu:
+
+  · saldırganlık AUC 0.465 (şans altı), kural AUC 0.4996 (tam şans).
+    Şans seviyesindeki iki sinyali eklemek AUC'yi yükseltemez.
+  · katman_a karelerinin **%42'si tam 0.0**. `_roc_auc` eşitlikleri
+    0.5 sayıyor (doğru davranış) ve bu kadar çok eşitlik AUC'ye
+    TAVAN koyuyor. EMA geçmişten sızdırıp o sıfırları dolduruyor →
+    eşitlik azalıyor → AUC mekanik olarak yükseliyor.
+
+Bu yüzden beşinci bir seri eklendi: **`katman_a_ema`** — katman A'nın
+tek başına, füzyonla AYNI EMA'dan geçmiş hâli. Doğru soru artık
+sorulabiliyor:
+
+    füzyon > katman_a_ema  → birleştirme gerçekten kazandırıyor
+    füzyon ≈ katman_a_ema  → kazanan YUMUŞATMA; füzyon katmanı bu
+                             veri setinde karşılığını vermiyor
+
+⚠ İki sonuç da rapor için değerli. Kötü olan tek şey, hangisi
+olduğunu bilmeden birini iddia etmekti. Bu, aynı sınıf hatanın
+DÖRDÜNCÜSÜ olurdu (P-17 sıralı koşu · P-36 bozuk blok · P-39
+koordinat uzayı): ölçüm aracına, ölçtüğü şeye gösterilen şüpheyi
+göstermemek.
+
 ⚠ NEDEN ROC-AUC, DOĞRULUK DEĞİL
 Avenue'da anomali kareleri azınlıkta. "Hiçbir şey anomali değil"
 diyen bir sistem yüksek doğruluk alır ve hiçbir işe yaramaz. AUC
@@ -117,14 +157,19 @@ def _klip_skorla(
     imgsz: int,
     kamera: str = "avenue",
     sadece_ogren: bool = False,
-) -> list[tuple[float, float, float, float, float]]:
+) -> list[tuple[float, float, float, float, float, float]]:
     """Bir klibi boru hattından geçirir.
 
     Dönen: her örneklenen kare için
-    `(zaman, füzyon_riski, katman_a, saldırganlık, kural)`.
+    `(zaman, füzyon_riski, katman_a, saldırganlık, kural, katman_a_ema)`.
 
     ⚠ Bileşenler de dönüyor: füzyonun bileşenlerinden daha iyi olup
     olmadığını görmeden füzyonu savunmak mümkün değil.
+
+    ⚠ `katman_a_ema` — ADİL KARŞILAŞTIRMANIN KENDİSİ (P-41)
+    Katman A'nın füzyonla aynı zamansal yumuşatmadan geçmiş hâli.
+    Bu sütun olmadan "füzyon 0.867 > katman_a 0.789" cümlesi,
+    birleştirmenin mi yumuşatmanın mı kazandırdığını söylemiyor.
 
     ⚠ `sadece_ogren=True` — ISITMA İÇİN HIZLI YOL
     Isıtma aşamasında yalnızca profil besleniyor; çift özellikleri,
@@ -171,9 +216,17 @@ def _klip_skorla(
     # sıfırlamak, her klibin ilk saniyelerini yapay anomali yapardı.
     profil = _PROFIL.setdefault(kamera, KameraNormali(camera=kamera))
 
-    cikti: list[tuple[float, float, float, float, float]] = []
+    cikti: list[tuple[float, float, float, float, float, float]] = []
     kare_no = 0
     onceki_ts = 0.0
+    # ⚠ Katman A'nın KENDİ EMA'sı — füzyonunkiyle aynı α, aynı başlangıç.
+    # Kare seviyesinde tutuluyor (iz seviyesinde değil) çünkü
+    # karşılaştırılan şey de kare seviyesindeki azami skor.
+    # Füzyon EMA'yı iz başına uyguluyor; bu fark raporda yazılacak
+    # ama yönü BU SERİNİN LEHİNE değil: iz başına yumuşatma daha
+    # keskin bir sinyal verir, yani bu seri füzyonu haksız yere
+    # aşağı çekmiyor.
+    a_ema = 0.0
     while True:
         ok, kare = cap.read()
         if not ok:
@@ -264,7 +317,10 @@ def _klip_skorla(
                 k_azami = max(k_azami, kural_map.get(iz.track_id, 0.0))
             profil.kare_ogren(len(izler))
 
-        cikti.append((ts, risk_azami, a_azami, s_azami, k_azami))
+        # Füzyonla AYNI yumuşatma katsayısı — tek fark, girdide
+        # yalnızca Katman A'nın olması.
+        a_ema = fusion.EMA_ALFA * a_azami + (1 - fusion.EMA_ALFA) * a_ema
+        cikti.append((ts, risk_azami, a_azami, s_azami, k_azami, a_ema))
         kare_no += 1
 
     cap.release()
@@ -567,7 +623,8 @@ def main() -> int:
 
     # skor adı → (anomali kareleri, normal kareler)
     seriler: dict[str, tuple[list[float], list[float]]] = {
-        ad: ([], []) for ad in ("fuzyon", "katman_a", "saldirganlik", "kural")
+        ad: ([], [])
+        for ad in ("fuzyon", "katman_a", "katman_a_ema", "saldirganlik", "kural")
     }
     t0 = time.time()
     kapsanan = 0
@@ -577,11 +634,11 @@ def main() -> int:
             yol, dedektor=dedektor, poz=poz, ornek_fps=args.fps,
             imgsz=args.imgsz, kamera="avenue",
         )
-        for ts, risk, a, s, k in kareler:
+        for ts, risk, a, s, k, a_ema in kareler:
             hedef = 0 if _anomali_mi(araliklar, ts) else 1
             kapsanan += 1 - hedef
             for ad, deger in (
-                ("fuzyon", risk), ("katman_a", a),
+                ("fuzyon", risk), ("katman_a", a), ("katman_a_ema", a_ema),
                 ("saldirganlik", s), ("kural", k),
             ):
                 seriler[ad][hedef].append(deger)
@@ -627,22 +684,46 @@ def main() -> int:
         print(f"{ad:<14} {auc:>7.3f} {p_med:>12.3f} {n_med:>11.3f} {p90:>12.3f}")
 
     fuzyon_auc = ozet["fuzyon"]["auc"]
+    # ⚠ EMA'lı seri "tek bileşen" yarışmasına GİRMİYOR: o bir bileşen
+    # değil, bir KONTROL GRUBU. Karşılaştırması ayrıca yapılıyor.
     en_iyi_bilesen = max(
-        (ad for ad in seriler if ad != "fuzyon"), key=lambda a: ozet[a]["auc"]
+        (ad for ad in seriler if ad not in ("fuzyon", "katman_a_ema")),
+        key=lambda a: ozet[a]["auc"],
     )
     print(f"\nK6 HEDEFİ: AUC ≥ 0.75 · ölçülen (füzyon): {fuzyon_auc:.3f}")
     print("  " + ("✅ TUTUYOR" if fuzyon_auc >= 0.75 else "❌ TUTMUYOR"))
     print(
-        f"\n⚠ FÜZYON KENDİNİ HAKLI ÇIKARIYOR MU?\n"
-        f"  en iyi tek bileşen: {en_iyi_bilesen} = {ozet[en_iyi_bilesen]['auc']:.3f}\n"
-        f"  füzyon            : {fuzyon_auc:.3f}\n"
-        "  " + (
-            "füzyon bileşenlerinden İYİ — birleştirme kazandırıyor"
-            if fuzyon_auc > ozet[en_iyi_bilesen]["auc"]
-            else "⚠ füzyon en iyi bileşeninden İYİ DEĞİL — karmaşıklık "
-                 "karşılığını vermiyor, ağırlıklar gözden geçirilmeli"
-        )
+        f"\n(1) FÜZYON HAM BİLEŞENLERİNDEN İYİ Mİ?\n"
+        f"  en iyi ham bileşen: {en_iyi_bilesen} = {ozet[en_iyi_bilesen]['auc']:.3f}\n"
+        f"  füzyon            : {fuzyon_auc:.3f}"
     )
+
+    # ─── ASIL SORU (P-41) ───
+    ema_auc = ozet["katman_a_ema"]["auc"]
+    fark = fuzyon_auc - ema_auc
+    print(
+        f"\n(2) ⭐ PEKİ KAZANDIRAN BİRLEŞTİRME Mİ, YUMUŞATMA MI?\n"
+        f"  katman_a (ham)          : {ozet['katman_a']['auc']:.3f}\n"
+        f"  katman_a + EMA (kontrol): {ema_auc:.3f}   ⬅ tek sinyal, füzyonla aynı yumuşatma\n"
+        f"  füzyon (5 sinyal + EMA) : {fuzyon_auc:.3f}\n"
+        f"  fark (füzyon − kontrol) : {fark:+.3f}"
+    )
+    # ⚠ Eşik 0.02 KEYFİ ve öyle olduğu yazılıyor. 9 klip / 69 anomali
+    # karesiyle AUC'nin belirsizliği bu mertebede; daha küçük bir farkı
+    # "kazanç" saymak, gürültüyü bulgu ilan etmek olurdu. Gerçek bir
+    # güven aralığı bootstrap ister ve bu örneklem için abartı olurdu —
+    # ama eşiğin nereden geldiği raporda böyle yazılacak.
+    if fark > 0.02:
+        print("  → BİRLEŞTİRME kazandırıyor: füzyon, yumuşatılmış tek sinyali AŞIYOR")
+    elif fark < -0.02:
+        print("  → ⚠ FÜZYON ZARAR VERİYOR: tek sinyal + yumuşatma DAHA İYİ")
+    else:
+        print(
+            "  → ⚠ KAZANDIRAN YUMUŞATMA: füzyonun ham bileşene üstünlüğü\n"
+            "     büyük ölçüde EMA'dan geliyor, sinyal birleştirmeden değil.\n"
+            "     Bu veri setinde füzyon katmanı karşılığını VERMİYOR —\n"
+            "     ve bu, gizlenecek değil raporlanacak bir bulgudur."
+        )
 
     cikti = {
         "olculdu": datetime.now(UTC).isoformat(),
@@ -660,6 +741,25 @@ def main() -> int:
         "sure_s": round(sure, 1),
         "sonuc": ozet,
         "k6_tutuyor": bool(fuzyon_auc >= 0.75),
+        # ⚠ FÜZYONUN KENDİ SINAVI (P-41) — sayı JSON'a da giriyor ki
+        # rapor bu karşılaştırmayı yeniden koşmadan alıntılayabilsin.
+        "fuzyon_sinavi": {
+            "soru": "kazandıran sinyal birleştirme mi, zamansal yumuşatma mı",
+            "katman_a_ham": ozet["katman_a"]["auc"],
+            "katman_a_ema_kontrol": ema_auc,
+            "fuzyon": fuzyon_auc,
+            "fark": round(fark, 4),
+            "anlamlilik_esigi": 0.02,
+            "esik_gerekcesi": (
+                "9 klip / 69 anomali karesinde AUC belirsizliği bu mertebede; "
+                "daha küçük farkı kazanç saymak gürültüyü bulgu ilan etmek olur"
+            ),
+            "sonuc": (
+                "birlestirme_kazandiriyor" if fark > 0.02
+                else "fuzyon_zarar_veriyor" if fark < -0.02
+                else "kazandiran_yumusatma"
+            ),
+        },
     }
     BENCHMARKS.mkdir(exist_ok=True)
     hedef = BENCHMARKS / f"k6_{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"

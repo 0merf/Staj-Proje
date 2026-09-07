@@ -1,0 +1,11 @@
+{
+ "camera": "cam-18",
+ "source": "CUHK Avenue Dataset (training split)",
+ "citation": "Lu, Shi, Jia — Abnormal Event Detection at 150 FPS, ICCV 2013",
+ "anomali_turleri": [],
+ "not": "KONTROL KAMERASI. Avenue'nun EGITIM bolumu tanimi geregi yalnizca normal davranis icerir. Segment listesi BOS olmasi hatasi degil, olcumun ta kendisi: cam-19 (deney) ile ayni sahne, ayni kamera acisi, ayni yaya yogunlugu — tek fark anomalinin varligi. cam-18'de uretilen her alarm YANLIS POZITIFTIR.",
+ "total_duration_s": 300.0,
+ "anomali_segment_sayisi": 0,
+ "segments": [],
+ "uretim_kaynagi": "archive/Avenue_Dataset/Avenue Dataset"
+}

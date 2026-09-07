@@ -51,4 +51,24 @@ karara işaret eder. Bir kararın nasıl çürüdüğü, kararın kendisinden
 | [0004](0004-sunucu-videoya-cizmez.md) | Video ve üst katman ayrı yollardan gider | kabul |
 | [0005](0005-nvdec-kullanilmiyor.md) | NVDEC kullanılmıyor | kabul |
 | [0006](0006-tensorrt.md) | TensorRT ölçüldü, üretime alınmadı | kabul |
-| [0007](0007-kural-once-model-sonra.md) | Önce kural tabanlı skor, sonra model | kabul |
+| [0007](0007-kural-once-model-sonra.md) | Önce kural tabanlı skor, sonra model | kabul ⚠ düzeltme notu (03.09) |
+| [0008](0008-fuzyon-katmani.md) | Füzyon: gözlem doğrudan, ipucu toplulukta | kabul ⚠ **gerekçesi eksik** |
+| [0009](0009-kimlik-dogrulama.md) | JWT + `httpOnly` çerez, `localStorage` değil | kabul |
+| [0010](0010-timescaledb-olay-kaliciligi.md) | Olay kalıcılığı: TimescaleDB | kabul |
+
+## ⚠ İki kaydın durumu "kabul" ama tam değil — ve bu bilinçli
+
+**ADR-0007** ilkeyi doğru yazıp kendisi ihlal ediyordu: *"eşiği aynı
+kliplerle hem ayarlayıp hem değerlendirmek ezberi başarı sanmaktır"*
+diyor, ama `en_iyi_esik` tam olarak öyle seçiliyor. 03.09'da bir
+düzeltme notu eklendi. Karar değişmedi (K5 zaten tutmuyor); değişen,
+**bildirilen sayının yanlılığının açıkça yazılması.**
+
+**ADR-0008**'in merkezî iddiası (*"birleştirme kazandırıyor"*) henüz
+kanıtlanmadı: karşılaştırma iki değişkeni birden değiştiriyordu.
+Kontrol serisi eklendi, ölçüm bekliyor (P-41).
+
+> ⭐ Bu iki kayıt, ADR'lerin **canlı belge** olduğunun kanıtı. Bir
+> kararı yazmak onu doğrulamaz; ADR-0006'nın dersi burada da geçerli:
+> *"bir kararın gerekçesi belgeye girdikten sonra veri gibi davranmaya
+> başlıyor."*

@@ -64,3 +64,41 @@ sanmaktır.
 AUC ≈ 0.63 skorun kendi sınırını gösteriyor: eşik nereye konursa
 konsun, kavganın %20'sini yakalamak normalin %20'sini yakmak demek —
 yani şans seviyesi.
+
+---
+
+## ⚠ DÜZELTME (03.09.2026) — bu ADR kendi ilkesini ihlal ediyordu
+
+Yukarıdaki paragraf şunu yazıyor:
+
+> *"Eşiği aynı kliplerle hem ayarlayıp hem değerlendirmek, ezberi
+> başarı sanmaktır."*
+
+İlke doğru. Ama **ölçüm tam olarak bunu yapıyor.**
+
+`evaluate_rwf.py`, F1'i hesapladığı **aynı 120 klip üzerinde**
+`en_iyi_esik`'i arıyor ve o eşikteki F1'i raporluyor. `train`/`val`
+ayrımı yapılmış olması bunu çözmüyor: ayrım *modelin eğitimi* için
+doğru yerdeydi, ama burada eğitilen bir model yok — **eşiğin kendisi
+öğrenilen parametre** ve o parametre test kümesinde seçiliyor.
+
+**Etkisi:** Bildirilen **F1 = 0.712 optimistik.** Gerçek, görülmemiş
+veri üzerindeki F1 bundan düşük. Ne kadar düşük olduğu ölçülmedi.
+
+**Neden şimdi düzeltilmiyor:** İki seçenek vardı ve ikisi de bu
+noktada zarar/fayda sınavını geçmiyor:
+
+- `val`'ı ikiye bölmek → her yarıda 30+30 klip kalır; F1 tahmininin
+  gürültüsü, düzeltmeye çalıştığımız yanlılıktan büyük olur
+- `train`'den eşik seçmek → `train` sahte kamera cam-17'yi besliyor,
+  yani sistemin canlı davranışıyla iç içe geçmiş bir veri
+
+**Bunun yerine yapılan:** Yanlılık **açıkça raporlanıyor.** K5 zaten
+tutmuyor (0.712 < 0.85); yanlılığı bildirmek sayıyı daha da aleyhimize
+çeviriyor ve doğrusu bu.
+
+⚠ **Kaydedilmeye değer ders:** Bir belgede ilkeyi doğru yazmak, onu
+uyguladığını göstermez. Bu ADR ilkeyi savunuyor ve ihlal ediyordu —
+üstelik ihlal, ilkenin yazıldığı paragrafın **iki satır altındaydı.**
+Aynı sınıf: ADR-0006'nın dersi (*"bir kararın gerekçesi belgeye
+girdikten sonra veri gibi davranmaya başlıyor"*).

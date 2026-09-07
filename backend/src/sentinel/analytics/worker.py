@@ -57,6 +57,7 @@ from sentinel.analytics.features import skeleton as sk
 from sentinel.analytics.features.person import KisiOzellikleri, cikar
 from sentinel.analytics.features.window import Ornek, PencereDeposu
 from sentinel.analytics.fusion import RiskFuzyonu, RiskSonucu
+from sentinel.analytics.ifade import IfadeSinyali
 from sentinel.bus.streams import connect
 from sentinel.config import PROJECT_ROOT, settings
 from sentinel.logging import configure_logging, get_logger
@@ -91,6 +92,12 @@ class AnalyticsWorker:
         self._tirmanma = TirmanmaSkorlayici()
         # FÜZYON — beş sinyali tek risk skorunda birleştirir (PLAN §6.6)
         self._fuzyon = RiskFuzyonu()
+        # İFADE — KADEME 2b çıktısını füzyona taşıyan katman.
+        # ⚠ 03.09.2026'ya kadar YOKTU: füzyon sinyali `ifade=0.0` diye
+        # sabit yazılıydı ve mesajdaki `expr` alanı hiç okunmuyordu.
+        # "Duygu analizi" şartnamedeki üç yetenekten biri ve sistemin
+        # kararına hiç katılmıyordu (bkz. analytics/ifade.py).
+        self._ifade = IfadeSinyali()
         # Kamera başına son değerlendirme anı — oyalanma birikimi için
         # gereken `dt`. Kameralar farklı hızlarda analiz edildiği için
         # (uyarlanabilir FPS) sabit adım kullanmak yanlış olurdu.
@@ -168,6 +175,25 @@ class AnalyticsWorker:
                 self._pencereler.buda(time.time())
                 self._kurallar.buda(time.time())
                 self._tirmanma.buda(time.time())
+                # ⚠ 03.09.2026 — FÜZYON BUDANMIYORDU: SESSİZ BELLEK SIZINTISI
+                #
+                # `RiskFuzyonu.buda()` 01.09'da füzyon katmanıyla birlikte
+                # YAZILDI ama hiçbir yerden ÇAĞRILMADI. Diğer üç bileşen
+                # buradan budanıyordu; füzyon listeye eklenmemişti.
+                #
+                # Etkisi: `_izler` sözlüğü her yeni (kamera, iz) çifti için
+                # kalıcı bir kayıt tutuyordu. İz kimlikleri sürekli
+                # yenilendiği için bu sözlük SINIRSIZ büyüyor — mimari
+                # kural 5'in ("her kuyruk sınırlı, sınırsız kuyruk = RAM
+                # patlaması") doğrudan ihlali.
+                #
+                # ⚠ Neden 2 gün fark edilmedi: sızıntı yavaş ve BELİRTİSİZ.
+                # Sistem çalışmaya devam ediyor, alarm üretmeye devam
+                # ediyor, yalnızca bellek büyüyor. Kısa koşularda
+                # görünmez — ve bugüne kadar hiç uzun koşu yapılmamıştı.
+                # K4 kriterinin varlık sebebi tam olarak bu sınıf arıza.
+                self._fuzyon.buda(time.time())
+                self._ifade.buda(time.time())
                 self._normal.kaydet()
                 last_prune = now
             if now - last_report >= stats_interval:
@@ -267,12 +293,19 @@ class AnalyticsWorker:
         # yazıyordu. Kalıcı çözüm geldi: skor füzyona giriyor.
         anomali_skorlari = self._katman_a(camera, ozellikler, tespitler, veri, ts)
 
+        # ─── KADEME 2b: yüz ifadesi → füzyon sinyali ───
+        # ⚠ Mesajdaki `expr` alanı burada İLK KEZ okunuyor (03.09.2026).
+        # KADEME 2b Gün 14'ten beri çalışıyor ve çıktısı panele gidiyordu;
+        # analitik zincire hiç girmiyordu (analytics/ifade.py).
+        ifade_skorlari = self._ifade.guncelle(camera, tespitler, ts)
+
         for bulgu in bulgular:
             self._yayinla(bulgu, ts)
 
         # ─── FÜZYON: beş sinyal, tek risk skoru (PLAN §6.6) ───
         self._fuzyon_degerlendir(
-            camera, ozellikler, skorlar, bulgular, anomali_skorlari, ts
+            camera, ozellikler, skorlar, bulgular, anomali_skorlari,
+            ifade_skorlari, ts,
         )
 
     def _oyalanma_normali(
@@ -381,6 +414,7 @@ class AnalyticsWorker:
         tirmanma: list[TirmanmaSkoru],
         bulgular: list[Anomali],
         anomali_skorlari: dict[int, tuple[float, dict[str, float]]],
+        ifade_skorlari: dict[int, float],
         ts: float,
     ) -> None:
         """Beş sinyali iz bazında birleştirir (PLAN §6.6).
@@ -393,11 +427,21 @@ class AnalyticsWorker:
         biri "düştü" der, diğeri "bu kişi genel olarak riskli" der ve
         operatör için ikisi farklı bilgidir.
 
-        ⚠ İFADE SİNYALİ ŞU AN HEP 0
-        KADEME 2b çalışıyor ama bu kamera çiftliğinde yüzler ~15 piksel
-        ve sınıflandırma üretmiyor (2700 aday → 0). Bağlantı yeri
-        hazır; gerçek bir kurulumda beslendiğinde kod değişikliği
-        gerekmeyecek.
+        ⚠ İFADE SİNYALİ ARTIK GERÇEKTEN AKIYOR (03.09.2026)
+        Önceki sürüm `ifade=0.0` diye SABİT yazıyordu ve yanına şunu
+        not düşmüştü: *"Bağlantı yeri hazır; gerçek bir kurulumda
+        beslendiğinde kod değişikliği gerekmeyecek."*
+
+        O iddia yanlıştı ve **ölçülmemişti.** Bağlantı yeri hazır
+        değildi: bu worker mesajdaki `expr` alanını hiç okumuyordu.
+        Yüzler yeterince büyük olsa bile skor buraya ulaşmazdı.
+
+        ⚠ BU KAMERA ÇİFTLİĞİNDE SİNYAL YİNE DE ÇOĞUNLUKLA 0 OLACAK —
+        ama artık sebebi farklı ve bu ayrım raporda önemli:
+          · ÖNCE : kod sinyali taşımıyordu     (mühendislik eksiği)
+          · ŞİMDİ: yüzler ~15 px, kalite eşiğinin altında (veri sınırı)
+        Birincisi bir hata, ikincisi bir bulgu. Bulgu raporlanabilir,
+        hata raporlanamaz — düzeltilir.
         """
         # İz kimliği → o izin sinyalleri
         tirmanma_map = {s.track_id: s.skor for s in tirmanma}
@@ -416,6 +460,7 @@ class AnalyticsWorker:
             (b.skor for b in bulgular if b.tur is AnomaliTuru.KALABALIK), default=0.0
         )
 
+        kamera_azami_risk = 0.0
         for ozellik in ozellikler:
             iz = ozellik.track_id
             if iz < 0:
@@ -425,14 +470,24 @@ class AnalyticsWorker:
                 saldirganlik=tirmanma_map.get(iz, 0.0),
                 anomali=anomali_skor,
                 kural=kural_map.get(iz, 0.0),
-                ifade=0.0,
+                ifade=ifade_skorlari.get(iz, 0.0),
                 kalabalik=kalabalik,
             )
             sonuc = self._fuzyon.degerlendir(
                 camera, iz, sinyaller, ozellik.tamlik, ts
             )
-            if sonuc is not None and sonuc.seviye in ("uyari", "alarm"):
+            if sonuc is None:
+                continue
+            kamera_azami_risk = max(kamera_azami_risk, sonuc.risk)
+            if sonuc.seviye in ("uyari", "alarm"):
                 self._risk_yayinla(camera, sonuc, ts)
+
+        # ⚠ EŞİĞİN ALTINDAKİ RİSK DE YAYINLANIYOR — ve asıl değeri bu.
+        # Alarm sayacı yalnızca eşiği GEÇEN riski gösterir; bu gauge
+        # tırmanmayı eşiğe varmadan gösteriyor. "Sistem sessiz" ile
+        # "sistem sessiz ama risk yükseliyor" arasındaki fark, K8'in
+        # (erken uyarı avansı) tam olarak konusu.
+        metrics.risk_score.labels(cam=camera).set(kamera_azami_risk)
 
     def _risk_yayinla(self, camera: str, sonuc: RiskSonucu, ts: float) -> None:
         """Füzyon riskini alarm akışına yazar.
@@ -446,8 +501,17 @@ class AnalyticsWorker:
         """
         if sonuc.katkida_bulunan < 2:
             self.fuzyon_bastirilan += 1
+            # ⚠ 03.09.2026 — BU SAYAÇ DIŞARI ÇIKMIYORDU
+            # `fuzyon_bastirilan` yalnızca worker kapanırken loga
+            # düşüyordu. Oysa K7 anlatısının en güçlü sayısı bu:
+            # "kaç alarm operatöre gitmeden önlendi". Bastırılmayan
+            # alarmlar sayılıp bastırılanlar sayılmayınca, sistemin
+            # sessizliği bir başarı mı yoksa bir arıza mı ayırt
+            # edilemiyordu.
+            metrics.false_alarm_suppressed.labels(reason="tek_sinyal").inc()
             return
         if self._kurallar.saldirganlik_sogumada_mi(camera, sonuc.track_id, ts):
+            metrics.false_alarm_suppressed.labels(reason="sogumada").inc()
             return
 
         d = sonuc.to_dict()

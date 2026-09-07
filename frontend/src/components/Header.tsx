@@ -11,6 +11,8 @@ export function Header({ kullanici }: HeaderProps) {
   const cameras = useStore((s) => s.cameras)
   const playing = useStore((s) => s.playing.size)
   const toggle = useStore((s) => s.togglePlaying)
+  const sayfa = useStore((s) => s.sayfa)
+  const setSayfa = useStore((s) => s.setSayfa)
 
   const ready = cameras.filter((c) => c.ready).length
   const dot =
@@ -28,6 +30,32 @@ export function Header({ kullanici }: HeaderProps) {
         <span className="text-xs text-muted">
           {ready}/{cameras.length} kamera yayında · {playing} açık
         </span>
+
+        {/* ─── Sayfa gezinmesi (PLAN §10.1) ───
+            ⚠ Router yok, durum değişkeni var. Gerekçe types.ts · Sayfa:
+            üç görünüm için deep-link gereksinimi olmayan bir panelde
+            router bir bağımlılık ve bir URL sözleşmesi getiriyordu. */}
+        <nav className="flex gap-1">
+          {(
+            [
+              ['izgara', 'Izgara'],
+              ['zaman-cizelgesi', 'Zaman Çizelgesi'],
+              ['kamera', 'Kamera Detayı'],
+            ] as const
+          ).map(([id, etiket]) => (
+            <button
+              key={id}
+              onClick={() => setSayfa(id)}
+              className={`rounded px-2 py-1 text-xs transition-colors ${
+                sayfa === id
+                  ? 'bg-panel text-ink'
+                  : 'text-muted hover:text-ink'
+              }`}
+            >
+              {etiket}
+            </button>
+          ))}
+        </nav>
 
         <div className="ml-auto flex flex-wrap items-center gap-5">
           <ViewModeToggle />

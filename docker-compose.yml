@@ -22,6 +22,60 @@ x-logging: &default-logging
     max-size: "10m"
     max-file: "3"
 
+# ─── Ortak tanım: beş servis de bunu miras alıyor ───
+#
+# ⚠⚠ 06.09.2026 — `profiles` OLMADAN BU BLOK SİSTEMİ KİLİTLİYORDU
+#
+# Bu beş servis `build:` içeriyor. Profil verilmediğinde Compose onları
+# VARSAYILAN servis sayıyor ve `docker compose up -d` komutu, yalnızca
+# altyapıyı ayağa kaldırmak isteyen kullanıcıya haber vermeden
+# **16.8 GB'lık imajı derlemeye başlıyordu.**
+#
+# Belirtisi teşhisi zorlaştırıyordu: komut "takılmış" gibi görünüyor,
+# hiçbir konteyner ayağa kalkmıyor, hata da vermiyor — çünkü aslında
+# çalışıyor, sadece PyTorch+CUDA indiriyor.
+#
+# ⚠ Ve bu derleme bir kez C: diskini TAMAMEN doldurdu: 67 GB ara ürün
+# + 16.8 GB imaj. Docker'ın varsayılan veri konumu C:'de ve derlemeden
+# önce boş alan kontrol edilmemişti.
+#
+# Artık iki ayrı komut var ve ikisi de ne yapacağını söylüyor:
+#
+#     docker compose up -d                  → SADECE altyapı (derleme YOK)
+#     docker compose --profile app up -d    → + uygulama (imaj gerekli)
+#
+# ⭐ Ders: bir dosyaya eklenen servis, o dosyayı kullanan HERKESİN
+# varsayılan davranışını değiştirir. `profiles` bu değişikliği
+# "istersen" hâline getiriyor.
+x-app: &app
+  profiles: ["app"]
+  build:
+    context: .
+    dockerfile: backend/Dockerfile
+  image: sentinel-app:latest
+  restart: unless-stopped
+  env_file: [.env]
+  environment: &app-env
+    # ⚠ Konteyner içinden servisler ADIYLA çözülüyor, 127.0.0.1 ile
+    # değil: her konteynerin kendi loopback'i var ve `127.0.0.1`
+    # konteynerin KENDİSİNİ işaret eder.
+    VALKEY_HOST: valkey
+    POSTGRES_HOST: postgres
+    POSTGRES_PORT: "5432"
+    MEDIAMTX_HOST: mediamtx
+    MEDIAMTX_API_PORT: "9997"
+    MEDIAMTX_RTSP_PORT: "8554"
+    # ⚠ AMA WHEP ADRESİ TARAYICIYA GİDİYOR — o Docker ağının dışında
+    # ve `mediamtx` adını çözemez (bkz. config.py · mediamtx_public_host).
+    MEDIAMTX_PUBLIC_HOST: "127.0.0.1"
+    VALKEY_URL: ""          # host/port'tan türetilsin
+  volumes:
+    - ./backend/models:/app/models:ro
+    - ./data:/app/data
+    - ./benchmarks:/app/benchmarks
+  networks: [sentinel]
+  logging: *default-logging
+
 services:
 
   # ─── VALKEY — mesaj kuyruğu (Streams) + canlı durum önbelleği ───
@@ -171,6 +225,124 @@ services:
       - "127.0.0.1:3903:3903"   # yönetim API
     networks: [sentinel]
     logging: *default-logging
+
+  # ══════════════════════════════════════════════════════════════
+  #  UYGULAMA — API + YZ worker'ları  (03.09.2026'da eklendi)
+  # ══════════════════════════════════════════════════════════════
+  #
+  # ⚠ NEDEN ŞİMDİYE KADAR YOKTU
+  # Geliştirme stratejisi "altyapı Docker'da, Python worker'ları
+  # Windows'ta native" idi ve gerekçesi şuydu: *"Windows+Docker+GPU =
+  # WSL2 karmaşası, iterasyonu yavaşlatır"* (CLAUDE.md §2).
+  #
+  # ⚠ O GEREKÇE SINANDI VE ÇÜRÜDÜ (03.09.2026)
+  #     docker run --rm --gpus all nvidia/cuda:12.8.0-base nvidia-smi
+  #     → NVIDIA GeForce RTX 3070 Laptop GPU, 8192 MiB
+  # `nvidia` çalışma zamanı Docker'a kayıtlıydı. Varsayım, bir kez
+  # denenmeden on sekiz gün taşındı — ADR-0006'nın dersinin tekrarı:
+  # *"bir kararın gerekçesi belgeye girdikten sonra veri gibi
+  # davranmaya başlıyor."*
+  #
+  # ⚠ TEK İMAJ, BEŞ SERVİS: hepsi aynı `sentinel-app` imajını
+  # kullanıyor, yalnızca `command` farklı. Beş ayrı imaj beş kez
+  # ~6 GB'lık PyTorch+CUDA katmanı demekti.
+  #
+  # ⚠ BAŞLATMA SIRASI TEKNİK ZORUNLULUK (start_all.ps1 ile aynı):
+  #   ingest → paylaşımlı bellek havuzunu O YARATIR (`--owner`)
+  #   inference → havuza BAĞLANIR, önce havuz var olmalı
+  # `depends_on` bunu garanti ediyor; elle sıra takibi gerekmiyor.
+
+  # ─── API + React paneli ───
+  api:
+    <<: *app
+    container_name: sentinel-api
+    command: ["uvicorn", "sentinel.api.main:app", "--host", "0.0.0.0", "--port", "8001"]
+    environment:
+      <<: *app-env
+      # Panel konteyner dışından açılıyor; köken doğrulaması host
+      # adresini tanımalı (P-11 / P-21 — `localhost` ile `127.0.0.1`
+      # AYRI kökenlerdir, ikisi de yazılıyor).
+      ALLOWED_ORIGINS: "http://127.0.0.1:8001,http://localhost:8001,http://127.0.0.1:5173"
+    ports:
+      - "127.0.0.1:${API_PORT:-8001}:8001"
+    depends_on:
+      valkey: {condition: service_healthy}
+      postgres: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8001/api/v1/system/live || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ─── ALIM — paylaşımlı bellek havuzunun SAHİBİ ───
+  ingest:
+    <<: *app
+    container_name: sentinel-ingest
+    # ⚠ `ipc: shareable` — KONTEYNERLEŞTİRMENİN EN KRİTİK SATIRI
+    #
+    # Mimari kural 1: ham kare Valkey'den geçmez, paylaşımlı bellek
+    # kullanılır (1080p kare ~6 MB). Ama paylaşımlı bellek segmentleri
+    # IPC ad alanına özeldir: iki ayrı konteyner varsayılan olarak
+    # BİRBİRİNİN `/dev/shm`'ini göremez.
+    #
+    # Bu satır olmadan çıkarım worker'ı havuzu bulamaz ve sistem
+    # "kare gelmiyor" diye SESSİZCE durur — tam olarak P-38'in
+    # belirtisi. `shareable`, bu ad alanını başka konteynerlere
+    # açıyor; `inference` aşağıda ona katılıyor.
+    ipc: shareable
+    # Havuz 48 slot × ~1.2 MB; varsayılan 64 MB `/dev/shm` yetmez.
+    shm_size: "512mb"
+    command: ["python", "-m", "sentinel.ingest.worker", "--all", "--owner",
+              "--metrics-port", "9101", "--stats-interval", "300"]
+    ports:
+      - "127.0.0.1:9101:9101"
+    depends_on:
+      valkey: {condition: service_healthy}
+      mediamtx: {condition: service_healthy}
+
+  # ─── ÇIKARIM — GPU · modeller TEK KOPYA (mimari kural 3) ───
+  inference:
+    <<: *app
+    container_name: sentinel-inference
+    # Alım worker'ının IPC ad alanına KATILIYOR — paylaşımlı bellek
+    # havuzunu ancak böyle görebiliyor.
+    ipc: "service:ingest"
+    command: ["python", "-m", "sentinel.inference.worker",
+              "--batch-size", "8", "--stats-interval", "300"]
+    ports:
+      - "127.0.0.1:9110:9110"
+    # ⚠ GPU AYIRMA — Compose'un `deploy.resources` biçimi
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    depends_on:
+      ingest: {condition: service_started}
+
+  # ─── ANALİTİK — anomali + saldırganlık + füzyon ───
+  analytics:
+    <<: *app
+    container_name: sentinel-analytics
+    command: ["python", "-m", "sentinel.analytics.worker", "--stats-interval", "300"]
+    ports:
+      - "127.0.0.1:9120:9120"
+    depends_on:
+      inference: {condition: service_started}
+
+  # ─── ALARM — olayları TimescaleDB'ye kalıcılaştırır ───
+  alerting:
+    <<: *app
+    container_name: sentinel-alerting
+    command: ["python", "-m", "sentinel.alerting.worker"]
+    ports:
+      - "127.0.0.1:9130:9130"
+    depends_on:
+      postgres: {condition: service_healthy}
+      analytics: {condition: service_started}
 
 networks:
   sentinel:

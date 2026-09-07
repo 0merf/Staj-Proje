@@ -1,0 +1,129 @@
+{
+ "olculdu": "2026-09-07T08:30:26.546591+00:00",
+ "deney": "iskelet teşhisi — bilek sinyali neden sıfır",
+ "veri_seti": "RWF-2000 val",
+ "klip_sinif_basina": 40,
+ "hipotezler": {
+  "H1": "örnekleme seyrek (4 FPS) — hızlı hareket araya düşüyor",
+  "H3": "kırpıntı çözünürlüğü düşük (192 px)",
+  "H4": "poz güven eşiği sıkı (0.25)"
+ },
+ "sonuclar": [
+  {
+   "yapilandirma": "TABAN (üretim)",
+   "ad": "TABAN (üretim)",
+   "fps": 4.0,
+   "kirpinti": 192,
+   "conf": 0.25,
+   "fight": {
+    "klip": 40,
+    "iskelet_orani": 0.8965,
+    "bilek_gorunur_orani": 1.0,
+    "bilek_sifir_klip_orani": 0.075,
+    "bilek_hizi_medyan": 689.4,
+    "tespit_kare_basina": 3.15
+   },
+   "nonfight": {
+    "klip": 40,
+    "iskelet_orani": 0.8386,
+    "bilek_gorunur_orani": 1.0,
+    "bilek_sifir_klip_orani": 0.125,
+    "bilek_hizi_medyan": 325.9,
+    "tespit_kare_basina": 2.18
+   }
+  },
+  {
+   "yapilandirma": "H1 · sık örnekleme",
+   "ad": "H1 · sık örnekleme",
+   "fps": 15.0,
+   "kirpinti": 192,
+   "conf": 0.25,
+   "fight": {
+    "klip": 40,
+    "iskelet_orani": 0.8985,
+    "bilek_gorunur_orani": 1.0,
+    "bilek_sifir_klip_orani": 0.05,
+    "bilek_hizi_medyan": 2528.11,
+    "tespit_kare_basina": 3.16
+   },
+   "nonfight": {
+    "klip": 40,
+    "iskelet_orani": 0.8499,
+    "bilek_gorunur_orani": 1.0,
+    "bilek_sifir_klip_orani": 0.1,
+    "bilek_hizi_medyan": 1200.71,
+    "tespit_kare_basina": 2.18
+   }
+  },
+  {
+   "yapilandirma": "H3 · büyük kırpıntı",
+   "ad": "H3 · büyük kırpıntı",
+   "fps": 4.0,
+   "kirpinti": 320,
+   "conf": 0.25,
+   "fight": {
+    "klip": 40,
+    "iskelet_orani": 0.9248,
+    "bilek_gorunur_orani": 1.0,
+    "bilek_sifir_klip_orani": 0.075,
+    "bilek_hizi_medyan": 699.04,
+    "tespit_kare_basina": 3.15
+   },
+   "nonfight": {
+    "klip": 40,
+    "iskelet_orani": 0.9277,
+    "bilek_gorunur_orani": 1.0,
+    "bilek_sifir_klip_orani": 0.125,
+    "bilek_hizi_medyan": 330.56,
+    "tespit_kare_basina": 2.18
+   }
+  },
+  {
+   "yapilandirma": "H4 · gevşek güven",
+   "ad": "H4 · gevşek güven",
+   "fps": 4.0,
+   "kirpinti": 192,
+   "conf": 0.1,
+   "fight": {
+    "klip": 40,
+    "iskelet_orani": 0.9599,
+    "bilek_gorunur_orani": 1.0,
+    "bilek_sifir_klip_orani": 0.075,
+    "bilek_hizi_medyan": 729.55,
+    "tespit_kare_basina": 3.15
+   },
+   "nonfight": {
+    "klip": 40,
+    "iskelet_orani": 0.9476,
+    "bilek_gorunur_orani": 1.0,
+    "bilek_sifir_klip_orani": 0.1,
+    "bilek_hizi_medyan": 331.21,
+    "tespit_kare_basina": 2.18
+   }
+  },
+  {
+   "yapilandirma": "H1+H3+H4 birlikte",
+   "ad": "H1+H3+H4 birlikte",
+   "fps": 15.0,
+   "kirpinti": 320,
+   "conf": 0.1,
+   "fight": {
+    "klip": 40,
+    "iskelet_orani": 0.97,
+    "bilek_gorunur_orani": 1.0,
+    "bilek_sifir_klip_orani": 0.075,
+    "bilek_hizi_medyan": 2518.64,
+    "tespit_kare_basina": 3.16
+   },
+   "nonfight": {
+    "klip": 40,
+    "iskelet_orani": 0.9708,
+    "bilek_gorunur_orani": 1.0,
+    "bilek_sifir_klip_orani": 0.1,
+    "bilek_hizi_medyan": 1130.52,
+    "tespit_kare_basina": 2.18
+   }
+  }
+ ],
+ "sure_s": 614.9
+}

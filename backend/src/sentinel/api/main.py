@@ -1,7 +1,22 @@
 """SENTINEL FastAPI uygulaması.
 
-Faz 0 kapsamı: sağlık kontrolleri, metrikler ve geliştirme durum paneli.
-Kimlik doğrulama, kamera CRUD ve WebSocket katmanı sonraki fazlarda eklenecek.
+Kapsam: kimlik doğrulama + RBAC, kamera envanteri, canlı sonuç
+WebSocket'i, olay geçmişi, sağlık kontrolleri, Prometheus metrikleri
+ve React SPA servisi.
+
+⚠ 03.09.2026 — BU BAŞLIK 17 GÜN BAYAT KALDI
+Önceki hâli şuydu: *"Faz 0 kapsamı: sağlık kontrolleri, metrikler ve
+geliştirme durum paneli. Kimlik doğrulama, kamera CRUD ve WebSocket
+katmanı sonraki fazlarda eklenecek."*
+
+Üçü de eklendi (Gün 5 WebSocket, Gün 16 kimlik doğrulama) ama dosyanın
+başındaki cümle Faz 0'da kalmıştı. Mimari kural 0: belgede yazan ile
+kodda olan aynı olmalı. Bir docstring kodun belgesidir ve bayat bir
+docstring, kodu yeni okuyan birini doğrudan yanlış yönlendirir —
+"burada kimlik doğrulaması yok" diye okuyup korumasız bir uç eklemek
+tam olarak bu şekilde olur.
+
+Uç noktaların yetki tablosu aşağıda, `system_health` üstünde.
 """
 
 from __future__ import annotations
@@ -20,6 +35,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
+from sentinel import metrics
 from sentinel.api import cameras, health, webcam
 from sentinel.api.guvenlik import Kullanici, Rol, mevcut_kullanici, rol_gerekli
 from sentinel.api.routers import olaylar as olaylar_router
@@ -84,8 +100,10 @@ app = FastAPI(
 )
 
 # CORS — yalnızca beyaz listedeki origin'ler
-# ⚠ Bu WebSocket'i KAPSAMAZ. WS için Origin başlığı elle doğrulanacak
-#   (PLAN.md §11.1 / G06) — Faz 1'de eklenecek.
+# ⚠ Bu WebSocket'i KAPSAMAZ. WS el sıkışması CORS'a uymaz; `Origin`
+#   başlığı orada ELLE doğrulanıyor (`api/ws/live.py · origin_allowed`,
+#   PLAN.md §11.1 / G06). Bu ayrımı bilmemek yaygın bir açık kaynağı:
+#   CORS ayarlandı diye WebSocket'in de korunduğu sanılıyor.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.origins,
@@ -93,6 +111,31 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PATCH", "DELETE"],
     allow_headers=["Authorization", "Content-Type"],
 )
+
+
+@app.middleware("http")
+async def _istek_olc(request: Any, call_next: Any) -> Any:
+    """Her isteği sayar (PLAN §13.1 · `sentinel_http_requests_total`).
+
+    ⚠ YOL ŞABLONU KULLANILIYOR, HAM YOL DEĞİL
+    `/api/v1/events?camera=cam-03` gibi bir yolu olduğu gibi etiket
+    yapmak, Prometheus'ta **kardinalite patlaması** demek: her farklı
+    sorgu yeni bir zaman serisi üretir ve bir süre sonra Prometheus'u
+    dize etiketleriyle boğar. FastAPI'nin eşleştirdiği rota şablonu
+    (`/api/v1/events`) sabit sayıda seri üretiyor.
+
+    ⚠ Eşleşmeyen istekler (404) tek bir "bilinmeyen" etiketinde
+    toplanıyor — aksi hâlde rastgele yol deneyen bir tarayıcı
+    (saldırgan ya da bot) metrik deposunu şişirebilirdi. Bu, ölçüm
+    ucunun kendisinin bir saldırı yüzeyi olduğu az bilinen bir durum.
+    """
+    yanit = await call_next(request)
+    rota = request.scope.get("route")
+    yol = getattr(rota, "path", None) or "bilinmeyen"
+    metrics.http_requests.labels(
+        method=request.method, path=yol, status=str(yanit.status_code)
+    ).inc()
+    return yanit
 
 
 # ─── Sağlık ve durum ─────────────────────────────────────────
@@ -170,12 +213,33 @@ async def webcam_start(
     """Webcam yayınını başlatır (cam-21-live).
 
     ⚠ Kamera yalnızca bu çağrıyla açılır — kendiliğinden açılmaz.
-    Faz 1'de `operator+` rolü ve denetim kaydı zorunlu olacak (G19).
+
+    ⚠ 03.09.2026 — DENETİM KAYDI BURADA EKSİKTİ (G19)
+    `operator` rolü Gün 16'da zorunlu kılınmıştı ama yanındaki not
+    hâlâ *"Faz 1'de rol ve denetim kaydı zorunlu olacak"* diyordu.
+    Rol gelmişti, **denetim kaydı gelmemişti** — ve not bayat olduğu
+    için eksik görünmez hâle gelmişti.
+
+    Bu, denetim izinin en çok gerektiği eylem: sistemdeki diğer her uç
+    var olan bir görüntüyü OKUYOR, bu uç **yeni bir kamera açıyor.**
+    PLAN §11.1/G19 zaten "kamera görüntüleme" için denetim istiyordu;
+    kamera AÇMA, okumadan daha ağır bir eylem.
+
+    ⚠ Denetim kaydı sonuçtan BAĞIMSIZ yazılıyor (`basarili` alanıyla).
+    Başarısız bir açma denemesi de kayda değer: niyet gerçekleşmiş
+    olmasa da beyan edilmiştir.
     """
     try:
         result = webcam.controller.start(device)
     except (ValueError, FileNotFoundError) as exc:
+        await _denetim("webcam_baslat", kullanici, basarili=False,
+                       ayrinti={"device": device, "hata": str(exc)[:200]})
         return JSONResponse({"started": False, "reason": str(exc)}, status_code=400)
+    await _denetim(
+        "webcam_baslat", kullanici,
+        basarili=bool(result.get("started")),
+        ayrinti={"device": device},
+    )
     return JSONResponse(result, status_code=200 if result.get("started") else 409)
 
 
@@ -183,8 +247,42 @@ async def webcam_start(
 async def webcam_stop(
     kullanici: Annotated[Kullanici, Depends(rol_gerekli(Rol.OPERATOR))],
 ) -> dict[str, Any]:
-    """Webcam yayınını durdurur."""
-    return webcam.controller.stop()
+    """Webcam yayınını durdurur. Denetime yazılır (G19)."""
+    sonuc = webcam.controller.stop()
+    await _denetim("webcam_durdur", kullanici, basarili=True)
+    return sonuc
+
+
+async def _denetim(
+    eylem: str,
+    kullanici: Kullanici,
+    *,
+    basarili: bool = True,
+    ayrinti: dict[str, Any] | None = None,
+) -> None:
+    """Denetim izine yazar — hata isteği DÜŞÜRMEZ.
+
+    ⚠ Bu takas bilinçli ve tartışmalı olduğu için yazılıyor:
+    denetim kaydı yazılamazsa istek yine de işleniyor. Alternatif,
+    veritabanı erişilemezken kamera açmayı tümden engellemekti.
+
+    Yüksek güvenlikli bir kurulumda doğru seçim TERSİ olurdu:
+    "denetlenemeyen eylem yapılamaz". Bu bir staj/demo kurulumu ve
+    veritabanı arızasının tüm operasyonu durdurması orantısız —
+    ama karar raporda böyle, gerekçesiyle yazılacak. Sessizce
+    "denetim var" demek olmaz.
+    """
+    try:
+        from sentinel.db import kullanicilar as depo
+
+        await depo.denetim_yaz(
+            eylem,
+            kullanici_adi=kullanici.kullanici_adi,
+            basarili=basarili,
+            ayrinti=ayrinti,
+        )
+    except Exception as exc:  # pragma: no cover
+        log.error("denetim_yazilamadi", eylem=eylem, error=f"{type(exc).__name__}: {exc}")
 
 
 @app.get("/api/v1/system/live", tags=["system"])
@@ -197,13 +295,20 @@ async def liveness() -> dict[str, Any]:
 async def public_config(
     _: Annotated[Kullanici, Depends(mevcut_kullanici)],
 ) -> dict[str, Any]:
-    """Arayüzün ihtiyaç duyduğu, sır İÇERMEYEN ayarlar."""
+    """Arayüzün ihtiyaç duyduğu, sır İÇERMEYEN ayarlar.
+
+    ⚠ 03.09.2026 — `privacy_blur_default` BU YANITTAN ÇIKARILDI
+    Bu alan `true` dönüyordu ve sistemde hiçbir bulanıklaştırma yoktu;
+    ön yüz de alanı hiç okumuyordu. Yani API, yapmadığı bir şeyi
+    yaptığını beyan ediyordu — en kötü tür hata, çünkü kimse
+    kontrol etmeye gerek duymaz. Yüz bulanıklaştırma bu staj
+    kapsamının dışında (bkz. config.py ve raporun kapsam bölümü).
+    """
     return {
         "env": settings.sentinel_env,
         "camera_count": settings.camera_count,
         "target_fps": settings.target_fps,
         "motion_gate_enabled": settings.motion_gate_enabled,
-        "privacy_blur_default": settings.privacy_blur_default,
         "urls": {
             "webrtc": settings.mediamtx_webrtc_url,
             "grafana": settings.grafana_url,
@@ -213,8 +318,13 @@ async def public_config(
 
 
 @app.get("/metrics", include_in_schema=False)
-async def metrics() -> Response:
-    """Prometheus metrik uç noktası."""
+async def metrik_ucu() -> Response:
+    """Prometheus metrik uç noktası.
+
+    ⚠ Fonksiyon adı `metrics` DEĞİL: `sentinel.metrics` modülü bu
+    dosyaya `metrics` adıyla aktarılıyor ve aynı adı kullanmak modülü
+    gölgeliyordu. Yol (`/metrics`) değişmedi — yalnızca Python adı.
+    """
     if not settings.metrics_enabled:
         return Response(status_code=404)
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)

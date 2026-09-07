@@ -53,6 +53,7 @@ etmesi, spor yapması aynı örüntüyü verebilir. Sistem karar vermez,
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from statistics import median
 
 from sentinel.analytics.features.pair import YAKIN_MESAFE, CiftOzellikleri
 from sentinel.analytics.features.person import KisiOzellikleri
@@ -129,17 +130,54 @@ class Esikler:
     a_durus: float = 0.10
 
     # ─── Ölü bölge tabanları (ölçülen normal p90) ───
-    taban_bilek_hiz: float = 1.80
-    taban_bilek_sarsinti: float = 1.40
-    taban_enerji: float = 0.85
+    #
+    # ⚠⚠ 07.09.2026 — YENİDEN KALİBRE EDİLDİ (P-47/P-48)
+    #
+    # Eski değerler `bilek_hizi_azami` (pencere AZAMİSİ) için ölçülmüştü.
+    # Modül artık p75 okuyor (P-47: `azami` eklem gürültüsünü ölçüyordu,
+    # AUC 0.558 → p75 ile 0.677). Farklı bir büyüklüğü eski büyüklüğün
+    # eşiğiyle bantlamak, ölçtüğünden başka bir şeyin istatistiğini
+    # kullanmak olurdu.
+    #
+    # Yeni değerler `kalibre_rwf.py --ciftlik` ile ÇİFTLİK videolarından
+    # ölçüldü (18 kamera, cam-16/17 hariç — onlar kasten olay içeriyor;
+    # 37 862 örnek, canlı analiz hızında 2.75 FPS):
+    #
+    #     büyüklük              p50     p90    ESKİ    YENİ
+    #     bilek_hizi_p75       0.556   1.529   1.80    1.53
+    #     bilek_sarsintisi_p75 0.274   1.259   1.40    1.26
+    #     hareket_enerjisi     0.528   1.209   0.85    1.21
+    #
+    # ⚠ FİZİKSEL MAKULİYET SINIRI UYGULANDI (8.0 gövde/sn üstü atıldı)
+    # Sınırsız ölçümde p99 = 24.2 çıkıyordu. Bir boksörün yumruğu ~9 m/s
+    # ≈ 5.3 gövde/sn; 24.2 hareket değil eklem hatası. Sınır olmadan
+    # doyum p99'dan türetiliyordu ve 36.3 gibi anlamsız bir değer
+    # veriyordu — bileşen hiçbir zaman 1.0'a varamazdı.
+    #
+    # ⭐ Atılan oran bir BULGU: iskeletten türeyen ölçümlerin
+    # **%4-6'sı fiziksel olarak imkânsız.** Poz tahmini gürültüsünün
+    # doğrudan ölçüsü ve raporda bu şekilde yer alacak.
+    #
+    # ⚠ HÂLÂ ÇİFTLİK GENELİ TEK TABAN — mimari kural 7 ("her kameranın
+    # normali ayrı öğrenilir") saldırganlık modülünde TAM uygulanmış
+    # değil. Katman A kamera başına profil tutuyor, bu modül tutmuyor.
+    # `kalibre_rwf.py` kamera başına koşturulabilir; bağlanması açık iş.
+    taban_bilek_hiz: float = 1.529
+    taban_bilek_sarsinti: float = 1.259
+    taban_enerji: float = 1.209
     taban_yaklasma: float = 1.00
 
     # ─── Doyum noktaları (bu değerde bileşen 1.0) ───
     # Normalin p99'unun biraz üstü: p99 hâlâ normal davranıştır,
     # doyum ancak onu aşan hareket için ayrılmalı.
-    doyum_bilek_hiz: float = 4.50
-    doyum_bilek_sarsinti: float = 3.50
-    doyum_enerji: float = 2.00
+    # ⚠ 07.09.2026 — doyum artık p90 × 2.0 (p99 DEĞİL).
+    # p99, fiziksel sınır uygulandıktan sonra bile uzun kuyruklu:
+    # gürültünün bir kısmı 8.0 sınırının altında kalıyor. p90 sağlam
+    # bir üst çeyrek göstergesi ve "normalin belirgin üstü" tanımını
+    # koruyor.
+    doyum_bilek_hiz: float = 3.057
+    doyum_bilek_sarsinti: float = 2.519
+    doyum_enerji: float = 2.418
     doyum_yaklasma: float = 2.50
 
     # ─── Histerezis eşikleri ───
@@ -249,6 +287,61 @@ def _bant(deger: float | None, taban: float, doyum: float) -> float:
     return min(1.0, max(0.0, (deger - taban) / (doyum - taban)))
 
 
+# ⚠⚠ SAHNE-GÖRELİ TABAN — kalabalık karışmasına karşı (P-49/P-51)
+#
+# Ölü bölge tabanı Gün 1'den beri SABİT bir sayıydı (RWF'den kalibre).
+# İki ayrı videoda ölçüldüğünde sabit tabanın yetmediği görüldü:
+#
+#     video                kişi/kare   `max` ayrımı   sahne medyanı
+#     F_74 (elde telefon)     6.5         0.97 ❌        0.69 ❌
+#     F_45 (sabit CCTV)       3.0         0.90 ❌        1.36 ✅
+#
+# ⭐ Ve doğru istatistik KALABALIĞA GÖRE DEĞİŞİYOR: 3 kişilik bir
+# sahnede "medyan" kavga edenin KENDİSİ oluyor; 7 kişilik sahnede
+# seyirci oluyor. Bu yüzden ne `max` ne de `max − medyan` tek başına
+# her iki durumda çalışıyor.
+#
+# ⭐⭐ Doğru referans "herkes" değil, **SEYİRCİLER**: kişinin kendisi
+# ve çift partneri HARİÇ kalanların medyanı. Bu tanım her iki
+# kalabalıkta da aynı şeyi ölçüyor — "etrafındakilere göre ne kadar
+# hareketli".
+#
+# Taban `max(sabit_taban, seyirci_medyanı)` oluyor:
+#   - Seyirciler sakinse sabit taban geçerli (eski davranış korunur)
+#   - Seyirciler de hareketliyse taban yükselir → sahnenin geneli
+#     hareketli olduğu için kimse "saldırgan" sayılmaz
+#
+# ⚠ Bu değişiklik skoru yalnızca DÜŞÜREBİLİR; yanlış alarmı azaltır,
+# duyarlılığı azaltma riski taşır. İki yönlü ölçüldü (bkz. P-51).
+def _seyirci_referansi(
+    kisi: KisiOzellikleri,
+    cift: CiftOzellikleri | None,
+    kisiler: list[KisiOzellikleri],
+) -> dict[str, float] | None:
+    """Kişinin ve partnerinin dışındaki kişilerin medyan hareketi."""
+    haric = {kisi.track_id}
+    if cift is not None:
+        haric |= {cift.track_a, cift.track_b}
+    digerleri = [k for k in kisiler if k.track_id not in haric and k.track_id >= 0]
+    # ⚠ En az 2 seyirci: tek bir kişinin değeri "sahnenin normali"
+    # sayılamaz. Altındaysa referans YOK ve sabit taban kullanılır.
+    if len(digerleri) < 2:
+        return None
+    ref: dict[str, float] = {}
+    for alan in ("bilek_hizi_p75", "hareket_enerjisi"):
+        v = [x for k in digerleri if (x := getattr(k, alan, None)) is not None]
+        if len(v) >= 2:
+            ref[alan] = float(median(v))
+    return ref or None
+
+
+def _taban(sabit: float, ref: dict[str, float] | None, alan: str) -> float:
+    """Sabit tabanla seyirci referansının büyüğü."""
+    if ref is None or alan not in ref:
+        return sabit
+    return max(sabit, ref[alan])
+
+
 @dataclass(slots=True)
 class TirmanmaSkoru:
     """Bir kişi (ve varsa en tehlikeli çifti) için tırmanma değerlendirmesi."""
@@ -324,7 +417,8 @@ class TirmanmaSkorlayici:
             if kisi.track_id < 0 or kisi.tamlik < self._e.asgari_tamlik:
                 continue
             cift = en_yakin.get(kisi.track_id)
-            sonuc = self._skorla(camera, kisi, cift, simdi)
+            ref = _seyirci_referansi(kisi, cift, kisiler)
+            sonuc = self._skorla(camera, kisi, cift, simdi, ref)
             if sonuc is not None:
                 cikti.append(sonuc)
         return cikti
@@ -337,6 +431,7 @@ class TirmanmaSkorlayici:
         kisi: KisiOzellikleri,
         cift: CiftOzellikleri | None,
         simdi: float,
+        ref: dict[str, float] | None = None,
     ) -> TirmanmaSkoru | None:
         b: dict[str, float] = {}
 
@@ -366,9 +461,29 @@ class TirmanmaSkorlayici:
 
         # ── 2. Bilek dinamiği ──
         e = self._e
-        hiz = _bant(kisi.bilek_hizi_azami, e.taban_bilek_hiz, e.doyum_bilek_hiz)
+        # ⚠⚠ 07.09.2026 — `azami` YERİNE p75 (P-47)
+        #
+        # `bilek_hizi_azami` pencere içindeki AZAMİ hızdı ve ölçüldü ki
+        # o azami, hareketi değil **eklem tahmini hatasını** örnekliyor:
+        # RWF-2000'de kavga/normal ayırt etme gücü AUC 0.558 (şans
+        # seviyesi). Aynı seriden p75 alınca 0.677 — tek bir
+        # toplulaştırma değişikliğiyle +0.120.
+        #
+        # ⚠ `... or kisi.bilek_hizi_azami` YEDEĞİ BİLİNÇLİ:
+        # p75 alanı yalnızca yeni özellik çıkarımından geliyor. Eski
+        # bir kayıt (kaydedilmiş profil, tekrar oynatılan ölçüm)
+        # okunursa alan `None` olur ve modül sessizce susardı. Yedek,
+        # o durumda ESKİ davranışa dönüyor — daha kötü ama sağır değil.
+        hiz = _bant(
+            kisi.bilek_hizi_p75 if kisi.bilek_hizi_p75 is not None
+            else kisi.bilek_hizi_azami,
+            _taban(e.taban_bilek_hiz, ref, "bilek_hizi_p75"),
+            e.doyum_bilek_hiz,
+        )
         sarsinti = _bant(
-            kisi.bilek_sarsintisi, e.taban_bilek_sarsinti, e.doyum_bilek_sarsinti
+            kisi.bilek_sarsintisi_p75 if kisi.bilek_sarsintisi_p75 is not None
+            else kisi.bilek_sarsintisi,
+            e.taban_bilek_sarsinti, e.doyum_bilek_sarsinti,
         )
         # Sarsıntı hızdan daha ayırt edici: kontrollü bir hareket düzgün
         # hızlanır, vuruş ANİ sıçrar. Bu yüzden daha ağır.
@@ -386,7 +501,11 @@ class TirmanmaSkorlayici:
             b["yaklasma"] = 0.0
 
         # ── 4. Enerji + senkron ──
-        enerji = _bant(kisi.hareket_enerjisi, e.taban_enerji, e.doyum_enerji)
+        enerji = _bant(
+            kisi.hareket_enerjisi,
+            _taban(e.taban_enerji, ref, "hareket_enerjisi"),
+            e.doyum_enerji,
+        )
         senkron = (cift.senkron_enerji or 0.0) if cift is not None else 0.0
         # ⚠ Senkron TEK BAŞINA kullanılmıyor, enerjiyle ÇARPILIYOR.
         # Yan yana yürüyen iki kişinin hareketleri de korelasyonludur

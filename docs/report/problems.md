@@ -33,6 +33,1162 @@ ama **belirti / sebep / çözüm** üçlüsü mutlaka olsun.
 
 <!-- Yeni kayıtlar buraya, en yenisi en üstte -->
 
+### P-51 · ⭐⭐ Test videosu sistemin varsayımının DIŞINDAYDI — ve `with_reid` etkisiz bir bayrakmış
+
+**Tarih:** 07.09.2026 · **Faz:** 3 · **Kaybedilen süre:** ~3 saat
+
+**Belirti:** P-50'de cam-15'in (UBI-Fights `F_74`) elde tutulan bir
+telefonla çekildiği görülmüştü. Kullanıcı iki soru sordu:
+
+> *"Düzelttin mi peki o sabit kamera olayını?"*
+> *"20 kamerada ReID GPU bütçesini aşıyor demişsinde bunu test ettin mi
+> söylüyorsun yoksa test etmeden mi söyledin?"*
+
+İkisinin de cevabı **hayır**dı. Birincisi yalnızca belgelenmişti,
+ikincisi hiç ölçülmemişti — ve ölçülmemiş bir gerekçe kullanıcıya
+ölçülmüş gibi aktarılmıştı.
+
+---
+
+#### 1. SABİT KAMERA — varsayım doğru, TEST VERİSİ yanlıştı
+
+`botsort.py`'de iki ayar kapalı ve ikisinin de gerekçesi *"kameralarımız
+sabit"*:
+
+```python
+gmc_method="none",   # kamera hareketi telafisi
+with_reid=False,     # görünüm eşleştirme
+```
+
+Varsayım **kamera çiftliği için doğru** (20 kameranın hepsi sabit).
+Yanlış olan, o varsayımın dışındaki bir videoyla test etmekti.
+
+216 kavga videosu tarandı (`bul_sabit_kamera.py` · seyrek optik akış,
+**medyan** kayma — ortalama alsaydık sahnedeki insanlar sonucu
+sürüklerdi):
+
+```
+video                    kayma%   kesme   süre   olay öncesi
+F_45_0_0_0_0              0.000     0     128s      25.5s   ⬅ SEÇİLEN
+F_39_1_0_0_0              0.000     0     112s      40.6s
+F_74_1_2_0_0 (eski cam-15) 0.197    —     160s      58.0s   ⬅ p90 %1.023
+```
+
+60 adayın **45'i tam sabit**; eski cam-15 veri setindeki en kötülerden
+biriydi. Yanlış videoyu seçmişim.
+
+⚠ **Tarama tek başına yetmedi — iki aday gözle elendi:**
+
+| Aday | Tarama dedi | Göz gördü |
+|---|---|---|
+| `F_0_1_0_0_0` | sabit, 112 sn bağlam ✅ | **iki ayrı kameradan kurgulanmış**: 0-100 sn hastane koridoru, 106 sn'den sonra otopark |
+| `F_202_0_0_0_0` | sabit, tek sahne ✅ | **kurgu/eğitim videosu** ("Active Self Protection" filigranı); etiketi görünen şiddetle çelişiyor |
+
+⭐ Sahne kesmesi bizim için kamera hareketinden **daha kötü**: Katman A
+her kameranın normalini ayrı öğreniyor (mimari kural 7). Ortasında
+sahne değişen bir video, tek kameranın öğrenilmiş normalini geçersiz
+kılar.
+
+⚠ **Kesme dedektörünün ilk sürümü de yanlıştı.** HSV histogram
+korelasyonu kullanıyordu ve F_0'ın kesmesinde **0.582** verdi — 0.5
+eşiğinin üstünde, yani "kesme yok". Sebep: iki sahne de kapalı alan,
+ikisi de düşük doygunluklu (bej fayans ⟷ gri beton). **Sahne değişti
+ama renk değişmedi.** Gri seviye farkına geçilince aynı kesme net
+göründü (43.6 ⟷ normal 15).
+
+**Yeni cam-15: `F_45_0_0_0_0`** — gerçek CCTV, sabit (%0.000), tek
+sahne (market), 22 sn temiz olay öncesi bağlam. Eski video silinmedi:
+`data/videos/_arsiv/` altında ve kalabalık ölçümü için `cam-15h`
+olarak duruyor (6.5 kişi/kare — yeni cam-15 yalnızca 3.0 veriyor).
+
+**Yer gerçeği yine gözle doğrulandı:**
+
+```
+19-21s  iki kişi ayrı yürüyor — normal
+22.5s   ⬅ ilk saldırgan hareket (kol uzatma)
+23.0s   ayrı duruyorlar
+23.5s   yakınlaşma
+24.0s   ⬅ FİZİKSEL TEMAS
+25.0s   veri setinin etiketi burada başlıyor
+```
+
+⭐ **Bu videonun etiketi güvenilir:** 1.5 sn sapma (F_74'te 25 sn'ydi).
+Başlangıç 23.5 alındı, belirsizlik bandı [22.5, 24.0] açıkça yazıldı —
+**1.5 sn'den küçük hiçbir avans iddiası bu bandın dışına çıkamaz.**
+
+**Sonuç — sabit kamerada K8:**
+
+```
+dönem                  n    KURAL p50   MODEL p50
+normal                31      0.064       0.127
+tırmanma (-6 sn)      33      0.059       0.147
+kavga                 86      0.067       0.416
+
+KURAL  ❌ ayırt etmiyor (oran 1.01)
+MODEL  ✅ TESPİT ediyor (oran 2.17)   ⬅ hareketli videoda 1.71'di
+       ❌ ERKEN UYARI YOK (tırmanma 0.147 ⟷ normal 0.127 = 1.16)
+
+⭐ Yanlış alarmsız eşikte tespit: olay başlangıcından +2.2 sn SONRA
+   (tek eşik, sıfır yanlış alarm — hareketli videoda 1.8-5.0 sn aralığı)
+```
+
+⭐ **Sistemi kendi varsayımına uyan bir kamerada test etmek ayrımı
+%27 artırdı** (1.71 → 2.17) ve tespit gecikmesini tek bir sayıya
+indirdi. Ama K8 **hâlâ tutmuyor**: sistem kavgayı tespit ediyor,
+önceden haber vermiyor.
+
+⚠ İki ölçüm hatası daha bu koşuda yakalandı:
+
+1. **Isınma kırpması yanlış yerdeydi.** Dönem tablolarından *sonra*
+   uygulanıyordu: tablolar kırpılmamış seriyi, karar kırpılmış seriyi
+   gösteriyordu — aynı raporun iki farklı veriye bakması.
+2. **Tırmanma penceresi (20 sn) bağlamı yutuyordu.** Bu videonun olay
+   öncesi bağlamı 23.5 sn; 20 sn'lik pencere "uzak normal" havuzunda
+   10 örnek bırakıyor, medyanı 0.000 çıkıyor ve ayırt etme oranı
+   **64 milyon** gibi anlamsız bir sayıya fırlıyordu. Pencere K8
+   hedefinden türetildi (2 sn × 3 = 6 sn) ve mevcut bağlamın 1/3'üyle
+   sınırlandı.
+
+---
+
+#### 2. `with_reid` — ölçülmemiş bir gerekçe, ve altından çıkan asıl bulgu
+
+Koddaki gerekçe:
+
+```python
+with_reid=False,
+# ReID ayrı bir sinir ağı çalıştırır. 20 kamerada GPU bütçesini
+# aşar... Faz 5'te ölçülüp değerlendirilecek.
+```
+
+⭐ Son cümle gerekçenin kendisini çürütüyor: *"ölçülüp
+değerlendirilecek"* = **ölçülmedi**. Ölçüm betiği yazıldı
+(`benchmark_reid.py`) ve şunu verdi:
+
+```
+with_reid=False : 0.494 ms/kare
+with_reid=True  : 0.519 ms/kare   → +0.025 ms (1.05×)
+```
+
+"ReID neredeyse bedava" diye raporlanabilirdi. **Ama bir sinir ağı bu
+kadar ucuz olamaz.** Şüphelenip takipçinin içine bakıldı:
+
+```python
+# botsort.py · update()
+raw = tracker.update(batch, img=None)   # ⬅ GÖRÜNTÜ VERİLMİYOR
+```
+
+⭐⭐ **`with_reid` bu boru hattında ETKİSİZ BİR BAYRAK.** ReID kişi
+kırpıntısından gömme vektörü çıkarır; görüntü verilmezse kodlayıcı
+nesnesi oluşur (`encoder=function` diye doğrulandı) ama **hiç
+çağrılmaz**. Ölçüm "kapalı ReID ⟷ kapalı ReID" kıyaslamış oldu;
++0.025 ms ReID'in maliyeti değil, ölçüm gürültüsü.
+
+⭐ **Gerçek sebep maliyet değil MİMARİ:** takipçi arayüzü piksel
+almıyor — bu, mimari kural 1'in (*ham kare kuyruktan geçmez*)
+doğrudan sonucu. ReID'i açmak bir bayrak değişikliği değil, kare
+referansını takip katmanına taşımaktır; maliyeti **ancak ondan sonra**
+ölçülebilir.
+
+**Bunun bedeli var ve raporda yazılacak:** kimlik sürekliliği yalnızca
+hareket tahminine (Kalman + IoU) dayanıyor. Kişi `track_buffer`ı
+(≈10 sn) aşarak kaybolursa ya da kalabalıkta başka bir yerden
+çıkarsa **yeni kimlik** alır.
+
+Betiğe artık bir geçerlilik ön koşulu kodlandı: ölçmeden önce
+"ReID gerçekten koşuyor mu" diye soruyor ve koşmuyorsa **sayı
+üretmiyor, ölçümü geçersiz ilan ediyor.**
+
+---
+
+#### 3. Kural yoluna sahne-göreli taban — doğru ama YETMEDİ
+
+P-49'un `max`-over-kişi bulgusu kural yoluna da taşındı, ama tanı
+önce daha ince bir şey gösterdi:
+
+```
+                          cam-15 (3 kişi)   cam-15h (6.5 kişi)
+sahne medyanı ayrımı          1.36 ✅            0.69 ❌
+aykırılık (max−medyan)        0.81 ❌            1.39 ✅
+```
+
+⭐ **Doğru istatistik kalabalığa göre değişiyor.** 3 kişilik sahnede
+"medyan" kavga edenin *kendisi* oluyor; 7 kişilik sahnede *seyirci*
+oluyor. Ne `max` ne `max − medyan` her iki durumda çalışıyor.
+
+⭐⭐ Doğru referans "herkes" değil **seyirciler**: kişinin kendisi ve
+çift partneri hariç kalanların medyanı. Bu tanım her iki kalabalıkta
+da aynı şeyi ölçüyor. Ölü bölge tabanı sabit sayı olmaktan çıkıp
+`max(sabit_taban, seyirci_medyanı)` oldu.
+
+**İki yönlü doğrulandı:**
+
+```
+RWF-2000 kural tabanı : AUC 0.629 → 0.633   (regresyon YOK)
+cam-15  kural ayrımı  : 1.01 → 1.01         (değişmedi)
+cam-15h kural ayrımı  : 0.89 → 1.00         (değişmedi)
+```
+
+⚠ **Değişiklik doğru ama kural yolunu KURTARMIYOR.** Sebep daha
+derinde: kural skoru her dönemde 0.070 civarında **sabit** — ölü
+bölgeler (RWF klip istatistiklerinden kalibre) bu videolarda hemen
+her şeyi sıfırlıyor. Kural yolunun sorunu tek bir istatistik değil,
+**bir dağılımdan kalibre edilen eşiklerin başka bir dağılıma
+taşınmaması.**
+
+⭐ Ve bu, makalenin öğrenilen model ⟷ elle kurallı sistem
+karşılaştırmasının en güçlü kanıtı: aynı özelliklerle beslenen
+LightGBM aynı videoda 2.17 ayrım verirken, elle ağırlıklı kural
+kümesi 1.01 veriyor.
+
+**Öğrenilen ders:** Bir varsayım, kodda gerekçe olarak yazılı olduğu
+için doğrulanmış sayılamaz. Bu projede üç ayrı gerekçe ölçüldüğünde
+üçü de farklı çıktı: biri **doğru ama yanlış yerde uygulanmıştı**
+(sabit kamera), biri **hiç ölçülmemişti** (ReID maliyeti), biri
+**yanlış sebebi gösteriyordu** (ReID'in kapalı olma nedeni). Yorum
+satırı bir kanıt değil, bir **iddiadır** — ve iddialar denetlenir.
+
+> ⭐ Kullanıcının *"test ettin mi yoksa test etmeden mi söyledin"*
+> sorusu, bu kaydın tamamını açan sorudur. Bir gerekçeyi okumakla
+> ölçmek arasındaki farkı sormak, denetimin en ucuz aracı.
+
+
+---
+
+### P-50 · ⭐⭐ K8'in "+20.2 sn avansı" YOK OLDU — veri setinin etiketi olayın başlangıcını vermiyordu
+
+**Tarih:** 07.09.2026 · **Faz:** 3 · **Kaybedilen süre:** ~2 saat
+
+**Belirti:** P-49'un sonunda K8 ✅ işaretlenmişti: *"eşik 0.90'te avans
++20.2 sn."* Kullanıcı sayıya itiraz etti — **ölçüme değil, makullüğüne**:
+
+> *"20 saniye öncesinden kavga uyarısı normal değil gibi. Ama videoyu
+> görmedim, belki doğrudur."*
+
+Sayıyı savunmak yerine **videoya bakıldı.**
+
+**Araştırma:** cam-15'ten (`UBI-Fights · F_74_1_2_0_0`) kareler
+çıkarıldı ve gözle tarandı:
+
+```
+ 20-32.0s   normal — yürüyen insanlar, bebek arabalı adam, bisikletli
+ 32.8s      ⬅ ilk saldırgan hamle
+ 33.6s      açık çatışma duruşu, kollar açılmış
+ 34.4s      hamle
+ 36.8s      ⬅ YERDE YATAN KİŞİ
+ 38.4s      yerdekine müdahale
+ 44.0s      yerde boğuşma
+ 52.0s      yerde boğuşma sürüyor
+ 75-160s    olay sonrası kalabalık (8.2 kişi/kare) — şiddet görünmüyor
+```
+
+Veri setinin etiketi ise ilk kavgayı **57.967 sn**'de başlatıyor.
+Fiziksel çatışma **~32.8 sn**'de başlamış: etiket **~25 saniye GEÇ.**
+
+⚠ Kaynak videoyla `cam-15.mp4` aynı karede birebir eşleşiyor — zaman
+kayması yok, yeniden kodlama doğru. Sorun hizalamada değil, **etiketin
+neyi işaretlediğinde.**
+
+**Kök sebep:** UBI-Fights'ın etiketi **yanlış değil** — kendi tanımına
+göre doğru. Veri seti üç ayrı *"şiddet penceresi"* işaretliyor, olayın
+*başlangıcını* değil. Yanlış olan, o etiketi **başka bir sorunun**
+cevabı sanmaktı:
+
+| Veri setinin cevapladığı soru | K8'in sorduğu soru |
+|---|---|
+| "hangi karelerde şiddet var?" | "olay ne zaman **başladı**?" |
+
+⭐ Geç bir başlangıç etiketi, erken uyarı ölçümünü **sistematik olarak
+şişirir**. Aynı alarm anı (37.8 sn):
+
+```
+58.0'a göre  →  "+20.2 sn ERKEN"     ✅ başarı
+32.8'e göre  →  "  5.0 sn GEÇ"       ❌ başarısızlık
+```
+
+**Aynı sayı, etikete göre başarı ya da başarısızlık okunuyor.**
+
+**Çözüm:** Görsel doğrulamayla üretilmiş ayrı bir yer gerçeği
+(`data/annotations/cam-15.gorsel.json`); veri setinin etiketi
+**silinmedi**, `--etiket veriseti` ile erişilebilir durumda ve ikisinin
+farkı raporlanacak bir bulgu. Ölçüme üç kısıt daha eklendi:
+
+1. **Isınma kırpması.** İlk sürüm "+31.7 sn avans" verdi — skorun
+   **1.1. saniyede** eşiği geçtiği anlamına geliyordu; özellik penceresi
+   (5 sn) daha dolmamıştı. İlk 6 sn atılıyor. (Canlı sistem bu dersi
+   zaten biliyordu — P-28, ilk 90 sn. Ölçüm betiği bilmiyordu.)
+2. **Doğrulanmamış aralık hiçbir havuza girmiyor.** 75-160 sn olay
+   sonrası kalabalık: ne normal olduğu ne olmadığı doğrulanabildi
+   (veri seti 96.9-112'yi hâlâ "fight" sayıyor). 236 örnek **ölçüm
+   dışı**. Etiketlenemeyen veriyi "normal" saymak, K7'de düzeltilen
+   hatanın aynısı olurdu.
+3. ⭐ **"Tespit" ile "ERKEN uyarı" ayrıldı.** Önceki geçerlilik
+   kontrolü tırmanma + kavgayı tek havuz sayıyordu; kavgadaki güçlü
+   sinyal, olay öncesi hiçbir şey olmasa bile havuzu yukarı çekiyordu.
+   Artık avans iddiası ayrı bir ön koşula bağlı: **olay öncesi
+   pencerenin medyanı normali aşmalı.**
+
+**Sonuç — DÜRÜST K8:**
+
+```
+dönem                  n    KURAL p50   MODEL p50
+normal (0-32.8)       36      0.066       0.297
+tırmanma (-20 sn)     56      0.069       0.207   ⬅ NORMALDEN DÜŞÜK
+kavga (32.8-75)      117      0.070       0.819   ⬅ güçlü
+(75-160 ölçüm dışı)  236        —           —
+
+KURAL  ❌ kavgayı normalden ayırt ETMİYOR (oran 0.89)
+MODEL  ✅ TESPİT ediyor (oran 1.71 · kavga 0.819 ⟷ normal 0.297)
+       ❌ ERKEN UYARI YOK (tırmanma 0.207 < normal 0.297)
+
+⭐ Yanlış alarmsız eşiklerde (0.60-0.90) tespit:
+   olay başlangıcından 1.8 – 5.0 saniye SONRA
+```
+
+> ⭐⭐ **K8 TUTMUYOR.** Sistem kavgayı güçlü biçimde tespit ediyor
+> (2.8× ayrım) ama **önceden haber vermiyor** — tam tersine, olay
+> öncesi 20 saniyede skoru normalin altında.
+
+**İkinci bulgu — kamera sabit değil.** Kareler açılınca görüldü ki bu
+video **elde tutulan bir telefonla** çekilmiş: görüntü kayıyor,
+yakınlaşıyor, sarsılıyor. Boru hattımız sabit kamera varsayıyor ve bu
+varsayım **kodda gerekçe olarak yazılı**:
+
+```python
+# botsort.py
+gmc_method="none",   # "sabit kamerada bedava maliyet"
+with_reid=False,     # "sabit kameralarda zaten yeterli"
+```
+
+Kamera hareketi **tüm** kutulara sahte hız ekler. Bu videodaki her hız
+temelli özellik o yanlılığı taşıyor — ve normal dönemde bilek hızının
+neden kavga seviyesinde çıktığının (P-49) muhtemel bir açıklaması bu.
+
+**Öğrenilen ders:** Bir ölçümün girdisi kadar **yer gerçeğinin tanımı**
+da denetlenmeli. Etiket dosyası bir *veri* değil, bir *yorumdur*:
+birinin, kendi sorusuna göre çizdiği sınırdır. Başka bir soru için
+kullanılacaksa, o soruya uyup uymadığı **doğrulanmalıdır** —
+ve doğrulamanın en ucuz yolu videoyu açıp bakmaktı.
+
+> ⭐ Kullanıcının itirazı bir ölçüm değildi, bir **makullük sezgisiydi**
+> — ve haklı çıktı. "Sayı doğru ama anlamı şüpheli" demek, ölçüm
+> denetiminin en verimli ilk adımı.
+
+
+---
+
+### P-49 · K8 üç kez yanlış karara vardı — üçünde de suçlu ölçütün TASARIMIYDI
+
+**Tarih:** 07.09.2026 · **Faz:** 3 · **Kaybedilen süre:** ~4 saat
+
+**Belirti:** K8 (erken uyarı avansı), cam-15 üzerinde art arda üç farklı
+sonuç verdi — ve ilk ikisi yanlıştı:
+
+| # | Betiğin verdiği karar | Neden yanlıştı |
+|---|---|---|
+| 1 | ✅ "+56.9 sn avans" | Görev döngüsü **%99** — dedektör sürekli açıktı. Hep "alarm" diyen bir sistem her olaydan önce de alarm der. |
+| 2 | ✅ "+19.8 sn avans, görev döngüsü %1.8" | Görev döngüsü düzeltildi ama **skor kavgada normalden yüksek değildi**. Eşik geçişi öngörü değil, denk gelmiş yanlış pozitifti. |
+| 3 | ❌ "ayırt etmiyor" | Bu kez ölçütün kendisi bozuktu (aşağıda). |
+
+**Araştırma:** İkinci karardan sonra dönem bazlı bir geçerlilik kontrolü
+ekledim ve karar ❌'ye döndü. Sıradaki üç şüpheli tek tek elendi:
+
+```
+tespit      : kavgada 6.5 kişi/kare, %96.7 poz başarısı   → sağlam
+takip       : iz ömrü kavgada 7.5 örnek (normalde 7.0)    → kopmuyor
+zamansal    : kişilerin %100'ünde bilek hızı hesaplandı   → veri var
+⭐ ham özellik: kavga 1.152 · normal 1.192 · oran 0.97     → SİNYAL YOK
+```
+
+Modele giren sayının kendisi ayırt etmiyordu. Üç hipotez sınandı:
+
+| Hipotez | Test | Sonuç |
+|---|---|---|
+| Takip kopuyor (örtüşme) | iz ömrü dönem kırılımı | ❌ çürüdü — kavgada ömür daha uzun |
+| Çözünürlük tabanı (kişi küçük) | `diagnose_olcek.py` · RWF ⟷ cam-15 | ❌ çürüdü — cam-15'te kişiler **daha büyük** (129 px vs 105 px) |
+| ⭐ Kalabalık karışması | kişi sayısı ⟷ özellik korelasyonu | ✅ **doğrulandı** |
+
+**Kök sebep 1 — `max`-over-KİŞİ kalabalığı ölçüyor:**
+
+```
+kişi/kare    n     bilek hızı p75 medyan    o karelerin kavga oranı
+ 1-4        109           1.099                      4%
+ 5-6        162           1.049                     20%
+ 7-8        137           1.372                     20%
+ 9+          35           1.535                     23%   ⬅ kavga sabit,
+                                                             hız +%40
+Pearson r(kişi sayısı, bilek hızı) = +0.274
+```
+
+`max`, örneklem büyüdükçe **tanımı gereği** büyüyen bir istatistiktir.
+9 kişilik bir sahnenin "en hızlı kişisi", 4 kişilik sahneninkinden
+yüksek çıkar — kimse kavga etmese bile.
+
+> ⚠⚠ **Bu P-47 ile AYNI hata, atlanmış eksende.** P-47'de
+> `max`-over-ZAMAN eklem gürültüsünü ölçüyordu ve p75'e çevrildi.
+> Aynı istatistik uzay ekseninde duruyordu ve kimse bakmadı.
+
+**Çözüm 1 — sahne-göreli aykırılık.** Kavganın işareti "biri hızlı
+hareket ediyor" değil, **"biri çevresindekilere göre hızlı hareket
+ediyor"**:
+
+```python
+aykirilik = max(kare) - medyan(kare)   # oran değil FARK: birim korunur
+```
+
+Ölçülen (cam-15):
+
+```
+ölçüt                     kavga   normal   oran
+max (mevcut)              1.152    1.192   0.97  ❌
+sahne medyanı             0.345    0.501   0.69  ⬅ kavgada seyirci DONUYOR
+⭐ aykırılık (max−medyan)  0.751    0.542   1.39  ✅
+```
+
+⭐ Beklenmeyen bonus: kontrast iki taraftan geliyor — kavga eden
+hızlanırken **çevresi durup izliyor**. `max` bu ikinci yarıyı hiç
+göremiyordu.
+
+RWF-2000'de temiz ablasyon (**aynı çıkarım koşusu**, yalnızca sütun
+kümesi farklı — `--haric-onek` bayrağı bunun için eklendi):
+
+| | özellik | AUC | F1 | duyarlılık | kesinlik |
+|---|---|---|---|---|---|
+| aykırılık YOK | 55 | 0.911 | 0.874 | 0.849 | 0.900 |
+| aykırılık VAR | 99 | **0.927** | **0.889** | 0.830 | **0.957** |
+
+Kazanç kesinlikte yoğunlaşıyor (0.900 → 0.957) — kalabalık kaynaklı
+yanlış pozitifin kesilmesinin beklenen imzası.
+
+⚠ Üçüncü bir ablasyon da koşuldu: **yalnızca değişmez özellikler**
+(`ham_*` düşürülmüş, 66 sütun) → AUC 0.894 · F1 0.862. Hem RWF'de hem
+cam-15'te daha kötü. Yani mutlak özellikleri tamamen atmak çözüm değil;
+aykırılık onların **yanına** eklenmeli.
+
+**Kök sebep 2 — ve asıl ders: ölçütün kendisi bozuktu.**
+
+Aykırılık özelliği eklendikten sonra bile K8 ❌ veriyordu. Sebep,
+**benim geçerlilik kontrolümdü**: "kavga segmentleri" ile "geri kalan
+her şeyi" kıyaslıyordu. Ama yer gerçeği segmentleri yalnızca **fiziksel
+darbeleri** işaretliyor — segment 1 yalnızca **1.7 saniye**. Kavgaya
+giden tartışma, yaklaşma, itişme "normal" havuzuna düşüyordu.
+
+> ⭐ Bu ölçüt, bir **erken uyarı** dedektörünü tam da erken uyardığı
+> için cezalandırır: olaydan önce yükselen skor "normal"i yükseltir ve
+> oran 1'in altına iner. Ölçüt, ölçtüğü şeyi imkânsız kılıyordu.
+
+Doğru kırılımla bakıldığında (iki farklı model, aynı desen):
+
+```
+dönem                  n    KURAL p50   MODEL p50
+normal (uzak)        249      0.076       0.348
+tırmanma (-20 sn)    124      0.073       0.733   ⬅ EN YÜKSEK
+kavga (darbeler)      72      0.080       0.331   ⬅ EN DÜŞÜK
+```
+
+⚠ Bu bir kalabalık artefaktı değil — kişi sayısı **eşleştirilmiş**
+kontrolde tırmanma her kuşakta normalin üstünde kaldı:
+
+```
+kişi/kare      normal    tırmanma     kavga
+ 1-4          0.329       0.848         —
+ 5-6          0.303       0.695       0.351
+ 7-8          0.447       0.512       0.291
+ 9+           0.448         —         0.149
+```
+
+**Sonuç (K8):**
+
+```
+skorlayıcı   olay p50   uzak normal   oran   sonuç
+KURAL          0.076       0.076      0.99   ❌ ayırt etmiyor
+MODEL          0.519       0.348      1.49   ✅ ayırt ediyor
+
+MODEL · eşik 0.90 → avans +20.2 sn · görev döngüsü %2.4 · 3/3 olay yakalandı
+```
+
+**Dürüstlük sınırları — raporda böyle yazılacak:**
+
+1. **Tek video, tek temiz başlangıç.** Avans bir vaka çalışmasıdır,
+   popülasyon tahmini değil. %2.4 görev döngüsüyle 20 sn'lik bir
+   pencereye tesadüfen düşme olasılığı ihmal edilebilir değil.
+2. **Kural tabanı bu videoda tamamen başarısız** (0.99). RWF'de
+   AUC 0.629 veren kural kümesi, budanmamış gerçek gözetim
+   görüntüsünde hiçbir şey ayırt etmiyor.
+3. **Ayrım kalabalıkla zayıflıyor** (2.6× → 1.14×). Ölçülebilir bir
+   çalışma sınırı.
+4. ⚠ **Skor darbe anında DÜŞÜYOR** (0.733 → 0.331). Model temasa
+   gelişi öğrenmiş, temasın kendisini değil — RWF'nin 5 sn'lik
+   kliplerinde yaklaşma payı darbelerden büyük. Erken uyarı için
+   şanslı, "kavga sınıflandırma" iddiası için sınırlayıcı.
+5. Saatlik alarm sayısı (118) çevrim dışı değerlendirmede histerezis
+   ve soğuma **olmadan** hesaplandı; canlı sistemde ikisi de var.
+
+**Öğrenilen ders:** Bir dedektörün "erken uyardığı", ancak olayı
+normalden **ayırt ettiği** gösterildikten sonra söylenebilir; ve o
+ayrımı ölçen ölçüt, olayın **tanımını** doğru çizmelidir. "Kavga"nın
+yer gerçeği darbelerdir; erken uyarının hedefi ise darbelerden önceki
+tırmanmadır. İkisini aynı kovaya koymak, ölçmek istediğin şeyi
+ölçülemez yapar.
+
+> ⭐⭐ Bu, projenin merkezî tezinin **altıncı** örneği ve ilk kez
+> hatanın kaynağı ölçümün girdisi değil, **ölçütün tanımı**.
+
+---
+
+### P-48 · Ölü bölge kural yolunda doğru, model yolunda BİLGİ İMHASI
+
+**Tarih:** 07.09.2026 · **Faz:** 3 · **Kaybedilen süre:** ~1 saat
+
+**Belirti:** LightGBM modeli, kural tabanının bileşen skorlarıyla
+eğitilince beklenenin çok altında kaldı: AUC 0.761 · F1 0.750 —
+kural tabanına (0.629 / 0.712) göre kazanç neredeyse yok.
+
+**Araştırma:** Bileşenler `_bant(deger, taban, doyum)` üzerinden
+geçiyor: tabanın altındaki her şey **sıfıra** yuvarlanıyor. Bu ölü
+bölge P-32'de bilinçli eklenmişti ve yanlış alarmı 610 → 0'a
+indirmişti. Ama RWF dağılımına bakınca sorun görüldü:
+
+```
+normal p90        : 2.187
+kavga p50 (bilek) : 0.954   ⬅ TABANIN ALTINDA
+```
+
+Kavga sinyalinin yarısından fazlası tabanın altında kalıp
+sıfırlanıyordu. Model, sınırı çizilmiş bir veri görüyordu.
+
+**Kök sebep:** Ölü bölge bir **karar** aracı; model girdisi ise bir
+**gözlem** olmalı. Karar eşiğini modelin kendisi öğrenmeli — ona
+önceden bantlanmış sayı vermek, öğrenmesi gereken şeyi elinden almak.
+
+**Çözüm:** Bantlanmamış ham özellikler de toplanıp modele verildi
+(`HAM_ALANLAR`, `_klip_ozellikleri`). Kural yolu ölü bölgeyi
+**korudu** — orada doğru çalışıyor.
+
+```
+bantlı bileşenler       : AUC 0.761 · F1 0.750
++ ham özellikler (p75)  : AUC 0.911 · F1 0.874
+```
+
+**Öğrenilen ders:** Aynı sayı, karar yolunda ve öğrenme yolunda farklı
+ön işleme ister. Bir yolda doğru olan dönüşümü diğerine taşımak,
+gerekçesi unutulduğunda sessizce zarar verir.
+
+---
+
+### P-47 · `max` toplulaştırması hareketi değil EKLEM GÜRÜLTÜSÜNÜ ölçüyordu
+
+**Tarih:** 07.09.2026 · **Faz:** 3 · **Kaybedilen süre:** ~1.5 saat
+
+**Belirti:** Bilek hızı özelliği, RWF-2000'de kavgayı normalden ayırt
+etmiyordu: AUC **0.558** — şans seviyesi.
+
+**Araştırma:** Koddaki gerekçe makul görünüyordu ve aynen duruyordu:
+
+> *"AZAMİ, ortalama değil: vuruş anlık bir olaydır ve ortalama onu
+> 3 saniyeye yayıp söndürür."*
+
+Mantık doğru, sonuç yanlıştı. `max` aynı zamanda **en gürültülü**
+istatistiktir: tek bir hatalı eklem tahmini tüm pencereyi ele geçirir.
+`deney_toplulastirma.py` ile 200 klipte ölçüldü:
+
+```
+toplulaştırma   AUC     kavga p50   normal p50
+azami           0.558     2.577       2.077   ⬅ şans
+p90             0.659     1.625       1.003
+p75             0.677     0.954       0.542   ⬅ EN İYİ
+medyan          0.652     0.437       0.274
+```
+
+**Kök sebep:** p99/p50 oranı **9.7** — dağılımın kuyruğu medyanın 10
+katı. Saniyede 10 gövde boyu bilek hareketi **fiziksel olarak
+imkânsız**; o kuyruk hareket değil, poz kestirim hatası. `max` tam
+olarak o kuyruğu örneklemiş oluyordu. Ölçüm ayrıca iskelet
+ölçümlerinin **%4-6'sının fiziksel olarak imkânsız** olduğunu gösterdi.
+
+**Çözüm:** `bilek_hizi_p75` ve `bilek_sarsintisi_p75` eklendi;
+skorlama bunları kullanıyor. `azami` alanları **silinmedi** —
+makalede iki toplulaştırma karşılaştırılacak ve eski davranışın
+yeniden üretilebilmesi gerekiyor.
+
+**Öğrenilen ders:** Bir istatistik seçerken "neyi yakalamak
+istiyorum" kadar "neyi yanlışlıkla yakalarım" da sorulmalı. `max`
+sinyalin uç değerini yakalar — ama gürültünün uç değerini de. Sinyal /
+gürültü oranı düşükse, ikincisi baskın gelir.
+
+> ⚠ Bu hatanın **uzay eksenindeki ikizi** aynı gün bulundu: P-49
+> (`max`-over-kişi kalabalığı ölçüyordu). Bir eksende düzeltilen
+> hatanın diğer eksende aranması akla gelmedi.
+
+---
+
+### P-46 · Sızıntı dedektörüm yanlış alarm verdi — aynı hatanın BEŞİNCİSİ, ama bu kez yakalandı
+
+**Tarih:** 03.09.2026 · **Faz:** 3 / Gün 18 · **Kaybedilen süre:** ~15 dk
+
+**Belirti:** İki saatlik K4 dayanıklılık koşusu bitti ve betik şunu
+yazdı:
+
+```
+K4 · 120.0 dakika · 241 örnek · 0 kesinti
+  ✅ TUTUYOR
+
+SLOT SIZINTISI · azami boş slot 46 → 41 (en düşük 22)
+  ⚠ ŞÜPHELİ — azami düşmüş
+```
+
+Yani sistem iki saat çökmeden koştu ama ölçüm aracı *"paylaşımlı bellek
+havuzunda sızıntı olabilir"* dedi. Bu, P-38'in tekrarı anlamına
+gelirdi — koşunun asıl sınadığı şeyin başarısızlığı.
+
+**Araştırma:** Verdikti kabul etmek yerine **ham seriye bakıldı** (ham
+seri JSON'a yazılıyor; bu karar burada karşılığını verdi).
+
+20 dakikalık pencerelerde azami boş slot:
+
+```
+2-21 dk    35
+21-41 dk   46
+41-61 dk   43
+61-80 dk   41
+80-100 dk  37
+100-120 dk 41
+```
+
+⚠ **İlk pencere zaten en düşüğü.** Monoton bir düşüş yok; değerler
+35-46 arasında dalgalanıyor.
+
+Doğrusal eğim ve serinin kendi dalgalanması:
+
+```
+eğim              : −1.08 slot/saat
+2 saatte toplam   : −2.16 slot   (havuz 48)
+serinin std sapması:  5.9 slot   ⬅ değişimin ~3 KATI
+```
+
+Yani gözlenen "düşüş" gürültünün içinde kalıyor.
+
+**Kök sebep:** Dedektör pencereyi ikiye bölüp **azami** değerleri
+karşılaştırıyordu:
+
+```python
+ilk_yari_azami = max(slot_serisi[:orta])   # 46
+son_yari_azami = max(slot_serisi[orta:])   # 41
+sizinti_supheli = son_yari_azami < ilk_yari_azami   # True
+```
+
+Bu, 241 örnekli bir seriden **iki sayı** seçip onları karşılaştırmak
+demek — yani örneklem büyüklüğünü 2'ye indirmek. Üstelik seçilen iki
+sayı serinin **uç değerleri**, yani gürültüye en duyarlı olanları.
+
+⭐ **Sızıntının imzası "son değer ilkinden küçük" değil, zamanla düşen
+bir EĞİLİM'dir.** Tek bir uç değer, kaç örnek olursa olsun bir eğilim
+göstermez.
+
+**Çözüm:** Dedektör en küçük kareler eğimine geçirildi. Ölçüt: koşu
+boyunca eğimin öngördüğü toplam düşüş, serinin standart sapmasını
+aşıyor mu. Aşmıyorsa "sızıntı var" denmiyor.
+
+Mevcut K4 dosyası yeni yöntemle **yeniden değerlendirildi** ve JSON'a
+bir `DUZELTME_03_09` bloğu eklendi: eski verdikt, neden yanlış olduğu
+ve yeni verdikt birlikte duruyor. ⚠ Eski sonuç **silinmedi** —
+ölçümün düzeltilme geçmişi de bir bulgudur.
+
+**Yeni verdikt: sızıntı YOK.** P-38'in iki aşamalı kurtarma düzeltmesi
+iki saatlik koşuda tuttu.
+
+**Öğrenilen ders:** Bu, projenin merkezî hatasının **beşinci** örneği —
+ölçüm aracına, ölçtüğü şeye gösterilen şüpheyi göstermemek:
+
+| # | Kayıt | Hata |
+|---|---|---|
+| 1 | P-17 | ölçümü sırayla koşturmak sonucu tersine çevirdi |
+| 2 | P-36 | bir bozuk blok, ölçülmemiş bir şeyi ölçülmüş gösterdi |
+| 3 | P-39 | koordinat uzayı karışıktı → AUC 0.483 |
+| 4 | P-41 | karşılaştırma iki değişkeni birden değiştiriyordu |
+| 5 | **P-46** | **eğilim testi yerine iki uç değer karşılaştırması** |
+
+⭐ **Ama bu kez fark var ve fark rapora girmeli:** ilk dördünde hata,
+sonuç kullanıldıktan *sonra* bulundu. Burada verdikt **kullanılmadan
+önce** sorgulandı ve yanlış alarm yakalandı.
+
+Bunu mümkün kılan tek şey **ham serinin JSON'a yazılmış olması.** Betik
+yalnızca özeti yazsaydı elimizde "⚠ ŞÜPHELİ" cümlesinden başka bir şey
+olmayacaktı ve muhtemelen saatler süren bir sızıntı avına çıkılacaktı.
+
+> ⭐ **Özet bir yorumdur, ham seri veridir.** Yorum yanlış olabilir;
+> veriden geri dönülebilir. Bu yüzden her ölçüm betiği ham seriyi de
+> yazmalı — özeti yazan kişi, sonradan sorulacak soruyu bilmiyor.
+
+⚠ İkinci ders: **yanlış alarm veren bir dedektör de bir arızadır.**
+"Sızıntı yok" derken yanılmak (yanlış negatif) açıkça tehlikeli; ama
+"sızıntı var" derken yanılmak da güveni aşındırıyor — ve bu proje
+zaten aynı dersi ölü Prometheus hedeflerinde almıştı: *hep kırmızı
+duran bir gösterge, olmayan göstergeden kötüdür.*
+
+---
+
+### P-45 · Klip zinciri: kesiliyor, kaydediliyor, **kimse göremiyor**
+
+**Tarih:** 03.09.2026 · **Faz:** 3 / Gün 18 · **Kaybedilen süre:** —
+(bulma: 20 dk · düzeltme: ~1 saat)
+
+**Belirti:** Yoktu. Belirti olmaması bu kaydın konusu.
+
+Gün 18 kapsamlı incelemesinde şu soru soruldu: *"kesilen klibe nasıl
+ulaşılıyor?"* Cevap: **ulaşılmıyor.**
+
+**Kök sebep:** Zincirin her halkası tek tek çalışıyordu:
+
+```
+alarm → klip KESİLDİ (klip.py, 32 ms remux, 12 birim testi ✅)
+      → anahtar TimescaleDB'ye yazıldı (klip_anahtar sütunu ✅)
+      → /api/v1/events yanıtında döndürüldü (klip alanı ✅)
+      → ???
+```
+
+Son okta hiçbir şey yoktu:
+- klibi getiren bir API ucu **yok**
+- ön yüz `klip` alanını okumuyor bile (`store.ts` onu `TimedAlert`'e
+  hiç taşımıyordu)
+
+PLAN §1.3 kapsam maddesi *"olay öncesi/sonrası klip arşivi"* diyor.
+Arşiv vardı, erişim yoktu.
+
+⚠ **Bu, bileşen testinin göremediği bir arıza sınıfı.** `test_klip.py`
+12 test ve hepsi geçiyor — çünkü hepsi klip **kesmeyi** test ediyor.
+Hiçbiri "kesilen klip kullanıcıya ulaşıyor mu" diye sormuyor. Her
+parçası doğru olan bir zincir, eksik bir halka yüzünden işe yaramaz
+olabilir ve **parça testleri bunu asla göstermez.**
+
+**Çözüm:**
+1. `GET /api/v1/events/klip/{anahtar:path}` eklendi
+   - G12: anahtar biçimi **beyaz liste** deseniyle doğrulanıyor
+   - ikinci savunma: `resolve()` + `is_relative_to` (symlink'e karşı)
+   - G19: her erişim denetim izine yazılıyor (klip = dışa aktarma)
+   - 404 ayrım yapmıyor (biçim bozuk / dosya yok / dizin dışı → aynı)
+2. `AlertPanel` içine gömülü oynatıcı (tembel yükleme)
+3. `TimedAlert.klip` alanı ve `store.ts` eşlemesi
+4. `test_klip_ucu.py` — 26 yol doğrulama testi
+
+**Yan bulgu:** Desen ilk hâlinde `^...$` çapalarını kullanıyordu.
+Python'da `$` **sondaki yeni satırdan önce de** eşleşir, yani
+`".../115742_fall.mp4\n"` kabul ediliyordu. Tek başına sömürülebilir
+değil ama doğrulayıcı "tam olarak bu biçim" derken başka bir şey
+yapıyordu. `\A ... \Z` ile düzeltildi ve test eklendi.
+
+**Öğrenilen ders:** Bir yeteneğin "yapıldı" sayılması için zincirin
+**kullanıcıya ulaşan ucuna kadar** izlenmesi gerekiyor. Kapsam
+maddeleri modüllerle değil, kullanıcının yapabildiği işlerle
+işaretlenmeli: "klip kesiliyor" bir modül ifadesi, "operatör alarmın
+videosunu izleyebiliyor" bir kapsam ifadesi.
+
+---
+
+### P-44 · Füzyon iz sözlüğü sınırsız büyüyordu — `buda()` yazılmış, hiç ÇAĞRILMAMIŞ
+
+**Tarih:** 03.09.2026 · **Faz:** 3 / Gün 18 · **Kaybedilen süre:** —
+(bulma: 5 dk, K4 hazırlığı sırasında)
+
+**Belirti:** Yoktu — ve olmaması bu kaydın önemi.
+
+**Kök sebep:** `RiskFuzyonu.buda()` 01.09'da füzyon katmanıyla birlikte
+yazıldı, gerekçesi docstring'e kondu, ve **hiçbir yerden çağrılmadı.**
+
+Analitik worker'ın 30 saniyelik bakım döngüsü şöyleydi:
+
+```python
+self._pencereler.buda(...)   # ✅
+self._kurallar.buda(...)     # ✅
+self._tirmanma.buda(...)     # ✅
+#  füzyon → LİSTEDE YOK
+self._normal.kaydet()
+```
+
+Sonuç: `_izler` sözlüğü her yeni `(kamera, iz)` çifti için kalıcı bir
+kayıt tutuyordu. İz kimlikleri sürekli yenileniyor (izlerin medyan
+ömrü ~4 kare), yani sözlük **sınırsız** büyüyordu.
+
+Bu, mimari kural 5'in doğrudan ihlali: *"Her kuyruk sınırlı. Sınırsız
+kuyruk = RAM patlaması."*
+
+⚠ **İki gün fark edilmedi çünkü belirtisizdi.** Sistem çalışıyor,
+alarm üretiyor, gecikme normal — yalnızca bellek büyüyor. Kısa
+koşularda görünmez ve **bugüne kadar hiç uzun koşu yapılmamıştı.**
+
+**Çözüm:** Bakım döngüsüne `self._fuzyon.buda()` (ve yeni eklenen
+`self._ifade.buda()`) eklendi. `test_ifade.py` içine budama testi
+yazıldı ki aynı şey bir daha atlanmasın.
+
+**Öğrenilen ders:** İki ayrı ders çıktı ve ikisi de kayda değer.
+
+1. **Yazılmış ama çağrılmamış bir temizleyici, olmayan temizleyiciden
+   kötüdür** — çünkü kodu okuyan biri onu görür ve "temizlik var"
+   sanır. `buda()` metodunun varlığı, budamanın yapıldığı izlenimi
+   veriyordu.
+
+2. ⭐ **K4 kriterinin varlık sebebi tam olarak bu sınıf arıza.**
+   Bu hata, iki saatlik dayanıklılık koşusu hazırlanırken bulundu —
+   koşu daha başlamadan. Yani kriter, ölçülmeden önce bile işe
+   yaradı: "sistemi iki saat ayakta tutabilecek miyim" sorusu,
+   kodun uzun-koşu davranışına ilk kez bakılmasını sağladı.
+
+---
+
+### P-43 · "Duygu analizi" ekranda vardı, KARARDA yoktu — ve kod bunun tersini iddia ediyordu
+
+**Tarih:** 03.09.2026 · **Faz:** 3 / Gün 18 · **Kaybedilen süre:** —
+(bulma: 15 dk · düzeltme: ~1 saat)
+
+**Belirti:** `analytics/worker.py` füzyon sinyallerini kurarken:
+
+```python
+sinyaller = fusion.Sinyaller(
+    saldirganlik=tirmanma_map.get(iz, 0.0),
+    anomali=anomali_skor,
+    kural=kural_map.get(iz, 0.0),
+    ifade=0.0,            # ⬅ SABİT
+    kalabalik=kalabalik,
+)
+```
+
+Yanındaki açıklama şuydu (ve `fusion.py`'de de tekrarlanıyordu):
+
+> *"KADEME 2b çalışıyor ama bu kamera çiftliğinde yüzler ~15 piksel ve
+> sınıflandırma üretmiyor (2700 aday → 0). **Bağlantı yeri hazır;
+> gerçek bir kurulumda beslendiğinde kod değişikliği gerekmeyecek.**"*
+
+**Kök sebep:** İddianın ikinci yarısı **yanlıştı ve hiç sınanmamıştı.**
+
+Bağlantı yeri hazır değildi. Analitik worker mesajdaki `expr` alanını
+**hiç okumuyordu.** Yüzler 200 piksel olsa, sınıflandırma mükemmel
+çalışsa bile skor füzyona ulaşmazdı — çünkü onu okuyan satır yoktu.
+
+İfade sonucu `Track.expression` → `_serialize` → WebSocket → panel
+yolunu izliyordu, yani **ekranda görünüyordu.** Ekranda görünmek,
+kodun bağlı olduğu izlenimini veriyordu.
+
+⚠ **Şartname açısından bu bir boşluktu:** "duygu analizi" verilen
+görevdeki **üç yetenekten biri** ve sistemin kararına hiç
+katılmıyordu. "Yüz ifadesi sınıflandırılıyor" doğru bir cümleydi;
+"duygu analizi sistemin riskine katkı veriyor" değildi.
+
+**Çözüm:** `analytics/ifade.py` yazıldı:
+- etiket → risk eşlemesi (öfke 1.00 · korku 0.80 · … · nötr 0.00)
+- güven **ve** kalite ile çarpım — kaliteli olmayan sınıflandırma
+  füzyona giremiyor
+- kalite eşiği (0.35) ayrıca ELEME yapıyor: çarpımla söndürmek
+  yetmiyordu, çünkü kalite 0.15'lik bir "öfke" tam da füzyonun katkı
+  eşiğine (0.15) denk geliyor ve "en az iki sinyal" kuralını
+  gürültüyle doldurabiliyordu
+- iz başına 5 örneklik kayan ortalama (PLAN §6.3)
+- `test_ifade.py` — 14 test
+
+**⚠ Korku da sayılıyor:** saldırganlık iki taraflı bir olay. Öfkeli
+yüzün yanındaki korkmuş yüz, olayın kendisi kadar bilgi verir.
+Yalnızca öfkeye bakmak tırmanmanın yarısını görmek olurdu.
+
+**Bu kamera çiftliğinde sinyal yine de çoğunlukla 0 olacak** — ama
+sebebi artık farklı ve fark raporda önemli:
+
+| | Sebep | Türü |
+|---|---|---|
+| ÖNCE | kod sinyali taşımıyordu | **mühendislik eksiği** |
+| ŞİMDİ | yüzler ~15 px, kalite eşiğinin altında | **veri sınırı** |
+
+Birincisi bir hata, ikincisi bir bulgu. Bulgu raporlanır; hata
+düzeltilir.
+
+**Öğrenilen ders:** ⭐ *"Bağlantı yeri hazır"* gibi bir cümle, bir
+**iddiadır** ve iddialar ölçülür. Bu cümle iki dosyada yazılıydı,
+kimse "peki beslenirse gerçekten akar mı" diye sormamıştı. Kodda
+yazılı bir gerekçe, doğrulandığı an bulgu; doğrulanmadığı sürece
+varsayım — ve bu proje aynı dersi ADR-0006'da da almıştı
+(*"bir kararın gerekçesi belgeye girdikten sonra veri gibi davranmaya
+başlıyor"*).
+
+---
+
+### P-42 · Yapılandırma dosyaları paralel bir KURGU anlatıyordu — 16 ayar okunmuyordu, ikisi kodla çelişiyordu
+
+**Tarih:** 03.09.2026 · **Faz:** 3 / Gün 18 · **Kaybedilen süre:** ~30 dk
+
+**Belirti:** İki ayrı olay aynı güne denk geldi ve aynı kök sebebi
+işaret ettiler.
+
+**1 · Panel giriş istedi, `.env`'deki parola çalışmadı.**
+`BOOTSTRAP_ADMIN_PASSWORD=vxqxTGF9tssBeWA9mNL9` yazıyordu; giriş
+denemesi **401** döndü. Kullanıcı 30.08'de
+`kullanici_ekle.py admin --uret` ile kurulmuştu — o komut **rastgele**
+parola üretip ekrana basıyor ve `.env`'e yazmıyor. Yani o satır bir
+kurulum kaydı değil, bir varsayımdı.
+
+**2 · İnceleme sırasında `privacy_blur_default` arandı.** `config.py`'de
+`True`, `/api/v1/system/config` ile panele **`true` diye yayınlanıyor**,
+`privacy/` modülü **tamamen boş**, ön yüzde bulanıklaştırma **yok**.
+API, yapmadığı bir şeyi yaptığını beyan ediyordu.
+
+**Araştırma:** Bunun üzerine tüm ayarlar `config.py` ile karşılaştırıldı.
+Sonuç: **`.env` ve `.env.example` içinde 16 ayar, kodda hiç okunmuyordu.**
+
+| Ayar | Durum |
+|---|---|
+| `WEIGHT_*` (5) | `fusion.py` değerleri sabit yazıyor |
+| `THRESHOLD_*` (6) | `fusion.py` sabit yazıyor **ve DEĞERLER FARKLI** |
+| `ALERT_*_COOLDOWN_SECONDS` (2) | `rules.py` sabit yazıyor |
+| `RETENTION_*` (3) | `schema.py` sabit yazıyor **ve DEĞER FARKLI** |
+| `USE_TENSORRT` / `USE_FP16` | okunmuyor |
+| `PRIVACY_BLUR_DEFAULT` | okunmuyor, üstelik yayınlanıyor |
+| `MAX_WS_CONNECTIONS_PER_USER` | `config.py`'de vardı, **kullanılmıyordu** |
+
+⚠ **İkisi doğrudan yanlış bilgi veriyordu:**
+
+```
+THRESHOLD_ALARM_IN=0.75    ← gerçek eşik 0.55  (fusion.py)
+RETENTION_EVENTS_DAYS=90   ← gerçek saklama 30 (schema.py)
+USE_TENSORRT=true          ← TensorRT üretimde DEĞİL (ADR-0006)
+```
+
+**Kök sebep:** `.env.example` Gün 1'de PLAN'a bakılarak yazıldı —
+yani **yapılacakların listesi olarak.** Sonra kod yazıldı ve değerler
+kodda sabitlendi; `.env` güncellenmedi. Zamanla dosya, sistemin
+yapılandırması değil *planlanan* yapılandırması hâline geldi.
+
+Ve `.env.example` **depoya giriyor.** Yani projeyi okuyan biri
+(değerlendirici dâhil) oradaki değerleri sistemin gerçek ayarları
+sanardı.
+
+**Çözüm:**
+- 16 ayar `.env` ve `.env.example`'dan kaldırıldı, yerine gerçek
+  değerlerin **nerede** olduğunu söyleyen bir blok kondu
+- `use_tensorrt`, `use_fp16`, `privacy_blur_default` `config.py`'den
+  silindi; `privacy_blur_default` API yanıtından çıkarıldı
+- `MAX_WS_CONNECTIONS_PER_USER` **canlandırıldı** — G14 artık gerçekten
+  uygulanıyor (`api/ws/live.py`)
+- `store_face_crops` KALDI: o ölü değil, `true` yapılırsa uygulama
+  açılmıyor. Bir mekanizma, bir vaat değil
+- `.env`'deki admin parolası gerçek değerle güncellendi
+
+**Öğrenilen ders:** ⭐ **Yanlış cevap veren bir ayar, olmayan ayardan
+kötüdür.** Olmayan ayar arayanı koda yönlendirir; yanlış ayar onu
+durdurur ve yanlış bir sonuca ikna eder.
+
+⚠ Bu, projede **dördüncü kez** aynı sınıf hata:
+
+| Ne | Neden kötüydü |
+|---|---|
+| `npm run lint` | Kurulu değildi, patlıyordu — çalışmayan kalite kapısı yeşil sanılıyordu |
+| 3 ölü Prometheus hedefi | Hep kırmızı gösterge, "kırmızıya bak" alışkanlığını bozuyordu |
+| `.env` bayat admin parolası | Kurulum kaydı sanılan bir varsayım |
+| 16 ölü ayar | Sistemin davranışını yanlış anlatan bir belge |
+
+Ortak payda: **doğruluğu kimsenin kontrol etmediği bir beyan, zamanla
+veri gibi davranmaya başlıyor.** Kalıcı çözüm, her beyanın ya bir
+mekanizmaya ya bir teste bağlanması.
+
+---
+
+### P-41 · "Füzyon kendini haklı çıkardı" — desteklenmeyen bir çıkarımdı (aynı hatanın DÖRDÜNCÜSÜ)
+
+**Tarih:** 03.09.2026 · **Faz:** 3 / Gün 18 · **Kaybedilen süre:** —
+(bulma: 25 dk)
+
+**Belirti:** K6 ölçümü (P-39) şu tabloyu üretmişti ve rapora
+*"füzyon kendini haklı çıkardı"* diye yazılmak üzereydi:
+
+```
+katman_a  0.789
+füzyon    0.867   ⬅ "demek ki birleştirme kazandırıyor"
+```
+
+Betiğin kendi çıktısı da bunu söylüyordu:
+*"füzyon bileşenlerinden İYİ — birleştirme kazandırıyor."*
+
+**Kök sebep:** Karşılaştırılan iki sayı **aynı işlemden geçmemişti.**
+
+```
+katman_a  = HAM, kare başına anomali skoru
+füzyon    = EMA(α=0.4) ile ZAMANSAL YUMUŞATILMIŞ ağırlıklı toplam
+```
+
+Füzyona iki şey birden eklenmişti — **sinyal birleştirme** ve
+**zamansal yumuşatma** — ve ölçüm hangisinin kazandırdığını
+ayırmıyordu.
+
+Eldeki sayılar ikinciyi işaret ediyordu:
+
+1. **Diğer bileşenler şans seviyesinde.** Saldırganlık AUC 0.465
+   (şansın *altı*), kural AUC 0.4996 (tam şans, çünkü Avenue'da
+   kurallar neredeyse hiç ateşlemiyor — karelerin %0.07'si). Şans
+   seviyesindeki iki sinyali eklemek AUC'yi 0.789'dan 0.867'ye
+   çıkaramaz.
+
+2. **Katman A karelerinin %42'si tam 0.0.** `_roc_auc` eşitlikleri
+   0.5 sayıyor (doğru davranış — P-39'da bilinçli seçilmişti) ve bu
+   kadar çok eşitlik AUC'ye **tavan** koyuyor. EMA geçmişten sızdırıp
+   o sıfırları dolduruyor → eşitlik azalıyor → AUC **mekanik olarak**
+   yükseliyor. Yani gözlenen artış, ayırt etme gücünden değil, skor
+   dağılımının sürekli hâle gelmesinden geliyor olabilir.
+
+**Çözüm:** `evaluate_k6.py`'a beşinci bir seri eklendi:
+**`katman_a_ema`** — Katman A'nın tek başına, füzyonla **aynı**
+EMA'dan geçmiş hâli. Kontrol grubu.
+
+Artık doğru soru sorulabiliyor:
+
+```
+füzyon > katman_a_ema  → birleştirme gerçekten kazandırıyor
+füzyon ≈ katman_a_ema  → kazandıran YUMUŞATMA; füzyon katmanı bu
+                          veri setinde karşılığını vermiyor
+```
+
+Betiğin sonuç yorumu da değiştirildi: artık "füzyon ham bileşeninden
+iyi mi" (yanıltıcı soru) yerine "füzyon **yumuşatılmış tek
+sinyalden** iyi mi" (asıl soru) sorusunu basıyor ve JSON'a
+`fuzyon_sinavi` bloğu yazıyor.
+
+---
+
+## ⭐ SONUÇ (05.09.2026) — HİPOTEZ DOĞRULANDI, İDDİA ÇÜRÜDÜ
+
+Kontrol serisiyle yeniden ölçüldü (`benchmarks/k6_20260905-112405.json`):
+
+```
+SKOR               AUC   anomali p50  normal p50
+katman_a (ham)    0.789        0.863       0.157
+katman_a + EMA    0.860        0.864       0.319   ⬅ KONTROL GRUBU
+füzyon (5+EMA)    0.867        0.217       0.057
+saldırganlık      0.465        0.092       0.094
+kural             0.500        0.000       0.000
+```
+
+**Kazancın dağılımı:**
+
+```
+toplam artış (0.789 → 0.867)  = +0.078
+  yumuşatmadan (0.789 → 0.860) = +0.071   ⬅ %91
+  birleştirmeden (0.860 → 0.867) = +0.007  ⬅ %9, gürültü içinde
+```
+
+> ⭐ **Füzyonun AUC kazancının %91'i EMA'dan geliyor.** "Birleştirme
+> kazandırıyor" iddiası bu veri setinde **desteklenmiyor.**
+
+### ⚠ Ama bu "füzyon işe yaramaz" DEMEK DEĞİL — üç ayrı nokta
+
+**1 · Bu veri setinde füzyonun birleştirecek bir şeyi yoktu.**
+Beş sinyalden dördü ölü: `kural` AUC tam **0.500** (Avenue'da hiç
+ateşlemiyor — anomaliler çanta fırlatma/bisiklet, biz yalnızca insan
+tespit ediyoruz), `saldırganlık` **0.465** (şansın altı), `ifade` ve
+`kalabalık` sıfır. Geriye tek bilgi taşıyan sinyal kalıyor: Katman A.
+**Tek sinyali "birleştirmek" tanım gereği hiçbir şey kazandıramaz.**
+
+Yani ölçüm şunu söylüyor: *"füzyon bu veri setinde kazandırmıyor"* —
+*"füzyon kazandırmaz"* değil. Fark, raporda korunacak.
+
+**2 · Füzyonun ASIL kazancı zaten başka yerde ÖLÇÜLDÜ.**
+"En az iki sinyal" kuralı yanlış alarmı **26.4 → 0.00/kamera-saat**
+düşürdü (K7). Bu ayrı ve gerçek bir kazanç. Füzyonun gerekçesi
+**ayırt etme gücü (AUC) değil, gürültü bastırma** imiş — ve bu
+başından beri kodda yazılıydı, yalnızca yanlış kriterle savunulmuştu.
+
+**3 · EMA'nın neden bu kadar kazandırdığı da bir bulgu.**
+Katman A karelerinin **%42'si tam 0.0**. AUC hesabı eşitlikleri 0.5
+sayıyor, yani bu kadar çok beraberlik AUC'ye tavan koyuyor. EMA
+geçmişten sızdırıp sıfırları dolduruyor → beraberlik azalıyor → AUC
+yükseliyor. Dikkat: `normal p50` da 0.157'den **0.319'a** çıkmış,
+yani EMA yalnızca anomalileri değil normali de yükseltiyor. Kazanç
+gerçek ama mekanizması "daha iyi ayırt etme" değil, **skorun sürekli
+hâle gelmesi.**
+
+### Alınan aksiyon
+
+- ADR-0008'in durumu **"kabul edildi (gerekçesi düzeltildi)"** oldu:
+  füzyonun dayanağı K6'dan **K7'ye** taşındı
+- `evaluate_k6.py` artık `fuzyon_sinavi` bloğunu JSON'a yazıyor;
+  rapor bu karşılaştırmayı yeniden koşmadan alıntılayabiliyor
+- CLAUDE.md'deki *"füzyon kendini haklı çıkardı"* cümlesi kaldırıldı
+
+**Öğrenilen ders:** ⭐ Bu, **aynı sınıf hatanın dördüncüsü:**
+
+| # | Kayıt | Ölçüm aracındaki hata |
+|---|---|---|
+| 1 | P-17 | ölçümü sırayla koşturmak sonucu tersine çevirdi |
+| 2 | P-36 | bir bozuk blok, ölçülmemiş bir şeyi ölçülmüş gösterdi |
+| 3 | P-39 | koordinat uzayı karışıktı, AUC 0.483 çıktı |
+| 4 | **P-41** | **karşılaştırma iki değişkeni birden değiştiriyordu** |
+
+Üçü ölçümün *girdisini*, dördüncüsü ölçümün *tasarımını* bozuyordu —
+ve dördüncüsü en sinsisi, çünkü sayı **makul** çıkmıştı. Yanlış bir
+sayı şüphe uyandırır; **beklenen** bir sayı uyandırmaz.
+
+⚠ Deneysel yöntemin en temel kuralı ihlal edilmişti: **iki grubu
+karşılaştırırken aralarında yalnızca bir fark olmalı.** Burada iki
+fark vardı.
+
+⚠ Bu kayıt, sonucu daha ölçülmeden yazıldı — ve bilinçli olarak.
+Hangi sonuç çıkarsa çıksın, hata karşılaştırmanın kendisindeydi.
+İki sonuç da rapor için değerli; kötü olan tek şey, hangisi olduğunu
+bilmeden birini iddia etmekti.
+
+---
+
+### P-40 · Grafana "Analiz hızı" paneli kare değil, TESPİT EDİLEN KİŞİ sayıyordu
+
+**Tarih:** 03.09.2026 · **Faz:** 3 / Gün 18 · **Kaybedilen süre:** ~20 dk
+
+**Belirti:** K4 ölçüm betiği yazılırken "analiz edilen kare sayısı"
+için bir sayaç arandı. İki aday vardı ve **ikisi de yanlış kullanıldı.**
+
+**Hata 1 — benim betiğimde (prova koşusunda yakalandı):**
+`sentinel_inference_duration_seconds_count{stage="detect"}` kullanıldı
+ve K2'yi **6 kat düşük** ölçtü (0.47 yerine ~2.8 FPS/kamera).
+
+Sebep: o histogram **parti başına bir kez** gözlemleniyor
+(`inference/worker.py:544`). Gözlemlenen DEĞER kare başına süre olsa
+da **sayacı parti sayıyor.** Ortalama parti 6 kare olduğu için sayaç
+tam 6 kat eksikti.
+
+⚠ Genel kural: bir histogramın `_count` alanı *"kaç şey"* değil
+*"kaç GÖZLEM"* demektir. İkisi ancak gözlem başına bir şey düşüyorsa
+aynıdır.
+
+**Hata 2 — canlı Grafana panosunda (asıl bulgu):**
+"Analiz hızı (toplam)" paneli şunu kullanıyordu:
+
+```promql
+sum(rate(sentinel_detections_total[1m]))
+```
+
+`detections_total` **tespit edilen KİŞİ** sayıyor, kare değil.
+
+⚠ **Bu panelin neden 17 gün fark edilmediği, hatanın kendisinden
+öğretici:** kamera çiftliğinde kare başına ortalama ~1 kişi düşüyor,
+yani panel **makul bir sayı gösteriyordu** (~55). Doğru sayıya yakın
+olduğu için kimse sorgulamadı.
+
+Ama panel iki durumda tamamen yanılırdı:
+- **boş sahne** → 0 kişi = "analiz hızı 0" (oysa boru hattı çalışıyor)
+- **kalabalık sahne** → 5 kişi = 5 kat şişmiş hız
+
+Yani gösterge, tam da anlamlı olduğu anlarda (sistem sessiz mi, yoksa
+durdu mu?) en yanıltıcı hâle geliyordu.
+
+**Çözüm:** İkisi de `sentinel_end_to_end_latency_seconds_count`
+kullanacak şekilde düzeltildi — o histogram mesaj döngüsünün İÇİNDE,
+**kare başına** gözlemleniyor (`inference/worker.py:624`). Panel
+açıklamasına da hatanın kendisi yazıldı.
+
+**Öğrenilen ders:** ⭐ **Makul görünen bir sayı, doğrulanmış bir sayı
+değildir.** P-33 aynı dersi vermişti ("GPU %5" cümlesi doğruydu,
+ondan çıkarılan sonuç yanlıştı); burada cümlenin kendisi yanlıştı ama
+sonucu doğru göründüğü için sorgulanmadı.
+
+⚠ Pratik kural: bir metriğin adı ile hesaplandığı ifade **ayrı ayrı**
+okunmalı. `title: "Analiz hızı"` ile `expr: rate(detections_total)`
+yan yana duruyordu ve kimse ikisini birlikte okumamıştı.
+
+---
+
 ### P-39 · K6 = 0.483 → 0.867: farkı yaratan model değil, ÖLÇÜM ARACIYDI
 
 **Tarih:** 01.09.2026 · **Faz:** 2 / Gün 17 · **Kaybedilen süre:** ~2 saat (+ bir 56 dakikalık boşa koşu)

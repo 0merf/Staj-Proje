@@ -1,0 +1,53 @@
+{
+ "olculdu": "2026-09-07T10:46:44.545332+00:00",
+ "deney": "RWF-2000 ölü bölge kalibrasyonu",
+ "kaynak": "RWF-2000 train/nonfight (val'a DOKUNULMADI)",
+ "klip": 18,
+ "ornekleme_fps": 2.75,
+ "yontem": "taban = normal p90 · doyum = p90 × 2.0 · fiziksel makuliyet sınırı 8.0 gövde/sn üstü ATILDI",
+ "makul_ust_sinir": 8.0,
+ "dagilim": {
+  "bilek_hizi_p75": {
+   "n": 37862,
+   "p50": 0.556,
+   "p90": 1.529,
+   "p99": 5.647,
+   "eski_taban": 1.8,
+   "yeni_taban": 1.529,
+   "yeni_doyum": 3.057,
+   "makul_disi_atilan": 2404,
+   "makul_disi_oran": 0.0597
+  },
+  "bilek_sarsintisi_p75": {
+   "n": 35470,
+   "p50": 0.274,
+   "p90": 1.259,
+   "p99": 6.272,
+   "eski_taban": 1.4,
+   "yeni_taban": 1.259,
+   "yeni_doyum": 2.519,
+   "makul_disi_atilan": 1553,
+   "makul_disi_oran": 0.0419
+  },
+  "hareket_enerjisi": {
+   "n": 40422,
+   "p50": 0.528,
+   "p90": 1.209,
+   "p99": 6.369,
+   "eski_taban": 0.85,
+   "yeni_taban": 1.209,
+   "yeni_doyum": 2.418,
+   "makul_disi_atilan": 2157,
+   "makul_disi_oran": 0.0507
+  }
+ },
+ "yeni_esikler": {
+  "taban_bilek_hiz": 1.529,
+  "doyum_bilek_hiz": 3.057,
+  "taban_bilek_sarsinti": 1.259,
+  "doyum_bilek_sarsinti": 2.519,
+  "taban_enerji": 1.209,
+  "doyum_enerji": 2.418
+ },
+ "gerekce": "Eşikler kamera çiftliğinde ölçülmüştü ve RWF-2000'e taşınmıyor. Mimari kural 7 ('her kameranın normali ayrı öğrenilir') saldırganlık modülünde uygulanmamıştı."
+}

@@ -18,6 +18,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, Field
 
+from sentinel import metrics
 from sentinel.api.guvenlik import (
     Kullanici,
     Rol,
@@ -121,6 +122,13 @@ async def giris(istek: GirisIstegi, request: Request, yanit: Response) -> dict[s
     ip = _istemci_ip(request)
 
     if _kilitli_mi(istek.kullanici_adi, ip):
+        # ⚠ G20 kilidi ÇALIŞIYORDU ama GÖRÜNMÜYORDU (03.09.2026 eklendi).
+        # Kilit Gün 16'da yazıldı; kaç kez devreye girdiğini gösteren
+        # hiçbir metrik yoktu. G28 ("başarısız giriş serisi uyarısı")
+        # ve PLAN §13.2'nin güvenlik panosu ikisi de bu sayaca
+        # dayanıyor. Gözlemlenemeyen bir savunma, ilk sessiz arızasına
+        # kadar çalışır.
+        metrics.auth_failures.labels(reason="kilitli").inc()
         await depo.denetim_yaz(
             "giris_kilitli", kullanici_adi=istek.kullanici_adi, ip=ip, basarili=False
         )
@@ -146,6 +154,7 @@ async def giris(istek: GirisIstegi, request: Request, yanit: Response) -> dict[s
 
     if not gecerli:
         _deneme_say(istek.kullanici_adi, ip)
+        metrics.auth_failures.labels(reason="kimlik_hatali").inc()
         await depo.denetim_yaz(
             "giris", kullanici_adi=istek.kullanici_adi, ip=ip, basarili=False
         )
@@ -191,6 +200,7 @@ async def yenile(istek: YenilemeIstegi, yanit: Response) -> dict[str, Any]:
     if kayit is None or not kayit.aktif:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "geçersiz oturum")
     if int(govde.get("ver", -1)) != kayit.token_surumu:
+        metrics.auth_failures.labels(reason="token_surumu_eski").inc()
         await depo.denetim_yaz(
             "yenileme_reddedildi", kullanici_adi=kullanici_adi, basarili=False,
             ayrinti={"sebep": "token surumu eski"},

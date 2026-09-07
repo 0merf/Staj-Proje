@@ -13,14 +13,29 @@ Origin yoksa (tarayıcı dışı istemci) reddedilir.
 Protokol
 --------
     → (bağlan)              Origin doğrulanır, yoksa 1008 ile kapatılır
+                            Çerezdeki JWT doğrulanır, yoksa 1008
+                            Kullanıcı başına bağlantı sınırı (G14)
     ← hello                 sunucu bilgisi
     → subscribe {cameras}   istemci abone olmak istediği kameraları söyler
     ← subscribed {cameras}  SUNUCU YETKİ KONTROLÜ YAPAR, izinsizleri çıkarır
     ← frame …               sürekli sonuç akışı
     → ping / ← pong         canlılık
 
-Faz 1'de eklenecek: JWT ile kimlik doğrulama ve `user_camera_access`
-tablosuna göre kamera bazlı yetki (G05/G07). Şu an tüm kameralar açık.
+Güvenlik durumu — neyin yapıldığı, neyin YAPILMADIĞI
+----------------------------------------------------
+✅ G06 `Origin` doğrulaması (aynı köken + beyaz liste, şema dâhil)
+✅ G02/G03 JWT kimlik doğrulaması — `httponly` çerezden okunuyor
+✅ G07 abonelikte yeniden yetkilendirme — BEYAZ LİSTE ile
+✅ G14 kullanıcı başına eşzamanlı bağlantı sınırı
+❌ G05 kamera bazlı yetki — `user_camera_access` tablosu YOK, yani
+   doğrulanmış her kullanıcı tüm kameralara abone olabiliyor.
+   Bu eksik raporda böyle yazılacak, "yapıldı" diye değil.
+
+⚠ 03.09.2026 — BU BAŞLIK BAYATTI
+Önceki sürüm *"Faz 1'de eklenecek: JWT ile kimlik doğrulama... Şu an
+tüm kameralar açık"* diyordu. JWT doğrulaması Gün 16'da eklenmişti
+(satır ~330) ama başlık güncellenmemişti. Mimari kural 0: belgede
+yazan ile kodda olan aynı olmalı — ve bir docstring, kodun belgesidir.
 """
 
 from __future__ import annotations
@@ -35,6 +50,7 @@ from urllib.parse import urlsplit
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from starlette.websockets import WebSocketState
 
+from sentinel import metrics
 from sentinel.api.guvenlik import token_coz
 from sentinel.api.ws.manager import Client, broadcaster
 from sentinel.config import get_settings, settings
@@ -311,18 +327,43 @@ async def live_feed(websocket: WebSocket) -> None:
     token = websocket.cookies.get("sentinel_token")
     if not token:
         log.warning("ws_kimliksiz_reddedildi", origin=origin or "(yok)")
+        metrics.auth_failures.labels(reason="ws_kimliksiz").inc()
         await websocket.close(code=CLOSE_POLICY_VIOLATION, reason="authentication required")
         return
     try:
         govde = token_coz(token)
     except HTTPException:
         log.warning("ws_gecersiz_token", origin=origin or "(yok)")
+        metrics.auth_failures.labels(reason="ws_token_gecersiz").inc()
         await websocket.close(code=CLOSE_POLICY_VIOLATION, reason="invalid token")
         return
 
+    kullanici = str(govde.get("sub", ""))
+
+    # ⚠ G14 — KULLANICI BAŞINA BAĞLANTI SINIRI (03.09.2026)
+    #
+    # `MAX_WS_CONNECTIONS_PER_USER` ayarı `.env`'de ve `config.py`'de
+    # Gün 1'den beri duruyordu ve **hiçbir yerde okunmuyordu.** Yani
+    # güvenlik kontrol listesinde bir madde, kodda bir ölü değişken
+    # olarak yaşıyordu — ve ayarın varlığı, korumanın var olduğu
+    # izlenimini veriyordu. Bu, çalışmayan kalite kapısıyla aynı
+    # sınıf hata: olmayan korumadan kötüsü, var sanılan korumadır.
+    #
+    # ⚠ Neden bu sınır bir gözetim sisteminde önemli: her WS bağlantısı
+    # 20 kameranın canlı analiz akışını dinliyor. Çalınmış tek bir
+    # hesapla yüzlerce bağlantı açmak hem sunucuyu yorar hem de
+    # veriyi sınırsız kopyalar. Sınır, çalınmış hesabın verebileceği
+    # zararı sabitliyor.
+    sinir = get_settings().max_ws_connections_per_user
+    if kullanici and broadcaster.kullanici_baglanti_sayisi(kullanici) >= sinir:
+        log.warning("ws_baglanti_siniri", kullanici=kullanici, sinir=sinir)
+        metrics.auth_failures.labels(reason="ws_baglanti_siniri").inc()
+        await websocket.close(code=CLOSE_POLICY_VIOLATION, reason="connection limit")
+        return
+
     await websocket.accept()
-    log.info("ws_baglandi", kullanici=govde.get("sub"), rol=govde.get("rol"))
-    client = Client(websocket=websocket)
+    log.info("ws_baglandi", kullanici=kullanici, rol=govde.get("rol"))
+    client = Client(websocket=websocket, kullanici=kullanici)
     broadcaster.add(client)
 
     await websocket.send_text(

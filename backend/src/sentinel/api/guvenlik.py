@@ -58,6 +58,7 @@ from argon2.exceptions import InvalidHashError, VerifyMismatchError
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from sentinel import metrics
 from sentinel.config import get_settings
 from sentinel.logging import get_logger
 
@@ -240,6 +241,7 @@ def rol_gerekli(en_az: Rol) -> Any:
         kullanici: Annotated[Kullanici, Depends(mevcut_kullanici)],
     ) -> Kullanici:
         if _YETKI[kullanici.rol] < _YETKI[en_az]:
+            metrics.auth_failures.labels(reason="yetkisiz").inc()
             log.warning(
                 "yetkisiz_erisim_denemesi",
                 kullanici=kullanici.kullanici_adi,

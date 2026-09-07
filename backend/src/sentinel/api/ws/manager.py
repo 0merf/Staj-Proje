@@ -33,6 +33,7 @@ from uuid import uuid4
 from fastapi import WebSocket
 from redis.asyncio import Redis
 
+from sentinel import metrics
 from sentinel.config import settings
 from sentinel.logging import get_logger
 
@@ -56,6 +57,13 @@ class Client:
     """Bağlı bir WebSocket istemcisi."""
 
     websocket: WebSocket
+    # Bağlantıyı açan kullanıcı — G14 (kullanıcı başına bağlantı
+    # sınırı) bu alan olmadan uygulanamıyordu.
+    # ⚠ Varsayılanı boş: eski çağrılar ve testler kırılmasın diye.
+    # Boş kullanıcı sınıra takılmıyor — sınır ancak kimlik bilinirse
+    # anlamlı, ve kimlik doğrulaması zaten bağlantının ön koşulu
+    # (api/ws/live.py). Boş değer pratikte yalnızca testlerde oluşur.
+    kullanici: str = ""
     # Oturumu ayırt eden kimlik. İzlenen kamera listesi bununla
     # yazılıyor; iki panel açıkken biri diğerinin listesini ezmesin
     # (bkz. bus/streams.py · WATCHED_PREFIX).
@@ -121,12 +129,30 @@ class ResultBroadcaster:
 
     # ─── Abonelik ────────────────────────────────────────────
 
+    def kullanici_baglanti_sayisi(self, kullanici: str) -> int:
+        """Bir kullanıcının açık bağlantı sayısı (G14).
+
+        ⚠ Sayım KULLANICI adına göre, IP'ye göre değil. IP tabanlı
+        sınır kurumsal bir ağda tüm binayı tek kullanıcı sayardı;
+        kullanıcı tabanlı sınır ise çalınmış bir hesapla açılan
+        onlarca dinleme kanalını engelliyor — korunmak istenen şey bu.
+        """
+        if not kullanici:
+            return 0
+        return sum(1 for c in self._clients if c.kullanici == kullanici)
+
     def add(self, client: Client) -> None:
         self._clients.add(client)
-        log.info("ws_istemci_baglandi", total=len(self._clients))
+        metrics.ws_connections_active.set(len(self._clients))
+        log.info(
+            "ws_istemci_baglandi",
+            total=len(self._clients),
+            kullanici=client.kullanici or "(bilinmiyor)",
+        )
 
     def remove(self, client: Client) -> None:
         self._clients.discard(client)
+        metrics.ws_connections_active.set(len(self._clients))
         log.info("ws_istemci_ayrildi", total=len(self._clients), dropped=client.dropped)
 
     @property

@@ -1,0 +1,54 @@
+# ⚠ BU DOSYA OLMADAN DERLEME PRATİKTE İMKÂNSIZ
+#
+# Docker, derlemeye başlamadan önce bağlamın (context) TAMAMINI
+# arka plan sürecine gönderiyor. `data/` içinde RWF-2000 veri seti
+# (~12 GB) ve kamera çiftliği videoları var; onlar olmadan bağlam
+# birkaç MB, onlarla birlikte on gigabaytlarca.
+#
+# Bu dosya yokken belirti şudur: "transferring context..." satırı
+# dakikalarca ilerlemiyor ve derleme hiç başlamıyor gibi görünüyor.
+
+# ─── Büyük veri — imaja GİRMEZ, çalışma zamanında BAĞLANIR ───
+data/
+benchmarks/
+notebooks/
+
+# ⚠ Modeller de bağlanıyor (`./backend/models:/app/models:ro`).
+# İmaja gömmek her model güncellemesinde yeniden derleme demekti;
+# ayrıca `.engine` dosyası donanıma özgü ve taşınabilir değil.
+models/
+backend/models/
+
+# ─── Sanal ortamlar ve derleme çıktıları ───
+.venv/
+backend/.venv/
+**/__pycache__/
+**/*.pyc
+.pytest_cache/
+backend/.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# ⚠ node_modules HARİÇ TUTULUYOR ama frontend/ dâhil: imaj kendi
+# `npm ci` çağrısını yapıyor (Linux'a özgü ikili paketler var,
+# Windows'ta kurulmuş node_modules konteynerde çalışmaz).
+frontend/node_modules/
+frontend/dist/
+backend/src/sentinel/api/static/app/
+
+# ─── Sırlar ───
+# ⚠ `.env` İMAJA GİRMEZ. Compose `env_file` ile ÇALIŞMA ZAMANINDA
+# veriyor. İmaja gömülen bir sır, imajı alan herkese açıktır ve
+# katman geçmişinden silinemez (G15).
+.env
+*.pem
+*.key
+
+# ─── Geliştirme ───
+.git/
+.github/
+.vscode/
+.idea/
+*.md
+!backend/README.md
+.claude/

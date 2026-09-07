@@ -64,6 +64,22 @@ class Settings(BaseSettings):
 
     # ─── MediaMTX ─────────────────────────────────────────────
     mediamtx_host: str = "127.0.0.1"
+    # ⚠ AYNI SERVİS, İKİ FARKLI İZLEYİCİ — konteynerleştirmede ortaya çıktı
+    #
+    # `mediamtx_host` SUNUCUNUN gördüğü adres: RTSP okuma ve yönetim
+    # API'si buradan geçiyor. Docker içinde bu `mediamtx` (servis adı).
+    #
+    # `mediamtx_public_host` ise TARAYICININ gördüğü adres: WHEP video
+    # akışını tarayıcı doğrudan çekiyor (mimari kural 2 — video sunucu
+    # üzerinden geçmiyor). Tarayıcı Docker ağının dışında olduğu için
+    # `mediamtx` adını çözemez; onun için `127.0.0.1` gerekiyor.
+    #
+    # Tek bir ayarla ikisini birden karşılamak imkânsız ve bu ayrım
+    # konteynerleştirmeden önce görünmüyordu: her şey aynı makinede
+    # koşarken iki adres de `127.0.0.1` idi.
+    #
+    # Boş bırakılırsa `mediamtx_host` kullanılıyor (yerel geliştirme).
+    mediamtx_public_host: str = ""
     mediamtx_rtsp_port: int = 8554
     mediamtx_webrtc_port: int = 8889
     mediamtx_api_port: int = 9997
@@ -229,11 +245,45 @@ class Settings(BaseSettings):
     #   buradaki 180 px, kaynakta 360 px'e denk geliyor.
     expression_min_person_px: int = 180
     tracker: str = "botsort"
-    use_tensorrt: bool = True
-    use_fp16: bool = True
+
+    # ⚠ 03.09.2026 — ÜÇ AYAR KALDIRILDI: HİÇBİRİ OKUNMUYORDU
+    #
+    #   use_tensorrt         (varsayılan True)
+    #   use_fp16             (varsayılan True)
+    #   privacy_blur_default (varsayılan True)
+    #
+    # Üçü de `config.py`'de tanımlıydı, `.env`'de değer taşıyordu ve
+    # kodun HİÇBİR YERİNDE okunmuyordu. İkisi ayrıca aktif olarak
+    # yanlış bilgi veriyordu:
+    #
+    #   · `use_tensorrt=true` — TensorRT üretimde KULLANILMIYOR.
+    #     Ölçüldü (1.40×, tespitler birebir aynı) ama parti dolgunluğu
+    #     yüzünden bilinçli olarak devreye alınmadı (ADR-0006).
+    #     Ayarı okuyan biri tam tersi sonuca varırdı.
+    #
+    #   · `privacy_blur_default=true` — hiçbir yerde bulanıklaştırma
+    #     YOK. Dahası bu değer `/api/v1/system/config` ile panele
+    #     "true" diye YAYINLANIYORDU: API, yapmadığı bir şeyi yaptığını
+    #     söylüyordu. Yüz bulanıklaştırma bu staj kapsamının dışında
+    #     bırakıldı (ticari kurulum değil) ve doğru davranış, kapsam
+    #     dışı bir özelliğin ayarını açık bırakmak değil KALDIRMAK.
+    #
+    #   · `use_fp16=true` — FP16 gerçekten kullanılıyor ama ayardan
+    #     değil, dedektör kurulurken `half=True` sabitiyle. Ayar
+    #     "değiştirilebilir" izlenimi veriyordu; değiştirilemiyordu.
+    #
+    # ⚠ Ders (bu projede üçüncü kez): YANLIŞ CEVAP VEREN BİR AYAR,
+    # OLMAYAN AYARDAN KÖTÜDÜR. Aynı sınıf: kaldırılan `npm run lint`
+    # (çalışmayan kalite kapısı), ölü Prometheus hedefleri (hep
+    # kırmızı gösterge), `.env`'deki bayat admin parolası.
+    #
+    # `extra="ignore"` sayesinde `.env`'de kalan anahtarlar hata
+    # üretmiyor; yine de oradan da temizlendiler.
 
     # ─── KVKK ─────────────────────────────────────────────────
-    privacy_blur_default: bool = True
+    # ⚠ Bu ayar SİLİNMEDİ çünkü ölü değil: aşağıdaki doğrulayıcı
+    # açılmaya çalışılırsa uygulamayı başlatmıyor. Yani bir mekanizma,
+    # bir vaat değil — kaldırılan üçünden farkı tam olarak bu.
     store_face_crops: bool = False
 
     # ─── Türetilmiş yardımcılar ───────────────────────────────
@@ -261,7 +311,14 @@ class Settings(BaseSettings):
 
     @property
     def mediamtx_webrtc_url(self) -> str:
-        return f"http://{self.mediamtx_host}:{self.mediamtx_webrtc_port}"
+        """Tarayıcının WHEP için kullanacağı adres.
+
+        ⚠ `mediamtx_host` DEĞİL `mediamtx_public_host`: bu URL panele
+        gönderiliyor ve tarayıcı Docker ağının dışında. Konteyner içi
+        servis adı (`mediamtx`) tarayıcıda çözülemez.
+        """
+        host = self.mediamtx_public_host or self.mediamtx_host
+        return f"http://{host}:{self.mediamtx_webrtc_port}"
 
     @property
     def prometheus_url(self) -> str:

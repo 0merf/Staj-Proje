@@ -1,0 +1,94 @@
+{
+  "olusturuldu": "2026-09-07T14:05:00+00:00",
+  "camera": "cam-15",
+  "kaynak": "UBI-Fights · F_45_0_0_0_0",
+  "kaynak_lisans": "UBI-Fights (socia-lab.di.ubi.pt/EventDetection) — akademik kullanım",
+  "etiket_turu": "GÖRSEL DOĞRULAMA — kare kare bakılarak elle çıkarıldı",
+
+  "neden_bu_video_secildi": [
+    "İlk cam-15 (F_74_1_2_0_0) iki sebeple UYGUNSUZDU (P-50):",
+    "  1. Elde tutulan telefonla çekilmiş — kamera kayma medyanı",
+    "     %0.197, p90 %1.023. Boru hattımız sabit kamera varsayıyor",
+    "     (botsort.py: gmc_method='none', with_reid=False), yani",
+    "     sistemi kendi varsayımının DIŞINDA test ediyorduk.",
+    "  2. Veri setinin etiketi olayın başlangıcını ~25 saniye GEÇ",
+    "     veriyordu (etiket 57.97 sn, gerçek başlangıç ~32.8 sn).",
+    "",
+    "216 kavga videosu tarandı (bul_sabit_kamera.py):",
+    "  - 60 tanesinde ≥20 sn olay öncesi bağlam var",
+    "  - kamera hareketi (seyrek optik akış, MEDYAN kayma) ölçüldü",
+    "  - sahne kesmesi (gri seviye farkı) ölçüldü",
+    "  - 35 tanesi hem sabit hem kesmesiz çıktı",
+    "",
+    "⚠ İki aday gözle elendi — tarama tek başına yetmedi:",
+    "  F_0_1_0_0_0   : iki ayrı kameradan kurgulanmış (hastane",
+    "                  koridoru → otopark). Kesme dedektörünün ilk",
+    "                  sürümü (HSV histogram) bunu KAÇIRDI; gri",
+    "                  seviye farkına geçilince yakalandı.",
+    "  F_202_0_0_0_0 : sabit ve tek sahne ama KURGU/eğitim videosu",
+    "                  ('Active Self Protection' filigranı) ve",
+    "                  etiketi görünen şiddetle çelişiyor.",
+    "",
+    "F_45_0_0_0_0 seçildi: gerçek güvenlik kamerası, sabit (kayma",
+    "%0.000), tek sahne (market), ~22 sn temiz olay öncesi bağlam."
+  ],
+
+  "kamera_notu": [
+    "✅ SABİT KAMERA — kayma medyanı %0.000, sahne kesmesi yok.",
+    "Boru hattının sabit kamera varsayımıyla UYUMLU.",
+    "Karşılaştırma: eski cam-15 (F_74) kayma %0.197 / p90 %1.023."
+  ],
+
+  "sure_s": 128.0,
+  "kaynak_fps": 30.0,
+  "cozunurluk": "640x360",
+  "not_kodlama": [
+    "⚠ Video YENİDEN KODLANMADI, kaynaktan olduğu gibi kopyalandı.",
+    "Kamera çiftliğinin 720p/25fps kuralına uymuyor ama ölçüm için",
+    "bu daha doğru: 30→25 FPS dönüşümü kare atar ve zaman damgalarını",
+    "40 ms'ye kadar kaydırır. Bir ZAMANLAMA ölçümünde (K8 tam olarak",
+    "budur) ölçüm aracına kasıtlı zaman hatası eklemek anlamsız."
+  ],
+
+  "olay_baslangici_s": 23.5,
+  "olay_baslangici_belirsizlik_s": [22.5, 24.0],
+  "olay_baslangici_gerekce": [
+    "22.5s  kırmızı üstlü kişi diğerine doğru kol uzatıyor — ilk",
+    "       saldırgan hareket, ama tek başına belirsiz (jest olabilir)",
+    "23.0s  ikisi ayrı duruyor",
+    "23.5s  yakınlaşma, karşı karşıya",
+    "24.0s  ⬅ FİZİKSEL TEMAS, boğuşma başlıyor",
+    "25.0s  boğuşma sürüyor, üçüncü kişi giriyor",
+    "",
+    "⚠ Başlangıç 23.5 alındı (belirsizlik bandının ortası).",
+    "1.5 saniyeden küçük hiçbir avans/gecikme iddiası bu",
+    "belirsizliğin dışına çıkamaz ve öyle raporlanmalı.",
+    "",
+    "⭐ Veri setinin etiketi 25.0 sn diyor — görsel başlangıçtan",
+    "1.5 sn sonra. F_74'teki 25 SANİYELİK sapmanın yanında",
+    "kabul edilebilir; bu videonun etiketi güvenilir."
+  ],
+
+  "dogrulanmis_normal": [[0.0, 21.5]],
+  "dogrulanmis_normal_gerekce": [
+    "0-21.5 sn gözle tarandı: markette dolaşan iki kişi, raflar,",
+    "çatışma yok. 21.5'te kesildi — 22.5'teki ilk hamleye 1 sn tampon.",
+    "",
+    "⚠ 64-128 sn NORMAL SAYILMIYOR ve hiçbir havuza katılmıyor:",
+    "polis geliyor, kalabalık oluşuyor, olay sonrası. Ne normal",
+    "olduğu ne olmadığı doğrulanabildi → ölçüm dışı."
+  ],
+
+  "segments": [
+    {"clip": "cam-15", "start_s": 23.5, "end_s": 39.0, "tur": "fight",
+     "not": "başlangıç görsel doğrulamayla 25.0'dan 23.5'e çekildi"},
+    {"clip": "cam-15", "start_s": 48.0, "end_s": 64.0, "tur": "fight"}
+  ],
+
+  "veri_seti_segmentleri": [
+    {"start_s": 25.0, "end_s": 39.0, "tur": "fight"},
+    {"start_s": 48.0, "end_s": 64.0, "tur": "fight"}
+  ],
+
+  "eski_video_arsivde": "data/videos/_arsiv/cam-15-hareketli-F74.mp4"
+}

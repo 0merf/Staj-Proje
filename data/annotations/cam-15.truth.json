@@ -1,0 +1,24 @@
+{
+ "olusturuldu": "2026-09-07T11:28:23.677654+00:00",
+ "camera": "cam-15",
+ "kaynak": "UBI-Fights · F_45_0_0_0_0",
+ "kaynak_lisans": "UBI-Fights (socia-lab.di.ubi.pt/EventDetection) — akademik kullanım",
+ "etiket_turu": "kare seviyesinde (veri setiyle birlikte gelen, ELLE ÜRETİLMEDİ)",
+ "not": "⚠ VERİ SETİNİN KENDİ ETİKETİ. Görsel doğrulama: cam-15.gorsel.json (varsayılan). Bu dosya karşılaştırma için duruyor — --etiket veriseti ile kullanılır.",
+ "sure_s": 128.0,
+ "segments": [
+  {
+   "clip": "cam-15",
+   "start_s": 25.0,
+   "end_s": 39.0,
+   "tur": "fight"
+  },
+  {
+   "clip": "cam-15",
+   "start_s": 48.0,
+   "end_s": 64.0,
+   "tur": "fight"
+  }
+ ],
+ "onceki_video": "F_74_1_2_0_0 (elde tutulan telefon) — arşiv: _arsiv_cam-15-F74.truth.json"
+}

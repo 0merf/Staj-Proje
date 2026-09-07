@@ -38,6 +38,11 @@ class KisiOzellikleri:
     # ─── Hareket (birim: gövde/sn) ───
     bilek_hizi_azami: float | None = None
     bilek_sarsintisi: float | None = None
+    # ⚠ p75 SÜRÜMLERİ — gürültüye dayanıklı toplulaştırma (P-47).
+    # `azami` alanları KARŞILAŞTIRMA için duruyor; skorlamada
+    # `aggression.py` bunları kullanıyor.
+    bilek_hizi_p75: float | None = None
+    bilek_sarsintisi_p75: float | None = None
     hareket_enerjisi: float | None = None
     govde_hizi: float | None = None
 
@@ -58,6 +63,18 @@ class KisiOzellikleri:
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
+
+
+def _p75(sirali: list[float]) -> float:
+    """Sıralı bir listenin 75. yüzdeliği.
+
+    ⚠ `statistics.quantiles` KULLANILMIYOR: o en az 2 örnek istiyor ve
+    3 saniyelik pencerede tek örnek sık görülüyor (kare atma). Tek
+    örnekte doğru cevap o örneğin kendisi, istisna değil.
+    """
+    if not sirali:
+        return 0.0
+    return sirali[min(len(sirali) - 1, int(len(sirali) * 0.75))]
 
 
 def _bilek_hizlari(pencere: IzPenceresi, olcek: float) -> list[float]:
@@ -149,14 +166,45 @@ def cikar(pencere: IzPenceresi) -> KisiOzellikleri:
 
         bilek = _bilek_hizlari(pencere, olcek)
         if bilek:
-            # AZAMİ, ortalama değil: vuruş anlık bir olaydır ve
-            # ortalama onu 3 saniyeye yayıp söndürür.
-            ozellik.bilek_hizi_azami = max(bilek)
+            # ⚠⚠ 07.09.2026 — `azami` GÜRÜLTÜ ÖLÇÜYORDU (P-47)
+            #
+            # Buradaki gerekçe şuydu ve makul görünüyordu:
+            #     "AZAMİ, ortalama değil: vuruş anlık bir olaydır ve
+            #      ortalama onu 3 saniyeye yayıp söndürür."
+            #
+            # Mantık doğru, sonuç yanlıştı. `max` aynı zamanda en
+            # gürültülü istatistik: TEK bir hatalı eklem tahmini tüm
+            # pencereyi ele geçiriyor. RWF-2000'de ölçüldü
+            # (`deney_toplulastirma.py`, 200 klip):
+            #
+            #     toplulaştırma   AUC     kavga p50   normal p50
+            #     azami           0.558     2.577       2.077   ⬅ şans
+            #     p90             0.659     1.625       1.003
+            #     p75             0.677     0.954       0.542   ⬅ EN İYİ
+            #     medyan          0.652     0.437       0.274
+            #
+            # ⚠ p99/p50 oranı 9.7 — dağılımın kuyruğu medyanın 10 katı.
+            # Saniyede 10 gövde boyu bilek hareketi FİZİKSEL OLARAK
+            # İMKÂNSIZ; o kuyruk hareket değil, eklem hatası. `max`
+            # tam olarak o kuyruğu örneklemiş oluyordu.
+            #
+            # ⭐ p75 hem uç değeri hem gürültüyü dengeliyor: vuruş
+            # pencerenin üst çeyreğinde kalıyor (sönmüyor) ama tek bir
+            # bozuk eklem üst çeyreği belirleyemiyor.
+            #
+            # ⚠ ESKİ DEĞER SİLİNMEDİ, yanına yazıldı: makalede iki
+            # toplulaştırmanın karşılaştırması raporlanacak ve eski
+            # davranışı yeniden üretebilmek gerekiyor.
+            sirali = sorted(bilek)
+            ozellik.bilek_hizi_azami = sirali[-1]
+            ozellik.bilek_hizi_p75 = _p75(sirali)
             if len(bilek) >= 2:
                 # Sarsıntı: hızın değişim hızı. Kontrollü bir hareket
                 # düzgün hızlanır; vuruş ani sıçrama yapar.
-                farklar = np.abs(np.diff(bilek))
-                ozellik.bilek_sarsintisi = float(np.max(farklar))
+                # ⚠ Burada da aynı düzeltme: `max` yerine p75.
+                farklar = sorted(float(v) for v in np.abs(np.diff(bilek)))
+                ozellik.bilek_sarsintisi = farklar[-1]
+                ozellik.bilek_sarsintisi_p75 = _p75(farklar)
 
         tum = _tum_keypoint_hizlari(pencere, olcek)
         if tum:

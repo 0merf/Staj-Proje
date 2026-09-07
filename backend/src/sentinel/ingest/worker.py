@@ -173,7 +173,7 @@ class CameraTask:
                 metrics.frames_received.labels(cam=self.camera).inc()
 
                 self._process(frame)
-                self._adapt_rate(decoder, frame.timestamp)  # type: ignore[attr-defined]
+                self._adapt_rate(decoder, frame.timestamp)
 
                 metrics.camera_fps.labels(cam=self.camera).set(self.stats.fps)
                 metrics.motion_gate_ratio.labels(cam=self.camera).set(self.stats.pass_ratio)

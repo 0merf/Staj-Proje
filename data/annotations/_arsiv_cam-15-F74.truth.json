@@ -1,0 +1,29 @@
+{
+ "olusturuldu": "2026-09-07T11:28:23.677654+00:00",
+ "camera": "cam-15",
+ "kaynak": "UBI-Fights · F_74_1_2_0_0",
+ "kaynak_lisans": "UBI-Fights (socia-lab.di.ubi.pt/EventDetection) — akademik kullanım",
+ "etiket_turu": "kare seviyesinde (veri setiyle birlikte gelen, ELLE ÜRETİLMEDİ)",
+ "not": "⚠ Etiket ZAMAN olarak saklanıyor, kare indeksi olarak değil: kaynak 30 FPS, cam-15 25 FPS'e yeniden kodlandı. Kare indeksi taşınamaz, saniye taşınır.",
+ "sure_s": 160.0,
+ "segments": [
+  {
+   "clip": "cam-15",
+   "start_s": 57.967,
+   "end_s": 59.633,
+   "tur": "fight"
+  },
+  {
+   "clip": "cam-15",
+   "start_s": 64.0,
+   "end_s": 73.367,
+   "tur": "fight"
+  },
+  {
+   "clip": "cam-15",
+   "start_s": 96.933,
+   "end_s": 112.0,
+   "tur": "fight"
+  }
+ ]
+}

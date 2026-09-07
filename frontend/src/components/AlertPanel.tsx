@@ -16,7 +16,7 @@
  * yanlış alarm sayısı değil, operatörün sistemi umursamamaya
  * başlamasıdır (PLAN §8.1 `contributing_signals`).
  */
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useStore } from '../store'
 import { ANOMALI_TR } from '../types'
 
@@ -101,6 +101,68 @@ function saat(rx: number): string {
   // sayfa açılış anını referans alıyoruz.
   const d = new Date(performance.timeOrigin + rx)
   return d.toLocaleTimeString('tr-TR', { hour12: false })
+}
+
+/** Olay klibi oynatıcısı — "göster" sorusunun cevabı.
+ *
+ * ⚠ NEDEN GÖMÜLÜ OYNATICI, İNDİRME BAĞLANTISI DEĞİL
+ * Operatörün sorusu "bu dosyayı bilgisayarıma al" değil, "ne olduğunu
+ * göster". İndirme, klibi sistemin denetiminden kalıcı olarak
+ * çıkarıyor; izlemek çıkarmıyor. Sunucu da bunu destekliyor
+ * (`Content-Disposition: inline`) ve her erişimi denetim izine
+ * yazıyor (G19).
+ *
+ * ⚠ TEMBEL YÜKLEME (`preload="none"` + açılınca kur)
+ * 50 alarmlık bir listede her satır kendi videosunu önden yüklerse
+ * tarayıcı 50 eşzamanlı istek açar. Klip ancak operatör açtığında
+ * isteniyor.
+ */
+function KlipOynatici({ anahtar }: { anahtar: string }) {
+  const [acik, setAcik] = useState(false)
+  const [hata, setHata] = useState(false)
+
+  if (!acik) {
+    return (
+      <button
+        type="button"
+        onClick={() => setAcik(true)}
+        className="mt-1.5 w-full rounded border border-line bg-panel px-2 py-1 text-[10px] text-muted hover:text-ink"
+        title="Olay anının ±10 sn'lik kaydı. Her görüntüleme denetim izine yazılır."
+      >
+        ▶ kanıt klibini göster
+      </button>
+    )
+  }
+
+  if (hata) {
+    return (
+      <p className="mt-1.5 text-[10px] text-warn">
+        Klip bulunamadı.
+        {/* ⚠ En olası sebep bir arıza DEĞİL: sürekli kayıt varsayılan
+            olarak kapalı (~14 GB/saat) ve kayıt yokken kesilecek bir
+            şey de yok. Bunu söylemek, operatörün olmayan bir hatayı
+            aramasını engelliyor. */}
+        <br />
+        <span className="text-muted">
+          Sürekli kayıt kapalıysa (varsayılan) klip üretilmez.
+        </span>
+      </p>
+    )
+  }
+
+  return (
+    <video
+      // Anahtar `a/b/c.mp4` biçiminde; her parça ayrı ayrı kodlanmalı,
+      // aksi hâlde `encodeURIComponent` bölü işaretlerini de kaçırır
+      // ve sunucudaki yol eşleşmez.
+      src={`/api/v1/events/klip/${anahtar.split('/').map(encodeURIComponent).join('/')}`}
+      controls
+      autoPlay
+      preload="none"
+      onError={() => setHata(true)}
+      className="mt-1.5 w-full rounded border border-line"
+    />
+  )
 }
 
 export function AlertPanel() {
@@ -221,6 +283,12 @@ export function AlertPanel() {
                     kanıt gücü {(a.completeness * 100).toFixed(0)}%
                   </span>
                 </div>
+
+                {/* ⚠ KANIT KLİBİ — "alarm bir iddia, klip bir kanıt"
+                    (alerting/klip.py). Klip yalnızca ciddi olaylarda
+                    ve yalnızca sürekli kayıt açıkken üretiliyor, bu
+                    yüzden satırların çoğunda görünmeyecek. */}
+                {a.klip && <KlipOynatici anahtar={a.klip} />}
               </li>
             ))}
           </ul>

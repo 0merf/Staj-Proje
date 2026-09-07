@@ -1,0 +1,107 @@
+{
+ "olculdu": "2026-09-07T09:10:45.760964+00:00",
+ "deney": "toplulaştırma karşılaştırması (azami vs dayanıklı)",
+ "hipotez": "`azami` toplulaştırması eklem gürültüsünü ölçüyor",
+ "veri_seti": "RWF-2000 train",
+ "klip_sinif_basina": 100,
+ "ornekleme_fps": 4.0,
+ "sonuclar": [
+  {
+   "buyukluk": "bilek",
+   "toplulastirma": "azami (üretim)",
+   "auc": 0.5579,
+   "kavga_p50": 2.577,
+   "normal_p50": 2.077,
+   "p99_p50_orani": 9.66
+  },
+  {
+   "buyukluk": "bilek",
+   "toplulastirma": "p90",
+   "auc": 0.6595,
+   "kavga_p50": 1.625,
+   "normal_p50": 1.003,
+   "p99_p50_orani": 9.78
+  },
+  {
+   "buyukluk": "bilek",
+   "toplulastirma": "p75",
+   "auc": 0.6775,
+   "kavga_p50": 0.954,
+   "normal_p50": 0.542,
+   "p99_p50_orani": 16.41
+  },
+  {
+   "buyukluk": "bilek",
+   "toplulastirma": "medyan",
+   "auc": 0.6518,
+   "kavga_p50": 0.437,
+   "normal_p50": 0.274,
+   "p99_p50_orani": 6.87
+  },
+  {
+   "buyukluk": "bilek",
+   "toplulastirma": "ortalama",
+   "auc": 0.6591,
+   "kavga_p50": 0.737,
+   "normal_p50": 0.476,
+   "p99_p50_orani": 8.64
+  },
+  {
+   "buyukluk": "tum_eklem",
+   "toplulastirma": "azami (üretim)",
+   "auc": 0.5555,
+   "kavga_p50": 3.427,
+   "normal_p50": 3.106,
+   "p99_p50_orani": 9.18
+  },
+  {
+   "buyukluk": "tum_eklem",
+   "toplulastirma": "p90",
+   "auc": 0.6347,
+   "kavga_p50": 1.196,
+   "normal_p50": 0.858,
+   "p99_p50_orani": 12.67
+  },
+  {
+   "buyukluk": "tum_eklem",
+   "toplulastirma": "p75",
+   "auc": 0.6363,
+   "kavga_p50": 0.692,
+   "normal_p50": 0.415,
+   "p99_p50_orani": 18.97
+  },
+  {
+   "buyukluk": "tum_eklem",
+   "toplulastirma": "medyan",
+   "auc": 0.6218,
+   "kavga_p50": 0.337,
+   "normal_p50": 0.213,
+   "p99_p50_orani": 6.49
+  },
+  {
+   "buyukluk": "tum_eklem",
+   "toplulastirma": "ortalama",
+   "auc": 0.627,
+   "kavga_p50": 0.62,
+   "normal_p50": 0.437,
+   "p99_p50_orani": 14.61
+  }
+ ],
+ "en_iyi": {
+  "buyukluk": "bilek",
+  "toplulastirma": "p75",
+  "auc": 0.6775,
+  "kavga_p50": 0.954,
+  "normal_p50": 0.542,
+  "p99_p50_orani": 16.41
+ },
+ "uretim": {
+  "buyukluk": "bilek",
+  "toplulastirma": "azami (üretim)",
+  "auc": 0.5579,
+  "kavga_p50": 2.577,
+  "normal_p50": 2.077,
+  "p99_p50_orani": 9.66
+ },
+ "sure_s": 148.4
+}

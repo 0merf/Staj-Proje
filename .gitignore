@@ -23,7 +23,22 @@ secrets/
 data/videos/*
 data/datasets/*
 data/clips/*
+# ⚠⚠ 07.09.2026 — YER GERÇEĞİ DOSYALARI İSTİSNA (P-50/P-51)
+#
+# Bu dizin baştan tamamen eleniyordu. Ama içindeki `*.gorsel.json` ve
+# `*.truth.json` dosyaları BÜYÜK VERİ DEĞİL, ÖLÇÜMÜN TANIMI:
+# hangi saniyede olayın başladığını, hangi aralığın doğrulanmış
+# normal olduğunu, hangi aralığın ölçüm dışı bırakıldığını yazıyorlar.
+#
+# ⭐ K8'in tüm sayıları bu dosyalara bağlı. Onlar olmadan
+# `benchmarks/k8_video_*.json` yeniden üretilemez — ve P-50 tam da
+# yer gerçeğinin tanımının sonucu değiştirdiğini gösteren kayıt.
+# Ölçümü saklayıp tanımını atmak, ölçümü saklamamaktır.
+#
+# Birkaç KB; görüntü içermiyorlar.
 data/annotations/*
+!data/annotations/*.gorsel.json
+!data/annotations/*.truth.json
 # MediaMTX sürekli kaydı — olay klibinin kaynağı (~4.5 GB/saat).
 # ⚠ Bunlar gerçek görüntü içerir (webcam dahil); asla commit edilmez.
 data/recordings/*
@@ -39,11 +54,26 @@ data/_sources/*
 # Ham veri setleri — git'e ASLA girmez (boyut + lisans).
 # Kaynak/lisans bilgisi data/SOURCE.md dosyalarinda tutulur.
 data/archive/*
+# UBI-Fights (socia-lab.di.ubi.pt/EventDetection) — 1000 video, 7.8 GB.
+# Videolar zaten `*.mp4` ile eleniyor; ama `annotation/` altındaki 1000
+# CSV elenmiyordu ve commit'e girecekti. Üçüncü taraf etiketleri git'e
+# GİRMEZ (boyut değil, LİSANS): veri seti akademik kullanım şartıyla
+# dağıtılıyor, yeniden dağıtım hakkı bizde değil.
+data/UBI_FIGHTS/*
+!data/UBI_FIGHTS/SOURCE.md
 data/fall-01-cam0-rgb/*
 !data/fall-01-cam0-rgb/SOURCE.md
 # ffmpeg concat listeleri gibi geçici dosyalar
 data/_tmp/*
 models/*
+# ⚠ `models/*` kök dizine ÇAPALI (ortada eğik çizgi var) — yani
+# `backend/models/` bu kuralla ELENMİYOR. Oradaki ağırlıklar
+# `*.pt` / `*.engine` / `*.onnx` desenleriyle eleniyor.
+backend/models/*
+# ⭐ İSTİSNA: eğittiğimiz saldırganlık modeli (138 KB). Üçüncü taraf
+# ağırlık değil, BİZİM çıktımız ve K5/K8 sayılarının kaynağı.
+# Git'e girmezse makalenin hiçbir sayısı yeniden üretilemez.
+!backend/models/saldirganlik_lgbm.txt
 !**/.gitkeep
 
 # ⚠ SOURCE.md dosyalari git'e GİRER — PLAN.md §7.2:

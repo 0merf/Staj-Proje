@@ -96,11 +96,44 @@ def default_args(
         # ─── Kapatılanlar ve gerekçeleri ───
         # Kameralarımız SABİT. Kamera hareketi telafisi her karede
         # global hizalama hesaplar; sabit kamerada bedava maliyet.
+        #
+        # ⚠ 07.09.2026 — VARSAYIM ÖLÇÜLDÜ VE KAMERA ÇİFTLİĞİ İÇİN
+        # DOĞRU, TEST VERİSİ İÇİN DEĞİLDİ (P-51).
+        # cam-15'e konan UBI-Fights videosu (F_74) elde tutulan bir
+        # telefonla çekilmişti: kayma medyanı %0.197, p90 %1.023.
+        # Yani sistem kendi varsayımının DIŞINDA test ediliyordu ve
+        # hız temelli tüm özellikler sahte kamera hızı taşıyordu.
+        # 216 video tarandı (`bul_sabit_kamera.py`), 35'i hem sabit
+        # hem tek sahne çıktı; cam-15 sabit bir CCTV videosuyla
+        # (F_45, kayma %0.000) değiştirildi.
+        # ⚠ HAREKETLİ KAMERA DESTEĞİ HÂLÂ YOK — kapsam dışı, gerekçesi
+        # bu: çiftliğin 20 kamerası da sabit.
         gmc_method="none",
-        # ReID (görünüm eşleştirme) ayrı bir sinir ağı çalıştırır.
-        # 20 kamerada GPU bütçesini aşar; hareket tabanlı eşleştirme
-        # sabit kameralarda zaten yeterli. Faz 5'te ölçülüp
-        # değerlendirilecek.
+        # ⚠⚠ 07.09.2026 — ESKİ GEREKÇE YANLIŞTI, DÜZELTİLDİ (P-51)
+        #
+        # Burada şu yazıyordu:
+        #     "ReID ayrı bir sinir ağı çalıştırır. 20 kamerada GPU
+        #      bütçesini aşar... Faz 5'te ölçülüp değerlendirilecek."
+        #
+        # Son cümle gerekçenin kendisini çürütüyordu: ölçülmemişti.
+        # Ölçülünce ortaya çıkan şey daha temel:
+        #
+        # ⭐ `with_reid` bu boru hattında ETKİSİZ BİR BAYRAK.
+        # Aşağıdaki `update()` takipçiyi `img=None` ile çağırıyor.
+        # ReID kişi kırpıntısından gömme vektörü çıkarır; görüntü
+        # verilmezse kodlayıcı oluşur ama HİÇ ÇAĞRILMAZ. Ölçüm de
+        # bunu doğruladı: açık/kapalı fark +0.025 ms (gürültü).
+        #
+        # ⭐⭐ Gerçek sebep maliyet değil MİMARİ: takipçi arayüzü
+        # piksel almıyor — mimari kural 1'in (ham kare kuyruktan
+        # geçmez) doğrudan sonucu. ReID'i açmak bir bayrak değişikliği
+        # değil, kare referansını takip katmanına taşımaktır; maliyeti
+        # ancak ondan sonra ölçülebilir.
+        #
+        # ⚠ Bunun bedeli var ve raporda yazılacak: kişi 10 saniyeden
+        # (track_buffer) uzun kaybolursa ya da kalabalıkta başka
+        # yerden çıkarsa YENİ KİMLİK alır. Kimlik sürekliliği yalnızca
+        # hareket tahminine dayanıyor.
         with_reid=False,
         proximity_thresh=0.5,
         appearance_thresh=0.25,

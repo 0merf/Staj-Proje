@@ -1,0 +1,21 @@
+{
+  "tarih": "2026-09-07T12:01:47.792095+00:00",
+  "imgsz": 640,
+  "egitim_alani": {
+    "kaynak": "RWF-2000",
+    "klip": 40,
+    "adet": 730.0,
+    "p10": 56.5,
+    "medyan": 104.9375,
+    "p90": 252.625
+  },
+  "uygulama_alani": {
+    "kaynak": "cam-15",
+    "adet": 1553.0,
+    "p10": 72.25,
+    "medyan": 129.0,
+    "p90": 244.125
+  },
+  "medyan_boy_orani": 0.813,
+  "mekanizma_dogrulandi": false
+}

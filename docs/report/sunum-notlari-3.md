@@ -272,7 +272,39 @@ değil. 'GPU kullanımı %5' cümlesi doğruydu; ondan çıkardığım sonuç
 yanlıştı. Ve bir kez belgeye girdikten sonra o çıkarım veri gibi
 davranmaya başladı — on gün boyunca bulgu diye alıntılandı."*
 
-*(TensorRT ölçümünün sonucu — devam ediyor)*
+### TensorRT ölçümünün sonucu: 1.40× — ve yine de KULLANMADIK
+
+Ölçüm yapıldı (`benchmarks/tensorrt_20260826-190302.json`):
+
+```
+parti  PyTorch(ms)  TensorRT(ms)   kazanç
+  6       38.04        29.58       +22.2%
+  8       39.25        27.13       +30.9%
+```
+
+**1.40× hızlanma, ve tespitler birebir aynı** — yani doğruluk bedeli
+yok. Kâğıt üzerinde açık bir kazanç.
+
+**Kullanmadık.** Sebep motorun kendisinde: TensorRT **sabit parti**
+istiyor, eksik kareler tekrarla dolduruluyor ve maliyet **tam parti
+kadar** oluyor. Canlı ölçüm (5 dk, 1424 parti):
+
+```
+ortalama 5.52 kare/parti · partilerin yalnızca %47'si 7-8 aralığında
+```
+
+Yani partilerin **yarısından fazlasında TensorRT kaybettirirdi.**
+
+**Videoda söylenecek cümle:** *"Ölçüm '1.40 kat hızlı' dedi ve
+kullanmadım. Çünkü o 1.40 kat, tam dolu partide geçerli — ve bizim
+partilerimizin yarısı dolu değil. Bir hızlanma sayısı, hangi koşulda
+ölçüldüğü söylenmeden bir karar gerekçesi olamaz. Bu yüzden karar
+kaydına (ADR-0006) sayıyı değil, sayının KOŞULUNU yazdım."*
+
+⚠ Açık iş: parti doldurma (`--batch-fill-ms`) mekanizması çalışıyor
+(dolu parti %46 → %78) ama verim etkisi **ölçülemedi** — bloklar arası
+yayılım etkiden büyük çıktı (P-36). TensorRT ancak parti doldurma
+kanıtlanınca anlamlı.
 
 ---
 
@@ -551,3 +583,257 @@ sürüklenmeyi çözüyor, tek seferlik bir bozulmayı çözmüyor."*
 
 Betik artık medyan kullanıyor, yayılımı basıyor, ve etki gürültüden
 küçükse açıkça **"SONUÇSUZ"** yazıyor.
+
+---
+---
+
+# BÖLÜM 2 — Gün 16 → 18
+
+> Bu dönemin hikâyesi tek cümlede: **"sistem çalışıyordu; çalıştığını
+> sandığım birkaç şey çalışmıyordu."**
+
+---
+
+## 4 · API 16 gün boyunca TAMAMEN AÇIKTI
+
+### Sorun
+
+`PLAN.md` güvenliği **Öncelik-1** ilan ediyor. `config.py` JWT
+ayarlarını Gün 1'den beri taşıyordu. Ve tek satır kod yoktu.
+
+Kamera listesi, olay geçmişi, webcam açma — hepsi kimlik doğrulaması
+olmadan çağrılabiliyordu.
+
+Tek hafifletici koşul her şeyin `127.0.0.1`'e bağlı olmasıydı.
+
+**Videoda söylenecek cümle:** *"Bu bir savunma değildi, bir tesadüftü.
+Sistemi dış ağa açacak bileşen (Caddy) daha kurulmamıştı — yani beni
+koruyan şey, yapmadığım bir işti."*
+
+### Çözüm ve en önemli tek karar
+
+Argon2id + JWT + RBAC kuruldu. Ama asıl anlatılacak karar **tokenın
+nerede durduğu:**
+
+| Nerede | Sonuç |
+|---|---|
+| `localStorage` | ❌ JavaScript okuyabiliyor → sayfaya sızan herhangi bir XSS tokenı çalar |
+| **`httpOnly` çerez** | ✅ JavaScript **okuyamıyor** |
+
+**Videoda söylenecek cümle:** *"Token'ı localStorage'da tutmak en
+yaygın kalıp. Yaygın olması güvenli olduğu anlamına gelmiyor. httpOnly
+çerez seçtim ve bunun bir bedeli var: panel 'girişli miyim' sorusunu
+artık kendi başına cevaplayamıyor, sunucuya sormak zorunda. Bir istek
+fazladan atmak, XSS'te tüm gözetim sistemini kaybetmekten ucuz."*
+
+⚠ Bonus: çerez seçimi teknik bir zorunluluk da çıktı — tarayıcının
+WebSocket API'si özel başlık eklemeye izin vermiyor, `Authorization`
+başlığı WS'e taşınamıyor. Çerez taşınıyor.
+
+---
+
+## 5 · İki sessiz arıza: video herkese açıktı, havuz kalıcı küçülüyordu
+
+### P-37 — korumayı kolay korunan yere koymuşum
+
+API'yi kapattım. **Video akışını unuttum.** MediaMTX'in WHEP ucu hâlâ
+kimlik doğrulamasızdı: o adrese giden herkes canlı görüntüyü
+izleyebiliyordu.
+
+**Videoda söylenecek cümle:** *"Korumayı kolay korunan yere koymuşum.
+API bizim kodumuz, orada bir bağımlılık eklemek beş dakika. Video ayrı
+bir servisten geçiyor ve orası benim kodum değil — o yüzden aklıma
+gelmedi. Güvenlik sınırı, kodun sınırıyla aynı yerde değil."*
+
+### P-38 — bir çökme, havuzu KALICI olarak küçültüyordu
+
+Paylaşımlı bellek havuzundan bir slot alınıyor, işlenip geri
+veriliyor. Bir çökme olduğunda o slot geri verilmiyordu. 48 slotun
+48'i sızmıştı.
+
+⚠ **Arıza SESSİZDİ:** süreçler ayakta, panel bağlı, metrikler
+akıyor — sadece hiçbir kare işlenmiyor.
+
+**Videoda söylenecek cümle:** *"Sistemin çökmesi iyi haberdir; çünkü
+görürsünüz. Kötü haber, sistemin ayakta kalıp iş yapmayı bırakmasıdır.
+Bu yüzden 'boş slot' sayısı Grafana panosundaki en kritik gösterge ve
+kırmızı eşiği en dar olan o."*
+
+---
+
+## 6 · Alarmlar hiçbir yere kaydedilmiyordu
+
+Analytics bir olay üretiyor, Valkey'e yazıyor, panel açıksa
+gösteriyor. **Panel kapalıysa olay hiç olmamış gibi kayboluyordu.**
+
+**Videoda söylenecek cümle:** *"Operatörün asıl sorusu 'şu an ne
+oluyor' değil — 'dün gece üçte ne oldu'. Canlı akış dikkat üretir,
+geçmiş kanıt üretir. On altı gün boyunca sadece dikkat üretmişim."*
+
+TimescaleDB seçildi (ADR-0010). ⭐ **Yan kazanç:** sürekli
+toplulaştırma görünümü K7 kriterini **sürekli** hesaplıyor — kriter
+artık bir ölçüm koşusunun değil, sistemin normal çıktısının parçası.
+
+### Buradaki en öğretici hata
+
+Özet ucu **boş dönüyordu.** Alarmlar tabloya yazılmıştı ama özet
+görünümü en son saati kasten atlıyordu ve materyalize edilmemiş bölge
+sorguya hiç girmiyordu.
+
+**Videoda söylenecek cümle:** *"Operatör 'son bir saatte hiçbir şey
+olmadı' cevabı alıyordu. Oysa doğru cevap 'bakmadım'dı. Bir gözetim
+sisteminde en tehlikeli cevap budur — 'hiçbir şey yok' ile 'bakmadım'
+aynı görünüyorsa, sistem sessizce yanıltıyor demektir."*
+
+---
+
+## 7 · K6 = 0.483 → 0.867: suçlu model değil, ÖLÇÜM ARACIYDI
+
+İlk ölçüm **0.483** verdi — şans seviyesinin altı. Modeli suçlamaya
+hazırdım.
+
+Altı hata çıktı ve **hiçbiri modelde değildi.** En öğreticisi:
+
+⭐ **Koordinat uzayı karışıktı.** Tespitler 640×640 letterbox
+uzayındaydı, öğrenilen profil ızgarası 640×360 kaynak kare
+boyutlarındaydı. Her konum yanlış hücreye düşüyordu — dolgu bandı
+yüzünden y ekseni **140 piksel** kaymıştı.
+
+Hiçbir modele, hiçbir eşiğe dokunmadan:
+
+```
+              ÖNCE     SONRA
+füzyon        0.483    0.867
+katman_a      0.493    0.789
+```
+
+**Videoda söylenecek cümle:** *"Ölçüm 'sistem anomaliyi ayırt
+edemiyor' demiyordu; 'sistem hiçbir şey söylemiyor' diyordu. İkisi çok
+farklı ve ikincisi neredeyse her zaman ölçüm aracını işaret eder.
+Skorların %97'si sıfırdı — bu bir model zayıflığı değil, bir borunun
+tıkalı olmasıdır."*
+
+⚠ Ayrıca çürüyen bir sezgi: *"örnekleme hızını artırmak maliyeti
+doğrusal artırır."* Pencere tabanlı bir sistemde hız artışı **karesel**
+etki yapıyor — 6× büyük pencere × 6× sık çağrı = **36× maliyet.**
+
+---
+
+## 8 · GÜN 18 — kapsamlı denetim: altı bulgu, tek bir tema
+
+Sistem uçtan uca çalışıyordu. Yine de baştan sona tarandı: kod,
+testler, ölçüm dosyaları, tüm belgeler, altyapı ayarları.
+
+**Altı bulgu çıktı ve hepsi aynı şeyi söylüyor.**
+
+### 8.1 · Panel kare değil, İNSAN sayıyordu
+
+Grafana'daki "Analiz hızı" paneli tespit edilen **kişi** sayısını
+kullanıyordu, kare sayısını değil.
+
+⚠ **Neden 17 gün fark edilmedi:** kare başına ortalama ~1 kişi
+düştüğü için panel **makul bir sayı gösteriyordu** (~55).
+
+**Videoda söylenecek cümle:** *"Panel yanlıştı ama doğru bir sayı
+gösteriyordu. Boş bir sahnede sıfır yazacaktı — yani tam da 'sistem
+durdu mu' diye sorduğum anda en çok yanıltacaktı. Makul görünen bir
+sayı, doğrulanmış bir sayı değildir."*
+
+### 8.2 · "Füzyon kendini haklı çıkardı" — desteklenmeyen bir çıkarım
+
+Raporun yıldızlı cümlesi olacaktı: *"en iyi tek bileşen 0.789, füzyon
+0.867 — demek ki birleştirme kazandırıyor."*
+
+Karşılaştırma elmayla armuttu: Katman A **ham**, füzyon **EMA'dan
+geçmiş**. Füzyona iki şey birden eklenmişti — sinyal birleştirme *ve*
+zamansal yumuşatma — ve ölçüm hangisinin kazandırdığını ayırmıyordu.
+
+Üstelik diğer bileşenler **şans seviyesindeydi** (0.465 ve 0.4996);
+şans seviyesindeki iki sinyali eklemek AUC'yi 0.79'dan 0.87'ye
+çıkaramaz.
+
+**Videoda söylenecek cümle:** *"Bu, aynı sınıf hatanın dördüncüsüydü.
+İlk üçü ölçümün girdisini bozuyordu; bu, ölçümün TASARIMINI. Ve en
+sinsisi buydu, çünkü sayı makul çıktı. Yanlış bir sayı şüphe
+uyandırır; beklenen bir sayı uyandırmaz."*
+
+⭐ Çözüm: bir **kontrol grubu** eklendi — Katman A'nın tek başına,
+füzyonla aynı yumuşatmadan geçmiş hâli.
+
+### 8.3 · Ayarlar paralel bir kurgu anlatıyordu
+
+Ortam dosyalarında **16 ayar** kodda hiç okunmuyordu. Ve ikisi
+doğrudan yanlış bilgi veriyordu:
+
+```
+THRESHOLD_ALARM_IN=0.75    ← gerçek eşik 0.55
+RETENTION_EVENTS_DAYS=90   ← gerçek saklama 30 gün
+USE_TENSORRT=true          ← TensorRT üretimde DEĞİL
+```
+
+**Videoda söylenecek cümle:** *"Örnek ortam dosyası Gün 1'de plana
+bakarak yazılmıştı — yani yapılacakların listesi olarak. Sonra kod
+yazıldı, değerler kodda sabitlendi, dosya güncellenmedi. Zamanla o
+dosya sistemin yapılandırması değil, PLANLANAN yapılandırması hâline
+geldi. Ve depoya giriyor — yani projeyi okuyan biri oradaki değerleri
+gerçek sanacaktı."*
+
+⭐ **Ders: yanlış cevap veren bir ayar, olmayan ayardan kötüdür.**
+Olmayan ayar arayanı koda yönlendirir; yanlış ayar onu durdurur ve
+yanlış bir sonuca ikna eder.
+
+### 8.4 · "Duygu analizi" ekranda vardı, KARARDA yoktu
+
+Şartnamedeki üç yetenekten biri "duygu analizi". Yüz tespiti
+çalışıyordu, ifade sınıflandırılıyordu, sonuç panele gidiyordu.
+
+Ve füzyon katmanında ifade sinyali **sabit sıfır** yazılıydı. Yanında
+da şu not: *"Bağlantı yeri hazır; gerçek bir kurulumda beslendiğinde
+kod değişikliği gerekmeyecek."*
+
+**O not yanlıştı.** Analitik worker mesajdaki ifade alanını **hiç
+okumuyordu.** Yüzler 200 piksel olsa bile skor karara ulaşmazdı.
+
+**Videoda söylenecek cümle:** *"Ekranda görünmek, karara girmekle aynı
+şey değil. İfade sonucu panele gidiyordu ve o yüzden bağlı olduğunu
+sanıyordum. 'Bağlantı yeri hazır' cümlesi bir iddiaydı ve kimse onu
+sınamamıştı — çünkü sınayacak bir test yoktu."*
+
+### 8.5 · Yazılmış ama hiç çağrılmamış bir temizleyici
+
+Füzyon katmanının budama metodu vardı, gerekçesi yazılıydı, ve
+**hiçbir yerden çağrılmıyordu.** İz sözlüğü sınırsız büyüyordu.
+
+⚠ Belirtisizdi: sistem çalışıyor, alarm üretiyor, gecikme normal —
+yalnızca bellek büyüyor.
+
+⭐ **Bu hata, iki saatlik dayanıklılık testi hazırlanırken bulundu —
+test daha başlamadan.** Yani kriter, ölçülmeden önce bile işe yaradı.
+
+### 8.6 · Klipler kesiliyordu, kimse göremiyordu
+
+Alarm klibi kesiliyor (32 ms remux, 12 birim testi ✅), anahtar
+veritabanına yazılıyor, API yanıtında dönüyor. Ve o anahtarla
+yapılacak **hiçbir şey yoktu**: klibi getiren bir uç yoktu, panel
+alanı okumuyordu bile.
+
+**Videoda söylenecek cümle — bölümün özeti:** *"Zincirin her halkası
+tek tek çalışıyordu ve zincir çalışmıyordu. On iki testim vardı ve
+hepsi geçiyordu — çünkü hepsi klip KESMEYİ test ediyordu. Hiçbiri
+'kesilen klip kullanıcıya ulaşıyor mu' diye sormuyordu."*
+
+---
+
+## Gün 18'in tek cümlesi
+
+> ⭐ **Her parçası tek tek çalışan bir sistem uçtan uca çalışmayabilir
+> — ve parça testleri bunu asla göstermez.**
+
+**Videoda söylenecek kapanış:** *"Bu projede iki şey öğrendim ve ikisi
+de teknik değil yöntemsel. Birincisi: ölçüm aracına, ölçtüğü şeye
+gösterdiğim şüpheyi göstermem gerekiyormuş — dört kez aynı hatayı
+yaptım. İkincisi: bir yeteneğin 'yapıldı' sayılması için zincirin
+kullanıcıya ulaşan ucuna kadar izlenmesi gerekiyormuş. Kapsam
+maddelerini modüllerle değil, kullanıcının yapabildiği işlerle
+işaretlemek gerekiyor: 'klip kesiliyor' bir modül ifadesi; 'operatör
+alarmın videosunu izleyebiliyor' bir kapsam ifadesi."*

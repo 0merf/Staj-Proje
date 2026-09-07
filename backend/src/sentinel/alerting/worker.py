@@ -124,6 +124,13 @@ class AlarmWorker:
         log.info("sema_hazir")
 
         self._grubu_kur()
+        # ⚠ 03.09.2026 — BU WORKER `worker_up` YAYINLAMIYORDU
+        # Diğer üç worker yayınlıyordu, bu yayınlamıyordu. Sonucu K4
+        # (2 saat çökmesiz) ölçümünde ortaya çıktı: dayanıklılık testi
+        # "worker ayakta mı" sorusunu bu bileşen için CEVAPLAYAMIYORDU.
+        # Metrik ucu açıktı, yani dışarıdan sağlıklı görünüyordu —
+        # süreç yaşıyor mu ölmüş mü ayırt edilemiyordu.
+        metrics.worker_up.labels(component="alerting", worker_id=self._worker_id).set(1)
         basladi = time.monotonic()
         son_rapor = basladi
 
@@ -155,6 +162,7 @@ class AlarmWorker:
             if sure and simdi - basladi >= sure:
                 break
 
+        metrics.worker_up.labels(component="alerting", worker_id=self._worker_id).set(0)
         await motoru_kapat()
         log.info(
             "alarm_worker_bitti",

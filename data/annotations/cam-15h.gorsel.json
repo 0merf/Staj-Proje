@@ -1,0 +1,50 @@
+{
+ "olusturuldu": "2026-09-07T14:20:00+00:00",
+ "camera": "cam-15h",
+ "kaynak": "UBI-Fights · F_74_1_2_0_0",
+ "etiket_turu": "GÖRSEL DOĞRULAMA — kare kare bakılarak elle çıkarıldı",
+ "neden_var": [
+  "⚠ ELDE TUTULAN TELEFON — kayma medyanı %0.197, p90 %1.023.",
+  "Boru hattı sabit kamera varsayıyor; bu video o varsayımın DIŞINDA.",
+  "Kamera çiftliğinden çıkarıldı (yerine F_45 sabit CCTV kondu) ama",
+  "KALABALIK sahne ölçümü için burada tutuluyor: 6.5 kişi/kare.",
+  "Sabit kameralı cam-15 yalnızca 3 kişi/kare veriyor ve kalabalık",
+  "etkisini ölçmeye elvermiyor."
+ ],
+ "sure_s": 160.0,
+ "kaynak_fps": 25.0,
+ "olay_baslangici_s": 32.8,
+ "olay_baslangici_gerekce": "32.8 ilk hamle · 33.6 saldırgan duruş · 36.8 yerde kişi",
+ "dogrulanmis_normal": [
+  [
+   0.0,
+   32.0
+  ]
+ ],
+ "dogrulanmis_normal_gerekce": [
+  "0-32 sn gözle normal. 75-160 sn olay sonrası",
+  "kalabalık — doğrulanamadı, hiçbir havuza katılmıyor."
+ ],
+ "segments": [
+  {
+   "clip": "cam-15h",
+   "start_s": 32.8,
+   "end_s": 75.0,
+   "tur": "fight"
+  }
+ ],
+ "veri_seti_segmentleri": [
+  {
+   "start_s": 57.967,
+   "end_s": 59.633
+  },
+  {
+   "start_s": 64.0,
+   "end_s": 73.367
+  },
+  {
+   "start_s": 96.933,
+   "end_s": 112.0
+  }
+ ]
+}

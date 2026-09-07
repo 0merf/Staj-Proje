@@ -1,0 +1,4412 @@
+{
+ "olculdu": "2026-09-03T14:35:42.231811+00:00",
+ "kriterler": [
+  "K4",
+  "K2",
+  "K3"
+ ],
+ "kosulllar": {
+  "panel": "kapalı (P-24)",
+  "isinma_atlandi_s": 90.0,
+  "ornekleme_araligi_s": 30.0
+ },
+ "sonuc": {
+  "K4": {
+   "hedef": "2 saat (7200 sn) çökmesiz",
+   "gercek_sure_s": 7200.0,
+   "ornek_sayisi": 241,
+   "isinma_atlandi_s": 90.0,
+   "kesinti_sayisi": 0,
+   "kesintiler": [],
+   "tutuyor": true
+  },
+  "slot_sizintisi": {
+   "olculdu": true,
+   "egim_slot_saat": -1.08,
+   "kosu_boyunca_degisim": -2.1,
+   "seri_std_sapma": 5.9,
+   "en_dusuk": 22.0,
+   "en_yuksek": 46.0,
+   "sizinti_supheli": false,
+   "yontem": "en kucuk kareler egimi; toplam degisim serinin standart sapmasini asarsa supheli. Iki uc degeri kiyaslamak yanlis alarm uretiyordu (P-46).",
+   "DUZELTME_03_09": {
+    "eski_verdikt": "sizinti_supheli = True",
+    "eski_yontem": "ilk yari azami (46) vs son yari azami (41)",
+    "neden_yanlis": "iki uc degeri kiyaslamak iki orneklemli bir test; serinin std sapmasi 5.9 slot iken 5 slotluk fark gurultudur. 20 dk'lik pencerelerde azami: 35 -> 46 -> 43 -> 41 -> 37 -> 41, yani monoton dusus YOK ve ilk pencere zaten en dusugu.",
+    "yeni_verdikt": "sizinti YOK"
+   }
+  },
+  "K2": {
+   "olculdu": true,
+   "hedef_fps_kamera": 4.0,
+   "kamera_sayisi": 20.0,
+   "analiz_fps_toplam": 55.04,
+   "analiz_fps_kamera": 2.75,
+   "ornekleme_fps_toplam": 72.9,
+   "ornekleme_fps_kamera": 3.64,
+   "tutuyor": false
+  },
+  "K3": {
+   "olculdu": true,
+   "hedef_ms": 1500,
+   "ornek_sayisi": 391319,
+   "p50_ms": 204.9,
+   "p95_ms": 463.1,
+   "yontem": "histogram kova ara değerlemesi — kesin değer değil",
+   "tutuyor": true
+  },
+  "boru_hatti": {
+   "kamera_ayakta": 20.0,
+   "parti_p50": 6.08,
+   "kapasite_fps": 55.66180519218224,
+   "vram_mb": null,
+   "atilan_kare": {
+    "no_slot": 44,
+    "gate_idle": 121349
+   },
+   "anomali_uretildi": 392,
+   "olay_yazildi": 392.0,
+   "klip_uretildi": 0.0
+  }
+ },
+ "seri": [
+  {
+   "t_s": 0.0,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 24.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 35.593395530142395,
+   "vram_bayt": 0.0,
+   "kare_alindi": 49236.0,
+   "analiz_kare": 28018.0,
+   "anomali": 39.0,
+   "olay_yazildi": 39.0
+  },
+  {
+   "t_s": 30.1,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 24.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 49.73828270353255,
+   "vram_bayt": 0.0,
+   "kare_alindi": 51433.0,
+   "analiz_kare": 29582.0,
+   "anomali": 44.0,
+   "olay_yazildi": 44.0
+  },
+  {
+   "t_s": 60.2,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 24.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 61.645919805924116,
+   "vram_bayt": 0.0,
+   "kare_alindi": 53772.0,
+   "analiz_kare": 31375.0,
+   "anomali": 45.0,
+   "olay_yazildi": 45.0
+  },
+  {
+   "t_s": 90.3,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 24.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 58.549848990561784,
+   "vram_bayt": 0.0,
+   "kare_alindi": 55985.0,
+   "analiz_kare": 33093.0,
+   "anomali": 47.0,
+   "olay_yazildi": 47.0
+  },
+  {
+   "t_s": 120.3,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 24.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 52.41724017184548,
+   "vram_bayt": 0.0,
+   "kare_alindi": 58174.0,
+   "analiz_kare": 34643.0,
+   "anomali": 49.0,
+   "olay_yazildi": 49.0
+  },
+  {
+   "t_s": 150.4,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 24.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 46.04016515674698,
+   "vram_bayt": 0.0,
+   "kare_alindi": 60390.0,
+   "analiz_kare": 36043.0,
+   "anomali": 51.0,
+   "olay_yazildi": 51.0
+  },
+  {
+   "t_s": 180.5,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 24.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 50.13035614442159,
+   "vram_bayt": 0.0,
+   "kare_alindi": 62545.0,
+   "analiz_kare": 37574.0,
+   "anomali": 53.0,
+   "olay_yazildi": 53.0
+  },
+  {
+   "t_s": 210.5,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 24.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 55.01198380161095,
+   "vram_bayt": 0.0,
+   "kare_alindi": 64691.0,
+   "analiz_kare": 39226.0,
+   "anomali": 56.0,
+   "olay_yazildi": 56.0
+  },
+  {
+   "t_s": 240.6,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 33.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 59.32505899457323,
+   "vram_bayt": 0.0,
+   "kare_alindi": 66842.0,
+   "analiz_kare": 41016.0,
+   "anomali": 57.0,
+   "olay_yazildi": 57.0
+  },
+  {
+   "t_s": 270.7,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 33.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 55.73346997607019,
+   "vram_bayt": 0.0,
+   "kare_alindi": 69098.0,
+   "analiz_kare": 42674.0,
+   "anomali": 58.0,
+   "olay_yazildi": 58.0
+  },
+  {
+   "t_s": 300.7,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 33.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 56.33285971326436,
+   "vram_bayt": 0.0,
+   "kare_alindi": 71176.0,
+   "analiz_kare": 44290.0,
+   "anomali": 62.0,
+   "olay_yazildi": 62.0
+  },
+  {
+   "t_s": 330.8,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 33.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 55.555312116236934,
+   "vram_bayt": 0.0,
+   "kare_alindi": 73414.0,
+   "analiz_kare": 46008.0,
+   "anomali": 62.0,
+   "olay_yazildi": 62.0
+  },
+  {
+   "t_s": 360.8,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 33.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 58.32081125144181,
+   "vram_bayt": 0.0,
+   "kare_alindi": 75757.0,
+   "analiz_kare": 47725.0,
+   "anomali": 64.0,
+   "olay_yazildi": 64.0
+  },
+  {
+   "t_s": 390.9,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 33.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 62.836756599853445,
+   "vram_bayt": 0.0,
+   "kare_alindi": 77918.0,
+   "analiz_kare": 49536.0,
+   "anomali": 64.0,
+   "olay_yazildi": 64.0
+  },
+  {
+   "t_s": 421.0,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 33.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 50.99274596967004,
+   "vram_bayt": 0.0,
+   "kare_alindi": 80148.0,
+   "analiz_kare": 51091.0,
+   "anomali": 69.0,
+   "olay_yazildi": 69.0
+  },
+  {
+   "t_s": 451.1,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 33.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 59.695253053857314,
+   "vram_bayt": 0.0,
+   "kare_alindi": 82314.0,
+   "analiz_kare": 52806.0,
+   "anomali": 72.0,
+   "olay_yazildi": 72.0
+  },
+  {
+   "t_s": 481.1,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 33.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 52.77923945647649,
+   "vram_bayt": 0.0,
+   "kare_alindi": 84525.0,
+   "analiz_kare": 54428.0,
+   "anomali": 73.0,
+   "olay_yazildi": 73.0
+  },
+  {
+   "t_s": 511.2,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 33.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 53.886219850820844,
+   "vram_bayt": 0.0,
+   "kare_alindi": 86629.0,
+   "analiz_kare": 55952.0,
+   "anomali": 75.0,
+   "olay_yazildi": 75.0
+  },
+  {
+   "t_s": 541.2,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 31.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 58.553683498023915,
+   "vram_bayt": 0.0,
+   "kare_alindi": 88755.0,
+   "analiz_kare": 57751.0,
+   "anomali": 75.0,
+   "olay_yazildi": 75.0
+  },
+  {
+   "t_s": 571.3,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 31.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 48.06677522031327,
+   "vram_bayt": 0.0,
+   "kare_alindi": 90988.0,
+   "analiz_kare": 59203.0,
+   "anomali": 79.0,
+   "olay_yazildi": 79.0
+  },
+  {
+   "t_s": 601.4,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 31.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 50.062234486931025,
+   "vram_bayt": 0.0,
+   "kare_alindi": 93031.0,
+   "analiz_kare": 60663.0,
+   "anomali": 81.0,
+   "olay_yazildi": 81.0
+  },
+  {
+   "t_s": 631.4,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 31.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 52.77358298334633,
+   "vram_bayt": 0.0,
+   "kare_alindi": 95341.0,
+   "analiz_kare": 62239.0,
+   "anomali": 81.0,
+   "olay_yazildi": 81.0
+  },
+  {
+   "t_s": 661.5,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 31.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 63.09538923020456,
+   "vram_bayt": 0.0,
+   "kare_alindi": 97645.0,
+   "analiz_kare": 64048.0,
+   "anomali": 84.0,
+   "olay_yazildi": 84.0
+  },
+  {
+   "t_s": 691.5,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 31.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 60.744480644521055,
+   "vram_bayt": 0.0,
+   "kare_alindi": 99859.0,
+   "analiz_kare": 65880.0,
+   "anomali": 86.0,
+   "olay_yazildi": 86.0
+  },
+  {
+   "t_s": 721.6,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 31.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 52.49569598134019,
+   "vram_bayt": 0.0,
+   "kare_alindi": 102058.0,
+   "analiz_kare": 67426.0,
+   "anomali": 87.0,
+   "olay_yazildi": 87.0
+  },
+  {
+   "t_s": 751.7,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 31.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.98773246676369,
+   "vram_bayt": 0.0,
+   "kare_alindi": 104229.0,
+   "analiz_kare": 69082.0,
+   "anomali": 89.0,
+   "olay_yazildi": 89.0
+  },
+  {
+   "t_s": 781.7,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 31.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.37907275792506,
+   "vram_bayt": 0.0,
+   "kare_alindi": 106464.0,
+   "analiz_kare": 70730.0,
+   "anomali": 90.0,
+   "olay_yazildi": 90.0
+  },
+  {
+   "t_s": 811.8,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 31.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 53.31837535818799,
+   "vram_bayt": 0.0,
+   "kare_alindi": 108527.0,
+   "analiz_kare": 72307.0,
+   "anomali": 93.0,
+   "olay_yazildi": 93.0
+  },
+  {
+   "t_s": 841.9,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 35.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 58.40710481632442,
+   "vram_bayt": 0.0,
+   "kare_alindi": 110743.0,
+   "analiz_kare": 74062.0,
+   "anomali": 93.0,
+   "olay_yazildi": 93.0
+  },
+  {
+   "t_s": 872.0,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 35.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 55.27590699345858,
+   "vram_bayt": 0.0,
+   "kare_alindi": 112962.0,
+   "analiz_kare": 75681.0,
+   "anomali": 94.0,
+   "olay_yazildi": 94.0
+  },
+  {
+   "t_s": 902.0,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 35.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 58.921149246459755,
+   "vram_bayt": 0.0,
+   "kare_alindi": 115065.0,
+   "analiz_kare": 77430.0,
+   "anomali": 98.0,
+   "olay_yazildi": 98.0
+  },
+  {
+   "t_s": 932.1,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 35.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 52.85257405091802,
+   "vram_bayt": 0.0,
+   "kare_alindi": 117303.0,
+   "analiz_kare": 79031.0,
+   "anomali": 99.0,
+   "olay_yazildi": 99.0
+  },
+  {
+   "t_s": 962.1,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 35.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 61.78880613233437,
+   "vram_bayt": 0.0,
+   "kare_alindi": 119600.0,
+   "analiz_kare": 80831.0,
+   "anomali": 101.0,
+   "olay_yazildi": 101.0
+  },
+  {
+   "t_s": 992.2,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 35.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 62.948424654383956,
+   "vram_bayt": 0.0,
+   "kare_alindi": 121838.0,
+   "analiz_kare": 82686.0,
+   "anomali": 102.0,
+   "olay_yazildi": 102.0
+  },
+  {
+   "t_s": 1022.3,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 35.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 52.34371590486154,
+   "vram_bayt": 0.0,
+   "kare_alindi": 123996.0,
+   "analiz_kare": 84240.0,
+   "anomali": 104.0,
+   "olay_yazildi": 104.0
+  },
+  {
+   "t_s": 1052.3,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 35.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 56.40891684925441,
+   "vram_bayt": 0.0,
+   "kare_alindi": 126208.0,
+   "analiz_kare": 85958.0,
+   "anomali": 106.0,
+   "olay_yazildi": 106.0
+  },
+  {
+   "t_s": 1082.4,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 35.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 49.07488574181626,
+   "vram_bayt": 0.0,
+   "kare_alindi": 128400.0,
+   "analiz_kare": 87489.0,
+   "anomali": 108.0,
+   "olay_yazildi": 108.0
+  },
+  {
+   "t_s": 1112.5,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 35.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 52.456153980178556,
+   "vram_bayt": 0.0,
+   "kare_alindi": 130503.0,
+   "analiz_kare": 89048.0,
+   "anomali": 112.0,
+   "olay_yazildi": 112.0
+  },
+  {
+   "t_s": 1142.6,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 34.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 59.03621529393416,
+   "vram_bayt": 0.0,
+   "kare_alindi": 132714.0,
+   "analiz_kare": 90840.0,
+   "anomali": 114.0,
+   "olay_yazildi": 114.0
+  },
+  {
+   "t_s": 1172.6,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 34.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 55.062745903324064,
+   "vram_bayt": 0.0,
+   "kare_alindi": 134916.0,
+   "analiz_kare": 92431.0,
+   "anomali": 115.0,
+   "olay_yazildi": 115.0
+  },
+  {
+   "t_s": 1202.7,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 34.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 56.759096997734986,
+   "vram_bayt": 0.0,
+   "kare_alindi": 137038.0,
+   "analiz_kare": 94089.0,
+   "anomali": 117.0,
+   "olay_yazildi": 117.0
+  },
+  {
+   "t_s": 1232.7,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 34.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 56.17352977684635,
+   "vram_bayt": 0.0,
+   "kare_alindi": 139242.0,
+   "analiz_kare": 95741.0,
+   "anomali": 117.0,
+   "olay_yazildi": 117.0
+  },
+  {
+   "t_s": 1262.8,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 34.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 61.28225141109411,
+   "vram_bayt": 0.0,
+   "kare_alindi": 141577.0,
+   "analiz_kare": 97568.0,
+   "anomali": 119.0,
+   "olay_yazildi": 119.0
+  },
+  {
+   "t_s": 1292.8,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 34.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 62.110137838404015,
+   "vram_bayt": 0.0,
+   "kare_alindi": 143755.0,
+   "analiz_kare": 99358.0,
+   "anomali": 121.0,
+   "olay_yazildi": 121.0
+  },
+  {
+   "t_s": 1322.9,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 34.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 55.08636822402594,
+   "vram_bayt": 0.0,
+   "kare_alindi": 145972.0,
+   "analiz_kare": 100955.0,
+   "anomali": 121.0,
+   "olay_yazildi": 121.0
+  },
+  {
+   "t_s": 1353.0,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 34.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 57.39801301547042,
+   "vram_bayt": 0.0,
+   "kare_alindi": 148173.0,
+   "analiz_kare": 102628.0,
+   "anomali": 124.0,
+   "olay_yazildi": 124.0
+  },
+  {
+   "t_s": 1383.0,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 34.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 52.28488638567704,
+   "vram_bayt": 0.0,
+   "kare_alindi": 150341.0,
+   "analiz_kare": 104256.0,
+   "anomali": 126.0,
+   "olay_yazildi": 126.0
+  },
+  {
+   "t_s": 1413.1,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 34.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.640736082224294,
+   "vram_bayt": 0.0,
+   "kare_alindi": 152459.0,
+   "analiz_kare": 105830.0,
+   "anomali": 129.0,
+   "olay_yazildi": 129.0
+  },
+  {
+   "t_s": 1443.1,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 34.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 58.09618480228774,
+   "vram_bayt": 0.0,
+   "kare_alindi": 154570.0,
+   "analiz_kare": 107555.0,
+   "anomali": 130.0,
+   "olay_yazildi": 130.0
+  },
+  {
+   "t_s": 1473.2,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 34.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 55.29437123227077,
+   "vram_bayt": 0.0,
+   "kare_alindi": 156796.0,
+   "analiz_kare": 109250.0,
+   "anomali": 134.0,
+   "olay_yazildi": 134.0
+  },
+  {
+   "t_s": 1503.3,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 34.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.77974361074703,
+   "vram_bayt": 0.0,
+   "kare_alindi": 158876.0,
+   "analiz_kare": 110864.0,
+   "anomali": 134.0,
+   "olay_yazildi": 134.0
+  },
+  {
+   "t_s": 1533.3,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 34.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 56.45837429520274,
+   "vram_bayt": 0.0,
+   "kare_alindi": 161162.0,
+   "analiz_kare": 112525.0,
+   "anomali": 134.0,
+   "olay_yazildi": 134.0
+  },
+  {
+   "t_s": 1563.4,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 34.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 62.16025133596192,
+   "vram_bayt": 0.0,
+   "kare_alindi": 163508.0,
+   "analiz_kare": 114324.0,
+   "anomali": 137.0,
+   "olay_yazildi": 137.0
+  },
+  {
+   "t_s": 1593.5,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 34.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 62.78383737806952,
+   "vram_bayt": 0.0,
+   "kare_alindi": 165674.0,
+   "analiz_kare": 116188.0,
+   "anomali": 138.0,
+   "olay_yazildi": 138.0
+  },
+  {
+   "t_s": 1623.5,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 34.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 52.65346808006352,
+   "vram_bayt": 0.0,
+   "kare_alindi": 167895.0,
+   "analiz_kare": 117744.0,
+   "anomali": 139.0,
+   "olay_yazildi": 139.0
+  },
+  {
+   "t_s": 1653.6,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 34.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.98508274185302,
+   "vram_bayt": 0.0,
+   "kare_alindi": 170044.0,
+   "analiz_kare": 119421.0,
+   "anomali": 141.0,
+   "olay_yazildi": 141.0
+  },
+  {
+   "t_s": 1683.6,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 34.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 52.50788738026728,
+   "vram_bayt": 0.0,
+   "kare_alindi": 172277.0,
+   "analiz_kare": 121037.0,
+   "anomali": 142.0,
+   "olay_yazildi": 142.0
+  },
+  {
+   "t_s": 1713.7,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 34.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 56.255851121024364,
+   "vram_bayt": 0.0,
+   "kare_alindi": 174360.0,
+   "analiz_kare": 122666.0,
+   "anomali": 145.0,
+   "olay_yazildi": 145.0
+  },
+  {
+   "t_s": 1743.8,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 46.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 60.40577911832132,
+   "vram_bayt": 0.0,
+   "kare_alindi": 176565.0,
+   "analiz_kare": 124410.0,
+   "anomali": 146.0,
+   "olay_yazildi": 146.0
+  },
+  {
+   "t_s": 1773.9,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 46.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.61343434072535,
+   "vram_bayt": 0.0,
+   "kare_alindi": 178815.0,
+   "analiz_kare": 126000.0,
+   "anomali": 147.0,
+   "olay_yazildi": 147.0
+  },
+  {
+   "t_s": 1803.9,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 46.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 56.68039486528057,
+   "vram_bayt": 0.0,
+   "kare_alindi": 180886.0,
+   "analiz_kare": 127681.0,
+   "anomali": 149.0,
+   "olay_yazildi": 149.0
+  },
+  {
+   "t_s": 1834.0,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 46.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.17552766229454,
+   "vram_bayt": 0.0,
+   "kare_alindi": 183143.0,
+   "analiz_kare": 129330.0,
+   "anomali": 150.0,
+   "olay_yazildi": 150.0
+  },
+  {
+   "t_s": 1864.1,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 46.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 61.30587707598659,
+   "vram_bayt": 0.0,
+   "kare_alindi": 185410.0,
+   "analiz_kare": 131110.0,
+   "anomali": 152.0,
+   "olay_yazildi": 152.0
+  },
+  {
+   "t_s": 1894.1,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 46.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 60.97600280930514,
+   "vram_bayt": 0.0,
+   "kare_alindi": 187638.0,
+   "analiz_kare": 132948.0,
+   "anomali": 153.0,
+   "olay_yazildi": 153.0
+  },
+  {
+   "t_s": 1924.2,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 46.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 51.96196985049655,
+   "vram_bayt": 0.0,
+   "kare_alindi": 189836.0,
+   "analiz_kare": 134530.0,
+   "anomali": 155.0,
+   "olay_yazildi": 155.0
+  },
+  {
+   "t_s": 1954.3,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 46.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 58.710676531894336,
+   "vram_bayt": 0.0,
+   "kare_alindi": 192017.0,
+   "analiz_kare": 136287.0,
+   "anomali": 157.0,
+   "olay_yazildi": 157.0
+  },
+  {
+   "t_s": 1984.3,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 46.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 50.42543693178615,
+   "vram_bayt": 0.0,
+   "kare_alindi": 194235.0,
+   "analiz_kare": 137840.0,
+   "anomali": 158.0,
+   "olay_yazildi": 158.0
+  },
+  {
+   "t_s": 2014.3,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 46.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 56.720231890071716,
+   "vram_bayt": 0.0,
+   "kare_alindi": 196291.0,
+   "analiz_kare": 139412.0,
+   "anomali": 161.0,
+   "olay_yazildi": 161.0
+  },
+  {
+   "t_s": 2044.4,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 41.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 59.26537770086365,
+   "vram_bayt": 0.0,
+   "kare_alindi": 198544.0,
+   "analiz_kare": 141244.0,
+   "anomali": 162.0,
+   "olay_yazildi": 162.0
+  },
+  {
+   "t_s": 2074.5,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 41.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 52.118206945338045,
+   "vram_bayt": 0.0,
+   "kare_alindi": 200719.0,
+   "analiz_kare": 142784.0,
+   "anomali": 163.0,
+   "olay_yazildi": 163.0
+  },
+  {
+   "t_s": 2104.5,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 41.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 55.3771318061512,
+   "vram_bayt": 0.0,
+   "kare_alindi": 202846.0,
+   "analiz_kare": 144480.0,
+   "anomali": 165.0,
+   "olay_yazildi": 165.0
+  },
+  {
+   "t_s": 2134.6,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 41.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 53.10643036590385,
+   "vram_bayt": 0.0,
+   "kare_alindi": 205091.0,
+   "analiz_kare": 146071.0,
+   "anomali": 166.0,
+   "olay_yazildi": 166.0
+  },
+  {
+   "t_s": 2164.7,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 41.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 65.53291295730978,
+   "vram_bayt": 0.0,
+   "kare_alindi": 207391.0,
+   "analiz_kare": 147968.0,
+   "anomali": 168.0,
+   "olay_yazildi": 168.0
+  },
+  {
+   "t_s": 2194.8,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 41.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 60.685807058848795,
+   "vram_bayt": 0.0,
+   "kare_alindi": 209611.0,
+   "analiz_kare": 149739.0,
+   "anomali": 169.0,
+   "olay_yazildi": 169.0
+  },
+  {
+   "t_s": 2224.8,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 41.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 51.62786253454628,
+   "vram_bayt": 0.0,
+   "kare_alindi": 211774.0,
+   "analiz_kare": 151295.0,
+   "anomali": 170.0,
+   "olay_yazildi": 170.0
+  },
+  {
+   "t_s": 2254.9,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 41.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 57.84006223274011,
+   "vram_bayt": 0.0,
+   "kare_alindi": 213998.0,
+   "analiz_kare": 153045.0,
+   "anomali": 173.0,
+   "olay_yazildi": 173.0
+  },
+  {
+   "t_s": 2285.0,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 41.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 51.25292956681192,
+   "vram_bayt": 0.0,
+   "kare_alindi": 216159.0,
+   "analiz_kare": 154625.0,
+   "anomali": 174.0,
+   "olay_yazildi": 174.0
+  },
+  {
+   "t_s": 2315.1,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 41.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 55.40117625985341,
+   "vram_bayt": 0.0,
+   "kare_alindi": 218276.0,
+   "analiz_kare": 156261.0,
+   "anomali": 176.0,
+   "olay_yazildi": 176.0
+  },
+  {
+   "t_s": 2345.1,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 43.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 56.64865441600497,
+   "vram_bayt": 0.0,
+   "kare_alindi": 220436.0,
+   "analiz_kare": 157944.0,
+   "anomali": 178.0,
+   "olay_yazildi": 178.0
+  },
+  {
+   "t_s": 2375.2,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 43.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 58.401874597032176,
+   "vram_bayt": 0.0,
+   "kare_alindi": 222600.0,
+   "analiz_kare": 159658.0,
+   "anomali": 178.0,
+   "olay_yazildi": 178.0
+  },
+  {
+   "t_s": 2405.2,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 43.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 53.87842322317961,
+   "vram_bayt": 0.0,
+   "kare_alindi": 224734.0,
+   "analiz_kare": 161247.0,
+   "anomali": 180.0,
+   "olay_yazildi": 180.0
+  },
+  {
+   "t_s": 2435.3,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 43.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 55.29973613903307,
+   "vram_bayt": 0.0,
+   "kare_alindi": 226983.0,
+   "analiz_kare": 162896.0,
+   "anomali": 180.0,
+   "olay_yazildi": 180.0
+  },
+  {
+   "t_s": 2465.3,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 43.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 60.47882963673884,
+   "vram_bayt": 0.0,
+   "kare_alindi": 229330.0,
+   "analiz_kare": 164675.0,
+   "anomali": 181.0,
+   "olay_yazildi": 181.0
+  },
+  {
+   "t_s": 2495.4,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 43.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 61.93045326366687,
+   "vram_bayt": 0.0,
+   "kare_alindi": 231497.0,
+   "analiz_kare": 166508.0,
+   "anomali": 182.0,
+   "olay_yazildi": 182.0
+  },
+  {
+   "t_s": 2525.5,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 43.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 51.71257042400234,
+   "vram_bayt": 0.0,
+   "kare_alindi": 233708.0,
+   "analiz_kare": 168121.0,
+   "anomali": 182.0,
+   "olay_yazildi": 182.0
+  },
+  {
+   "t_s": 2555.6,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 43.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 55.718573119440286,
+   "vram_bayt": 0.0,
+   "kare_alindi": 235904.0,
+   "analiz_kare": 169816.0,
+   "anomali": 184.0,
+   "olay_yazildi": 184.0
+  },
+  {
+   "t_s": 2585.7,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 43.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 52.642903415565485,
+   "vram_bayt": 0.0,
+   "kare_alindi": 238093.0,
+   "analiz_kare": 171403.0,
+   "anomali": 186.0,
+   "olay_yazildi": 186.0
+  },
+  {
+   "t_s": 2615.7,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 43.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 57.07409196809534,
+   "vram_bayt": 0.0,
+   "kare_alindi": 240204.0,
+   "analiz_kare": 173072.0,
+   "anomali": 189.0,
+   "olay_yazildi": 189.0
+  },
+  {
+   "t_s": 2645.8,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.68308114167088,
+   "vram_bayt": 0.0,
+   "kare_alindi": 242391.0,
+   "analiz_kare": 174763.0,
+   "anomali": 191.0,
+   "olay_yazildi": 191.0
+  },
+  {
+   "t_s": 2675.9,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 55.7908523034658,
+   "vram_bayt": 0.0,
+   "kare_alindi": 244628.0,
+   "analiz_kare": 176402.0,
+   "anomali": 193.0,
+   "olay_yazildi": 193.0
+  },
+  {
+   "t_s": 2706.0,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 55.847139428061006,
+   "vram_bayt": 0.0,
+   "kare_alindi": 246718.0,
+   "analiz_kare": 178043.0,
+   "anomali": 195.0,
+   "olay_yazildi": 195.0
+  },
+  {
+   "t_s": 2736.0,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.40913260826726,
+   "vram_bayt": 0.0,
+   "kare_alindi": 248964.0,
+   "analiz_kare": 179691.0,
+   "anomali": 196.0,
+   "olay_yazildi": 196.0
+  },
+  {
+   "t_s": 2766.1,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 61.74917016798676,
+   "vram_bayt": 0.0,
+   "kare_alindi": 251285.0,
+   "analiz_kare": 181484.0,
+   "anomali": 197.0,
+   "olay_yazildi": 197.0
+  },
+  {
+   "t_s": 2796.2,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 60.6880595142986,
+   "vram_bayt": 0.0,
+   "kare_alindi": 253462.0,
+   "analiz_kare": 183278.0,
+   "anomali": 198.0,
+   "olay_yazildi": 198.0
+  },
+  {
+   "t_s": 2826.2,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 53.42897917728091,
+   "vram_bayt": 0.0,
+   "kare_alindi": 255682.0,
+   "analiz_kare": 184871.0,
+   "anomali": 200.0,
+   "olay_yazildi": 200.0
+  },
+  {
+   "t_s": 2856.3,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 56.201534885766335,
+   "vram_bayt": 0.0,
+   "kare_alindi": 257844.0,
+   "analiz_kare": 186601.0,
+   "anomali": 202.0,
+   "olay_yazildi": 202.0
+  },
+  {
+   "t_s": 2886.4,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 53.170558062821875,
+   "vram_bayt": 0.0,
+   "kare_alindi": 260062.0,
+   "analiz_kare": 188237.0,
+   "anomali": 204.0,
+   "olay_yazildi": 204.0
+  },
+  {
+   "t_s": 2916.4,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.057114638784185,
+   "vram_bayt": 0.0,
+   "kare_alindi": 262127.0,
+   "analiz_kare": 189775.0,
+   "anomali": 205.0,
+   "olay_yazildi": 205.0
+  },
+  {
+   "t_s": 2946.5,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 39.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 59.11105625186481,
+   "vram_bayt": 0.0,
+   "kare_alindi": 264359.0,
+   "analiz_kare": 191618.0,
+   "anomali": 207.0,
+   "olay_yazildi": 207.0
+  },
+  {
+   "t_s": 2976.6,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 39.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 52.330343625447505,
+   "vram_bayt": 0.0,
+   "kare_alindi": 266578.0,
+   "analiz_kare": 193191.0,
+   "anomali": 208.0,
+   "olay_yazildi": 208.0
+  },
+  {
+   "t_s": 3006.6,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 39.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 59.775596721575155,
+   "vram_bayt": 0.0,
+   "kare_alindi": 268679.0,
+   "analiz_kare": 194863.0,
+   "anomali": 208.0,
+   "olay_yazildi": 208.0
+  },
+  {
+   "t_s": 3036.7,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 39.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 52.01150668780354,
+   "vram_bayt": 0.0,
+   "kare_alindi": 270937.0,
+   "analiz_kare": 196450.0,
+   "anomali": 209.0,
+   "olay_yazildi": 209.0
+  },
+  {
+   "t_s": 3066.8,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 39.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 61.04544849727009,
+   "vram_bayt": 0.0,
+   "kare_alindi": 273213.0,
+   "analiz_kare": 198267.0,
+   "anomali": 211.0,
+   "olay_yazildi": 211.0
+  },
+  {
+   "t_s": 3096.9,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 39.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 59.12365386036038,
+   "vram_bayt": 0.0,
+   "kare_alindi": 275440.0,
+   "analiz_kare": 200050.0,
+   "anomali": 213.0,
+   "olay_yazildi": 213.0
+  },
+  {
+   "t_s": 3126.9,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 39.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 50.59108214004198,
+   "vram_bayt": 0.0,
+   "kare_alindi": 277616.0,
+   "analiz_kare": 201547.0,
+   "anomali": 213.0,
+   "olay_yazildi": 213.0
+  },
+  {
+   "t_s": 3157.0,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 39.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 59.81208139101279,
+   "vram_bayt": 0.0,
+   "kare_alindi": 279815.0,
+   "analiz_kare": 203333.0,
+   "anomali": 216.0,
+   "olay_yazildi": 216.0
+  },
+  {
+   "t_s": 3187.1,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 39.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 51.574065132739854,
+   "vram_bayt": 0.0,
+   "kare_alindi": 282025.0,
+   "analiz_kare": 204902.0,
+   "anomali": 219.0,
+   "olay_yazildi": 219.0
+  },
+  {
+   "t_s": 3217.2,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 39.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.67558783828468,
+   "vram_bayt": 0.0,
+   "kare_alindi": 284087.0,
+   "analiz_kare": 206495.0,
+   "anomali": 221.0,
+   "olay_yazildi": 221.0
+  },
+  {
+   "t_s": 3247.2,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 22.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 51.37204699249051,
+   "vram_bayt": 0.0,
+   "kare_alindi": 286273.0,
+   "analiz_kare": 208082.0,
+   "anomali": 222.0,
+   "olay_yazildi": 222.0
+  },
+  {
+   "t_s": 3277.3,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 22.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.13184522447388,
+   "vram_bayt": 0.0,
+   "kare_alindi": 288416.0,
+   "analiz_kare": 209712.0,
+   "anomali": 224.0,
+   "olay_yazildi": 224.0
+  },
+  {
+   "t_s": 3307.4,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 22.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 53.6901033860131,
+   "vram_bayt": 0.0,
+   "kare_alindi": 290564.0,
+   "analiz_kare": 211306.0,
+   "anomali": 228.0,
+   "olay_yazildi": 228.0
+  },
+  {
+   "t_s": 3337.5,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 22.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 49.97549797825159,
+   "vram_bayt": 0.0,
+   "kare_alindi": 292784.0,
+   "analiz_kare": 212830.0,
+   "anomali": 229.0,
+   "olay_yazildi": 229.0
+  },
+  {
+   "t_s": 3367.5,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 22.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 56.231144513051845,
+   "vram_bayt": 0.0,
+   "kare_alindi": 295100.0,
+   "analiz_kare": 214456.0,
+   "anomali": 232.0,
+   "olay_yazildi": 232.0
+  },
+  {
+   "t_s": 3397.6,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 22.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.90154361003029,
+   "vram_bayt": 0.0,
+   "kare_alindi": 297316.0,
+   "analiz_kare": 216110.0,
+   "anomali": 233.0,
+   "olay_yazildi": 233.0
+  },
+  {
+   "t_s": 3427.7,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 22.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.502733547309546,
+   "vram_bayt": 0.0,
+   "kare_alindi": 299483.0,
+   "analiz_kare": 217709.0,
+   "anomali": 234.0,
+   "olay_yazildi": 234.0
+  },
+  {
+   "t_s": 3457.7,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 22.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 56.27827330270078,
+   "vram_bayt": 0.0,
+   "kare_alindi": 301695.0,
+   "analiz_kare": 219380.0,
+   "anomali": 236.0,
+   "olay_yazildi": 236.0
+  },
+  {
+   "t_s": 3487.8,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 22.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 50.68546099796864,
+   "vram_bayt": 0.0,
+   "kare_alindi": 303860.0,
+   "analiz_kare": 220927.0,
+   "anomali": 239.0,
+   "olay_yazildi": 239.0
+  },
+  {
+   "t_s": 3517.8,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 22.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 56.7547150967459,
+   "vram_bayt": 0.0,
+   "kare_alindi": 305973.0,
+   "analiz_kare": 222613.0,
+   "anomali": 241.0,
+   "olay_yazildi": 241.0
+  },
+  {
+   "t_s": 3547.9,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 41.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.55543985023125,
+   "vram_bayt": 0.0,
+   "kare_alindi": 308190.0,
+   "analiz_kare": 224306.0,
+   "anomali": 243.0,
+   "olay_yazildi": 243.0
+  },
+  {
+   "t_s": 3577.9,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 41.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 56.712321740531806,
+   "vram_bayt": 0.0,
+   "kare_alindi": 310374.0,
+   "analiz_kare": 225977.0,
+   "anomali": 243.0,
+   "olay_yazildi": 243.0
+  },
+  {
+   "t_s": 3608.0,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 41.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.601947616432795,
+   "vram_bayt": 0.0,
+   "kare_alindi": 312537.0,
+   "analiz_kare": 227601.0,
+   "anomali": 245.0,
+   "olay_yazildi": 245.0
+  },
+  {
+   "t_s": 3638.1,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 41.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 55.53603678766628,
+   "vram_bayt": 0.0,
+   "kare_alindi": 314743.0,
+   "analiz_kare": 229244.0,
+   "anomali": 247.0,
+   "olay_yazildi": 247.0
+  },
+  {
+   "t_s": 3668.1,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 41.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 57.88553453974481,
+   "vram_bayt": 0.0,
+   "kare_alindi": 317062.0,
+   "analiz_kare": 230949.0,
+   "anomali": 248.0,
+   "olay_yazildi": 248.0
+  },
+  {
+   "t_s": 3698.2,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 41.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 55.75839637051366,
+   "vram_bayt": 0.0,
+   "kare_alindi": 319221.0,
+   "analiz_kare": 232686.0,
+   "anomali": 248.0,
+   "olay_yazildi": 248.0
+  },
+  {
+   "t_s": 3728.3,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 41.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.56771325421651,
+   "vram_bayt": 0.0,
+   "kare_alindi": 321456.0,
+   "analiz_kare": 234314.0,
+   "anomali": 248.0,
+   "olay_yazildi": 248.0
+  },
+  {
+   "t_s": 3758.4,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 41.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.74238801632482,
+   "vram_bayt": 0.0,
+   "kare_alindi": 323633.0,
+   "analiz_kare": 235911.0,
+   "anomali": 252.0,
+   "olay_yazildi": 252.0
+  },
+  {
+   "t_s": 3788.4,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 41.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 53.969766857582975,
+   "vram_bayt": 0.0,
+   "kare_alindi": 325813.0,
+   "analiz_kare": 237489.0,
+   "anomali": 256.0,
+   "olay_yazildi": 256.0
+  },
+  {
+   "t_s": 3818.5,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 41.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 56.35152955636126,
+   "vram_bayt": 0.0,
+   "kare_alindi": 327939.0,
+   "analiz_kare": 239127.0,
+   "anomali": 258.0,
+   "olay_yazildi": 258.0
+  },
+  {
+   "t_s": 3848.6,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 33.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 60.02495603143002,
+   "vram_bayt": 0.0,
+   "kare_alindi": 330071.0,
+   "analiz_kare": 240903.0,
+   "anomali": 260.0,
+   "olay_yazildi": 260.0
+  },
+  {
+   "t_s": 3878.7,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 33.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.79487733460748,
+   "vram_bayt": 0.0,
+   "kare_alindi": 332234.0,
+   "analiz_kare": 242549.0,
+   "anomali": 262.0,
+   "olay_yazildi": 262.0
+  },
+  {
+   "t_s": 3908.8,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 33.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 56.27631925658355,
+   "vram_bayt": 0.0,
+   "kare_alindi": 334347.0,
+   "analiz_kare": 244204.0,
+   "anomali": 264.0,
+   "olay_yazildi": 264.0
+  },
+  {
+   "t_s": 3938.8,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 33.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 53.58785136236367,
+   "vram_bayt": 0.0,
+   "kare_alindi": 336612.0,
+   "analiz_kare": 245857.0,
+   "anomali": 264.0,
+   "olay_yazildi": 264.0
+  },
+  {
+   "t_s": 3968.9,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 33.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 57.5991315417294,
+   "vram_bayt": 0.0,
+   "kare_alindi": 338903.0,
+   "analiz_kare": 247593.0,
+   "anomali": 266.0,
+   "olay_yazildi": 266.0
+  },
+  {
+   "t_s": 3999.0,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 33.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 58.45747145990737,
+   "vram_bayt": 0.0,
+   "kare_alindi": 341099.0,
+   "analiz_kare": 249393.0,
+   "anomali": 268.0,
+   "olay_yazildi": 268.0
+  },
+  {
+   "t_s": 4029.0,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 33.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 47.67398924321944,
+   "vram_bayt": 0.0,
+   "kare_alindi": 343330.0,
+   "analiz_kare": 250873.0,
+   "anomali": 268.0,
+   "olay_yazildi": 268.0
+  },
+  {
+   "t_s": 4059.1,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 33.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 59.69571231260511,
+   "vram_bayt": 0.0,
+   "kare_alindi": 345477.0,
+   "analiz_kare": 252622.0,
+   "anomali": 270.0,
+   "olay_yazildi": 270.0
+  },
+  {
+   "t_s": 4089.2,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 33.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 51.99728996335689,
+   "vram_bayt": 0.0,
+   "kare_alindi": 347682.0,
+   "analiz_kare": 254213.0,
+   "anomali": 271.0,
+   "olay_yazildi": 271.0
+  },
+  {
+   "t_s": 4119.2,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 33.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 53.99536133312135,
+   "vram_bayt": 0.0,
+   "kare_alindi": 349751.0,
+   "analiz_kare": 255790.0,
+   "anomali": 273.0,
+   "olay_yazildi": 273.0
+  },
+  {
+   "t_s": 4149.3,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 34.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 55.9997083043652,
+   "vram_bayt": 0.0,
+   "kare_alindi": 352012.0,
+   "analiz_kare": 257552.0,
+   "anomali": 273.0,
+   "olay_yazildi": 273.0
+  },
+  {
+   "t_s": 4179.3,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 34.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 55.73983322518629,
+   "vram_bayt": 0.0,
+   "kare_alindi": 354178.0,
+   "analiz_kare": 259195.0,
+   "anomali": 274.0,
+   "olay_yazildi": 274.0
+  },
+  {
+   "t_s": 4209.4,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 34.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 57.42235475770012,
+   "vram_bayt": 0.0,
+   "kare_alindi": 356301.0,
+   "analiz_kare": 260897.0,
+   "anomali": 277.0,
+   "olay_yazildi": 277.0
+  },
+  {
+   "t_s": 4239.5,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 34.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 53.43711298449156,
+   "vram_bayt": 0.0,
+   "kare_alindi": 358579.0,
+   "analiz_kare": 262456.0,
+   "anomali": 279.0,
+   "olay_yazildi": 279.0
+  },
+  {
+   "t_s": 4269.5,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 34.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 61.56931435129357,
+   "vram_bayt": 0.0,
+   "kare_alindi": 360844.0,
+   "analiz_kare": 264285.0,
+   "anomali": 281.0,
+   "olay_yazildi": 281.0
+  },
+  {
+   "t_s": 4299.6,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 34.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 55.055705646466315,
+   "vram_bayt": 0.0,
+   "kare_alindi": 363064.0,
+   "analiz_kare": 266001.0,
+   "anomali": 282.0,
+   "olay_yazildi": 282.0
+  },
+  {
+   "t_s": 4329.7,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 34.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 50.89829454798417,
+   "vram_bayt": 0.0,
+   "kare_alindi": 365230.0,
+   "analiz_kare": 267568.0,
+   "anomali": 284.0,
+   "olay_yazildi": 284.0
+  },
+  {
+   "t_s": 4359.7,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 34.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 57.45629746057571,
+   "vram_bayt": 0.0,
+   "kare_alindi": 367450.0,
+   "analiz_kare": 269302.0,
+   "anomali": 286.0,
+   "olay_yazildi": 286.0
+  },
+  {
+   "t_s": 4389.8,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 34.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 50.23307715237094,
+   "vram_bayt": 0.0,
+   "kare_alindi": 369629.0,
+   "analiz_kare": 270796.0,
+   "anomali": 287.0,
+   "olay_yazildi": 287.0
+  },
+  {
+   "t_s": 4419.9,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 34.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 57.16474847167431,
+   "vram_bayt": 0.0,
+   "kare_alindi": 371705.0,
+   "analiz_kare": 272484.0,
+   "anomali": 290.0,
+   "olay_yazildi": 290.0
+  },
+  {
+   "t_s": 4449.9,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.22411338062729,
+   "vram_bayt": 0.0,
+   "kare_alindi": 373907.0,
+   "analiz_kare": 274163.0,
+   "anomali": 292.0,
+   "olay_yazildi": 292.0
+  },
+  {
+   "t_s": 4480.0,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 58.385423454490365,
+   "vram_bayt": 0.0,
+   "kare_alindi": 376030.0,
+   "analiz_kare": 275862.0,
+   "anomali": 294.0,
+   "olay_yazildi": 294.0
+  },
+  {
+   "t_s": 4510.0,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.8627357116609,
+   "vram_bayt": 0.0,
+   "kare_alindi": 378193.0,
+   "analiz_kare": 277520.0,
+   "anomali": 295.0,
+   "olay_yazildi": 295.0
+  },
+  {
+   "t_s": 4540.1,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.7278850252476,
+   "vram_bayt": 0.0,
+   "kare_alindi": 380408.0,
+   "analiz_kare": 279176.0,
+   "anomali": 295.0,
+   "olay_yazildi": 295.0
+  },
+  {
+   "t_s": 4570.1,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 59.219913022792255,
+   "vram_bayt": 0.0,
+   "kare_alindi": 382719.0,
+   "analiz_kare": 280983.0,
+   "anomali": 298.0,
+   "olay_yazildi": 298.0
+  },
+  {
+   "t_s": 4600.2,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 58.05903788722693,
+   "vram_bayt": 0.0,
+   "kare_alindi": 384933.0,
+   "analiz_kare": 282711.0,
+   "anomali": 298.0,
+   "olay_yazildi": 298.0
+  },
+  {
+   "t_s": 4630.3,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 52.71194385535193,
+   "vram_bayt": 0.0,
+   "kare_alindi": 387112.0,
+   "analiz_kare": 284253.0,
+   "anomali": 300.0,
+   "olay_yazildi": 300.0
+  },
+  {
+   "t_s": 4660.4,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 55.84198134132885,
+   "vram_bayt": 0.0,
+   "kare_alindi": 389323.0,
+   "analiz_kare": 285938.0,
+   "anomali": 302.0,
+   "olay_yazildi": 302.0
+  },
+  {
+   "t_s": 4690.4,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 50.968867785857626,
+   "vram_bayt": 0.0,
+   "kare_alindi": 391468.0,
+   "analiz_kare": 287433.0,
+   "anomali": 303.0,
+   "olay_yazildi": 303.0
+  },
+  {
+   "t_s": 4720.5,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 55.248545240614646,
+   "vram_bayt": 0.0,
+   "kare_alindi": 393592.0,
+   "analiz_kare": 289083.0,
+   "anomali": 305.0,
+   "olay_yazildi": 305.0
+  },
+  {
+   "t_s": 4750.5,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 32.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 55.03385950008087,
+   "vram_bayt": 0.0,
+   "kare_alindi": 395813.0,
+   "analiz_kare": 290797.0,
+   "anomali": 307.0,
+   "olay_yazildi": 307.0
+  },
+  {
+   "t_s": 4780.6,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 32.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 57.85395876122428,
+   "vram_bayt": 0.0,
+   "kare_alindi": 397969.0,
+   "analiz_kare": 292488.0,
+   "anomali": 311.0,
+   "olay_yazildi": 311.0
+  },
+  {
+   "t_s": 4810.6,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 32.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 57.28359971455048,
+   "vram_bayt": 0.0,
+   "kare_alindi": 400121.0,
+   "analiz_kare": 294144.0,
+   "anomali": 311.0,
+   "olay_yazildi": 311.0
+  },
+  {
+   "t_s": 4840.7,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 32.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 56.401793874510496,
+   "vram_bayt": 0.0,
+   "kare_alindi": 402362.0,
+   "analiz_kare": 295807.0,
+   "anomali": 311.0,
+   "olay_yazildi": 311.0
+  },
+  {
+   "t_s": 4870.7,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 32.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 59.992925767641665,
+   "vram_bayt": 0.0,
+   "kare_alindi": 404679.0,
+   "analiz_kare": 297632.0,
+   "anomali": 313.0,
+   "olay_yazildi": 313.0
+  },
+  {
+   "t_s": 4900.8,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 32.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 58.88882602100885,
+   "vram_bayt": 0.0,
+   "kare_alindi": 406836.0,
+   "analiz_kare": 299420.0,
+   "anomali": 314.0,
+   "olay_yazildi": 314.0
+  },
+  {
+   "t_s": 4930.8,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 32.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 52.98280920990639,
+   "vram_bayt": 0.0,
+   "kare_alindi": 409056.0,
+   "analiz_kare": 301011.0,
+   "anomali": 315.0,
+   "olay_yazildi": 315.0
+  },
+  {
+   "t_s": 4960.9,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 32.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 53.69175567957623,
+   "vram_bayt": 0.0,
+   "kare_alindi": 411226.0,
+   "analiz_kare": 302641.0,
+   "anomali": 319.0,
+   "olay_yazildi": 319.0
+  },
+  {
+   "t_s": 4990.9,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 32.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 51.67485776280823,
+   "vram_bayt": 0.0,
+   "kare_alindi": 413420.0,
+   "analiz_kare": 304239.0,
+   "anomali": 319.0,
+   "olay_yazildi": 319.0
+  },
+  {
+   "t_s": 5021.0,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 32.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 55.49462288290806,
+   "vram_bayt": 0.0,
+   "kare_alindi": 415519.0,
+   "analiz_kare": 305829.0,
+   "anomali": 322.0,
+   "olay_yazildi": 322.0
+  },
+  {
+   "t_s": 5051.1,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 33.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 57.157285088499336,
+   "vram_bayt": 0.0,
+   "kare_alindi": 417742.0,
+   "analiz_kare": 307576.0,
+   "anomali": 322.0,
+   "olay_yazildi": 322.0
+  },
+  {
+   "t_s": 5081.2,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 33.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 51.91679719085111,
+   "vram_bayt": 0.0,
+   "kare_alindi": 419939.0,
+   "analiz_kare": 309180.0,
+   "anomali": 324.0,
+   "olay_yazildi": 324.0
+  },
+  {
+   "t_s": 5111.2,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 33.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 57.03606600142776,
+   "vram_bayt": 0.0,
+   "kare_alindi": 422046.0,
+   "analiz_kare": 310874.0,
+   "anomali": 327.0,
+   "olay_yazildi": 327.0
+  },
+  {
+   "t_s": 5141.3,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 33.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 53.46082613358762,
+   "vram_bayt": 0.0,
+   "kare_alindi": 424317.0,
+   "analiz_kare": 312499.0,
+   "anomali": 327.0,
+   "olay_yazildi": 327.0
+  },
+  {
+   "t_s": 5171.3,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 33.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 56.24924741048204,
+   "vram_bayt": 0.0,
+   "kare_alindi": 426587.0,
+   "analiz_kare": 314160.0,
+   "anomali": 328.0,
+   "olay_yazildi": 328.0
+  },
+  {
+   "t_s": 5201.4,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 33.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 56.141234935428045,
+   "vram_bayt": 0.0,
+   "kare_alindi": 428788.0,
+   "analiz_kare": 315934.0,
+   "anomali": 328.0,
+   "olay_yazildi": 328.0
+  },
+  {
+   "t_s": 5231.4,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 33.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 55.85397522327938,
+   "vram_bayt": 0.0,
+   "kare_alindi": 431012.0,
+   "analiz_kare": 317521.0,
+   "anomali": 329.0,
+   "olay_yazildi": 329.0
+  },
+  {
+   "t_s": 5261.5,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 33.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 59.21373115250326,
+   "vram_bayt": 0.0,
+   "kare_alindi": 433172.0,
+   "analiz_kare": 319216.0,
+   "anomali": 331.0,
+   "olay_yazildi": 331.0
+  },
+  {
+   "t_s": 5291.6,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 33.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 46.99011165701802,
+   "vram_bayt": 0.0,
+   "kare_alindi": 435371.0,
+   "analiz_kare": 320637.0,
+   "anomali": 332.0,
+   "olay_yazildi": 332.0
+  },
+  {
+   "t_s": 5321.7,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 33.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 43.51526278113659,
+   "vram_bayt": 0.0,
+   "kare_alindi": 437434.0,
+   "analiz_kare": 322046.0,
+   "anomali": 335.0,
+   "olay_yazildi": 335.0
+  },
+  {
+   "t_s": 5351.7,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 50.96264743051941,
+   "vram_bayt": 0.0,
+   "kare_alindi": 439639.0,
+   "analiz_kare": 323587.0,
+   "anomali": 337.0,
+   "olay_yazildi": 337.0
+  },
+  {
+   "t_s": 5381.8,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 55.13250874553739,
+   "vram_bayt": 0.0,
+   "kare_alindi": 441767.0,
+   "analiz_kare": 325220.0,
+   "anomali": 339.0,
+   "olay_yazildi": 339.0
+  },
+  {
+   "t_s": 5411.9,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 56.19234621412161,
+   "vram_bayt": 0.0,
+   "kare_alindi": 443916.0,
+   "analiz_kare": 326879.0,
+   "anomali": 341.0,
+   "olay_yazildi": 341.0
+  },
+  {
+   "t_s": 5441.9,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 55.49047180844041,
+   "vram_bayt": 0.0,
+   "kare_alindi": 446196.0,
+   "analiz_kare": 328539.0,
+   "anomali": 342.0,
+   "olay_yazildi": 342.0
+  },
+  {
+   "t_s": 5472.0,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 57.35698417843049,
+   "vram_bayt": 0.0,
+   "kare_alindi": 448456.0,
+   "analiz_kare": 330278.0,
+   "anomali": 345.0,
+   "olay_yazildi": 345.0
+  },
+  {
+   "t_s": 5502.0,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 56.787304287676506,
+   "vram_bayt": 0.0,
+   "kare_alindi": 450676.0,
+   "analiz_kare": 332013.0,
+   "anomali": 345.0,
+   "olay_yazildi": 345.0
+  },
+  {
+   "t_s": 5532.1,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 53.92172129022049,
+   "vram_bayt": 0.0,
+   "kare_alindi": 452833.0,
+   "analiz_kare": 333585.0,
+   "anomali": 347.0,
+   "olay_yazildi": 347.0
+  },
+  {
+   "t_s": 5562.1,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 57.21430457525348,
+   "vram_bayt": 0.0,
+   "kare_alindi": 455046.0,
+   "analiz_kare": 335289.0,
+   "anomali": 350.0,
+   "olay_yazildi": 350.0
+  },
+  {
+   "t_s": 5592.1,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 46.84309407103231,
+   "vram_bayt": 0.0,
+   "kare_alindi": 457222.0,
+   "analiz_kare": 336789.0,
+   "anomali": 352.0,
+   "olay_yazildi": 352.0
+  },
+  {
+   "t_s": 5622.2,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 58.723305407609885,
+   "vram_bayt": 0.0,
+   "kare_alindi": 459309.0,
+   "analiz_kare": 338466.0,
+   "anomali": 354.0,
+   "olay_yazildi": 354.0
+  },
+  {
+   "t_s": 5652.3,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 25.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.79646515805526,
+   "vram_bayt": 0.0,
+   "kare_alindi": 461583.0,
+   "analiz_kare": 340113.0,
+   "anomali": 354.0,
+   "olay_yazildi": 354.0
+  },
+  {
+   "t_s": 5682.4,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 25.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 55.95995266615778,
+   "vram_bayt": 0.0,
+   "kare_alindi": 463680.0,
+   "analiz_kare": 341727.0,
+   "anomali": 358.0,
+   "olay_yazildi": 358.0
+  },
+  {
+   "t_s": 5712.4,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 25.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.186878137418375,
+   "vram_bayt": 0.0,
+   "kare_alindi": 465871.0,
+   "analiz_kare": 343349.0,
+   "anomali": 359.0,
+   "olay_yazildi": 359.0
+  },
+  {
+   "t_s": 5742.5,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 25.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 52.430547961364056,
+   "vram_bayt": 0.0,
+   "kare_alindi": 468082.0,
+   "analiz_kare": 344947.0,
+   "anomali": 360.0,
+   "olay_yazildi": 360.0
+  },
+  {
+   "t_s": 5772.6,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 25.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 60.38880739040696,
+   "vram_bayt": 0.0,
+   "kare_alindi": 470396.0,
+   "analiz_kare": 346807.0,
+   "anomali": 361.0,
+   "olay_yazildi": 361.0
+  },
+  {
+   "t_s": 5802.6,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 25.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 56.40443026428291,
+   "vram_bayt": 0.0,
+   "kare_alindi": 472600.0,
+   "analiz_kare": 348535.0,
+   "anomali": 362.0,
+   "olay_yazildi": 362.0
+  },
+  {
+   "t_s": 5832.7,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 25.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 56.803065857563205,
+   "vram_bayt": 0.0,
+   "kare_alindi": 474791.0,
+   "analiz_kare": 350161.0,
+   "anomali": 363.0,
+   "olay_yazildi": 363.0
+  },
+  {
+   "t_s": 5862.7,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 25.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 56.239042414019714,
+   "vram_bayt": 0.0,
+   "kare_alindi": 477001.0,
+   "analiz_kare": 351823.0,
+   "anomali": 366.0,
+   "olay_yazildi": 366.0
+  },
+  {
+   "t_s": 5892.8,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 25.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 52.95022430909993,
+   "vram_bayt": 0.0,
+   "kare_alindi": 479137.0,
+   "analiz_kare": 353411.0,
+   "anomali": 368.0,
+   "olay_yazildi": 368.0
+  },
+  {
+   "t_s": 5922.8,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 25.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.17442258218874,
+   "vram_bayt": 0.0,
+   "kare_alindi": 481264.0,
+   "analiz_kare": 355030.0,
+   "anomali": 371.0,
+   "olay_yazildi": 371.0
+  },
+  {
+   "t_s": 5952.9,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 23.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.10525264847931,
+   "vram_bayt": 0.0,
+   "kare_alindi": 483486.0,
+   "analiz_kare": 356645.0,
+   "anomali": 372.0,
+   "olay_yazildi": 372.0
+  },
+  {
+   "t_s": 5982.9,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 23.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.35132831033134,
+   "vram_bayt": 0.0,
+   "kare_alindi": 485630.0,
+   "analiz_kare": 358289.0,
+   "anomali": 373.0,
+   "olay_yazildi": 373.0
+  },
+  {
+   "t_s": 6013.0,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 23.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 53.43767302556691,
+   "vram_bayt": 0.0,
+   "kare_alindi": 487778.0,
+   "analiz_kare": 359908.0,
+   "anomali": 375.0,
+   "olay_yazildi": 375.0
+  },
+  {
+   "t_s": 6043.1,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 23.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.71734072774533,
+   "vram_bayt": 0.0,
+   "kare_alindi": 490026.0,
+   "analiz_kare": 361543.0,
+   "anomali": 378.0,
+   "olay_yazildi": 378.0
+  },
+  {
+   "t_s": 6073.1,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 23.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 58.208206456541966,
+   "vram_bayt": 0.0,
+   "kare_alindi": 492341.0,
+   "analiz_kare": 363316.0,
+   "anomali": 379.0,
+   "olay_yazildi": 379.0
+  },
+  {
+   "t_s": 6103.2,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 23.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 60.18066799494545,
+   "vram_bayt": 0.0,
+   "kare_alindi": 494498.0,
+   "analiz_kare": 365095.0,
+   "anomali": 379.0,
+   "olay_yazildi": 379.0
+  },
+  {
+   "t_s": 6133.3,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 23.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.430613696337865,
+   "vram_bayt": 0.0,
+   "kare_alindi": 496718.0,
+   "analiz_kare": 366730.0,
+   "anomali": 381.0,
+   "olay_yazildi": 381.0
+  },
+  {
+   "t_s": 6163.3,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 23.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 57.43403706394275,
+   "vram_bayt": 0.0,
+   "kare_alindi": 498882.0,
+   "analiz_kare": 368446.0,
+   "anomali": 384.0,
+   "olay_yazildi": 384.0
+  },
+  {
+   "t_s": 6193.4,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 23.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 48.41640615659164,
+   "vram_bayt": 0.0,
+   "kare_alindi": 501076.0,
+   "analiz_kare": 369970.0,
+   "anomali": 384.0,
+   "olay_yazildi": 384.0
+  },
+  {
+   "t_s": 6223.4,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 23.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 59.62106142680058,
+   "vram_bayt": 0.0,
+   "kare_alindi": 503164.0,
+   "analiz_kare": 371692.0,
+   "anomali": 386.0,
+   "olay_yazildi": 386.0
+  },
+  {
+   "t_s": 6253.5,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 41.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 56.04121252789105,
+   "vram_bayt": 0.0,
+   "kare_alindi": 505329.0,
+   "analiz_kare": 373407.0,
+   "anomali": 387.0,
+   "olay_yazildi": 387.0
+  },
+  {
+   "t_s": 6283.5,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 41.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.71847997752694,
+   "vram_bayt": 0.0,
+   "kare_alindi": 507484.0,
+   "analiz_kare": 374973.0,
+   "anomali": 391.0,
+   "olay_yazildi": 391.0
+  },
+  {
+   "t_s": 6313.5,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 41.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 56.09803614318791,
+   "vram_bayt": 0.0,
+   "kare_alindi": 509602.0,
+   "analiz_kare": 376625.0,
+   "anomali": 391.0,
+   "olay_yazildi": 391.0
+  },
+  {
+   "t_s": 6343.6,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 41.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 52.416881709007086,
+   "vram_bayt": 0.0,
+   "kare_alindi": 511896.0,
+   "analiz_kare": 378238.0,
+   "anomali": 392.0,
+   "olay_yazildi": 392.0
+  },
+  {
+   "t_s": 6373.7,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 41.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 57.58420991980584,
+   "vram_bayt": 0.0,
+   "kare_alindi": 514151.0,
+   "analiz_kare": 379957.0,
+   "anomali": 395.0,
+   "olay_yazildi": 395.0
+  },
+  {
+   "t_s": 6403.7,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 41.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 55.75468391288494,
+   "vram_bayt": 0.0,
+   "kare_alindi": 516362.0,
+   "analiz_kare": 381711.0,
+   "anomali": 396.0,
+   "olay_yazildi": 396.0
+  },
+  {
+   "t_s": 6433.8,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 41.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 53.850332316904456,
+   "vram_bayt": 0.0,
+   "kare_alindi": 518567.0,
+   "analiz_kare": 383283.0,
+   "anomali": 398.0,
+   "olay_yazildi": 398.0
+  },
+  {
+   "t_s": 6463.9,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 41.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 60.54175142798032,
+   "vram_bayt": 0.0,
+   "kare_alindi": 520748.0,
+   "analiz_kare": 385059.0,
+   "anomali": 399.0,
+   "olay_yazildi": 399.0
+  },
+  {
+   "t_s": 6493.9,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 41.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 49.17940223816666,
+   "vram_bayt": 0.0,
+   "kare_alindi": 522940.0,
+   "analiz_kare": 386578.0,
+   "anomali": 401.0,
+   "olay_yazildi": 401.0
+  },
+  {
+   "t_s": 6524.0,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 41.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 57.71106548073314,
+   "vram_bayt": 0.0,
+   "kare_alindi": 524996.0,
+   "analiz_kare": 388269.0,
+   "anomali": 403.0,
+   "olay_yazildi": 403.0
+  },
+  {
+   "t_s": 6554.1,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 35.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 55.02427711818895,
+   "vram_bayt": 0.0,
+   "kare_alindi": 527294.0,
+   "analiz_kare": 389993.0,
+   "anomali": 403.0,
+   "olay_yazildi": 403.0
+  },
+  {
+   "t_s": 6584.1,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 35.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 53.49520480719174,
+   "vram_bayt": 0.0,
+   "kare_alindi": 529402.0,
+   "analiz_kare": 391621.0,
+   "anomali": 405.0,
+   "olay_yazildi": 405.0
+  },
+  {
+   "t_s": 6614.2,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 35.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 53.493883718210014,
+   "vram_bayt": 0.0,
+   "kare_alindi": 531575.0,
+   "analiz_kare": 393249.0,
+   "anomali": 408.0,
+   "olay_yazildi": 408.0
+  },
+  {
+   "t_s": 6644.3,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 35.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 51.74883624893865,
+   "vram_bayt": 0.0,
+   "kare_alindi": 533839.0,
+   "analiz_kare": 394857.0,
+   "anomali": 409.0,
+   "olay_yazildi": 409.0
+  },
+  {
+   "t_s": 6674.3,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 35.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 62.05507806291881,
+   "vram_bayt": 0.0,
+   "kare_alindi": 536115.0,
+   "analiz_kare": 396682.0,
+   "anomali": 411.0,
+   "olay_yazildi": 411.0
+  },
+  {
+   "t_s": 6704.4,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 35.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 56.27761117819358,
+   "vram_bayt": 0.0,
+   "kare_alindi": 538336.0,
+   "analiz_kare": 398415.0,
+   "anomali": 412.0,
+   "olay_yazildi": 412.0
+  },
+  {
+   "t_s": 6734.5,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 35.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 53.58957724101656,
+   "vram_bayt": 0.0,
+   "kare_alindi": 540493.0,
+   "analiz_kare": 399920.0,
+   "anomali": 415.0,
+   "olay_yazildi": 415.0
+  },
+  {
+   "t_s": 6764.5,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 35.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.76917189069826,
+   "vram_bayt": 0.0,
+   "kare_alindi": 542706.0,
+   "analiz_kare": 401649.0,
+   "anomali": 416.0,
+   "olay_yazildi": 416.0
+  },
+  {
+   "t_s": 6794.5,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 35.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 51.483227704623786,
+   "vram_bayt": 0.0,
+   "kare_alindi": 544865.0,
+   "analiz_kare": 403215.0,
+   "anomali": 417.0,
+   "olay_yazildi": 417.0
+  },
+  {
+   "t_s": 6824.6,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 35.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 59.36754053282341,
+   "vram_bayt": 0.0,
+   "kare_alindi": 546963.0,
+   "analiz_kare": 404945.0,
+   "anomali": 421.0,
+   "olay_yazildi": 421.0
+  },
+  {
+   "t_s": 6854.6,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 35.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.25404002428638,
+   "vram_bayt": 0.0,
+   "kare_alindi": 549250.0,
+   "analiz_kare": 406608.0,
+   "anomali": 422.0,
+   "olay_yazildi": 422.0
+  },
+  {
+   "t_s": 6884.7,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 35.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 56.73821834262052,
+   "vram_bayt": 0.0,
+   "kare_alindi": 551336.0,
+   "analiz_kare": 408279.0,
+   "anomali": 423.0,
+   "olay_yazildi": 423.0
+  },
+  {
+   "t_s": 6914.8,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 35.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 54.08739177422352,
+   "vram_bayt": 0.0,
+   "kare_alindi": 553539.0,
+   "analiz_kare": 409932.0,
+   "anomali": 424.0,
+   "olay_yazildi": 424.0
+  },
+  {
+   "t_s": 6944.9,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 35.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 33.662111066858124,
+   "vram_bayt": 0.0,
+   "kare_alindi": 555758.0,
+   "analiz_kare": 411253.0,
+   "anomali": 425.0,
+   "olay_yazildi": 425.0
+  },
+  {
+   "t_s": 6974.9,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 35.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 39.15100844607215,
+   "vram_bayt": 0.0,
+   "kare_alindi": 558059.0,
+   "analiz_kare": 412388.0,
+   "anomali": 427.0,
+   "olay_yazildi": 427.0
+  },
+  {
+   "t_s": 7005.0,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 35.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 52.345699875669695,
+   "vram_bayt": 0.0,
+   "kare_alindi": 560253.0,
+   "analiz_kare": 413759.0,
+   "anomali": 429.0,
+   "olay_yazildi": 429.0
+  },
+  {
+   "t_s": 7035.0,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 35.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 55.44488702999267,
+   "vram_bayt": 0.0,
+   "kare_alindi": 562454.0,
+   "analiz_kare": 415406.0,
+   "anomali": 431.0,
+   "olay_yazildi": 431.0
+  },
+  {
+   "t_s": 7065.1,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 35.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 52.859684954026015,
+   "vram_bayt": 0.0,
+   "kare_alindi": 564654.0,
+   "analiz_kare": 417016.0,
+   "anomali": 432.0,
+   "olay_yazildi": 432.0
+  },
+  {
+   "t_s": 7095.1,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 35.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 50.39239298960889,
+   "vram_bayt": 0.0,
+   "kare_alindi": 566792.0,
+   "analiz_kare": 418550.0,
+   "anomali": 433.0,
+   "olay_yazildi": 433.0
+  },
+  {
+   "t_s": 7125.2,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 35.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 57.48785847332394,
+   "vram_bayt": 0.0,
+   "kare_alindi": 568905.0,
+   "analiz_kare": 420262.0,
+   "anomali": 436.0,
+   "olay_yazildi": 436.0
+  },
+  {
+   "t_s": 7155.3,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 56.2569544438025,
+   "vram_bayt": 0.0,
+   "kare_alindi": 571068.0,
+   "analiz_kare": 421968.0,
+   "anomali": 436.0,
+   "olay_yazildi": 436.0
+  },
+  {
+   "t_s": 7185.3,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 52.076935222497255,
+   "vram_bayt": 0.0,
+   "kare_alindi": 573213.0,
+   "analiz_kare": 423584.0,
+   "anomali": 438.0,
+   "olay_yazildi": 438.0
+  },
+  {
+   "t_s": 7200.0,
+   "ayakta": {
+    "ingest": true,
+    "inference": true,
+    "analytics": true,
+    "alerting": true,
+    "api": true
+   },
+   "bos_slot": 37.0,
+   "kamera_ayakta": 20.0,
+   "kapasite_fps": 55.66180519218224,
+   "vram_bayt": 0.0,
+   "kare_alindi": 574255.0,
+   "analiz_kare": 424412.0,
+   "anomali": 439.0,
+   "olay_yazildi": 439.0
+  }
+ ]
+}

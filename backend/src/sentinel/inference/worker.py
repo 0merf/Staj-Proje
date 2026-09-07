@@ -237,6 +237,10 @@ def _serialize(
 class InferenceWorker:
     """Kare akışını tüketip tespit sonucu üreten worker."""
 
+    # GPU kullanım metriği okunamadığında yalnızca BİR kez uyarılsın
+    # diye (bkz. `_gpu_olc`). Sınıf değişkeni: worker tek kopya.
+    _gpu_util_uyarildi = False
+
     def __init__(
         self,
         detector: Detector,
@@ -827,7 +831,52 @@ class InferenceWorker:
         metrics.shm_slots_free.set(self._allocator.available)
         metrics.queue_depth.labels(queue=self._frames.name).set(self._frames.depth)
         metrics.queue_depth.labels(queue=self._results.name).set(self._results.depth)
+        self._gpu_olc()
         print(f"  {self.summary(elapsed, since=now)}", flush=True)
+
+    @staticmethod
+    def _gpu_olc() -> None:
+        """VRAM ve GPU kullanımını metriklere yazar.
+
+        ⚠ NEDEN `memory_reserved`, `memory_allocated` DEĞİL
+        PyTorch ayırıcısı işletim sisteminden blok blok VRAM alıyor ve
+        tensör serbest bırakılınca o bloğu OS'e geri VERMİYOR — yeniden
+        kullanmak için elinde tutuyor. `memory_allocated` şu anda canlı
+        tensörleri sayar; `memory_reserved` sürecin gerçekten işgal
+        ettiği VRAM'i. VRAM bütçesi (PLAN §2.2, 4.6 GB / 7 GB) ikincisi
+        üzerinden tutulmalı: başka bir sürecin kullanamayacağı miktar o.
+
+        ⚠ GPU KULLANIMI OKUNAMAYABİLİR — ve sessizce sıfır YAZILMIYOR
+        `torch.cuda.utilization()` pynvml gerektiriyor; yoksa istisna
+        atıyor. O durumda metrik hiç güncellenmiyor (Prometheus'ta
+        "veri yok" görünür). Alternatif olan `.set(0)`, ölçülemeyen bir
+        şeyi "ölçüldü ve sıfır" diye göstermek olurdu — bu projenin
+        üç kez pahalıya ödediği hata sınıfı (P-17/P-36/P-39).
+        """
+        try:
+            import torch
+
+            if not torch.cuda.is_available():
+                return
+            metrics.gpu_memory_used.set(torch.cuda.memory_reserved())
+        except Exception:  # pragma: no cover — GPU yoksa metrik de yok
+            return
+        try:
+            metrics.gpu_utilization.set(torch.cuda.utilization())
+        except Exception as exc:  # pragma: no cover — pynvml yoksa
+            # ⚠ Bir KEZ uyarılıyor, her raporda değil: bu çağrı 5
+            # dakikada bir yapılıyor ve pynvml kalıcı olarak yoksa log
+            # gereksiz yere şişerdi. Ama tamamen sessiz kalmak da
+            # yanlış: GPU panosunun neden boş olduğu sorulduğunda
+            # cevabın bir yerde yazılı olması gerekiyor.
+            if not InferenceWorker._gpu_util_uyarildi:
+                InferenceWorker._gpu_util_uyarildi = True
+                log.warning(
+                    "gpu_kullanimi_okunamadi",
+                    error=f"{type(exc).__name__}: {exc}",
+                    etki="Grafana GPU panosunda 'kullanım' eğrisi boş kalacak",
+                    cozum="pynvml kurulu değilse: uv add nvidia-ml-py",
+                )
 
     @staticmethod
     def _p50(samples: deque[float]) -> float:

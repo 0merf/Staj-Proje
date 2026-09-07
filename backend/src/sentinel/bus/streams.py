@@ -84,7 +84,7 @@ class SlotAllocator:
 
     @property
     def available(self) -> int:
-        return int(self._client.llen(self._key))  # type: ignore[arg-type]
+        return int(self._client.llen(self._key))
 
     def sizanlari_geri_al(self, kullanimdaki: set[int]) -> list[int]:
         """Hiçbir yerde görünmeyen slotları havuza döndürür.
@@ -117,7 +117,7 @@ class SlotAllocator:
         ihlal edilmiş demektir.
         """
         gorulen: set[int] = set()
-        for ham in self._client.lrange(self._key, 0, -1):  # type: ignore[union-attr]
+        for ham in self._client.lrange(self._key, 0, -1):
             try:
                 gorulen.add(int(ham))
             except (TypeError, ValueError):
@@ -353,7 +353,7 @@ class FrameStream:
     @property
     def depth(self) -> int:
         """Akıştaki mesaj sayısı — geri basınç göstergesi."""
-        return int(self._client.xlen(self._stream))  # type: ignore[arg-type]
+        return int(self._client.xlen(self._stream))
 
     def islenmemis_slotlar(self, group: str) -> set[int]:
         """Henüz İŞLENMEMİŞ mesajların işaret ettiği slot numaraları.
@@ -387,7 +387,7 @@ class FrameStream:
         # (b1) Henüz teslim edilmemiş kayıtlar
         son_teslim = "0-0"
         try:
-            for g in self._client.xinfo_groups(self._stream):  # type: ignore[union-attr]
+            for g in self._client.xinfo_groups(self._stream):
                 if g.get("name") == group:
                     son_teslim = str(g.get("last-delivered-id", "0-0"))
                     break
@@ -397,6 +397,13 @@ class FrameStream:
         for _mid, alanlar in self._client.xrange(  # type: ignore[union-attr]
             self._stream, min=f"({son_teslim}", max="+"
         ):
+            # ⚠ Boş alan sözlüğü ELENIYOR — mypy'nin haklı olduğu yer.
+            # `xrange` dönüş tipi `... | None` içeriyor ve doğrudan
+            # indekslemek statik olarak güvensiz. Aşağıdaki `except`
+            # bunu zaten yakalıyordu ama istisnayla akış kontrolü
+            # yapmak, koşulun kendisini gizler.
+            if not alanlar:
+                continue
             try:
                 slotlar.add(int(alanlar["slot"]))
             except (KeyError, TypeError, ValueError):
@@ -416,6 +423,8 @@ class FrameStream:
             for _m, alanlar in self._client.xrange(  # type: ignore[union-attr]
                 self._stream, min=mid, max=mid
             ):
+                if not alanlar:
+                    continue
                 try:
                     slotlar.add(int(alanlar["slot"]))
                 except (KeyError, TypeError, ValueError):
@@ -469,7 +478,7 @@ class ResultStream:
 
     @property
     def depth(self) -> int:
-        return int(self._client.xlen(self._stream))  # type: ignore[arg-type]
+        return int(self._client.xlen(self._stream))
 
     @property
     def name(self) -> str:

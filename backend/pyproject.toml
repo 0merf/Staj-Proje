@@ -180,9 +180,32 @@ strict = true
 warn_unused_configs = true
 plugins = ["pydantic.mypy"]
 
+# ⚠ 03.09.2026 — LİSTE GERÇEKLE HİZALANDI
+# Önceki liste kurulu OLMAYAN üç paketi (sklearn, lightgbm, botocore)
+# sayıyordu ve gerçekten kullanılan ikisini (emotiefflib, torch)
+# saymıyordu. Sonuç: mypy 13 hata veriyordu ve bunların 3'ü kodla
+# değil, bu listeyle ilgiliydi.
+#
+# ⚠ Neden `ignore_missing_imports` ve neden `follow_imports=skip` değil:
+# bu paketlerin hiçbiri tip bilgisi (py.typed) yayınlamıyor. Onları
+# yok saymak bizim kodumuzun denetimini kapatmıyor, yalnızca üçüncü
+# taraf sınırında duruyor.
+#
+# `sklearn`/`lightgbm` KASTEN duruyor: eğitilmiş saldırganlık modeli
+# (K5 tabanı 0.712) yazılırsa ilk kullanılacak paketler bunlar ve
+# `warn_unused_configs` bunları "kullanılmayan bölüm" diye bildiriyor
+# — o uyarı kabul edildi, hata değil.
 [[tool.mypy.overrides]]
-module = ["cv2.*", "av.*", "ultralytics.*", "sklearn.*", "lightgbm.*", "boto3.*", "botocore.*"]
+module = [
+    "cv2.*", "av.*", "ultralytics.*", "emotiefflib.*", "onnxruntime.*",
+    "sklearn.*", "lightgbm.*", "boto3.*", "botocore.*",
+]
 ignore_missing_imports = true
+# ⚠ `ultralytics` paketi `YOLO`'yu `__all__` ile AÇIKÇA ihraç etmiyor
+# ve mypy bunu `attr-defined` hatası sayıyor. Sınıf var, çalışıyor,
+# yıllardır kamuya açık API'nin parçası — burada denetlenen şey
+# paketin kendi paketleme titizliği, bizim kodumuz değil.
+implicit_reexport = true
 
 # ─── PYTEST ───────────────────────────────────────────────────
 [tool.pytest.ini_options]

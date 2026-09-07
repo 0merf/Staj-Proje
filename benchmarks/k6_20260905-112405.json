@@ -1,0 +1,63 @@
+{
+ "olculdu": "2026-09-05T08:24:05.656440+00:00",
+ "kriter": "K6",
+ "hedef_auc": 0.75,
+ "veri_seti": "CUHK Avenue (testing)",
+ "klip_sayisi": 9,
+ "ornekleme_fps": 4.0,
+ "isinma_fps": 25.0,
+ "isinma_klip": 16,
+ "profil_gozlem": 125130,
+ "kare_toplam": 1439,
+ "kare_anomali": 69,
+ "kare_normal": 1370,
+ "sure_s": 84.5,
+ "sonuc": {
+  "fuzyon": {
+   "auc": 0.8672,
+   "anomali_p50": 0.2169,
+   "normal_p50": 0.0568,
+   "anomali_p90": 0.243,
+   "sifir_olmayan_oran": 0.9812
+  },
+  "katman_a": {
+   "auc": 0.7891,
+   "anomali_p50": 0.863,
+   "normal_p50": 0.1572,
+   "anomali_p90": 1.0,
+   "sifir_olmayan_oran": 0.5803
+  },
+  "katman_a_ema": {
+   "auc": 0.8602,
+   "anomali_p50": 0.8643,
+   "normal_p50": 0.3192,
+   "anomali_p90": 0.9542,
+   "sifir_olmayan_oran": 0.9903
+  },
+  "saldirganlik": {
+   "auc": 0.4647,
+   "anomali_p50": 0.0925,
+   "normal_p50": 0.0938,
+   "anomali_p90": 0.1828,
+   "sifir_olmayan_oran": 0.9812
+  },
+  "kural": {
+   "auc": 0.4996,
+   "anomali_p50": 0.0,
+   "normal_p50": 0.0,
+   "anomali_p90": 0.0,
+   "sifir_olmayan_oran": 0.0007
+  }
+ },
+ "k6_tutuyor": true,
+ "fuzyon_sinavi": {
+  "soru": "kazandıran sinyal birleştirme mi, zamansal yumuşatma mı",
+  "katman_a_ham": 0.7891,
+  "katman_a_ema_kontrol": 0.8602,
+  "fuzyon": 0.8672,
+  "fark": 0.007,
+  "anlamlilik_esigi": 0.02,
+  "esik_gerekcesi": "9 klip / 69 anomali karesinde AUC belirsizliği bu mertebede; daha küçük farkı kazanç saymak gürültüyü bulgu ilan etmek olur",
+  "sonuc": "kazandiran_yumusatma"
+ }
+}

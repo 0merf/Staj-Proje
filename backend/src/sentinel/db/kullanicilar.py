@@ -59,6 +59,60 @@ SEMA: tuple[str, ...] = (
     "CREATE INDEX IF NOT EXISTS denetim_kullanici ON denetim_izi (kullanici_adi, ts DESC)",
 )
 
+# ══════════════════════════════════════════════════════════════
+#  DENETİM İZİ SADECE-EKLEME (append-only)
+# ══════════════════════════════════════════════════════════════
+#
+# ⚠ 03.09.2026 — PLAN §12.1 BUNU SÖZ VERİYORDU, KOD YAPMIYORDU
+# PLAN'ın KVKK bölümü şunu yazıyor: *"Denetim kaydı ... sadece-ekleme,
+# DB trigger ile UPDATE/DELETE engellenir."* Tablo vardı, trigger yoktu.
+#
+# ⚠ Neden bu bir detay değil: denetim izinin TEK değeri değiştirilemez
+# olmasıdır. Silinebilen bir denetim kaydı, kötü niyetli bir yöneticiye
+# karşı hiçbir şey ifade etmez — ve denetim izinin var oluş sebebi tam
+# olarak yetkili birinin yetkisini kötüye kullanmasıdır. Yetkisiz
+# kişiye karşı zaten RBAC var.
+#
+# ⚠ Bu koruma VERİTABANI seviyesinde, uygulama seviyesinde değil.
+# Uygulama katmanında "UPDATE yazmayalım" demek bir disiplindir;
+# trigger bir MEKANİZMADIR. Aradaki fark, psql'e doğrudan bağlanan
+# birinin ne yapabildiğidir.
+#
+# ⚠ DÜRÜST SINIR: veritabanının SAHİBİ bu trigger'ı düşürebilir
+# (`DROP TRIGGER`). Gerçek değişmezlik ayrı bir sunucuya yazmak ya da
+# WORM depolama ister; bu kurulumda yok ve raporda böyle yazılacak.
+# Trigger, kazayı ve sıradan kötüye kullanımı engelliyor; kararlı bir
+# saldırganı değil.
+DENETIM_KORUMASI: tuple[str, ...] = (
+    """
+    CREATE OR REPLACE FUNCTION denetim_degistirilemez()
+    RETURNS TRIGGER AS $$
+    BEGIN
+        RAISE EXCEPTION
+            'denetim_izi sadece-ekleme bir tablodur: % engellendi',
+            TG_OP;
+    END;
+    $$ LANGUAGE plpgsql
+    """,
+    "DROP TRIGGER IF EXISTS denetim_no_update ON denetim_izi",
+    """
+    CREATE TRIGGER denetim_no_update
+        BEFORE UPDATE OR DELETE ON denetim_izi
+        FOR EACH ROW EXECUTE FUNCTION denetim_degistirilemez()
+    """,
+    # ⚠ TRUNCATE AYRI BİR TETİKLEYİCİ İSTİYOR — ve bu kolayca atlanır.
+    # `TRUNCATE` satır bazlı değil ifade bazlı çalışır; yukarıdaki
+    # `FOR EACH ROW` tetikleyicisi onu HİÇ görmez. Yani yalnızca
+    # UPDATE/DELETE engellenseydi, tabloyu tek komutla boşaltmak
+    # serbest kalırdı — korumanın adı doğru, kapsamı yanlış olurdu.
+    "DROP TRIGGER IF EXISTS denetim_no_truncate ON denetim_izi",
+    """
+    CREATE TRIGGER denetim_no_truncate
+        BEFORE TRUNCATE ON denetim_izi
+        FOR EACH STATEMENT EXECUTE FUNCTION denetim_degistirilemez()
+    """,
+)
+
 
 @dataclass(frozen=True, slots=True)
 class KullaniciKaydi:
@@ -70,8 +124,30 @@ class KullaniciKaydi:
 
 
 async def semayi_kur(baglanti: AsyncConnection) -> None:
+    """Kullanıcı ve denetim tablolarını kurar. Her açılışta çağrılır.
+
+    ⚠ İdempotent olmak ZORUNDA: elle migration gerektiren bir sistem,
+    bir bileşen yeniden başladığında sessizce çalışmaz duruma gelir.
+    """
     for ifade in SEMA:
         await baglanti.execute(text(ifade))
+
+    # ⚠ KORUMA AYRI VE HATASI YUTULUYOR — ama SESSİZCE DEĞİL
+    # Trigger kurulamazsa (yetki yok, plpgsql eklentisi yok) sistem
+    # yine çalışmalı: denetim yazımı devam eder, yalnızca
+    # değiştirilemezlik garantisi düşer. Ama bu bir GÜVENLİK
+    # bozulmasıdır ve WARNING seviyesinde, etkisiyle birlikte
+    # loglanıyor — "denetim izi korumasız çalışıyor" cümlesi loga
+    # düşmeden bu duruma girilmiyor.
+    try:
+        for ifade in DENETIM_KORUMASI:
+            await baglanti.execute(text(ifade))
+    except Exception as exc:
+        log.warning(
+            "denetim_korumasi_kurulamadi",
+            error=f"{type(exc).__name__}: {exc}",
+            etki="denetim izi yazılıyor ama UPDATE/DELETE'e karşı KORUMASIZ",
+        )
 
 
 async def kullanici_al(kullanici_adi: str) -> KullaniciKaydi | None:

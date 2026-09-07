@@ -1,0 +1,26 @@
+{
+ "camera": "cam-16",
+ "source": "UR Fall Detection Dataset — fall-01-cam0-rgb",
+ "citation": "Kwolek & Kepski — Human fall detection on embedded platform using depth maps and wireless accelerometer, CMPB 2014",
+ "anomali_turleri": [
+  "dusme"
+ ],
+ "not": "160 kare @ 30 FPS = 5.33 s. Video 25 FPS'e yeniden zamanlandi ama SURE KORUNDU (5.4 s), yani saniye degerleri kaynakla ayni. MediaMTX sonsuz dongude oynatiyor: dusme her ~5.4 saniyede tekrar eder. Segment sinirlari kare kare goz incelemesiyle belirlendi (k88 ayakta, k95 dengeyi kaybetmis, k112 yerde eller uzerinde, k140 yatay).",
+ "total_duration_s": 5.4,
+ "loop_s": 5.4,
+ "kaynak_fps": 30,
+ "anomali_segment_sayisi": 1,
+ "segments": [
+  {
+   "start_s": 3.0,
+   "end_s": 5.4,
+   "label": "dusme",
+   "kaynak_kare": [
+    90,
+    160
+   ],
+   "asama": "3.0-3.8 s cokme hareketi · 3.8-5.4 s yerde yatay"
+  }
+ ],
+ "uretim_kaynagi": "fall-01-cam0-rgb/fall-01-cam0-rgb"
+}

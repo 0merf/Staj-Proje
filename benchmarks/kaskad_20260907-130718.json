@@ -1,0 +1,101 @@
+{
+ "olculdu": "2026-09-07T10:07:18.903942+00:00",
+ "deney": "kaskad ablasyonu (kural kapısı → LightGBM)",
+ "veri_seti": "RWF-2000 val",
+ "klip_sayisi": 104,
+ "kare_sayisi": 1409,
+ "kapi_esikleri": {
+  "yakinlik": 0.15,
+  "etkilesim": 0.15,
+  "uzuv": 0.15,
+  "mantik": "VE (üçü birden)"
+ },
+ "yapilandirmalar": [
+  {
+   "ad": "A · yalnız kural",
+   "auc": 0.6998,
+   "f1": 0.7536,
+   "duyarlilik": 0.9286,
+   "kesinlik": 0.6341,
+   "en_iyi_esik": 0.04
+  },
+  {
+   "ad": "B · yalnız LightGBM",
+   "auc": 0.881,
+   "f1": 0.8288,
+   "duyarlilik": 0.8214,
+   "kesinlik": 0.8364,
+   "en_iyi_esik": 0.53
+  },
+  {
+   "ad": "C · KASKAD (kural→LGBM)",
+   "auc": 0.5859,
+   "f1": 0.411,
+   "duyarlilik": 0.2679,
+   "kesinlik": 0.8824,
+   "en_iyi_esik": 0.42
+  }
+ ],
+ "hesap": {
+  "lgbm_cagrilan_kare_orani": 0.0774,
+  "tasarruf_kat": 12.93
+ },
+ "kapi_bedeli": {
+  "elenen_kavga": 41,
+  "kavga_toplam": 56,
+  "elenen_normal": 42,
+  "normal_toplam": 48
+ },
+ "esik_taramasi": [
+  {
+   "esik": 0.05,
+   "cagri_orani": 0.1249,
+   "f1": 0.5714,
+   "auc": 0.6622,
+   "kacan_kavga": 32
+  },
+  {
+   "esik": 0.1,
+   "cagri_orani": 0.1043,
+   "f1": 0.4675,
+   "auc": 0.6079,
+   "kacan_kavga": 38
+  },
+  {
+   "esik": 0.15,
+   "cagri_orani": 0.0774,
+   "f1": 0.411,
+   "auc": 0.5859,
+   "kacan_kavga": 41
+  },
+  {
+   "esik": 0.2,
+   "cagri_orani": 0.0731,
+   "f1": 0.3889,
+   "auc": 0.5759,
+   "kacan_kavga": 42
+  },
+  {
+   "esik": 0.25,
+   "cagri_orani": 0.0568,
+   "f1": 0.3889,
+   "auc": 0.5759,
+   "kacan_kavga": 42
+  },
+  {
+   "esik": 0.3,
+   "cagri_orani": 0.044,
+   "f1": 0.3429,
+   "auc": 0.5644,
+   "kacan_kavga": 44
+  },
+  {
+   "esik": 0.4,
+   "cagri_orani": 0.0149,
+   "f1": 0.1613,
+   "auc": 0.5253,
+   "kacan_kavga": 51
+  }
+ ],
+ "bilinen_yanlilik": "en_iyi_esik üç yapılandırmada da aynı val kümesinde aranıyor (ADR-0007 ile aynı yöntem). Mutlak F1'ler optimistik; karşılaştırma adil."
+}

@@ -379,8 +379,13 @@ class YoloPoseEstimator:
             [yer[r.frame_index] for r in refs], device=self._device, dtype=torch.long
         )
 
+        # ⚠ `size` LİSTE olmalı, demet değil — PyTorch'un imzası öyle
+        # (`list[int]`). Çalışma zamanında demet de kabul ediliyor, bu
+        # yüzden hata hiç görünmemişti; yalnızca mypy yakaladı. Küçük
+        # ama gerçek bir sözleşme ihlali: bugün çalışan bir uyumluluk
+        # yarın kaldırılabilir.
         izgara = F.affine_grid(
-            theta, size=(n, 3, size, size), align_corners=False
+            theta, size=[n, 3, size, size], align_corners=False
         )
         kirpintilar = F.grid_sample(
             gpu[indeksler],

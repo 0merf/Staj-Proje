@@ -20,6 +20,7 @@ import type {
   HistoryEvent,
   TimedAlert,
   TimedResult,
+  Sayfa,
   ViewMode,
 } from './types'
 import { BUFFER_SIZE } from './lib/sync'
@@ -79,6 +80,9 @@ interface State {
   connection: 'bağlanıyor' | 'bağlı' | 'kopuk'
   /** Panelde ne çizilsin (kullanıcı düğmesi). */
   viewMode: ViewMode
+  sayfa: Sayfa
+  /** Kamera detay sayfasında hangi kamera açık. */
+  seciliKamera: string | null
   /** Kutular kaç ms geriden çizilsin — video/kutu hizalaması. */
   syncOffsetMs: number
   /** Açık olan kameralar (video oynatılıyor). */
@@ -105,6 +109,8 @@ interface State {
   setCameras: (c: Camera[]) => void
   setConnection: (c: State['connection']) => void
   setViewMode: (m: ViewMode) => void
+  setSayfa: (s: Sayfa) => void
+  kameraAc: (ad: string) => void
   setSyncOffset: (ms: number) => void
   togglePlaying: (name: string) => void
   bumpMessages: () => void
@@ -119,6 +125,8 @@ export const useStore = create<State>((set) => ({
   cameras: [],
   connection: 'bağlanıyor',
   viewMode: 'full',
+  sayfa: 'izgara',
+  seciliKamera: null,
   // İLERİ TAHMİN payı (ms). Video ~13 ms'de geliyor, analiz ~200-465 ms.
   // Aradaki fark kadar ileri tahmin gerekiyor; panel bunu ölçüp
   // "öner" düğmesiyle sunuyor. 0 = tahmin yok (kutular analizin
@@ -135,6 +143,11 @@ export const useStore = create<State>((set) => ({
   setCameras: (cameras) => set({ cameras }),
   setConnection: (connection) => set({ connection }),
   setViewMode: (viewMode) => set({ viewMode }),
+  setSayfa: (sayfa) => set({ sayfa }),
+  // Kamera detayına geçiş: hem sayfayı hem seçili kamerayı tek
+  // güncellemede değiştiriyor — ikisini ayrı set() ile yapmak arada
+  // bir kare "kamera seçilmemiş detay sayfası" gösterirdi.
+  kameraAc: (ad) => set({ sayfa: 'kamera', seciliKamera: ad }),
   setSyncOffset: (syncOffsetMs) => set({ syncOffsetMs }),
   togglePlaying: (name) =>
     set((s) => {
@@ -204,6 +217,8 @@ export const useStore = create<State>((set) => ({
             // doğru sıralansın ve saat doğru görünsün.
             rx: o.ts * 1000 - performance.timeOrigin,
             gecmis: true,
+            // Kanıt klibi — `AlertPanel` bunu bir oynatıcıya çeviriyor.
+            klip: o.klip,
           })
         }
         return {

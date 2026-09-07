@@ -1,0 +1,29 @@
+{
+  "olculdu": "2026-09-07T14:08:18.556426+00:00",
+  "kamera": "cam-15h",
+  "kare": 150,
+  "ornekleme_fps": 2.75,
+  "kapali": {
+    "reid": false,
+    "kare": 147,
+    "ms_medyan": 0.494,
+    "ms_p90": 0.622,
+    "ms_ortalama": 0.49,
+    "iz_ortalama": 4.62,
+    "vram_mb": 52.53125
+  },
+  "acik": {
+    "reid": true,
+    "kare": 147,
+    "ms_medyan": 0.519,
+    "ms_p90": 0.721,
+    "ms_ortalama": 0.532,
+    "iz_ortalama": 4.62,
+    "vram_mb": 52.53125
+  },
+  "yontem": "aynı tespitler, iki takipçi ayarı; tespit+poz maliyeti hariç",
+  "fark_ms": 0.025,
+  "kat": 1.051,
+  "yirmi_kamera_ek_ms_sn": 1.4,
+  "butceyi_asiyor": false
+}

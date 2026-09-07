@@ -79,6 +79,20 @@ export interface Camera {
 /** Panelde ne çizilsin — kullanıcı 3 kademeli düğmeyle seçiyor. */
 export type ViewMode = 'off' | 'boxes' | 'full'
 
+/** Panelin hangi sayfada olduğu (PLAN §10.1).
+ *
+ * ⚠ NEDEN ROUTER DEĞİL, DURUM DEĞİŞKENİ
+ * `react-router` üç görünüm için bir bağımlılık, bir sağlayıcı
+ * sarmalayıcısı ve bir URL sözleşmesi getiriyordu. Bu panelde derin
+ * bağlantı (deep link) gereksinimi yok: operatör panele girip
+ * görünüm değiştiriyor, URL paylaşmıyor.
+ *
+ * ⚠ BEDELİ AÇIKÇA YAZILIYOR: tarayıcının geri düğmesi görünümler
+ * arasında çalışmıyor ve bir görünüme doğrudan bağlantı verilemiyor.
+ * Gerçek bir üründe router doğru seçim olurdu; bu takas kapsam
+ * gerekçesiyle yapıldı. */
+export type Sayfa = 'izgara' | 'zaman-cizelgesi' | 'kamera'
+
 /** Analitik katmanının ürettiği anomali (KATMAN B).
  *
  * ⚠ Alarm ABONELİK FİLTRESİNE TAKILMAZ — kutucuk kapalı olsa bile
@@ -105,6 +119,19 @@ export interface TimedAlert extends Alert {
   /** Canlı akıştan değil, veritabanı geçmişinden geldiyse `true`.
    *  Operatör "şu an oluyor" ile "olmuştu"yu ayırt edebilmeli. */
   gecmis?: boolean
+  /** Olay klibinin anahtarı — varsa `/api/v1/events/klip/<anahtar>`.
+   *
+   * ⚠ 03.09.2026'ya kadar bu alan MAPLENMİYORDU: `/api/v1/events`
+   * yanıtı `klip` alanını döndürüyordu (`HistoryEvent.klip`), ama
+   * `loadHistory` onu `TimedAlert`'e taşımıyordu ve panelde kullanan
+   * hiçbir şey yoktu. Yani klip kesiliyor, veritabanına yazılıyor ve
+   * arayüze hiç ulaşmıyordu.
+   *
+   * ⚠ Canlı alarmlarda BOŞ ve bu normaldir: klibi alarm worker'ı
+   * veritabanına yazarken kesiyor, canlı WebSocket mesajı ondan önce
+   * gidiyor. Klip ancak geçmiş yüklendiğinde görünür — yani "canlı
+   * alarmda klip yok" bir arıza değil, sıralamanın sonucu. */
+  klip?: string | null
 }
 
 /** `/api/v1/events` yanıtındaki tek kayıt.

@@ -1,0 +1,46 @@
+{
+ "olculdu": "2026-09-07T09:03:52.073590+00:00",
+ "deney": "RWF-2000 ölü bölge kalibrasyonu",
+ "kaynak": "RWF-2000 train/nonfight (val'a DOKUNULMADI)",
+ "klip": 120,
+ "ornekleme_fps": 4.0,
+ "yontem": "taban = normal p90 · doyum = normal p99 × 1.5",
+ "dagilim": {
+  "bilek_hizi_azami": {
+   "n": 4136,
+   "p50": 0.807,
+   "p90": 3.011,
+   "p99": 11.363,
+   "eski_taban": 1.8,
+   "yeni_taban": 3.011,
+   "yeni_doyum": 17.045
+  },
+  "bilek_sarsintisi": {
+   "n": 3780,
+   "p50": 0.532,
+   "p90": 2.273,
+   "p99": 5.561,
+   "eski_taban": 1.4,
+   "yeni_taban": 2.273,
+   "yeni_doyum": 8.342
+  },
+  "hareket_enerjisi": {
+   "n": 4687,
+   "p50": 0.43,
+   "p90": 1.786,
+   "p99": 9.132,
+   "eski_taban": 0.85,
+   "yeni_taban": 1.786,
+   "yeni_doyum": 13.698
+  }
+ },
+ "yeni_esikler": {
+  "taban_bilek_hiz": 3.011,
+  "doyum_bilek_hiz": 17.045,
+  "taban_bilek_sarsinti": 2.273,
+  "doyum_bilek_sarsinti": 8.342,
+  "taban_enerji": 1.786,
+  "doyum_enerji": 13.698
+ },
+ "gerekce": "Eşikler kamera çiftliğinde ölçülmüştü ve RWF-2000'e taşınmıyor. Mimari kural 7 ('her kameranın normali ayrı öğrenilir') saldırganlık modülünde uygulanmamıştı."
+}

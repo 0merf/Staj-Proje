@@ -155,7 +155,7 @@ class EmotiEffExpressionClassifier:
         return out
 
     def close(self) -> None:
-        self._recognizer = None  # type: ignore[assignment]
+        self._recognizer = None
 
 
 def to_turkish(label: str) -> str:

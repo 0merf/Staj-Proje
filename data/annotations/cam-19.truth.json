@@ -1,0 +1,262 @@
+{
+  "camera": "cam-19",
+  "source": "CUHK Avenue Dataset (testing split)",
+  "citation": "Lu, Shi, Jia — Abnormal Event Detection at 150 FPS, ICCV 2013",
+  "anomali_turleri": [
+    "kosma",
+    "nesne firlatma",
+    "oyalanma",
+    "ters yon",
+    "ziplama"
+  ],
+  "not": "DUSME ICERMIYOR — dusme kurali icin UR Fall / Le2i gerekli",
+  "total_duration_s": 345.04,
+  "clips": [
+    "01.avi",
+    "02.avi",
+    "03.avi",
+    "04.avi",
+    "05.avi",
+    "06.avi",
+    "07.avi",
+    "08.avi",
+    "09.avi"
+  ],
+  "anomali_segment_sayisi": 39,
+  "segments": [
+    {
+      "start_s": 3.08,
+      "end_s": 3.32,
+      "label": "anomaly",
+      "clip": "01.avi"
+    },
+    {
+      "start_s": 3.76,
+      "end_s": 3.96,
+      "label": "anomaly",
+      "clip": "01.avi"
+    },
+    {
+      "start_s": 4.32,
+      "end_s": 4.4,
+      "label": "anomaly",
+      "clip": "01.avi"
+    },
+    {
+      "start_s": 4.6,
+      "end_s": 4.8,
+      "label": "anomaly",
+      "clip": "01.avi"
+    },
+    {
+      "start_s": 15.64,
+      "end_s": 15.96,
+      "label": "anomaly",
+      "clip": "01.avi"
+    },
+    {
+      "start_s": 16.28,
+      "end_s": 16.36,
+      "label": "anomaly",
+      "clip": "01.avi"
+    },
+    {
+      "start_s": 16.6,
+      "end_s": 16.88,
+      "label": "anomaly",
+      "clip": "01.avi"
+    },
+    {
+      "start_s": 20.08,
+      "end_s": 26.64,
+      "label": "anomaly",
+      "clip": "01.avi"
+    },
+    {
+      "start_s": 34.68,
+      "end_s": 35.0,
+      "label": "anomaly",
+      "clip": "01.avi"
+    },
+    {
+      "start_s": 35.08,
+      "end_s": 35.88,
+      "label": "anomaly",
+      "clip": "01.avi"
+    },
+    {
+      "start_s": 35.96,
+      "end_s": 36.4,
+      "label": "anomaly",
+      "clip": "01.avi"
+    },
+    {
+      "start_s": 37.24,
+      "end_s": 44.04,
+      "label": "anomaly",
+      "clip": "01.avi"
+    },
+    {
+      "start_s": 68.44,
+      "end_s": 70.36,
+      "label": "anomaly",
+      "clip": "02.avi"
+    },
+    {
+      "start_s": 86.48,
+      "end_s": 88.12,
+      "label": "anomaly",
+      "clip": "02.avi"
+    },
+    {
+      "start_s": 117.76,
+      "end_s": 119.6,
+      "label": "anomaly",
+      "clip": "03.avi"
+    },
+    {
+      "start_s": 129.24,
+      "end_s": 130.88,
+      "label": "anomaly",
+      "clip": "03.avi"
+    },
+    {
+      "start_s": 158.08,
+      "end_s": 160.04,
+      "label": "anomaly",
+      "clip": "04.avi"
+    },
+    {
+      "start_s": 168.84,
+      "end_s": 170.6,
+      "label": "anomaly",
+      "clip": "04.avi"
+    },
+    {
+      "start_s": 199.52,
+      "end_s": 212.24,
+      "label": "anomaly",
+      "clip": "05.avi"
+    },
+    {
+      "start_s": 234.84,
+      "end_s": 246.08,
+      "label": "anomaly",
+      "clip": "06.avi"
+    },
+    {
+      "start_s": 253.64,
+      "end_s": 254.08,
+      "label": "anomaly",
+      "clip": "06.avi"
+    },
+    {
+      "start_s": 255.28,
+      "end_s": 257.28,
+      "label": "anomaly",
+      "clip": "06.avi"
+    },
+    {
+      "start_s": 257.88,
+      "end_s": 261.36,
+      "label": "anomaly",
+      "clip": "06.avi"
+    },
+    {
+      "start_s": 284.36,
+      "end_s": 284.68,
+      "label": "anomaly",
+      "clip": "07.avi"
+    },
+    {
+      "start_s": 289.28,
+      "end_s": 292.16,
+      "label": "anomaly",
+      "clip": "07.avi"
+    },
+    {
+      "start_s": 294.88,
+      "end_s": 296.6,
+      "label": "anomaly",
+      "clip": "07.avi"
+    },
+    {
+      "start_s": 296.6,
+      "end_s": 298.04,
+      "label": "anomaly",
+      "clip": "08.avi"
+    },
+    {
+      "start_s": 303.44,
+      "end_s": 305.36,
+      "label": "anomaly",
+      "clip": "09.avi"
+    },
+    {
+      "start_s": 317.84,
+      "end_s": 319.92,
+      "label": "anomaly",
+      "clip": "09.avi"
+    },
+    {
+      "start_s": 320.04,
+      "end_s": 320.56,
+      "label": "anomaly",
+      "clip": "09.avi"
+    },
+    {
+      "start_s": 320.6,
+      "end_s": 320.68,
+      "label": "anomaly",
+      "clip": "09.avi"
+    },
+    {
+      "start_s": 327.64,
+      "end_s": 328.24,
+      "label": "anomaly",
+      "clip": "09.avi"
+    },
+    {
+      "start_s": 333.0,
+      "end_s": 334.36,
+      "label": "anomaly",
+      "clip": "09.avi"
+    },
+    {
+      "start_s": 334.96,
+      "end_s": 335.52,
+      "label": "anomaly",
+      "clip": "09.avi"
+    },
+    {
+      "start_s": 335.84,
+      "end_s": 336.24,
+      "label": "anomaly",
+      "clip": "09.avi"
+    },
+    {
+      "start_s": 336.76,
+      "end_s": 337.28,
+      "label": "anomaly",
+      "clip": "09.avi"
+    },
+    {
+      "start_s": 338.52,
+      "end_s": 339.8,
+      "label": "anomaly",
+      "clip": "09.avi"
+    },
+    {
+      "start_s": 342.16,
+      "end_s": 343.36,
+      "label": "anomaly",
+      "clip": "09.avi"
+    },
+    {
+      "start_s": 343.52,
+      "end_s": 344.56,
+      "label": "anomaly",
+      "clip": "09.avi"
+    }
+  ]
+}

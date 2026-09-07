@@ -3,6 +3,8 @@ import { Giris } from './components/Giris'
 import { Header } from './components/Header'
 import { CameraTile } from './components/CameraTile'
 import { AlertPanel } from './components/AlertPanel'
+import { ZamanCizelgesi } from './components/ZamanCizelgesi'
+import { KameraDetay } from './components/KameraDetay'
 import { useLiveResults } from './hooks/useLiveResults'
 import { useStore } from './store'
 import type { Camera } from './types'
@@ -48,6 +50,7 @@ function Panel({ kullanici }: { kullanici: { kullanici_adi: string; rol: string 
   useLiveResults()
   const cameras = useStore((s) => s.cameras)
   const setCameras = useStore((s) => s.setCameras)
+  const sayfa = useStore((s) => s.sayfa)
   const [webrtcBase, setWebrtcBase] = useState('http://127.0.0.1:8889')
 
   useEffect(() => {
@@ -71,18 +74,26 @@ function Panel({ kullanici }: { kullanici: { kullanici_adi: string; rol: string 
   return (
     <div className="flex h-screen flex-col">
       <Header kullanici={kullanici} />
-      {/* ⚠ Alarm paneli SABİT, kamera ızgarası kayar.
+      {/* ⚠ Alarm paneli SABİT, içerik kayar.
           Alarm kaçırılmaması gereken tek şey; onu kaydırma alanının
-          içine koysaydık operatör aşağı indiğinde görünmez olurdu. */}
+          içine koysaydık operatör aşağı indiğinde görünmez olurdu.
+
+          ⚠ Alarm paneli HER SAYFADA duruyor — zaman çizelgesine
+          bakarken canlı bir alarm gelirse operatör onu kaçırmamalı.
+          Gözetim sisteminde "başka sayfadaydım" bir mazeret değil. */}
       <div className="flex min-h-0 flex-1">
-        <main className="grid flex-1 auto-rows-min gap-3 overflow-y-auto p-4 sm:grid-cols-2 lg:grid-cols-3">
-          {cameras.map((camera) => (
-            <CameraTile key={camera.name} camera={camera} webrtcBase={webrtcBase} />
-          ))}
-          {cameras.length === 0 && (
-            <p className="text-sm text-muted">Kamera listesi bekleniyor…</p>
-          )}
-        </main>
+        {sayfa === 'izgara' && (
+          <main className="grid flex-1 auto-rows-min gap-3 overflow-y-auto p-4 sm:grid-cols-2 lg:grid-cols-3">
+            {cameras.map((camera) => (
+              <CameraTile key={camera.name} camera={camera} webrtcBase={webrtcBase} />
+            ))}
+            {cameras.length === 0 && (
+              <p className="text-sm text-muted">Kamera listesi bekleniyor…</p>
+            )}
+          </main>
+        )}
+        {sayfa === 'zaman-cizelgesi' && <ZamanCizelgesi />}
+        {sayfa === 'kamera' && <KameraDetay webrtcBase={webrtcBase} />}
         <AlertPanel />
       </div>
     </div>
