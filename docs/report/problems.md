@@ -33,6 +33,232 @@ ama **belirti / sebep / çözüm** üçlüsü mutlaka olsun.
 
 <!-- Yeni kayıtlar buraya, en yenisi en üstte -->
 
+### P-53 · Kademeli koşullu füzyon ölçüldü — fikir doğru, KAPI yok
+
+**Tarih:** 08.09.2026 · **Faz:** 3 · **Kaybedilen süre:** ~1 saat
+
+**Fikir kullanıcının:**
+
+> *"Katmanlı bir eleme süreci olacak: önce kural tabanlılar bakacak,
+> kutulara bakacak aradaki mesafe ne, temas gerçekleşti mi — o zaman
+> LightGBM'e hızlıdan veririz... yanlış alarmları da engellemiş oluruz."*
+
+**Belirti:** İlk kaskad denemesi (`evaluate_kaskad.py`) tam saldırganlık
+skoruyla kapılamıştı ve batmıştı: F1 0.829 → 0.411, kavgaların **%73'ü**
+elendi. O zaman "kaskad işe yaramıyor" diye kapatılmıştı.
+
+**Araştırma:** O sonuç doğruydu ama çıkarım eksikti. P-52 kapının neden
+bu kadar çok kavga elediğini gösterdi: tam skorun ağırlığının %60'ı
+**ölü bileşenlerden** geliyor. Onunla kapılamak, kapıyı gürültüyle
+kapatmaktı. Kaskad fikri yanlış değil, **seçilen kapı** yanlıştı.
+
+Dört kapı yan yana ölçüldü (`evaluate_kaskad_kapi.py`). Eşik `train`de
+arandı, sonuç `val`de raporlandı:
+
+```
+kapı           eşik   geçen%  kavga kaybı      F1  kesinlik  duyarlılık
+tam_skor       0.00    100%          0%   0.874     0.900       0.849
+yakinlik       0.00    100%          0%   0.874     0.900       0.849
+etkilesim      0.00    100%          0%   0.874     0.900       0.849
+durus          0.00    100%          0%   0.874     0.900       0.849
+model (kapısız)   —    100%          0%   0.874     0.900       0.849
+```
+
+⭐ Arama **her kapı için eşiği 0.00 seçti** — yani "hiç kapılama"
+en iyisi. Takas eğrisi neden olduğunu gösteriyor:
+
+```
+yakinlik kapısı        geçen%  kavga kaybı     F1   kesinlik  duyarlılık
+  eşik 0.00              100%          0%   0.874    0.900      0.849
+  eşik 0.20               76%          6%   0.863    0.898      0.830
+  eşik 0.30               71%          8%   0.860    0.915      0.811
+  eşik 0.40               42%         47%   0.600    0.889      0.453
+  eşik 0.50                0%        100%   0.000    0.000      0.000
+```
+
+Kesinlik en fazla 0.900 → 0.915 çıkıyor (+0.015); duyarlılık aynı
+noktada 0.849 → 0.811 düşüyor. Kapı sıkıldıkça F1 **tekdüze azalıyor**;
+kazandığı bir çalışma noktası yok.
+
+**Kök sebep — iki bağımsız gerekçe, ikisi de yok:**
+
+| Gerekçe | Durum |
+|---|---|
+| **Hız** | ❌ Geçersiz. LightGBM çıkarımı kare başına **0.0004 ms**; boru hattının 11.10 ms'sinin **%0.004'ü**. Modeli kapılamak yanlış aşamayı kapılamak — pahalı olan tespit + poz ve ikisi de kapının ÖNÜNDE koşuyor. |
+| **Doğruluk** | ❌ Ölçüldü. Hiçbir kapı, hiçbir eşikte F1'i artırmıyor. |
+
+⭐⭐ **Ve kapının başarısızlık biçimi öğretici.** Yakınlık, kavganın
+*fiziksel olarak gerekli* bir ön koşulu: iki kişi temas etmeden
+kavga edemez. Buna rağmen kapı olarak çalışmıyor — çünkü ön koşulun
+kendisi değil, **onun ÖLÇÜMÜ** güvenilmez. Yakınlık eşiği 0.50'de
+kavgaların %100'ü eleniyor.
+
+> ⭐ Fiziksel olarak zorunlu bir ön koşul bile, ölçümü gürültülüyse
+> güvenli bir kapı değildir. Kaskadın kazancı ön koşulun
+> doğruluğundan değil, **ölçümünün güvenilirliğinden** gelir.
+
+**Karar:** Kaskad üretime **ALINMADI**. Ama fikir çöpe atılmadı:
+mimaride kapının doğru yeri zaten var ve dolu — **KADEME 0 hareket
+filtresi**, karelerin %70'ini pahalı aşamalardan önce eliyor. Yani
+kaskad bu sistemde zaten uygulanıyor; yalnızca *pahalı* aşamanın
+önünde, ucuz olanın değil.
+
+**Öğrenilen ders:** Bir kaskadın iki gerekçesi (hız ve doğruluk)
+birbirinden bağımsızdır ve **ayrı ayrı ölçülmelidir.** Hız gerekçesi
+ancak kapı, maliyetin bulunduğu aşamanın önündeyse geçerlidir; kapının
+ucuz bir aşamayı korumasının hiçbir anlamı yok. Doğruluk gerekçesi ise
+kapının duyarlılığına bağlı ve o duyarlılık **ölçülmeden** varsayılamaz.
+
+---
+
+### P-52 · ⭐⭐ Kural yolu neden çöktü — elle yazılan ağırlıklar bir HALK TEORİSİ kodluyordu
+
+**Tarih:** 08.09.2026 · **Faz:** 3 · **Kaybedilen süre:** ~2 saat
+
+**Belirti:** Kural tabanlı tırmanma skoru iki farklı gerçek gözetim
+videosunda da kavgayı normalden ayırt etmedi:
+
+```
+cam-15  (sabit CCTV, 3.0 kişi/kare) : oran 1.01
+cam-15h (elde telefon, 6.5 kişi)    : oran 1.00
+```
+
+Ve skor her dönemde neredeyse aynı: normal 0.058 · kavga 0.068.
+
+**Araştırma:** "Ayırt etmiyor" iki farklı arıza olabilir ve çözümleri
+zıt: *görüyor ama ayıramıyor* (eşik/ağırlık sorunu) ya da *hiç tepki
+vermiyor* (bileşenler ölü). `diagnose_kural.py` skoru beş bileşenine
+ayırdı:
+
+```
+bileşen    ağırlık   normal   kavga   oran   ateşleme(kavga)
+yakinlik     0.30    0.3956  0.3956   1.00        99%   ⬅ DOYMUŞ, SABİT
+bilek        0.25    0.0000  0.0000    —          20%   ⬅ ÖLÜ
+yaklasma     0.20    0.0000  0.0000    —          12%   ⬅ ÖLÜ
+enerji       0.15    0.0000  0.0000    —          13%   ⬅ ÖLÜ
+durus        0.10    0.0564  0.0900   1.60        91%   ⬅ TEK AYIRT EDEN
+```
+
+⭐ **Skorun %90'ı bilgi taşımıyor:** 0.60 ağırlık ölü, 0.30 ağırlık
+sabit. Ayırt eden tek bileşen **en düşük ağırlığa** sahip.
+
+Aynı desen RWF-2000'de de var (kavga klipleri):
+
+```
+yakinlik 92% · durus 84% · bilek 17% · enerji 10% · yaklasma 6%
+```
+
+Yani bu cam-15'e özgü bir arıza değil, **modülün genel davranışı**.
+
+**Kök sebep 1 — ölü bölge tabanı ulaşılamayacak kadar yüksek:**
+
+```
+büyüklük              taban   normal   kavga   kavga/taban
+bilek_hizi_p75        1.529    0.312   0.721      0.47
+bilek_sarsintisi_p75  1.259    0.232   0.481      0.38
+hareket_enerjisi      1.209    0.215   0.480      0.40
+```
+
+Kavga anındaki değer bile tabanın **yarısına varmıyor**; `_bant()`
+hepsini sıfıra yuvarlıyor. Ama dikkat: **ham girdiler ayırt EDİYOR**
+(kavga/normal 2.0–2.25×). Sinyal orada, ölü bölge yok ediyor.
+
+⚠ Bu, P-48'in tam olarak tersi yönde bir düzeltme gerektiriyor.
+P-48'de *"ölü bölge kural yolunda doğru, model yolunda bilgi imhası"*
+denmişti. Yarısı yanlışmış: **ölü bölge, kalibrasyon dağılımı ile
+uygulama dağılımı ayrıştığında kural yolunda da bilgi imha ediyor.**
+
+**Kök sebep 2 — ve asıl olan: ağırlıklar yanlış şeye bahis yapmış.**
+
+Kural, ağırlığının **0.40'ını uzuv hızına** (bilek 0.25 + enerji 0.15),
+yalnızca **0.10'unu duruşa** veriyor. Bu bir halk teorisi: *"kavga =
+hızlı yumruk."*
+
+Gerçek gözetim görüntüsündeki şiddet çoğunlukla **boğuşma, tutma,
+itme** — kollar yavaş, duruş bozuk. Ölçüm bunu doğruluyor: cam-15'te
+sahnedeki azami bilek hızı kavgada **0.856**, ama kameranın kendi
+p90'ı **1.438**. Yani **olay sonrası kalabalıkta bilekler kavgadakinden
+daha hızlı** — el kol hareketi yapan kalabalık, yerde boğuşan iki
+kişiden daha "hareketli" ölçülüyor.
+
+⭐⭐ **LightGBM aynı şeyi bağımsız olarak söyledi.** Öğrenilen modelin
+en etkili 10 özelliğinin **10'u da gövde/duruş**:
+
+```
+ham_govde_hizi_medyan            48
+ham_durus_genisligi_p75          45
+ham_govde_egimi_degisimi_medyan  26
+ham_durus_genisligi_azami        22
+ham_en_boy_orani_p75             22
+ham_en_boy_orani_azami           21
+ham_govde_hizi_p75               21
+...
+sahne_bilek_hizi_p75_medyan      20   ⬅ bilek ancak 11. sırada
+```
+
+**Kural 0.40'ı uzuv hızına, 0.10'u duruşa verdi. Model tam tersini
+öğrendi.**
+
+**Sınama — hipotez ölçüldü, varsayılmadı.** `optimize_kural.py`
+ağırlıkları ızgarayla aradı; arama `train`de, rapor `val`de (aşırı
+uyum koruması — K5'te bilinen yanlılığın tekrarlanmaması için):
+
+```
+ayar                       AUC      F1
+mevcut (elle)            0.700   0.817
+aranan (ölçülmüş)        0.752   0.768
+                        +0.052  -0.049
+
+bulunan ağırlıklar: durus 1.00 · diğerlerinin hepsi 0.00
+```
+
+⭐ Arama **dejenere bir optimuma** gitti: tüm ağırlık tek bileşende.
+AUC (sıralama gücü) +0.052 arttı, F1 −0.049 düştü. Böyle bir optimum
+tek bir şey söyler: **diğer bileşenler gerçekten bilgi taşımıyor.**
+Yani sorun ağırlık dağılımı değil, bileşenlerin ölü olması.
+
+**Çözüm — kısmi ve dürüstçe kısmi:**
+
+1. **Kamera başına uyarlanabilir ölü bölge tabanı** (`aggression.py`).
+   Taban artık çiftlik sabiti değil, kameranın **kendi** dağılımının
+   p90'ı; çiftlik p50 ile çiftlik p90×1.5 arasına sıkıştırılmış.
+   Bu, mimari kural 7'nin ("her kameranın normali ayrı öğrenilir")
+   bu modülde uygulanması — kodun kendi yorumu eksikliği zaten
+   itiraf ediyordu.
+
+   ⚠ **Ve TEK BAŞINA YETMEDİ.** Ölçülen etkin taban 1.529 → **1.438**;
+   kavga değeri 0.721 hâlâ tabanın yarısında. cam-15 ayrımı
+   1.01 → 1.01. RWF'de regresyon yok (AUC 0.633 → 0.633, F1 0.712 →
+   0.712) ama kazanç da yok.
+
+   **Neden yetmedi:** kameranın p90'ı tüm kişilerin tüm karelerden
+   gelen değerlerini içeriyor — olay sonrası kalabalık dâhil. O
+   kalabalık kavgadan daha hareketli olduğu için p90'ı yukarı çekiyor.
+   Doğru taban "bu kameranın NORMALİNİN p90'ı" olmalı, "bu kamerada
+   görülen her şeyin p90'ı" değil — ve normali ayırmak için zaten bir
+   dedektöre ihtiyaç var. Döngüsel.
+
+2. **Ağırlıklar DEĞİŞTİRİLMEDİ.** Arama dejenere bir çözüm buldu ve
+   F1'i düşürdü; "AUC arttı" diye almak, ölçütü sonuca göre seçmek
+   olurdu.
+
+**Durum:** Kural yolu hâlâ gerçek gözetim görüntüsünde ayırt etmiyor
+(1.01). Bu **raporlanacak bir sonuç**, gizlenecek bir kusur değil:
+
+> ⭐⭐ Aynı özelliklerle beslenen LightGBM aynı videoda **2.17** ayrım
+> verirken, elle ağırlıklı kural kümesi **1.01** veriyor. Bu, öğrenilen
+> model ⟷ elle kurallı sistem karşılaştırmasının en güçlü kanıtı —
+> ve kuralın nerede yanıldığını da model söylüyor.
+
+**Öğrenilen ders:** Elle yazılan bir kural kümesi, yazarının olay
+hakkındaki **sezgisini** kodlar; sezgi yanlışsa kurallar tutarlı
+biçimde yanlış olur ve hiçbir eşik ayarı bunu düzeltmez. Öğrenilen
+modelin özellik önemi burada bir başarı ölçütü değil, bir **teşhis
+aracı**: hangi sezginin yanlış olduğunu söylüyor.
+
+
+---
+
 ### P-51 · ⭐⭐ Test videosu sistemin varsayımının DIŞINDAYDI — ve `with_reid` etkisiz bir bayrakmış
 
 **Tarih:** 07.09.2026 · **Faz:** 3 · **Kaybedilen süre:** ~3 saat

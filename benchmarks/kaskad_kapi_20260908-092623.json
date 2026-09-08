@@ -1,0 +1,166 @@
+{
+  "olculdu": "2026-09-08T09:26:23.368572+00:00",
+  "yontem": "kapı eşiği train'de arandı, rapor val'de",
+  "model_tek_basina": {
+    "esik": 0.56,
+    "f1": 0.8738,
+    "kesinlik": 0.9,
+    "duyarlilik": 0.8491
+  },
+  "kapilar": {
+    "tam_skor": {
+      "esik": 0.0,
+      "gecen_oran": 1.0,
+      "kavga_kaybi": 0.0,
+      "f1": 0.8738,
+      "kesinlik": 0.9,
+      "duyarlilik": 0.8491
+    },
+    "yakinlik": {
+      "esik": 0.0,
+      "gecen_oran": 1.0,
+      "kavga_kaybi": 0.0,
+      "f1": 0.8738,
+      "kesinlik": 0.9,
+      "duyarlilik": 0.8491
+    },
+    "etkilesim": {
+      "esik": 0.0,
+      "gecen_oran": 1.0,
+      "kavga_kaybi": 0.0,
+      "f1": 0.8738,
+      "kesinlik": 0.9,
+      "duyarlilik": 0.8491
+    },
+    "durus": {
+      "esik": 0.0,
+      "gecen_oran": 1.0,
+      "kavga_kaybi": 0.0,
+      "f1": 0.8738,
+      "kesinlik": 0.9,
+      "duyarlilik": 0.8491
+    }
+  },
+  "takas_egrisi": {
+    "yakinlik": [
+      {
+        "esik": 0.0,
+        "gecen": 1.0,
+        "kavga_kaybi": 0.0,
+        "f1": 0.8738,
+        "kesinlik": 0.9,
+        "duyarlilik": 0.8491
+      },
+      {
+        "esik": 0.1,
+        "gecen": 0.8333,
+        "kavga_kaybi": 0.0189,
+        "f1": 0.8738,
+        "kesinlik": 0.9,
+        "duyarlilik": 0.8491
+      },
+      {
+        "esik": 0.2,
+        "gecen": 0.7604,
+        "kavga_kaybi": 0.0566,
+        "f1": 0.8627,
+        "kesinlik": 0.898,
+        "duyarlilik": 0.8302
+      },
+      {
+        "esik": 0.3,
+        "gecen": 0.7083,
+        "kavga_kaybi": 0.0755,
+        "f1": 0.86,
+        "kesinlik": 0.9149,
+        "duyarlilik": 0.8113
+      },
+      {
+        "esik": 0.4,
+        "gecen": 0.4167,
+        "kavga_kaybi": 0.4717,
+        "f1": 0.6,
+        "kesinlik": 0.8889,
+        "duyarlilik": 0.4528
+      },
+      {
+        "esik": 0.5,
+        "gecen": 0.0,
+        "kavga_kaybi": 1.0,
+        "f1": 0.0,
+        "kesinlik": 0.0,
+        "duyarlilik": 0.0
+      },
+      {
+        "esik": 0.6,
+        "gecen": 0.0,
+        "kavga_kaybi": 1.0,
+        "f1": 0.0,
+        "kesinlik": 0.0,
+        "duyarlilik": 0.0
+      }
+    ],
+    "etkilesim": [
+      {
+        "esik": 0.0,
+        "gecen": 1.0,
+        "kavga_kaybi": 0.0,
+        "f1": 0.8738,
+        "kesinlik": 0.9,
+        "duyarlilik": 0.8491
+      },
+      {
+        "esik": 0.1,
+        "gecen": 0.8333,
+        "kavga_kaybi": 0.0189,
+        "f1": 0.8738,
+        "kesinlik": 0.9,
+        "duyarlilik": 0.8491
+      },
+      {
+        "esik": 0.2,
+        "gecen": 0.7604,
+        "kavga_kaybi": 0.0566,
+        "f1": 0.8627,
+        "kesinlik": 0.898,
+        "duyarlilik": 0.8302
+      },
+      {
+        "esik": 0.3,
+        "gecen": 0.7188,
+        "kavga_kaybi": 0.0755,
+        "f1": 0.8515,
+        "kesinlik": 0.8958,
+        "duyarlilik": 0.8113
+      },
+      {
+        "esik": 0.4,
+        "gecen": 0.4792,
+        "kavga_kaybi": 0.434,
+        "f1": 0.6265,
+        "kesinlik": 0.8667,
+        "duyarlilik": 0.4906
+      },
+      {
+        "esik": 0.5,
+        "gecen": 0.1146,
+        "kavga_kaybi": 0.9245,
+        "f1": 0.1356,
+        "kesinlik": 0.6667,
+        "duyarlilik": 0.0755
+      },
+      {
+        "esik": 0.6,
+        "gecen": 0.0938,
+        "kavga_kaybi": 0.9434,
+        "f1": 0.1034,
+        "kesinlik": 0.6,
+        "duyarlilik": 0.0566
+      }
+    ]
+  },
+  "en_iyi_kapi": "tam_skor",
+  "f1_kazanci": 0.0,
+  "hiz_gerekcesi_gecerli": false,
+  "hiz_notu": "LightGBM 0.0004 ms / 11.10 ms kare = %0.004"
+}

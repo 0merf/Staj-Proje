@@ -1,0 +1,45 @@
+{
+  "olculdu": "2026-09-08T08:59:24.782484+00:00",
+  "yontem": "ızgara araması train'de, rapor val'de (aşırı uyum koruması)",
+  "adim": 0.1,
+  "denenen": 1001,
+  "train_klip": 482,
+  "val_klip": 96,
+  "mevcut": {
+    "agirlik": {
+      "yakinlik": 0.3,
+      "bilek": 0.25,
+      "yaklasma": 0.2,
+      "enerji": 0.15,
+      "durus": 0.1
+    },
+    "train": {
+      "auc": 0.5964458247066943,
+      "f1": 0.7010309278350515
+    },
+    "val": {
+      "auc": 0.6998683633172444,
+      "f1": 0.8166666666666667,
+      "esik": 0.04
+    }
+  },
+  "aranan": {
+    "agirlik": {
+      "yakinlik": 0.0,
+      "bilek": 0.0,
+      "yaklasma": 0.0,
+      "enerji": 0.0,
+      "durus": 1.0
+    },
+    "train": {
+      "auc": 0.7137594893029675,
+      "f1": 0.7107142857142856
+    },
+    "val": {
+      "auc": 0.7520842474769636,
+      "f1": 0.7678571428571428,
+      "esik": 0.055
+    }
+  },
+  "val_auc_farki": 0.0522
+}

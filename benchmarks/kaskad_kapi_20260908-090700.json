@@ -1,0 +1,48 @@
+{
+  "olculdu": "2026-09-08T09:07:00.582170+00:00",
+  "yontem": "kapı eşiği train'de arandı, rapor val'de",
+  "model_tek_basina": {
+    "esik": 0.56,
+    "f1": 0.8738,
+    "kesinlik": 0.9,
+    "duyarlilik": 0.8491
+  },
+  "kapilar": {
+    "tam_skor": {
+      "esik": 0.0,
+      "gecen_oran": 1.0,
+      "kavga_kaybi": 0.0,
+      "f1": 0.8738,
+      "kesinlik": 0.9,
+      "duyarlilik": 0.8491
+    },
+    "yakinlik": {
+      "esik": 0.0,
+      "gecen_oran": 1.0,
+      "kavga_kaybi": 0.0,
+      "f1": 0.8738,
+      "kesinlik": 0.9,
+      "duyarlilik": 0.8491
+    },
+    "etkilesim": {
+      "esik": 0.0,
+      "gecen_oran": 1.0,
+      "kavga_kaybi": 0.0,
+      "f1": 0.8738,
+      "kesinlik": 0.9,
+      "duyarlilik": 0.8491
+    },
+    "durus": {
+      "esik": 0.0,
+      "gecen_oran": 1.0,
+      "kavga_kaybi": 0.0,
+      "f1": 0.8738,
+      "kesinlik": 0.9,
+      "duyarlilik": 0.8491
+    }
+  },
+  "en_iyi_kapi": "tam_skor",
+  "f1_kazanci": 0.0,
+  "hiz_gerekcesi_gecerli": false,
+  "hiz_notu": "LightGBM 0.0004 ms / 11.10 ms kare = %0.004"
+}

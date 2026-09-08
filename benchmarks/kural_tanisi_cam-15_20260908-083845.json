@@ -1,0 +1,71 @@
+{
+  "olculdu": "2026-09-08T08:38:45.418220+00:00",
+  "kamera": "cam-15",
+  "fps": 2.75,
+  "kare": 330,
+  "skor": {
+    "normal_p50": 0.05812273969677835,
+    "kavga_p50": 0.06780451603766943
+  },
+  "bilesenler": {
+    "yakinlik": {
+      "agirlik": 0.3,
+      "normal_p50": 0.3955973596700386,
+      "kavga_p50": 0.3955510237778746,
+      "atesleme_normal": 0.9048,
+      "atesleme_kavga": 0.9884
+    },
+    "bilek": {
+      "agirlik": 0.25,
+      "normal_p50": 0.0,
+      "kavga_p50": 0.0,
+      "atesleme_normal": 0.1667,
+      "atesleme_kavga": 0.186
+    },
+    "yaklasma": {
+      "agirlik": 0.2,
+      "normal_p50": 0.0,
+      "kavga_p50": 0.0,
+      "atesleme_normal": 0.0,
+      "atesleme_kavga": 0.1163
+    },
+    "enerji": {
+      "agirlik": 0.15,
+      "normal_p50": 0.0,
+      "kavga_p50": 0.0,
+      "atesleme_normal": 0.0,
+      "atesleme_kavga": 0.0698
+    },
+    "durus": {
+      "agirlik": 0.1,
+      "normal_p50": 0.056414228036909264,
+      "kavga_p50": 0.09125780822247465,
+      "atesleme_normal": 0.9762,
+      "atesleme_kavga": 0.9186
+    },
+    "ham_bilek_hizi_p75": {
+      "taban": 1.529,
+      "normal_p50": 0.3117673474251398,
+      "kavga_p50": 0.701744228612643,
+      "kavga_taban_orani": 0.459
+    },
+    "ham_bilek_sarsintisi_p75": {
+      "taban": 1.259,
+      "normal_p50": 0.23161565227646924,
+      "kavga_p50": 0.4757572881114682,
+      "kavga_taban_orani": 0.378
+    },
+    "ham_hareket_enerjisi": {
+      "taban": 1.209,
+      "normal_p50": 0.21475860531853944,
+      "kavga_p50": 0.47224606398901303,
+      "kavga_taban_orani": 0.391
+    },
+    "ham_en_yakin_mesafe": {
+      "normal_p50": 0.25108882090142637,
+      "kavga_p50": 0.20261491361730277
+    }
+  },
+  "olu_bilesenler": [],
+  "olu_agirlik": 0
+}
