@@ -20,6 +20,14 @@ import { frameAt } from '../lib/sync'
 import { recordTrace } from '../lib/trace'
 import { BONES, KP_CONF_MIN } from '../lib/skeleton'
 import {
+  cizgiDeseni,
+  hareketli,
+  kutuEtiketi,
+  kutuRengi,
+  kutuyuOlcekle,
+  olcek,
+} from '../lib/overlay'
+import {
   connectWhep,
   measureVideoLatencyMs,
   setVideoBuffer,
@@ -199,36 +207,31 @@ export function CameraTile({ camera, webrtcBase }: Props) {
       // Kutuları çizmeyi bırakma eşiği: bayat kutu yanlış yerde durur.
       if (viewMode === 'off' || !frame || frame.ageMs > DURDU_MS) return
 
-      // Kaynak kare pikselinden görüntü alanına ölçekle. Kameralar
-      // farklı çözünürlükte (1280×720, 960×720, 900×720) — sabit bir
-      // varsayım yanlış çizime yol açar.
-      const sx = canvas.width / (frame.w || 1280)
-      const sy = canvas.height / (frame.h || 720)
+      // ⚠ Ölçek matematiği `lib/overlay.ts`e taşındı ve orada test
+      // ediliyor (25 test). Burada kopyasını tutmak, "test edilen kod
+      // ile koşan kod" ayrışması demekti — bu projenin en pahalı hata
+      // türü (P-39, P-56).
+      const o = olcek(canvas.width, canvas.height, frame.w, frame.h)
+      const { sx, sy } = o
 
       ctx.lineWidth = 2
       ctx.font = '600 11px ui-monospace, Consolas, monospace'
 
       for (const det of frame.detections) {
-        const [x1, y1, x2, y2] = det.bbox
-        const x = x1 * sx
-        const y = y1 * sy
-        const w = (x2 - x1) * sx
-        const h = (y2 - y1) * sy
+        const { x, y, w, h } = kutuyuOlcekle(det.bbox, o)
 
         // Kimliksiz kutu = takipçi henüz onaylamadı (P-13). Kesikli
         // çizgiyle gösteriyoruz: tespit var, kimlik bir sonraki karede
         // gelecek. Gizlemek yanlış olurdu — kişi orada.
         const confirmed = det.id !== undefined
-        const moving = det.v ? Math.abs(det.v[0]) + Math.abs(det.v[1]) > 15 : false
-        ctx.setLineDash(confirmed ? [] : [5, 4])
-        ctx.strokeStyle = !confirmed ? '#8b98ad' : moving ? '#3fb950' : '#4d8f5c'
+        const moving = hareketli(det.v)
+        ctx.setLineDash(cizgiDeseni(confirmed))
+        ctx.strokeStyle = kutuRengi(confirmed, moving)
         ctx.fillStyle = ctx.strokeStyle
         ctx.strokeRect(x, y, w, h)
         ctx.setLineDash([])
 
-        const label = confirmed
-          ? `#${det.id} ${(det.conf * 100).toFixed(0)}%`
-          : `${(det.conf * 100).toFixed(0)}%`
+        const label = kutuEtiketi(det.id, det.conf)
         const tw = ctx.measureText(label).width + 8
         ctx.fillRect(x, Math.max(0, y - 15), tw, 15)
         ctx.fillStyle = '#06111f'
@@ -263,12 +266,17 @@ export function CameraTile({ camera, webrtcBase }: Props) {
     }
 
     handle = requestAnimationFrame(draw)
+    // ⚠ REF DEĞERİ TEMİZLİKTEN ÖNCE KOPYALANIYOR (ESLint bulgusu).
+    // `videoRef.current` temizlik çalıştığında BAŞKA bir düğümü
+    // gösteriyor olabilir — React o ana kadar DOM'u değiştirmiş olur.
+    // O durumda `cancelVideoFrameCallback` YANLIŞ videoda çağrılır ve
+    // eski geri çağrı iptal edilmeden kalır: sessiz bir sızıntı.
+    const videoDugumu = videoRef.current as
+      | (HTMLVideoElement & { cancelVideoFrameCallback?: (h: number) => void })
+      | null
     return () => {
       if (usingVideoCallback) {
-        const video = videoRef.current as
-          | (HTMLVideoElement & { cancelVideoFrameCallback?: (h: number) => void })
-          | null
-        video?.cancelVideoFrameCallback?.(handle)
+        videoDugumu?.cancelVideoFrameCallback?.(handle)
       } else {
         cancelAnimationFrame(handle)
       }

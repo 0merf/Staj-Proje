@@ -44,18 +44,65 @@ const CIDDIYET_RENK = ['bg-panel border-line', 'bg-warn/25 border-warn/50', 'bg-
 export function ZamanCizelgesi() {
   const cameras = useStore((s) => s.cameras)
   const kameraAc = useStore((s) => s.kameraAc)
-  const [satirlar, setSatirlar] = useState<OzetSatir[] | null>(null)
   const [saat, setSaat] = useState(24)
-  const [hata, setHata] = useState<string | null>(null)
+  // ⚠⚠ 08.09.2026 — YAPI DEĞİŞTİ, ÜÇ HATA BİRDEN DÜZELDİ (ESLint bulgusu)
+  //
+  // Eski hâli üç ayrı `useState` + efektin BAŞINDA `setSatirlar(null)`
+  // idi. ESLint ilk kurulduğu koşuda bunu işaretledi ve arkasından üç
+  // gerçek kusur çıktı:
+  //
+  // 1. `Date.now()` `useMemo` içinde çağrılıyordu. useMemo yalnızca
+  //    `[satirlar, saat]` değişince yeniden hesaplanıyor — yani SAAT
+  //    KOVALARI son veri çekiminde DONUYORDU. Panel bir saat açık
+  //    kalırsa zaman ekseni geride kalıyor ve kimse fark etmiyor.
+  //    Artık `simdi` veriyle birlikte state'e yazılıyor; useMemo saf.
+  //
+  // 2. İstek yarışı: `saat` hızlı değiştirilirse ESKİ ve yavaş yanıt,
+  //    YENİ yanıtın üstüne yazabiliyordu. `iptal` bayrağı kapattı.
+  //
+  // 3. Efektin başında setState → basamaklı yeniden render. Artık
+  //    "yükleniyor" durumu TÜRETİLİYOR: gelen verinin anahtarı
+  //    istenen `saat`ten farklıysa yükleniyoruz.
+  const [veri, setVeri] = useState<{
+    anahtar: number
+    satirlar: OzetSatir[] | null
+    hata: string | null
+    simdi: number
+  }>({ anahtar: -1, satirlar: null, hata: null, simdi: 0 })
 
   useEffect(() => {
-    setSatirlar(null)
-    setHata(null)
-    fetch(`/api/v1/events/ozet?saat=${saat}`)
+    // ⚠ `AbortController`, mutable bayraktan iyi: isteğin kendisini
+    // iptal eder, yalnızca yanıtı yok saymakla kalmaz.
+    const kontrol = new AbortController()
+    const istekAni = Date.now() / 1000
+    fetch(`/api/v1/events/ozet?saat=${saat}`, { signal: kontrol.signal })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((d: { satirlar: OzetSatir[] }) => setSatirlar(d.satirlar ?? []))
-      .catch(() => setHata('Olay özeti alınamadı — alarm worker çalışıyor mu?'))
+      .then((d: { satirlar: OzetSatir[] }) => {
+        setVeri({
+          anahtar: saat,
+          satirlar: d.satirlar ?? [],
+          hata: null,
+          simdi: istekAni,
+        })
+      })
+      .catch((e: unknown) => {
+        if (e instanceof DOMException && e.name === 'AbortError') return
+        setVeri({
+          anahtar: saat,
+          satirlar: null,
+          hata: 'Olay özeti alınamadı — alarm worker çalışıyor mu?',
+          simdi: istekAni,
+        })
+      })
+    return () => {
+      kontrol.abort()
+    }
   }, [saat])
+
+  // Yükleniyor durumu TÜRETİLİYOR, ayrı bir state değil.
+  const yukleniyor = veri.anahtar !== saat
+  const satirlar = yukleniyor ? null : veri.satirlar
+  const hata = yukleniyor ? null : veri.hata
 
   /** Saat kovaları (en eskiden yeniye) ve kamera → kova → olaylar. */
   const { kovalar, izgara, kameraListesi, toplam } = useMemo(() => {
@@ -70,8 +117,9 @@ export function ZamanCizelgesi() {
     // ⚠ Kovalar VERİDEN değil ZAMANDAN üretiliyor. Yalnızca olay olan
     // saatleri göstermek, "sessiz saatler"i görünmez yapardı — oysa
     // bir gözetim panelinde sessizlik de bilgidir.
-    const simdi = Date.now() / 1000
-    const suAnkiKova = Math.floor(simdi / 3600) * 3600
+    // ⚠ `Date.now()` BURADA ÇAĞRILMIYOR — useMemo saf olmak zorunda.
+    // Zaman, veriyle birlikte state'e yazıldı (bkz. yukarıdaki not).
+    const suAnkiKova = Math.floor(veri.simdi / 3600) * 3600
     const kovalar: number[] = []
     for (let i = saat - 1; i >= 0; i--) kovalar.push(suAnkiKova - i * 3600)
 
@@ -96,7 +144,7 @@ export function ZamanCizelgesi() {
     const bilinen = cameras.map((c) => c.name)
     const ekstra = [...izgara.keys()].filter((k) => !bilinen.includes(k))
     return { kovalar, izgara, kameraListesi: [...bilinen, ...ekstra], toplam }
-  }, [satirlar, saat, cameras])
+  }, [satirlar, saat, cameras, veri.simdi])
 
   return (
     <div className="flex-1 overflow-auto p-4">

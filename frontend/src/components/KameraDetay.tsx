@@ -39,28 +39,56 @@ export function KameraDetay({ webrtcBase }: Props) {
   const playing = useStore((s) => s.playing)
   const toggle = useStore((s) => s.togglePlaying)
 
-  const [olaylar, setOlaylar] = useState<HistoryEvent[] | null>(null)
+  // ⚠ Yapı ZamanCizelgesi ile aynı gerekçeyle değişti (ESLint bulgusu):
+  // efektin başında `setOlaylar(null)` basamaklı render tetikliyordu ve
+  // istek yarışı vardı — kamera hızlı değiştirilirse ESKİ kameranın
+  // yavaş yanıtı YENİ kameranın listesinin üstüne yazabiliyordu.
+  // "Yükleniyor" artık türetiliyor: gelen verinin anahtarı (kamera adı)
+  // istenen kameradan farklıysa yükleniyoruz.
+  const [veri, setVeri] = useState<{
+    anahtar: string | null
+    olaylar: HistoryEvent[] | null
+  }>({ anahtar: null, olaylar: null })
 
   const camera = cameras.find((c) => c.name === secili) ?? cameras[0]
 
   // ⚠ Detay sayfasına gelindiğinde video OTOMATİK açılıyor.
   // Izgarada bu davranış yanlış olurdu (20 akış birden = P-24), ama
   // burada tek kamera var ve kullanıcı zaten onu görmeye geldi.
+  const kameraAdi = camera?.name ?? null
+
   useEffect(() => {
-    if (camera && !playing.has(camera.name)) toggle(camera.name)
+    if (kameraAdi && !playing.has(kameraAdi)) toggle(kameraAdi)
     // ⚠ `playing` bağımlılığa KONULMUYOR: konulsaydı kullanıcı videoyu
     // elle kapattığı anda efekt yeniden çalışıp geri açardı.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [camera?.name])
+  }, [kameraAdi])
 
   useEffect(() => {
-    if (!camera) return
-    setOlaylar(null)
-    fetch(`/api/v1/events?camera=${encodeURIComponent(camera.name)}&limit=40&saat=24`)
+    if (!kameraAdi) return undefined
+    // ⚠ `AbortController`, mutable bir "iptal" bayrağından İYİ:
+    // bayrak yalnızca yanıtı yok sayar, controller isteğin KENDİSİNİ
+    // iptal eder. Kamera hızlı değiştirilirse ağ da boşa çalışmaz.
+    const kontrol = new AbortController()
+    fetch(
+      `/api/v1/events?camera=${encodeURIComponent(kameraAdi)}&limit=40&saat=24`,
+      { signal: kontrol.signal },
+    )
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((d: { olaylar: HistoryEvent[] }) => setOlaylar(d.olaylar ?? []))
-      .catch(() => setOlaylar([]))
-  }, [camera?.name])
+      .then((d: { olaylar: HistoryEvent[] }) => {
+        setVeri({ anahtar: kameraAdi, olaylar: d.olaylar ?? [] })
+      })
+      .catch((e: unknown) => {
+        // İptal bir hata değil — kullanıcı kamerayı değiştirdi.
+        if (e instanceof DOMException && e.name === 'AbortError') return
+        setVeri({ anahtar: kameraAdi, olaylar: [] })
+      })
+    return () => {
+      kontrol.abort()
+    }
+  }, [kameraAdi])
+
+  const olaylar = veri.anahtar === kameraAdi ? veri.olaylar : null
 
   if (!camera) {
     return <p className="p-4 text-sm text-muted">Kamera listesi bekleniyor…</p>
