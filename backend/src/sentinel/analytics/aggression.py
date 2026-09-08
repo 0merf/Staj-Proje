@@ -52,10 +52,7 @@ etmesi, spor yapması aynı örüntüyü verebilir. Sistem karar vermez,
 
 from __future__ import annotations
 
-from collections import deque
 from dataclasses import dataclass, field
-from statistics import median
-from typing import ClassVar
 
 from sentinel.analytics.features.pair import YAKIN_MESAFE, CiftOzellikleri
 from sentinel.analytics.features.person import KisiOzellikleri
@@ -169,71 +166,27 @@ class Esikler:
     taban_enerji: float = 1.209
     taban_yaklasma: float = 1.00
 
-    # ─── ⭐ KAMERA BAŞINA UYARLANABİLİR TABAN (P-52) ───
+    # ⚠⚠ 08.09.2026 — UYARLANABİLİR TABAN KALDIRILDI
     #
-    # ⚠⚠ YUKARIDAKİ SABİT TABANLAR KURAL YOLUNU ÖLDÜRÜYORDU.
+    # P-52'de kamera başına uyarlanabilir bir ölü bölge tabanı
+    # eklenmişti (kameranın kendi p90'ı, çiftlik p50-p90×1.5 arasına
+    # sıkıştırılmış). Gerekçesi mimari kural 7'ydi ve makuldü.
     #
-    # `diagnose_kural.py` cam-15'te (sabit CCTV, gerçek kavga) şunu
-    # ölçtü — bileşenlerin ateşleme oranı ve medyanları:
+    # ⭐ AMA ÖLÇÜLDÜ VE HİÇBİR FAYDASI ÇIKMADI:
+    #     etkin taban  1.529 → 1.438
+    #     cam-15 ayrım  1.01 → 1.01     (değişmedi)
+    #     RWF AUC      0.633 → 0.633    (değişmedi)
     #
-    #     bileşen    ağırlık   normal   kavga   ateşleme(kavga)
-    #     yakinlik     0.30    0.3956  0.3956        99%   ⬅ SABİT
-    #     bilek        0.25    0.0000  0.0000        19%   ⬅ ÖLÜ
-    #     yaklasma     0.20    0.0000  0.0000        12%   ⬅ ÖLÜ
-    #     enerji       0.15    0.0000  0.0000         7%   ⬅ ÖLÜ
-    #     durus        0.10    0.0564  0.0913        92%
+    # Sebebi de anlaşıldı: kameranın p90'ı olay sonrası kalabalığı da
+    # içeriyor. Doğru taban "bu kameranın NORMALİNİN p90'ı" olmalı ama
+    # normali ayırmak için zaten bir dedektöre ihtiyaç var — döngüsel.
     #
-    # 0.60 ağırlık ölü + 0.30 ağırlık sabit = **skorun %90'ı bilgi
-    # taşımıyor.** Ayırt eden tek bileşen 0.10 ağırlıklı `durus`.
+    # Hakem denetimi (§5.1) bunu haklı olarak eleştirdi: *"faydası
+    # ölçülemeyen bir soyutlama, bakım borcudur."* Kaldırıldı.
+    # Aynı gerekçeyle P-51'in "seyirci referansı" da kaldırıldı.
     #
-    # ⭐⭐ VE SEBEP MODEL DEĞİL, EŞİK. Ham girdiler ayırt EDİYOR:
-    #
-    #     büyüklük              taban   normal   kavga   kavga/taban
-    #     bilek_hizi_p75        1.529    0.312   0.702      0.46
-    #     bilek_sarsintisi_p75  1.259    0.232   0.476      0.38
-    #     hareket_enerjisi      1.209    0.215   0.472      0.39
-    #
-    # Kavga/normal oranı 2.0-2.25× — sinyal ORADA. Ama kavga anındaki
-    # değer bile tabanın YARISINA varmıyor, dolayısıyla `_bant()`
-    # hepsini sıfıra yuvarlıyor. Ölü bölge sinyali yok ediyor.
-    #
-    # ⭐ Sebep: bu tabanlar KAMERA ÇİFTLİĞİNİN genelinden kalibre
-    # edildi (18 kamera, p90). cam-15 başka bir dağılım — dar bir
-    # market, insanlar yavaş hareket ediyor. Çiftliğin p90'ı bu
-    # kameranın kavgasından yüksek.
-    #
-    # ⚠ Bu, mimari kural 7'nin ("her kameranın normali AYRI öğrenilir")
-    # bu modülde uygulanmamış olması. Kodun kendi yorumu bunu zaten
-    # itiraf ediyordu: *"HÂLÂ ÇİFTLİK GENELİ TEK TABAN"*. Katman A
-    # kamera başına profil tutuyor, bu modül tutmuyordu.
-    #
-    # ÇÖZÜM: taban, kameranın KENDİ gözlenen dağılımının p90'ı.
-    # Aynı istatistik (p90), ama doğru popülasyondan.
-    #
-    # ⚠ İki uçtan sınırlandırılıyor — sınırsız uyarlama iki yönde de
-    # bozulur:
-    #   alt sınır (çiftlik p50): boş/durgun bir sahnede p90 sıfıra
-    #     yaklaşır ve her kıpırtı "saldırgan" olur
-    #   üst sınır (çiftlik p90 × 1.5): sürekli hareketli bir sahnede
-    #     taban sonsuza tırmanır ve modül sağır kalır
-    #
-    # ⚠ BİLİNEN TAVİZ: kavga anındaki değerler de dağılıma giriyor ve
-    # tabanı bir miktar yükseltiyor. 2000 örneklik pencerede (~12 dk)
-    # 40 saniyelik bir kavga ≈ %5 kirlilik — p90'ın duyarlılığının
-    # altında. Katman A'nın taşıdığı tavizin aynısı ve aynı gerekçeyle
-    # kabul ediliyor.
-    uyarlanabilir_taban: bool = True
-    # Kaç örnekten sonra kameranın kendi dağılımına güvenilsin.
-    asgari_ornek: int = 300
-    # Dağılım penceresi (örnek sayısı). 2.75 FPS × ~3 kişi ≈ 8 örnek/sn
-    # → 2000 örnek ≈ 4 dakika.
-    dagilim_kapasitesi: int = 2000
-    # Alt sınır: çiftlik p50 (kalibre_rwf.py --ciftlik, 37 862 örnek)
-    alt_bilek_hiz: float = 0.556
-    alt_bilek_sarsinti: float = 0.274
-    alt_enerji: float = 0.528
-    # Üst sınır çarpanı (çiftlik p90 × bu)
-    ust_carpan: float = 1.5
+    # ⚠ Bulgu SİLİNMEDİ, problems.md · P-52'de duruyor. Kaldırılan şey
+    # kod, öğrenilen şey değil.
 
     # ─── Doyum noktaları (bu değerde bileşen 1.0) ───
     # Normalin p99'unun biraz üstü: p99 hâlâ normal davranıştır,
@@ -325,12 +278,6 @@ class Esikler:
     etkilesim_taban: float = 0.15
 
 
-# Doyum = taban × bu. Kalibrasyonun kullandığı kuralın aynısı
-# (`kalibre_rwf.py`: doyum = p90 × 2.0). Taban kamera başına
-# kayınca doyumun da kayması gerekiyor — yoksa bant genişler ve
-# bileşen 1.0'a hiç varamaz.
-DOYUM_CARPANI = 2.0
-
 VARSAYILAN = Esikler()
 
 # Geriye dönük uyumluluk: mevcut kod ve testler bu adları kullanıyor.
@@ -361,61 +308,6 @@ def _bant(deger: float | None, taban: float, doyum: float) -> float:
     return min(1.0, max(0.0, (deger - taban) / (doyum - taban)))
 
 
-# ⚠⚠ SAHNE-GÖRELİ TABAN — kalabalık karışmasına karşı (P-49/P-51)
-#
-# Ölü bölge tabanı Gün 1'den beri SABİT bir sayıydı (RWF'den kalibre).
-# İki ayrı videoda ölçüldüğünde sabit tabanın yetmediği görüldü:
-#
-#     video                kişi/kare   `max` ayrımı   sahne medyanı
-#     F_74 (elde telefon)     6.5         0.97 ❌        0.69 ❌
-#     F_45 (sabit CCTV)       3.0         0.90 ❌        1.36 ✅
-#
-# ⭐ Ve doğru istatistik KALABALIĞA GÖRE DEĞİŞİYOR: 3 kişilik bir
-# sahnede "medyan" kavga edenin KENDİSİ oluyor; 7 kişilik sahnede
-# seyirci oluyor. Bu yüzden ne `max` ne de `max − medyan` tek başına
-# her iki durumda çalışıyor.
-#
-# ⭐⭐ Doğru referans "herkes" değil, **SEYİRCİLER**: kişinin kendisi
-# ve çift partneri HARİÇ kalanların medyanı. Bu tanım her iki
-# kalabalıkta da aynı şeyi ölçüyor — "etrafındakilere göre ne kadar
-# hareketli".
-#
-# Taban `max(sabit_taban, seyirci_medyanı)` oluyor:
-#   - Seyirciler sakinse sabit taban geçerli (eski davranış korunur)
-#   - Seyirciler de hareketliyse taban yükselir → sahnenin geneli
-#     hareketli olduğu için kimse "saldırgan" sayılmaz
-#
-# ⚠ Bu değişiklik skoru yalnızca DÜŞÜREBİLİR; yanlış alarmı azaltır,
-# duyarlılığı azaltma riski taşır. İki yönlü ölçüldü (bkz. P-51).
-def _seyirci_referansi(
-    kisi: KisiOzellikleri,
-    cift: CiftOzellikleri | None,
-    kisiler: list[KisiOzellikleri],
-) -> dict[str, float] | None:
-    """Kişinin ve partnerinin dışındaki kişilerin medyan hareketi."""
-    haric = {kisi.track_id}
-    if cift is not None:
-        haric |= {cift.track_a, cift.track_b}
-    digerleri = [k for k in kisiler if k.track_id not in haric and k.track_id >= 0]
-    # ⚠ En az 2 seyirci: tek bir kişinin değeri "sahnenin normali"
-    # sayılamaz. Altındaysa referans YOK ve sabit taban kullanılır.
-    if len(digerleri) < 2:
-        return None
-    ref: dict[str, float] = {}
-    for alan in ("bilek_hizi_p75", "hareket_enerjisi"):
-        v = [x for k in digerleri if (x := getattr(k, alan, None)) is not None]
-        if len(v) >= 2:
-            ref[alan] = float(median(v))
-    return ref or None
-
-
-def _taban(sabit: float, ref: dict[str, float] | None, alan: str) -> float:
-    """Sabit tabanla seyirci referansının büyüğü."""
-    if ref is None or alan not in ref:
-        return sabit
-    return max(sabit, ref[alan])
-
-
 @dataclass(slots=True)
 class TirmanmaSkoru:
     """Bir kişi (ve varsa en tehlikeli çifti) için tırmanma değerlendirmesi."""
@@ -444,45 +336,6 @@ class TirmanmaSkoru:
         }
 
 
-class _KameraDagilimi:
-    """Bir kameranın kendi ham özellik dağılımı (P-52).
-
-    Ölü bölge tabanı bu dağılımın p90'ından türetiliyor — çiftlik
-    genelinden değil. Mimari kural 7'nin ("her kameranın normali ayrı
-    öğrenilir") saldırganlık modülündeki karşılığı.
-
-    ⚠ NEDEN `deque` VE NEDEN SINIRLI
-    Sınırsız biriktirme iki şeyi birden bozar: bellek (mimari kural 5)
-    ve uyum. Kamera açısı değişir, aydınlanma değişir, sahne kalabalığı
-    gün içinde değişir — bir yıl önceki dağılım bugünün normali değil.
-    Kayan pencere ikisini birden çözüyor.
-    """
-
-    __slots__ = ("_kapasite", "_ornekler")
-
-    def __init__(self, kapasite: int) -> None:
-        self._kapasite = kapasite
-        self._ornekler: dict[str, deque[float]] = {}
-
-    def ekle(self, alan: str, deger: float) -> None:
-        d = self._ornekler.get(alan)
-        if d is None:
-            d = deque(maxlen=self._kapasite)
-            self._ornekler[alan] = d
-        d.append(deger)
-
-    def sayi(self, alan: str) -> int:
-        d = self._ornekler.get(alan)
-        return len(d) if d else 0
-
-    def p90(self, alan: str) -> float | None:
-        d = self._ornekler.get(alan)
-        if not d:
-            return None
-        s = sorted(d)
-        return s[min(len(s) - 1, int(len(s) * 0.90))]
-
-
 @dataclass(slots=True)
 class _IzDurumu:
     """Bir izin tırmanma geçmişi."""
@@ -499,55 +352,6 @@ class TirmanmaSkorlayici:
     def __init__(self, esikler: Esikler | None = None) -> None:
         self._izler: dict[tuple[str, int], _IzDurumu] = {}
         self._e = esikler or VARSAYILAN
-        # Kamera başına ham özellik dağılımı — uyarlanabilir taban için.
-        self._dagilim: dict[str, _KameraDagilimi] = {}
-
-    # ─── Uyarlanabilir taban (P-52) ────────────────────────────
-
-    # alan → (sabit taban alanı, alt sınır alanı)
-    _TABAN_ESLESME: ClassVar[dict[str, tuple[str, str]]] = {
-        "bilek_hizi_p75": ("taban_bilek_hiz", "alt_bilek_hiz"),
-        "bilek_sarsintisi_p75": ("taban_bilek_sarsinti", "alt_bilek_sarsinti"),
-        "hareket_enerjisi": ("taban_enerji", "alt_enerji"),
-    }
-
-    def _dagilimi_besle(self, camera: str, kisiler: list[KisiOzellikleri]) -> None:
-        """Bu karenin ham değerlerini kameranın dağılımına ekler."""
-        if not self._e.uyarlanabilir_taban:
-            return
-        d = self._dagilim.get(camera)
-        if d is None:
-            d = _KameraDagilimi(self._e.dagilim_kapasitesi)
-            self._dagilim[camera] = d
-        for kisi in kisiler:
-            if kisi.track_id < 0:
-                continue
-            for alan in self._TABAN_ESLESME:
-                v = getattr(kisi, alan, None)
-                if v is not None:
-                    d.ekle(alan, float(v))
-
-    def kamera_tabani(self, camera: str, alan: str) -> float:
-        """`alan` için bu kamerada geçerli ölü bölge tabanı.
-
-        Kameranın kendi p90'ı — çiftlik p50 ile çiftlik p90×1.5 arasına
-        sıkıştırılmış. Yeterli örnek yoksa çiftlik sabiti kullanılıyor:
-        *"bilmiyoruz"* durumunda eski davranışa dönmek, uydurmaktan
-        iyidir (person.py başlığı: eksik ≠ sıfır).
-        """
-        sabit_adi, alt_adi = self._TABAN_ESLESME[alan]
-        sabit = float(getattr(self._e, sabit_adi))
-        if not self._e.uyarlanabilir_taban:
-            return sabit
-        d = self._dagilim.get(camera)
-        if d is None or d.sayi(alan) < self._e.asgari_ornek:
-            return sabit
-        p90 = d.p90(alan)
-        if p90 is None:
-            return sabit
-        alt = float(getattr(self._e, alt_adi))
-        ust = sabit * self._e.ust_carpan
-        return min(max(p90, alt), ust)
 
     def degerlendir(
         self,
@@ -564,11 +368,6 @@ class TirmanmaSkorlayici:
         bir etkileşimi kalabalığın içinde sulandırırdı. Tehlike
         maksimumdadır, ortalamada değil.
         """
-        # ⚠ Dağılım SKORLAMADAN ÖNCE besleniyor: bu karenin değerleri
-        # de kameranın normalinin parçası. Sonra beslemek, kareyi kendi
-        # etkisinden muaf tutmak olurdu.
-        self._dagilimi_besle(camera, kisiler)
-
         # Kişi kimliği → o kişinin dâhil olduğu en tehlikeli çift
         en_yakin: dict[int, CiftOzellikleri] = {}
         for c in ciftler:
@@ -584,8 +383,7 @@ class TirmanmaSkorlayici:
             if kisi.track_id < 0 or kisi.tamlik < self._e.asgari_tamlik:
                 continue
             cift = en_yakin.get(kisi.track_id)
-            ref = _seyirci_referansi(kisi, cift, kisiler)
-            sonuc = self._skorla(camera, kisi, cift, simdi, ref)
+            sonuc = self._skorla(camera, kisi, cift, simdi)
             if sonuc is not None:
                 cikti.append(sonuc)
         return cikti
@@ -598,7 +396,6 @@ class TirmanmaSkorlayici:
         kisi: KisiOzellikleri,
         cift: CiftOzellikleri | None,
         simdi: float,
-        ref: dict[str, float] | None = None,
     ) -> TirmanmaSkoru | None:
         b: dict[str, float] = {}
 
@@ -641,28 +438,15 @@ class TirmanmaSkorlayici:
         # bir kayıt (kaydedilmiş profil, tekrar oynatılan ölçüm)
         # okunursa alan `None` olur ve modül sessizce susardı. Yedek,
         # o durumda ESKİ davranışa dönüyor — daha kötü ama sağır değil.
-        # ⭐ TABAN ARTIK KAMERANIN KENDİSİNDEN (P-52), seyirci
-        # referansıyla birlikte. İki düzeltme farklı şeylere bakıyor:
-        #   kamera tabanı  → "bu KAMERADA normal ne kadar hareketli"
-        #   seyirci ref.   → "bu ANDA sahnedeki diğerleri ne kadar"
-        # İkisinin büyüğü alınıyor; ikisi de yanlış alarmı bastırma
-        # yönünde çalışıyor.
-        #
-        # ⚠ DOYUM DA TABANLA BİRLİKTE KAYIYOR (× 2.0). Sabit bir doyum,
-        # taban düşünce bandı aşırı genişletir ve bileşen bu kez hiç
-        # 1.0'a varamaz — ölü bölgenin tersi bir arıza.
-        t_hiz = _taban(self.kamera_tabani(camera, "bilek_hizi_p75"),
-                       ref, "bilek_hizi_p75")
         hiz = _bant(
             kisi.bilek_hizi_p75 if kisi.bilek_hizi_p75 is not None
             else kisi.bilek_hizi_azami,
-            t_hiz, t_hiz * DOYUM_CARPANI,
+            e.taban_bilek_hiz, e.doyum_bilek_hiz,
         )
-        t_sars = self.kamera_tabani(camera, "bilek_sarsintisi_p75")
         sarsinti = _bant(
             kisi.bilek_sarsintisi_p75 if kisi.bilek_sarsintisi_p75 is not None
             else kisi.bilek_sarsintisi,
-            t_sars, t_sars * DOYUM_CARPANI,
+            e.taban_bilek_sarsinti, e.doyum_bilek_sarsinti,
         )
         # Sarsıntı hızdan daha ayırt edici: kontrollü bir hareket düzgün
         # hızlanır, vuruş ANİ sıçrar. Bu yüzden daha ağır.
@@ -680,11 +464,7 @@ class TirmanmaSkorlayici:
             b["yaklasma"] = 0.0
 
         # ── 4. Enerji + senkron ──
-        t_enerji = _taban(self.kamera_tabani(camera, "hareket_enerjisi"),
-                          ref, "hareket_enerjisi")
-        enerji = _bant(
-            kisi.hareket_enerjisi, t_enerji, t_enerji * DOYUM_CARPANI,
-        )
+        enerji = _bant(kisi.hareket_enerjisi, e.taban_enerji, e.doyum_enerji)
         senkron = (cift.senkron_enerji or 0.0) if cift is not None else 0.0
         # ⚠ Senkron TEK BAŞINA kullanılmıyor, enerjiyle ÇARPILIYOR.
         # Yan yana yürüyen iki kişinin hareketleri de korelasyonludur
