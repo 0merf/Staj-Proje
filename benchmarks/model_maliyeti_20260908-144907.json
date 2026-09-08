@@ -1,0 +1,13 @@
+{
+  "olculdu": "2026-09-08T14:49:07.917551+00:00",
+  "pencere_kare": 14,
+  "kisi": 4,
+  "tekrar": 3000,
+  "besle_ms": 0.01365,
+  "ozet_ms": 0.44382,
+  "predict_ms": 0.33135,
+  "toplam_ms": 0.78882,
+  "yirmi_kamera_ms_sn": 43.4,
+  "kare_butcesi_payi_yuzde": 7.11,
+  "eski_iddia_ms": 0.0004
+}

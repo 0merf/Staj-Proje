@@ -33,6 +33,274 @@ ama **belirti / sebep / çözüm** üçlüsü mutlaka olsun.
 
 <!-- Yeni kayıtlar buraya, en yenisi en üstte -->
 
+### P-57 · ⭐⭐⭐ Model eklenince gecikme 2.2 KAT arttı — sebep model değil, DOYUM NOKTASI
+
+**Tarih:** 08.09.2026 · **Faz:** 3 · **Kaybedilen süre:** ~2 saat
+
+**Belirti:** Öğrenilmiş model üretime alındıktan sonra (P-56) canlı
+ölçüm ağır bir gerileme gösterdi:
+
+```
+ölçüt              model YOKKEN   model VARKEN     fark
+gecikme p50 (ms)         205            455       +250   (2.22×)
+gecikme p95 (ms)         463            723       +260   (1.56×)
+analiz FPS/kamera       2.75           1.67      −1.08   (−%39)
+örnekleme FPS/kam       3.64           2.81      −0.83   (−%23)
+```
+
+⚠ İkinci koşuda (sistem ısındıktan sonra) sayılar **aynı** kaldı —
+yani soğuk başlangıç değil, kalıcı bir gerileme.
+
+⭐ İlk dikkat çeken tutarsızlık: **örnekleme hızı da düştü.** Örnekleme
+alım worker'ında yapılıyor ve orada model YOK. Model bir bileşeni
+yavaşlattıysa, dokunmadığı bir bileşen neden yavaşladı?
+
+---
+
+#### 1. Şüpheli #1: modelin maliyeti — ve orada da kendi hatam çıktı
+
+Modeli suçlamadan önce ölçtüm (`benchmark_model_maliyeti.py`).
+
+⚠⚠ **İlk ölçüm 24.84 ms verdi ve YANLIŞTI.** Betik `besle()`yi 800 kez
+çağırıyordu ve zaman damgalarını 1 µs aralıklarla ilerletiyordu — yani
+`_buda()` hiçbir şey atmıyordu ve pencere 14 kareden **814 kareye**
+şişiyordu. Sonraki adım özeti o şişmiş pencerede ölçüyordu.
+
+> ⭐ **Ölçüm aracı, kendi yan etkisiyle ölçtüğü şeyi bozdu.** Bu
+> projede beşinci kez aynı hata sınıfı (P-17, P-36, P-41, P-46) ve
+> bu kez yine ben yaptım.
+
+Düzeltilmiş ölçüm:
+
+```
+aşama                        ms      pay
+besle() — pencereye ekle  0.0137     2%
+pencere_ozeti() — ÖZET    0.4438    56%
+booster.predict()         0.3313    42%
+TOPLAM                    0.7888    →  kare bütçesinin %7.1'i
+```
+
+⚠ **Ve bu da eski bir iddiamı çürüttü.** Kaskad analizinde şöyle
+yazmıştım:
+
+> *"LightGBM çıkarımı kare başına 0.0004 ms; toplam 11.10 ms'nin
+> %0.004'ü. Modeli kapılamak yanlış aşamayı kapılamaktır."*
+
+Ölçülen gerçek maliyet **0.7888 ms** — o sayının **1972 katı**. Sayı
+yanlış değildi, **eksikti**: yalnızca `predict()` çağrısını ölçüyordu.
+Üretimde asıl iş `predict` değil, onu **beslemek** — pencereyi her
+karede yeniden özetlemek.
+
+> ⭐ Bir bileşenin maliyetini ölçerken *"hangi çağrı"* değil
+> **"hangi İŞ"** sorulmalı.
+
+**Ama %7, −%39 verim düşüşünü açıklamıyor.** Şüpheli #1 elendi.
+
+---
+
+#### 2. Şüpheli #2: kuyruk birikimi — ölçüldü, küçük
+
+```
+frames.ready      : 86 kayıt (sınır 200) · lag 20 · pending 8
+inference.results : maxlen'de (5000) ama pending yalnızca 4
+analytics.events  : 114
+shm.free          : 27 slot boşta
+```
+
+⚠ `inference.results`in 5000'de olması **birikim değil** — MAXLEN ile
+kırpılan bir akışta uzunluk zaten tavanda durur. Gerçek gösterge
+`lag` ve `pending`, ikisi de küçük. Tüketiciler geri kalmıyor.
+
+Şüpheli #2 de elendi.
+
+---
+
+#### 3. ⭐⭐⭐ Şüpheli #3: MAKİNE — ve cevap bu
+
+```
+mantıksal çekirdek : 20
+SİSTEM CPU         : %98.6      ⬅ DOYMUŞ
+SİSTEM RAM         : %86.0  (13.5 / 15.7 GB)
+
+en çok CPU kullanan:
+  1043.3%  python.exe   ⬅ ALIM worker'ı = 10.4 çekirdek
+   303.9%  python.exe   ⬅ çıkarım
+   104.4%  vmmemWSL     ⬅ Docker
+    91.5%  python.exe   ⬅ analitik
+```
+
+⭐ **Alım worker'ı tek başına 20 çekirdeğin 10.4'ünü yiyor** — 20
+RTSP akışını CPU'da H.264 çözmek için. Model ise bir çekirdeğin
+%4'ünü alıyor.
+
+**Ve doyum noktasında gecikme DOĞRUSAL DEĞİL.** Klasik kuyruk sonucu
+(M/M/1): bekleme süresi `W ∝ 1/(1−ρ)`.
+
+```
+doluluk ρ    göreli bekleme
+  %90.0         10.0×
+  %93.0         14.3×
+  %95.0         20.0×
+  %97.0         33.3×
+  %98.6         71.4×
+```
+
+K4'te ρ ≈ 0.93, şimdi ρ ≈ 0.97 varsayımıyla:
+
+```
+beklenen gecikme artışı : 2.33 kat
+ÖLÇÜLEN artış           : 2.22 kat   (205 → 455 ms)
+```
+
+⭐⭐⭐ **Teori ölçümle tuttu.** Yani mekanizma şu:
+
+> Sistem zaten doyuma yakın çalışıyordu (ρ≈0.93). Modelin eklediği
+> **%7'lik iş**, doluluğu 0.97'ye taşıdı. Doyuma yakın bölgede
+> `1/(1−ρ)` patlıyor: **%7 ek iş, %120 ek gecikme** üretti.
+
+**Bu ne mimari hatası ne model hatası — bir KAPASİTE sınırı.**
+
+---
+
+#### Neden örnekleme hızı da düştü — tutarsızlık çözüldü
+
+Alım worker'ı modeli çalıştırmıyor ama **aynı CPU'yu paylaşıyor.**
+Makine doyunca 20 decode iş parçacığı daha az zaman dilimi alıyor ve
+örnekleme 3.64 → 2.81'e düşüyor. Yani düşüş modelin *doğrudan* değil,
+**paylaşılan kaynak üzerinden dolaylı** etkisi.
+
+---
+
+#### Sonuç ve seçenekler
+
+Darboğaz **CPU'da video çözme** (10.4 çekirdek / 20). Seçenekler:
+
+| seçenek | not |
+|---|---|
+| Kamera sayısını düşür | Şartname ≥20 diyor — feragat |
+| NVDEC (GPU'da çöz) | ⚠ P-07/P-09'da denendi ve **daha yavaştı**. Ama o ölçüm 2026-08'de, farklı kod ve daha az yükle yapıldı — yeniden ölçülmeli |
+| Çözünürlüğü düşür | Kişi boyu zaten 129 px; düşürmek pozu bozar |
+| Modeli seyrelt | Pencere %93 örtüşüyor; her karede değil her N karede çalıştırmak ~N× ucuzlar |
+| Daha güçlü makine | Kapsam dışı ama raporda yazılmalı |
+
+⚠ **Hiçbiri henüz ölçülmedi.** Rapor, sorunun **teşhis edildiğini** ama
+**çözülmediğini** dürüstçe yazacak.
+
+**Öğrenilen ders:** Bir sistemin doyuma ne kadar yakın çalıştığı, ona
+eklenen her şeyin maliyetini belirler. Doyumdan uzakta %7'lik bir ek
+iş fark edilmez; doyuma yakın aynı %7 gecikmeyi ikiye katlar.
+**Bir bileşenin "maliyeti" mutlak bir sayı değil, sistemin o andaki
+dolulukla birlikte okunması gereken bir orandır.**
+
+> ⭐ Ve bu, projenin merkezî tezinin bir başka yüzü: ölçtüğümüz sayı
+> (%7) doğruydu, **yorumu** yanlıştı. "Küçük bir maliyet" ancak
+> sistemde yer varsa küçüktür.
+
+---
+
+### P-56 · Öğrenilmiş model üretime alındı — ve iki sessiz hata daha çıktı
+
+**Tarih:** 08.09.2026 · **Faz:** 3 · **Kaybedilen süre:** ~2 saat
+
+**Belirti:** Hakem denetimi (`docs/report/denetim-hakem.md` §1.1-§1.2)
+iki ölümcül bulgu çıkardı:
+
+```
+$ grep -rln "lightgbm|Booster" backend/src/
+(çıktı boş)
+```
+
+Raporlanan bütün model sonuçları (K5 F1 **0.889**, birleşim 0.937)
+yalnızca çevrim dışı betiklerdeydi. Ve füzyonun **en ağır sinyali**
+(`A_SALDIRGANLIK = 0.40`), P-52'de ayırt etmediği ölçülen kural
+kümesinden geliyordu: K7 koşusundaki 39 alarmın **sıfırı**
+saldırganlıktandı.
+
+**Çözüm:** `src/sentinel/analytics/model.py` — LightGBM canlı boru
+hattında. Rol bölüşümü:
+
+```
+saldirganlik(iz) = model_kamera × pay(iz)
+pay(iz)          = kural(iz) / max(kural)   [0.5, 1.0]
+```
+
+Model *"ne kadar riskli"* (ölçülmüş F1 0.889), kural *"kim riskli"*.
+P-52 kuralın **büyüklüğünün** bilgisiz olduğunu ölçmüştü ama
+**sıralaması** hâlâ anlamlı.
+
+**Sonuç — iki bulgu da kapandı:**
+
+```
+model canlıda    : 18/20 kamerada skor · medyan 0.070 · azami 0.487
+                   en yüksek skor cam-15'te (gerçek kavga videosu) ✓
+
+alarm türleri    ESKİ (model yok)        YENİ (model var)
+  crowd                15                     55
+  unusual              12                      —
+  loitering             6                     17
+  fall                  6                     12
+  risk                  —                     12
+  aggression            0  ⬅               ⭐ 6
+  running               —                      2
+```
+
+---
+
+#### ⚠ Yol boyunca ÜÇ sessiz hata daha bulundu
+
+**1. İki model dizini vardı.** Üretim `config.resolve_path()` ile
+`<kök>/models/` okuyor; ölçüm betikleri `<kök>/backend/models/`
+yazıyordu. Yani modeli entegre ettikten **sonra bile** "model yok"
+deyip sessizce devre dışı kalıyordu. 16 betik düzeltildi.
+⚠ Ayrıca YOLO ağırlıkları iki yerde birden duruyordu (~100 MB kopya).
+
+**2. Ölçüm betiği yanlış worker'ı kazıyordu.** Alarm sayacını
+`sentinel_events_written_total` adıyla alarm worker'ından (9130)
+arıyordu; o worker yalnızca `sentinel_worker_up` yayınlıyor.
+Anomaliler **analitik** worker'da (9120) sayılıyor. Betik
+*"alarm yok"* diye raporluyordu — oysa 43 alarm vardı.
+
+> ⭐ *"Sonuç yok"* ile *"yanlış yere baktım"* aynı görünür. P-40'ta
+> panel kare yerine kişi sayıyordu; aynı hata sınıfı.
+
+**3. `decode_duration` metriği işi değil BEKLEMEYİ ölçüyor.**
+
+```python
+last = time.perf_counter()
+for frame in decoder.frames():
+    now = time.perf_counter()
+    metrics.decode_duration.labels(...).observe(now - last)
+```
+
+Çözücü `target_fps`e göre hız sınırlı olduğu için bu aralık, kareler
+arası **bekleme** süresidir. Ölçülen 263.84 ms ≈ 1/3.79 FPS — yani
+tam olarak alım hızının tersi. "Decode 264 ms sürüyor" diye okumak,
+darboğazı yanlış yerde aramaya yol açardı ve ilk teşhisimde tam
+olarak buna kapıldım.
+
+⚠ Metrik **yeniden adlandırılmalı** (`frame_interval_seconds`) ya da
+gerçek çözme süresini ölçecek şekilde düzeltilmeli. Açık iş.
+
+---
+
+#### ⭐ Kilit test: eğitim ⟷ üretim özellik eşitliği
+
+`model.py · pencere_ozeti()` ile `train_aggression.py ·
+_klip_ozellikleri()` **aynı** 99'luk vektörü üretmek zorunda.
+Ayrışırlarsa hata **sessiz** olur: skor üretilir, boru hattı çalışır,
+yalnızca sonuç yanlıştır.
+
+`tests/unit/test_model_ozellik.py` (10 test) bunu kilitliyor ve
+eğitim özetini **kasten bağımsız** yeniden yazıyor — `pencere_ozeti`yi
+çağırsaydı test hiçbir şey doğrulamazdı.
+
+**Öğrenilen ders:** Bir modeli "entegre etmek" onu import etmek değil;
+**aynı girdiyi üretmek, doğru yerden yüklemek ve gerçekten çağrıldığını
+ölçmektir.** Bu üç adımdan her birinde ayrı bir sessiz hata çıktı.
+
+
+---
+
 ### P-55 · ⭐⭐ MOD A / MOD B — 20 kamera kısıtının doğruluk bedeli ÖLÇÜLDÜ (ve benim iddiam yanlıştı)
 
 **Tarih:** 08.09.2026 · **Faz:** 3 · **Kaybedilen süre:** ~1 saat

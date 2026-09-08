@@ -244,11 +244,21 @@ def _ornek_al() -> dict[str, Any]:
                 e.get("cam", "?"): v
                 for e, v in _sec(o, "sentinel_risk_score")
             }
-        if rol == "alarm":
-            veri["alarm_turleri"] = {
-                e.get("type", e.get("tur", "?")): v
-                for e, v in _sec(o, "sentinel_events_written_total")
-            }
+            # ⚠⚠ ALARM SAYACI ANALİTİK WORKER'DA, ALARM WORKER'DA DEĞİL.
+            # İlk sürüm `sentinel_events_written_total`ı 9130'dan
+            # kazıyordu ve HİÇBİR ŞEY BULAMIYORDU — "alarm yok" diye
+            # rapor ediyordu. Oysa alarm worker'ı yalnızca
+            # `sentinel_worker_up` yayınlıyor; anomaliler analitikte
+            # sayılıyor.
+            #
+            # ⭐ Bu, ölçüm aracının sessizce yanlış yere bakmasının bir
+            # örneği daha (P-40: panel kare yerine kişi sayıyordu).
+            # "Sonuç yok" ile "yanlış yere baktım" aynı görünür.
+            turler: dict[str, float] = {}
+            for e, v in _sec(o, "sentinel_anomalies_total"):
+                turler[e.get("type", "?")] = turler.get(e.get("type", "?"), 0.0) + v
+            veri["alarm_turleri"] = turler
+
         if rol == "cikarim":
             k = _kovalar(o, "sentinel_end_to_end_latency_seconds")
             veri["gecikme_p50_ms"] = (
