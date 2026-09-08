@@ -33,6 +33,122 @@ ama **belirti / sebep / çözüm** üçlüsü mutlaka olsun.
 
 <!-- Yeni kayıtlar buraya, en yenisi en üstte -->
 
+### P-55 · ⭐⭐ MOD A / MOD B — 20 kamera kısıtının doğruluk bedeli ÖLÇÜLDÜ (ve benim iddiam yanlıştı)
+
+**Tarih:** 08.09.2026 · **Faz:** 3 · **Kaybedilen süre:** ~1 saat
+
+**Soru kullanıcının:**
+
+> *"Bizim analizimiz yavaş olduğu için, yani 2.5 FPS civarında olduğu
+> için bilekler vb. hızlı görünüyor olabilir. Eğer 10-15 FPS civarında
+> bir işlem gücü olsa daha detaylı ve derin inceleme şansı olacaktır."*
+
+**⚠⚠ ÖNCE BENİM HATAM — ve nasıl bir hata olduğu önemli**
+
+Kullanıcıya *"burada fizik senin sezginin tersine işliyor"* dedim ve
+şu argümanı kurdum:
+
+```
+hız = (x₂ − x₁)/Δt   →   gürültü ≈ σ√2/Δt
+   2.75 FPS → Δt 0.364 sn →  3.9σ
+  15.0  FPS → Δt 0.067 sn → 21.2σ   (5.5 KAT daha fazla gürültü)
+```
+
+Formül doğru. Ama **dayanağım yanlıştı**: iddiayı, elimde duran tek
+ölçüme yaslamıştım — 4.0 FPS (AUC 0.895) ⟷ 2.75 FPS (0.911).
+
+O karşılaştırmanın iki kusuru vardı:
+
+1. **Kontrollü değildi.** İki koşu farklı klip kümelerinden geliyordu.
+2. **Ve zaten NULL bir karşılaştırmaydı** — kontrollü hâlinde
+   4.00 ⟷ 2.75 farkı **−0.003, %95 GA [−0.056, +0.045], P(>0)=%46**.
+   Yani ortada bir etki hiç yoktu.
+
+⭐ **Bir null sonuçtan, 5 kat daha yüksek bir hız hakkında genelleme
+yaptım.** Mekanizmanın varlığını (gürültü ∝ 1/Δt) mekanizmanın
+BASKINLIĞI sanmak — bu, ölçmeden konuşmanın ders kitabı biçimi ve
+projenin merkezî tezinin bir örneği. Üstelik bu kez hatayı yapan
+ölçüm aracı değil, **ben**dim.
+
+---
+
+**Ölçüm — tek değişken, aynı klipler**
+
+Yüksek FPS'te daha çok klip özellik üretebiliyor (482/96 → 545/108),
+dolayısıyla ham koşuları kıyaslamak iki farklı sınavı kıyaslamak
+olurdu. Karşılaştırma **yalnızca ortak kliplerde** yapıldı
+(train 479 · val 96):
+
+```
+koşul                          AUC      F1  kesinlik  duyarlılık
+2.75 FPS (MOD A · canlı)     0.906   0.885     0.902       0.868
+4.00 FPS                     0.903   0.862     0.839       0.887
+8.25 FPS (MOD B)             0.936   0.916     0.907       0.925
+```
+
+İki bağımsız koşuda **birebir aynı** sayılar çıktı (LightGBM
+deterministik). Ama determinizm anlamlılık değildir; 96 kliplik bir
+kümede 0.030 fark hâlâ örnekleme gürültüsü olabilir. **Eşleştirilmiş
+bootstrap** (2000 tekrar, aynı örneklemde iki AUC):
+
+```
+karşılaştırma          ΔAUC          %95 GA        P(>0)
+4.00 − 2.75          -0.003   [-0.056, +0.045]     %46   ⬅ etki YOK
+8.25 − 2.75          +0.030   [-0.001, +0.067]     %97   ⬅ gerçek
+```
+
+⚠ **Dürüst okuma:** bootstrap örneklemlerinin %97'si 8.25 FPS lehine,
+ama %95 güven aralığı sıfırı **kıl payı** içeriyor (−0.001). Yani etki
+büyük olasılıkla gerçek, fakat tek bir 96 kliplik doğrulama kümesinde
+**kesin olarak kanıtlanmış değil.** Daha güçlü bir sonuç çapraz
+doğrulama ya da daha büyük bir küme ister.
+
+⭐ **Kullanıcı haklıydı, ben yanılmıştım.** Örtüşme (aliasing) kaybı,
+sonlu fark gürültüsüne baskın geliyor: daha sık örnekleme kısa süreli
+olayları yakalıyor ve bu, hız ölçümündeki ek gürültüden daha değerli.
+
+---
+
+**MOD A / MOD B — kısıtın bedeli**
+
+Boru hattı maliyeti ölçülmüştü: **11.10 ms/kare**.
+
+```
+MOD A  20 kamera × 2.75 FPS =  55 kare/sn ×11.10 =  610 ms/sn  (%61)  ✅
+       20 kamera × 8.25 FPS = 165 kare/sn ×11.10 = 1832 ms/sn (%183)  ❌
+MOD B  8.25 FPS'te azami kamera: 1000/(8.25×11.10) ≈ 10.9 kamera
+       (pay bırakılırsa ~6-7 kamera)
+```
+
+> ⭐⭐ **Şartnamenin "≥20 kamera" maddesi, ölçülebilir bir doğruluk
+> bedeli ödetiyor: ΔAUC ≈ 0.030 (F1 ≈ 0.031).**
+>
+> Bu bir kusur değil, bir **takas** — ve ilk kez sayısı var. Rapor
+> bunu böyle yazacak: 20 kamera hedefi mimari bir kısıt olarak
+> seçildi; bedeli tek kamera başına doğrulukta ~3 puan.
+
+**Kapsam kararı:** MOD B üretime alınmadı. Gerekçe kısıtın kendisi —
+sistemin şartnamesi 20 kamera. Ama Mod B ölçüldü ve raporlanıyor:
+*"aynı model, kamera başına 3× analiz hızıyla, 0.936 AUC veriyor."*
+
+⚠ **Ortak kümeye inmenin yanlılığı:** düşük FPS'te elenen klipler
+rastgele değil (kısa ya da az kişili olanlar). Ortak küme bir miktar
+"kolay" tarafa kaymış olabilir; her üç koşul da aynı kümede ölçüldüğü
+için karşılaştırma geçerli, ama **mutlak** sayılar hafif iyimser.
+
+**Öğrenilen ders:** Bir mekanizmanın var olduğunu göstermek, o
+mekanizmanın **baskın** olduğunu göstermez. İki etki ters yönde
+çalışıyorsa (burada: gürültü büyümesi ⟷ örtüşme kaybı), hangisinin
+kazandığı ancak ölçümle bilinir. Formülü doğru yazıp yanlış sonuca
+varmak mümkün.
+
+> ⭐ Ve bu kez düzeltmeyi tetikleyen şey bir ölçüm değil, **kullanıcının
+> ısrarıydı**. "Yanlış mıyım" diye sorulan bir soruya "evet" demeden
+> önce ölçmek gerekiyordu; ölçünce cevap "hayır, haklısın" çıktı.
+
+
+---
+
 ### P-54 · ⭐⭐⭐ İki bağımsız model birleşince AUC 0.968 — "3 YZ birlikte çalışsın" fikri ÖLÇÜLDÜ ve TUTTU
 
 **Tarih:** 08.09.2026 · **Faz:** 3 · **Kaybedilen süre:** — (kazanç)

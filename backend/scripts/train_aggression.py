@@ -474,6 +474,17 @@ def _egit(args: argparse.Namespace) -> int:
     )
 
     olasilik = model.predict_proba(xva)[:, 1]
+    # ⚠ VAL TAHMİNLERİNİ DIŞA VER — istatistiksel test için zorunlu.
+    # Tek bir AUC sayısı, iki ayarın farkının GÜRÜLTÜ İÇİNDE olup
+    # olmadığını söylemez. Eşleştirilmiş bootstrap için klip başına
+    # tahmin gerekiyor (bkz. deney_fps.py).
+    if getattr(args, "tahmin_cikti", ""):
+        (PROJECT_ROOT / "data" / "_tmp" / args.tahmin_cikti).write_text(
+            json.dumps({
+                "klip": [str(k["klip"]) for k in veri["val"]],
+                "tahmin": [float(v) for v in olasilik],
+                "etiket": [int(v) for v in yva],
+            }, ensure_ascii=False), encoding="utf-8")
 
     # ─── Ölçüm ───
     def _auc(poz: list[float], neg: list[float]) -> float:
@@ -599,6 +610,10 @@ def main() -> int:
     ap.add_argument("--klip", type=int, default=300, help="sınıf başına klip")
     ap.add_argument("--fps", type=float, default=4.0)
     ap.add_argument("--imgsz", type=int, default=640)
+    ap.add_argument(
+        "--tahmin-cikti", default="",
+        help="val tahminlerini bu dosyaya yaz (istatistiksel test için)",
+    )
     ap.add_argument(
         "--ozellik-dosyasi", default="",
         help="data/_tmp altında dosya adı (FPS taraması için ayrı dosya)",
