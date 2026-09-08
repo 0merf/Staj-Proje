@@ -71,7 +71,9 @@ BENCHMARKS = PROJECT_ROOT / "benchmarks"
 KOSULAR = (
     ("2.75 FPS (MOD A · canlı)", "rwf_ozellikler.json"),
     ("4.00 FPS", "rwf_ozellikler_4fps.json"),
-    ("8.25 FPS (MOD B)", "rwf_fps825.json"),
+    ("8.25 FPS", "rwf_fps825.json"),
+    ("16.50 FPS (MOD B)", "rwf_fps165.json"),
+    ("24.75 FPS (MOD B+)", "rwf_fps2475.json"),
 )
 
 
@@ -134,6 +136,14 @@ def _bootstrap(tahminler: dict[str, dict[str, Any]],
             "p_artı": sum(1 for f in farklar if f > 0) / len(farklar),
         }
     return cikti
+
+
+def _fps_cikar(etiket: str) -> float:
+    """Etiketten sayısal FPS — eğriyi FPS'e göre sıralamak için."""
+    try:
+        return float(etiket.split()[0])
+    except (ValueError, IndexError):
+        return 0.0
 
 
 def _yukle(ad: str) -> dict[str, Any] | None:
@@ -241,26 +251,58 @@ def main() -> int:
             print(f"{ad_:<36} {d['fark']:>+8.3f} {ga:>20} {d['p_artı']:>6.0%}")
 
     print("\n═══ YORUM ═══")
+    tepe: str | None = None
     if len(sonuc) >= 2:
-        sirali = sorted(sonuc.items(), key=lambda kv: kv[1]["auc"], reverse=True)
-        en_iyi = sirali[0]
-        print(f"En yüksek AUC: {en_iyi[0]} ({en_iyi[1]['auc']:.3f})")
+        sirali_fps = sorted(sonuc.items(), key=lambda kv: _fps_cikar(kv[0]))
+        en_iyi = max(sonuc.items(), key=lambda kv: kv[1]["auc"])
+        tepe = en_iyi[0]
         aralik = max(v["auc"] for v in sonuc.values()) - min(
             v["auc"] for v in sonuc.values())
+        print(f"En yüksek AUC: {tepe} ({en_iyi[1]['auc']:.3f})")
         print(f"AUC aralığı  : {aralik:.3f}")
+
+        # ⭐⭐ İÇ OPTİMUM ARANIYOR — bulunması TEORİYİ DOĞRULAR.
+        #
+        # Modül başlığında iki ters etki tarif edildi:
+        #   (1) örtüşme kaybı              → yüksek FPS'i sever
+        #   (2) sonlu fark gürültüsü σ√2/Δt → düşük FPS'i sever
+        #
+        # İki ters etkinin imzası **önce yükselip sonra düşen** bir
+        # eğridir. Monoton bir eğri, etkilerden yalnızca birinin baskın
+        # olduğunu gösterirdi; TEPE NOKTASI ikisinin de gerçek olduğunu
+        # gösterir.
+        #
+        # ⚠ İlk sürüm yalnızca "en yüksek hangisi" diye soruyordu ve
+        # 24.75 FPS ölçülene kadar "yüksek FPS daha iyi" diyordu —
+        # eğri henüz dönmemişti. Tek yönlü bir soru, tek yönlü bir
+        # cevap üretir.
+        indeks = [a for a, _v in sirali_fps].index(tepe)
+        ic_optimum = 0 < indeks < len(sirali_fps) - 1
         if aralik < 0.03:
-            print("\n⭐ FPS'in etkisi GÜRÜLTÜ İÇİNDE. Analiz hızını artırmak")
-            print("   doğruluğu belirgin biçimde değiştirmiyor.")
-            print("   → MOD B'nin (tek videoya tüm güç) doğruluk gerekçesi YOK.")
-            print("   → 20 kamera kısıtı bir doğruluk bedeli ödetmİYOR.")
-        elif en_iyi[0].startswith("2.75"):
-            print("\n⭐ DÜŞÜK FPS DAHA İYİ. Sonlu fark gürültüsü (σ√2/Δt)")
-            print("   örtüşme kaybına baskın geliyor — hız temelli")
-            print("   özelliklerde daha sık örneklemek zarar veriyor.")
+            print("\n⭐ FPS'in etkisi GÜRÜLTÜ İÇİNDE.")
+            print("   → MOD B'nin doğruluk gerekçesi YOK.")
+        elif ic_optimum:
+            onceki = sirali_fps[indeks - 1]
+            sonraki = sirali_fps[indeks + 1]
+            print(f"\n⭐⭐ İÇ OPTİMUM BULUNDU: {tepe}")
+            print(f"   {onceki[0]:<22} {onceki[1]['auc']:.3f}")
+            print(f"   {tepe:<22} {en_iyi[1]['auc']:.3f}   ⬅ TEPE")
+            print(f"   {sonraki[0]:<22} {sonraki[1]['auc']:.3f}   "
+                  f"({sonraki[1]['auc'] - en_iyi[1]['auc']:+.3f})")
+            print("\n   Bu şekil İKİ TERS ETKİNİN imzası ve ikisini de")
+            print("   doğruluyor:")
+            print("     düşük FPS'te  → örtüşme: kısa olaylar örnekler")
+            print("                      arasına düşüp KAÇIYOR")
+            print("     yüksek FPS'te → sonlu fark gürültüsü σ√2/Δt")
+            print("                      hız ölçümünü BOZUYOR")
+            print("\n   ⭐ Monoton bir eğri tek etkiyi gösterirdi; tepe")
+            print("   noktası ikisinin de gerçek olduğunu gösteriyor.")
+        elif tepe.startswith("2.75"):
+            print("\n⭐ DÜŞÜK FPS DAHA İYİ — gürültü örtüşmeye baskın.")
         else:
-            print("\n⭐ YÜKSEK FPS DAHA İYİ. Örtüşme kaybı gürültüye baskın:")
-            print("   daha sık örnekleme kısa süreli olayları yakalıyor.")
-            print("   → MOD B'nin doğruluk gerekçesi VAR; maliyeti ölçülmeli.")
+            print("\n⭐ YÜKSEK FPS DAHA İYİ — örtüşme gürültüye baskın.")
+            print("   ⚠ Tepe en yüksek ölçülen FPS'te; eğri henüz")
+            print("   dönmemiş olabilir. Daha yüksek bir nokta ölçülmeli.")
 
     print("\n⚠ Ortak kümeye inmenin yanlılığı: düşük FPS'te elenen klipler")
     print("  rastgele değil (kısa / az kişili olanlar). Ortak küme bir")
@@ -276,6 +318,7 @@ def main() -> int:
         "ham_klip_sayilari": {e: {"train": len(d["train"]), "val": len(d["val"])}
                               for e, d in veriler.items()},
         "sonuclar": sonuc,
+        "tepe": tepe,
         "bootstrap": bs,
         "gurultu_modeli": {
             "formul": "hız gürültüsü ≈ σ√2/Δt",

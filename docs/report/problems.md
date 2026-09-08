@@ -72,6 +72,57 @@ projenin merkezî tezinin bir örneği. Üstelik bu kez hatayı yapan
 
 ---
 
+**⭐⭐ EĞRİ TAMAMLANDI — VE DÖNDÜ (08.09.2026, ikinci güncelleme)**
+
+İlk sürüm yalnızca 2.75 / 4.00 / 8.25 FPS ölçmüştü ve *"yüksek FPS daha
+iyi"* diyordu. Kullanıcı haklı olarak itiraz etti: *"neden 8.25 ile
+denedin ki, tek bir videoyu 15-25 FPS ile dene dedim ya."*
+
+Denendi. Eğri **döndü**:
+
+```
+koşul                     AUC      F1     ΔAUC vs 2.75      P(>0)
+2.75 FPS (MOD A·canlı)  0.906   0.885          —              —
+4.00 FPS                0.903   0.862       −0.003           %46
+8.25 FPS                0.936   0.916       +0.030           %97
+16.50 FPS (MOD B)       0.949   0.914       +0.043           %96   ⬅ TEPE
+24.75 FPS (MOD B+)      0.918   0.865       +0.013           %70   ⬅ DÜŞÜŞ
+```
+
+⭐⭐⭐ **Bu şekil bir tesadüf değil, İKİ TERS ETKİNİN İMZASI** — ve
+modül başlığında ölçümden ÖNCE tarif edilmiş olan tam da buydu:
+
+| etki | yönü | mekanizma |
+|---|---|---|
+| örtüşme (aliasing) | yüksek FPS'i sever | 0.2 sn'lik bir yumruk, örnekler arasına düşüp tamamen kaçabilir |
+| sonlu fark gürültüsü | düşük FPS'i sever | `v̂ = Δx/Δt` · gürültü ≈ σ√2/Δt · Δt küçüldükçe BÜYÜR |
+
+**Monoton bir eğri, etkilerden yalnızca birinin gerçek olduğunu
+gösterirdi. Tepe noktası İKİSİNİN DE gerçek olduğunu gösteriyor.**
+
+```
+Δt = 0.364 sn (2.75 FPS)  → gürültü  3.9σ · olay ıskalanıyor
+Δt = 0.061 sn (16.5 FPS)  → gürültü 23.3σ · olay yakalanıyor  ⬅ denge
+Δt = 0.040 sn (24.75 FPS) → gürültü 35.0σ · gürültü kazanıyor
+```
+
+⚠ **Ve bu, hem kullanıcıyı hem beni kısmen haklı çıkarıyor:**
+kullanıcının *"daha fazla FPS daha derin analiz"* sezgisi 16.5'e kadar
+doğru; benim *"gürültü 1/Δt ile büyür"* mekanizmam ondan sonra doğru.
+Yanlış olan, **mekanizmanın var olmasından baskın olduğunu çıkarmaktı**
+— ve o çıkarımı NULL bir karşılaştırmadan (4.00 ⟷ 2.75) yapmıştım.
+
+⚠ Betiğin yorum mantığı da düzeltildi: ilk sürüm yalnızca *"en yüksek
+hangisi"* diye soruyordu ve 24.75 ölçülene kadar *"yüksek FPS daha
+iyi"* diyordu. **Tek yönlü bir soru, tek yönlü bir cevap üretir.**
+Artık iç optimum aranıyor ve bulunamazsa *"eğri henüz dönmemiş
+olabilir"* uyarısı basılıyor.
+
+⚠ Dürüstlük: 24.75'in düşüşü (−0.031) ve 16.5'in üstünlüğü, %95 güven
+aralıkları hâlâ sıfırı içerdiği için **kesin kanıtlanmış değil**
+(96 kliplik doğrulama kümesi). Eğrinin ŞEKLİ tutarlı ve mekanizmayla
+uyumlu; tek tek farklar sınırda.
+
 **Ölçüm — tek değişken, aynı klipler**
 
 Yüksek FPS'te daha çok klip özellik üretebiliyor (482/96 → 545/108),

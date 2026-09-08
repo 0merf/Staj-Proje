@@ -1,0 +1,104 @@
+{
+  "olculdu": "2026-09-08T14:28:07.139522+00:00",
+  "yontem": "aynı klipler (ortak küme), tek değişken FPS",
+  "ortak_train": 479,
+  "ortak_val": 96,
+  "ham_klip_sayilari": {
+    "2.75 FPS (MOD A · canlı)": {
+      "train": 482,
+      "val": 96
+    },
+    "4.00 FPS": {
+      "train": 510,
+      "val": 104
+    },
+    "8.25 FPS": {
+      "train": 545,
+      "val": 108
+    },
+    "16.50 FPS (MOD B)": {
+      "train": 561,
+      "val": 109
+    },
+    "24.75 FPS (MOD B+)": {
+      "train": 566,
+      "val": 109
+    }
+  },
+  "sonuclar": {
+    "2.75 FPS (MOD A · canlı)": {
+      "auc": 0.906,
+      "f1": 0.885,
+      "kesinlik": 0.902,
+      "duyarlilik": 0.868,
+      "train": 479,
+      "val": 96
+    },
+    "4.00 FPS": {
+      "auc": 0.903,
+      "f1": 0.862,
+      "kesinlik": 0.839,
+      "duyarlilik": 0.887,
+      "train": 479,
+      "val": 96
+    },
+    "8.25 FPS": {
+      "auc": 0.936,
+      "f1": 0.916,
+      "kesinlik": 0.907,
+      "duyarlilik": 0.925,
+      "train": 479,
+      "val": 96
+    },
+    "16.50 FPS (MOD B)": {
+      "auc": 0.949,
+      "f1": 0.914,
+      "kesinlik": 0.923,
+      "duyarlilik": 0.906,
+      "train": 479,
+      "val": 96
+    },
+    "24.75 FPS (MOD B+)": {
+      "auc": 0.918,
+      "f1": 0.865,
+      "kesinlik": 0.882,
+      "duyarlilik": 0.849,
+      "train": 479,
+      "val": 96
+    }
+  },
+  "tepe": "16.50 FPS (MOD B)",
+  "bootstrap": {
+    "4.00 FPS − 2.75 FPS (MOD A · canlı)": {
+      "fark": -0.003276873017068751,
+      "alt": -0.05573770491803276,
+      "ust": 0.04543409806567711,
+      "p_artı": 0.4625
+    },
+    "8.25 FPS − 2.75 FPS (MOD A · canlı)": {
+      "fark": 0.029889557758006488,
+      "alt": -0.0008869179600886623,
+      "ust": 0.06657669815564549,
+      "p_artı": 0.97
+    },
+    "16.50 FPS (MOD B) − 2.75 FPS (MOD A · canlı)": {
+      "fark": 0.04260354508697989,
+      "alt": -0.003478260869565264,
+      "ust": 0.09664246823956446,
+      "p_artı": 0.9635
+    },
+    "24.75 FPS (MOD B+) − 2.75 FPS (MOD A · canlı)": {
+      "fark": 0.012764903104889822,
+      "alt": -0.03615520282186946,
+      "ust": 0.06252713851498048,
+      "p_artı": 0.7005
+    }
+  },
+  "gurultu_modeli": {
+    "formul": "hız gürültüsü ≈ σ√2/Δt",
+    "2.75_fps": 3.9,
+    "8.25_fps": 11.7,
+    "15_fps": 21.2,
+    "birim": "σ katı"
+  }
+}
