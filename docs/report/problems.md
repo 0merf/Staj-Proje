@@ -33,6 +33,164 @@ ama **belirti / sebep / çözüm** üçlüsü mutlaka olsun.
 
 <!-- Yeni kayıtlar buraya, en yenisi en üstte -->
 
+### P-54 · ⭐⭐⭐ İki bağımsız model birleşince AUC 0.968 — "3 YZ birlikte çalışsın" fikri ÖLÇÜLDÜ ve TUTTU
+
+**Tarih:** 08.09.2026 · **Faz:** 3 · **Kaybedilen süre:** — (kazanç)
+
+**Soru kullanıcının, iki parçalı:**
+
+> *"Bu LightGBM'i neden kullanıyoruz? LightGBM tablosal verilerde iyi
+> değil mi? Buradaki veriler görüntü verileri değil mi, tensör hâlinde
+> gelmiyor mu?"*
+
+> *"Bu adamların 3 farklı yapay zekâ istemelerinin sebebi üçünün
+> birlikte çalışmasını istemeleri; üçü birlikte çalışsa daha iyi sonuç
+> vermez mi?"*
+
+İkisinin de cevabı aynı deneyden çıktı.
+
+---
+
+#### 1. LightGBM neden — ve sorunun haklı olan kısmı
+
+Boru hattı görüntüyü LightGBM'e **vermiyor**. Görüntüyü işleyen şey
+zaten derin ağlar:
+
+```
+kare (H×W×3) → YOLO26-s (CNN)     → kişi kutuları
+             → YOLO26-pose (CNN)  → 17 eklem
+             → BoT-SORT           → kimlik + zaman serisi
+             → özellik çıkarımı   → 99 SKALER
+             → LightGBM           → karar
+```
+
+Görüntü→tablo dönüşümünü CNN'ler yapıyor; LightGBM tablonun üstünde
+karar veriyor. İskelet tabanlı eylem tanımanın standart kurgusu.
+
+⚠ **Ama sorunun asıl kısmı haklıydı:** literatürdeki RWF-2000
+çalışmalarının çoğu bu yolu izlemiyor, **ham piksellere 3B evrişim**
+uyguluyor. Biz o yolu hiç denemedik, sadece onların yayınlanmış
+sayılarını yazdık — kendi ölçmediğimiz bir sayıyla kıyaslanmak bu
+projede defalarca yanlış çıkan türden bir kıyas (P-17, P-41, P-51).
+
+**Denendi.** Kinetics-400 ön eğitimli **R3D-18**, RWF train'in tamamıyla
+(1600 klip) ince ayarlandı; **aynı doğrulama kümesi, aynı klipler:**
+
+```
+yöntem                                 AUC      F1   kesinlik  duyarlılık
+kural tabanı (elle)                  0.629   0.712     0.612       0.867
+iskelet + LightGBM (bizim)           0.927   0.889     0.957       0.830
+R3D-18 ham piksel (literatür yolu)   0.937   0.911     0.864       0.962
+```
+
+⚠ **İki dürüstlük notu:**
+
+1. R3D-18'in "en iyi devri" doğrulama AUC'sine bakılarak seçildi —
+   **raporlanan kümede seçim**, ve 12 devrin maksimumunu almak tek bir
+   eşik seçmekten güçlü bir yanlılık. Seçimsiz **son devir: 0.918 /
+   0.874** — LightGBM'in biraz altında. Gerçek başarım ikisinin
+   arasında ve betik her iki satırı da basıyor.
+2. 482 kliple eğitildiğinde R3D-18 **0.916 / 0.879** veriyordu. Yani
+   video yolunun avantajı veri miktarından geliyor; aynı veriyle
+   iskelet yolu önde. Bu, kaynak kısıtlı bir kurulum için anlamlı bir
+   bilgi.
+
+---
+
+#### 2. ⭐⭐⭐ ASIL BULGU: iki model ZIT hatalar yapıyor
+
+Sıralama değil, **hata profili** önemli:
+
+```
+iskelet + LightGBM : kesinlik 0.957 · duyarlılık 0.830   ⬅ TEMKİNLİ
+R3D-18             : kesinlik 0.864 · duyarlılık 0.962   ⬅ AÇGÖZLÜ
+```
+
+Biri yanlış alarm vermiyor ama kaçırıyor; diğeri neredeyse hiç
+kaçırmıyor ama yanlış alarm veriyor. Ve gerçekten **farklı şeye**
+bakıyorlar:
+
+| | iskelet yolu | video yolu |
+|---|---|---|
+| girdi | 17 eklem koordinatı → geometri | ham piksel → doku, hareket bulanıklığı, sahne |
+| körlük | poz bulunamazsa **kör** | yeni sahnede genellemesi zayıf |
+
+**Hata bağımsızlığı ölçüldü** (96 klip, ayrı ayrı en iyi eşiklerinde):
+
+```
+yalnızca iskelet yanıldı :  10
+yalnızca video yanıldı   :   9
+İKİSİ birden yanıldı     :   1   ⬅ birleşimin kurtaramayacağı
+toplam hata (iskelet)    :  11
+toplam hata (video)      :  10
+
+hata örtüşmesi: %10
+```
+
+21 hatanın yalnızca **1'i ortak**. Ders kitabı örneği bir tamamlayıcılık.
+
+**Birleşim sonucu:**
+
+```
+yöntem                     AUC      F1  kesinlik  duyarlılık
+iskelet (LightGBM)       0.927   0.889     0.957       0.830
+video (R3D-18)           0.937   0.911     0.864       0.962
+⭐ ortalama              0.968   0.937     0.897       0.981
+azami (VEYA)             0.964   0.936     0.911       0.962
+asgari (VE)              0.938   0.889     0.873       0.906
+çarpım                   0.956   0.901     0.862       0.943
+```
+
+⭐ **Basit ortalama, iyi olan tek modelin üstüne +0.031 AUC ve
++0.026 F1 koyuyor.** Duyarlılık 0.981'e çıkarken kesinlik 0.897'de
+kalıyor — yani kaçırma neredeyse bitiyor, yanlış alarm bedeli küçük.
+
+⚠ **Sızıntı yakalandı ve düzeltildi.** İlk sürüm skorları min-max ile
+ölçekliyordu ve ölçek **doğrulama kümesinin kendi min/max'ından**
+geliyordu: birleşim val dağılımını görmüş oluyordu. Normalizasyon
+tamamen kaldırıldı — iki çıktı da zaten olasılık ([0,1], "kavga olma
+olasılığı"), doğrudan ortalanabiliyorlar. Sonuç düzeltmeden sonra
+**aynı kaldı** (0.968), yani sızıntı sonucu üretmemişti; ama
+düzeltilmeden raporlanamazdı.
+
+---
+
+#### 3. Maliyet — ve 20 kamera kısıtı
+
+```
+R3D-18 çıkarım    : 6.5 ms / 16 karelik pencere
+20 kamera × 2.75 FPS = 55 pencere/sn gerekir
+→ 357 ms/saniye = tek GPU'nun %36'sı
+```
+
+Mevcut boru hattı 11.10 ms/kare × 55 = **610 ms/sn (%61)**. Video
+modeli eklenince toplam **~967 ms/sn (%97)** — sınırda. Yani
+teorik olarak yetişiyor ama **payı yok**; termal kısıtlama (R1) ya da
+kamera sayısındaki küçük bir artış bunu kırar.
+
+⚠ Ölçüm tek klip çıkarımıyla yapıldı; üretimde partili çalışır ve
+daha iyi olur. Ama YOLO ile aynı GPU'yu paylaşacağı da hesaba
+katılmalı. **Üretime alma kararı Mod A/B çalışmasına bırakıldı.**
+
+---
+
+**Öğrenilen ders:** Bir topluluğun kazancı üyelerin *tek tek*
+başarımından değil, **hatalarının bağımsızlığından** gelir. Mevcut
+füzyon katmanımız beş skoru topluyordu ama beşi de aynı özelliklerden
+türüyordu — P-41 tam bu yüzden "füzyon kazandırıyor" iddiasını
+çürütmüştü. Gerçekten farklı bir bilgi kaynağı (ham piksel) eklenince
+kazanç ilk kez ortaya çıktı.
+
+> ⭐ Kullanıcının "üçü birlikte çalışsın" sezgisi doğruydu; eksik olan
+> şey üçüncü YZ değil, **birbirinden bağımsız** bir ikinciydi.
+
+⚠ **Kapsam dürüstlüğü:** bu birleşim "üç YZ"nin ikisini kapsıyor.
+İfade/duygu yolu dâhil değil — uzaktan güvenilir değil (ölçüldü,
+füzyon ağırlığı 0.10-0.15) ve RWF kliplerinde yüzler çözünmüyor.
+
+
+---
+
 ### P-53 · Kademeli koşullu füzyon ölçüldü — fikir doğru, KAPI yok
 
 **Tarih:** 08.09.2026 · **Faz:** 3 · **Kaybedilen süre:** ~1 saat

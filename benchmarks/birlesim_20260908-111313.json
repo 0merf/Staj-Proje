@@ -1,0 +1,59 @@
+{
+  "olculdu": "2026-09-08T11:13:13.851387+00:00",
+  "val_klip": 96,
+  "sonuclar": {
+    "iskelet (LightGBM)": {
+      "auc": 0.9267,
+      "f1": 0.8889,
+      "esik": 0.59,
+      "kesinlik": 0.9565,
+      "duyarlilik": 0.8302
+    },
+    "video (R3D-18)": {
+      "auc": 0.9366,
+      "f1": 0.9107,
+      "esik": 0.28,
+      "kesinlik": 0.8644,
+      "duyarlilik": 0.9623
+    },
+    "ortalama": {
+      "auc": 0.9684,
+      "f1": 0.9369,
+      "esik": 0.4,
+      "kesinlik": 0.8966,
+      "duyarlilik": 0.9811
+    },
+    "azami (VEYA)": {
+      "auc": 0.964,
+      "f1": 0.9346,
+      "esik": 0.66,
+      "kesinlik": 0.9259,
+      "duyarlilik": 0.9434
+    },
+    "asgari (VE)": {
+      "auc": 0.939,
+      "f1": 0.8889,
+      "esik": 0.23,
+      "kesinlik": 0.8727,
+      "duyarlilik": 0.9057
+    },
+    "çarpım": {
+      "auc": 0.9552,
+      "f1": 0.8947,
+      "esik": 0.05,
+      "kesinlik": 0.8361,
+      "duyarlilik": 0.9623
+    }
+  },
+  "hata_bagimsizligi": {
+    "yalniz_iskelet": 10,
+    "yalniz_video": 9,
+    "ikisi": 1,
+    "ortusme": 0.1
+  },
+  "maliyet": {
+    "r3d18_ms_pencere": 6.49,
+    "yirmi_kamera_ms_sn": 356.7,
+    "gercek_zamanli": true
+  }
+}

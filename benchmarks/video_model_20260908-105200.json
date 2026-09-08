@@ -1,0 +1,105 @@
+{
+  "olculdu": "2026-09-08T10:52:00.274135+00:00",
+  "mimari": "r3d_18 (Kinetics-400 ön eğitimli)",
+  "girdi": "16 kare × 112×112",
+  "tam_egitim": false,
+  "train_klip": 482,
+  "val_klip": 96,
+  "devir": 12,
+  "lr": 0.001,
+  "parti": 8,
+  "gecmis": [
+    {
+      "devir": 1,
+      "auc": 0.8883,
+      "f1": 0.8571
+    },
+    {
+      "devir": 2,
+      "auc": 0.91,
+      "f1": 0.8571
+    },
+    {
+      "devir": 3,
+      "auc": 0.8868,
+      "f1": 0.8364
+    },
+    {
+      "devir": 4,
+      "auc": 0.8912,
+      "f1": 0.8393
+    },
+    {
+      "devir": 5,
+      "auc": 0.8916,
+      "f1": 0.86
+    },
+    {
+      "devir": 6,
+      "auc": 0.8967,
+      "f1": 0.8571
+    },
+    {
+      "devir": 7,
+      "auc": 0.898,
+      "f1": 0.8644
+    },
+    {
+      "devir": 8,
+      "auc": 0.9057,
+      "f1": 0.8571
+    },
+    {
+      "devir": 9,
+      "auc": 0.9043,
+      "f1": 0.8621
+    },
+    {
+      "devir": 10,
+      "auc": 0.9118,
+      "f1": 0.8718
+    },
+    {
+      "devir": 11,
+      "auc": 0.9158,
+      "f1": 0.8793
+    },
+    {
+      "devir": 12,
+      "auc": 0.9109,
+      "f1": 0.8696
+    }
+  ],
+  "en_iyi": {
+    "auc": 0.9157525230364195,
+    "devir": 11,
+    "f1": 0.8793103448275862,
+    "esik": 0.06,
+    "kesinlik": 0.8095238095238095,
+    "duyarlilik": 0.9622641509433962
+  },
+  "karsilastirma": {
+    "kural_tabani": {
+      "auc": 0.629,
+      "f1": 0.712
+    },
+    "iskelet_lightgbm": {
+      "tur": "LightGBM",
+      "auc": 0.9267,
+      "f1": 0.8889,
+      "duyarlilik": 0.8302,
+      "kesinlik": 0.9565,
+      "en_iyi_esik": 0.59,
+      "dogruluk": 0.8854
+    },
+    "video_r3d18": {
+      "auc": 0.9157525230364195,
+      "devir": 11,
+      "f1": 0.8793103448275862,
+      "esik": 0.06,
+      "kesinlik": 0.8095238095238095,
+      "duyarlilik": 0.9622641509433962
+    }
+  },
+  "adil_kiyas_notu": "Aynı klipler, aynı val kümesi. Eşik her iki yöntemde de val'de arandı — bilinen yanlılık, İKİ TARAFTA DA aynı."
+}

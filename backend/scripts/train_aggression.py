@@ -81,6 +81,21 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BENCHMARKS = PROJECT_ROOT / "benchmarks"
 RWF = PROJECT_ROOT / "data" / "datasets" / "RWF-2000"
 OZELLIK_DOSYASI = PROJECT_ROOT / "data" / "_tmp" / "rwf_ozellikler.json"
+
+
+def _ozellik_dosyasi(args: argparse.Namespace) -> Path:
+    """Özellik dosyası yolu — FPS taraması için ayrıştırılabilir (P-55).
+
+    ⚠ Tek bir sabit yol, FPS taramasını imkânsız kılıyordu: her koşu
+    bir öncekini eziyordu ve iki ayarı YAN YANA kıyaslamak için ikisinin
+    de aynı anda diskte durması gerekiyor. Aynı gerekçe `Esikler`
+    sınıfının doğuş gerekçesiydi (P-17: ortak zemin olmadan iki sayı
+    kıyaslanamaz).
+    """
+    ad = getattr(args, "ozellik_dosyasi", "") or ""
+    if ad:
+        return PROJECT_ROOT / "data" / "_tmp" / ad
+    return OZELLIK_DOSYASI
 MODEL_DOSYASI = PROJECT_ROOT / "backend" / "models" / "saldirganlik_lgbm.txt"
 
 TOHUM = 42
@@ -356,8 +371,9 @@ def _ozellik_cikar(args: argparse.Namespace) -> int:
                       f"({time.time() - t0:.0f} sn)", end="", flush=True)
             print()
 
-    OZELLIK_DOSYASI.parent.mkdir(parents=True, exist_ok=True)
-    OZELLIK_DOSYASI.write_text(
+    hedef_dosya = _ozellik_dosyasi(args)
+    hedef_dosya.parent.mkdir(parents=True, exist_ok=True)
+    hedef_dosya.write_text(
         json.dumps(veri, ensure_ascii=False), encoding="utf-8"
     )
     print(f"\nyazıldı: {OZELLIK_DOSYASI.relative_to(PROJECT_ROOT)}")
@@ -370,13 +386,14 @@ def _egit(args: argparse.Namespace) -> int:
     import lightgbm as lgb
     import numpy as np
 
-    if not OZELLIK_DOSYASI.is_file():
-        print(f"❌ Özellik dosyası yok: {OZELLIK_DOSYASI}\n"
+    kaynak = _ozellik_dosyasi(args)
+    if not kaynak.is_file():
+        print(f"❌ Özellik dosyası yok: {kaynak}\n"
               "   Önce: uv run python scripts/train_aggression.py --cikar",
               file=sys.stderr)
         return 1
 
-    veri = json.loads(OZELLIK_DOSYASI.read_text(encoding="utf-8"))
+    veri = json.loads(kaynak.read_text(encoding="utf-8"))
     if not veri["train"] or not veri["val"]:
         print("❌ Eğitim ya da doğrulama kümesi boş.", file=sys.stderr)
         return 1
@@ -582,6 +599,10 @@ def main() -> int:
     ap.add_argument("--klip", type=int, default=300, help="sınıf başına klip")
     ap.add_argument("--fps", type=float, default=4.0)
     ap.add_argument("--imgsz", type=int, default=640)
+    ap.add_argument(
+        "--ozellik-dosyasi", default="",
+        help="data/_tmp altında dosya adı (FPS taraması için ayrı dosya)",
+    )
     ap.add_argument(
         "--haric-onek", default="",
         help="ablasyon: bu öneklerle başlayan sütunları düşür (virgüllü)",
