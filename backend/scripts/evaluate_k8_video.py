@@ -104,7 +104,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BENCHMARKS = PROJECT_ROOT / "benchmarks"
 VIDEOLAR = PROJECT_ROOT / "data" / "videos"
 ETIKETLER = PROJECT_ROOT / "data" / "annotations"
-MODEL_DOSYASI = PROJECT_ROOT / "backend" / "models" / "saldirganlik_lgbm.txt"
+MODEL_DOSYASI = PROJECT_ROOT / "models" / "saldirganlik_lgbm.txt"
 
 # ⚠ Eğitimdeki klip uzunluğuyla AYNI (RWF klipleri 5 sn). Model o
 # uzunluktaki özetlerle eğitildi; başka bir pencere, eğitildiğinden
@@ -610,10 +610,10 @@ def main() -> int:
     from sentinel.inference.pose.yolo import YoloPoseEstimator
 
     dedektor = UltralyticsDetector(
-        PROJECT_ROOT / "backend" / "models" / "yolo26s.pt",
+        PROJECT_ROOT / "models" / "yolo26s.pt",
         imgsz=args.imgsz, half=True,
     )
-    poz = YoloPoseEstimator(PROJECT_ROOT / "backend" / "models" / "yolo26s-pose.pt")
+    poz = YoloPoseEstimator(PROJECT_ROOT / "models" / "yolo26s-pose.pt")
     dedektor.warmup(1)
     poz.warmup(8)
 

@@ -181,6 +181,17 @@ class Settings(BaseSettings):
 
     # ─── Modeller ─────────────────────────────────────────────
     detector_backend: str = "yolo26"  # yolo26 | yolo11 | rtmdet
+    # ─── ⭐ ÖĞRENİLMİŞ SALDIRGANLIK MODELİ (P-56) ───
+    # Hakem denetimi (docs/report/denetim-hakem.md §1.1) şunu buldu:
+    # raporlanan model sonuçları (K5 F1 0.889) yalnızca çevrim dışı
+    # betiklerde vardı; canlı boru hattı hiçbir öğrenilmiş model
+    # çalıştırmıyordu. Bu ayar o boşluğu kapatan yolu açıyor.
+    #
+    # ⚠ Model dosyası yoksa modül SESSİZCE devre dışı kalır ve füzyon
+    # eski kural skoruna döner — eksik bir bağımlılık boru hattını
+    # durdurmaz.
+    aggression_model_enabled: bool = True
+    aggression_model_path: str = "models/saldirganlik_lgbm.txt"
     detector_model_path: str = "models/yolo26s.pt"
     detector_conf_threshold: float = 0.35
     pose_model_path: str = "models/yolo26s-pose.pt"
@@ -336,6 +347,10 @@ class Settings(BaseSettings):
         """
         path = Path(value)
         return path if path.is_absolute() else PROJECT_ROOT / path
+
+    @property
+    def aggression_model_weights(self) -> Path:
+        return self.resolve_path(self.aggression_model_path)
 
     @property
     def detector_weights(self) -> Path:

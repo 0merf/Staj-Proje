@@ -69,7 +69,7 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 OZELLIKLER = PROJECT_ROOT / "data" / "_tmp" / "rwf_ozellikler.json"
-MODEL_DOSYASI = PROJECT_ROOT / "backend" / "models" / "saldirganlik_lgbm.txt"
+MODEL_DOSYASI = PROJECT_ROOT / "models" / "saldirganlik_lgbm.txt"
 BENCHMARKS = PROJECT_ROOT / "benchmarks"
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))

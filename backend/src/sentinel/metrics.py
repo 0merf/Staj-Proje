@@ -186,6 +186,17 @@ anomalies_total = Counter(
 # EŞİĞİ GEÇEN riski gösterir, bu gauge eşiğin ALTINDAKİNİ de gösterir.
 # Fark operasyonel: "sistem sessiz" ile "sistem sessiz ama risk
 # tırmanıyor" arasındaki ayrım tam olarak erken uyarının konusu (K8).
+# ⭐ Öğrenilmiş saldırganlık modelinin kamera başına çıktısı (P-56).
+# ⚠ `risk_score`dan AYRI: o füzyon sonrası birleşik risk, bu ham model
+# olasılığı. İkisini tek gauge'da toplamak, modelin mi füzyonun mu
+# konuştuğunu ayırt edilemez yapardı — P-40'ta panelin kare yerine
+# kişi sayması tam bu tür bir karışıklıktı.
+aggression_model_score = Gauge(
+    "sentinel_aggression_model_score",
+    "Ogrenilmis saldirganlik modelinin kamera basina olasiligi (0-1)",
+    ["cam"],
+)
+
 risk_score = Gauge(
     "sentinel_risk_score",
     "Füzyon risk skoru — kameradaki azami (0-1). Eşiğin altını da gösterir",

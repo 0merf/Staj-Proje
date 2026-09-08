@@ -550,10 +550,10 @@ def main() -> int:
     print(f"{len(klipler)} klip · örnekleme {args.fps} FPS · yer gerçeği: {TRUTH.name}")
 
     dedektor = UltralyticsDetector(
-        PROJECT_ROOT / "backend" / "models" / "yolo26s.pt",
+        PROJECT_ROOT / "models" / "yolo26s.pt",
         imgsz=args.imgsz, half=True,
     )
-    poz = YoloPoseEstimator(PROJECT_ROOT / "backend" / "models" / "yolo26s-pose.pt")
+    poz = YoloPoseEstimator(PROJECT_ROOT / "models" / "yolo26s-pose.pt")
     dedektor.warmup(1)
     poz.warmup(8)
 

@@ -67,8 +67,8 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 OZELLIKLER = PROJECT_ROOT / "data" / "_tmp" / "rwf_ozellikler.json"
 TENSOR_DIZINI = PROJECT_ROOT / "data" / "_tmp" / "video_tensor"
-LGBM_DOSYASI = PROJECT_ROOT / "backend" / "models" / "saldirganlik_lgbm.txt"
-VIDEO_DOSYASI = PROJECT_ROOT / "backend" / "models" / "video_r3d18.pt"
+LGBM_DOSYASI = PROJECT_ROOT / "models" / "saldirganlik_lgbm.txt"
+VIDEO_DOSYASI = PROJECT_ROOT / "models" / "video_r3d18.pt"
 BENCHMARKS = PROJECT_ROOT / "benchmarks"
 
 KARE_SAYISI = 16

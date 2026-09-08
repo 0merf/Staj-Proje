@@ -181,7 +181,7 @@ def main() -> int:
     from sentinel.inference.detector.yolo import UltralyticsDetector
 
     dedektor = UltralyticsDetector(
-        PROJECT_ROOT / "backend" / "models" / "yolo26s.pt",
+        PROJECT_ROOT / "models" / "yolo26s.pt",
         imgsz=args.imgsz, half=True,
     )
     dedektor.warmup(1)

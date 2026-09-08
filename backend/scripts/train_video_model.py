@@ -85,7 +85,7 @@ RWF = PROJECT_ROOT / "data" / "datasets" / "RWF-2000"
 OZELLIKLER = PROJECT_ROOT / "data" / "_tmp" / "rwf_ozellikler.json"
 TENSOR_DIZINI = PROJECT_ROOT / "data" / "_tmp" / "video_tensor"
 BENCHMARKS = PROJECT_ROOT / "benchmarks"
-MODEL_DOSYASI = PROJECT_ROOT / "backend" / "models" / "video_r3d18.pt"
+MODEL_DOSYASI = PROJECT_ROOT / "models" / "video_r3d18.pt"
 
 # Kinetics ön işleme — ön eğitimli ağırlıkların beklediği hâl.
 # ⚠ Değiştirilirse ön eğitim boşa gider: ağ başka bir dağılım görür.

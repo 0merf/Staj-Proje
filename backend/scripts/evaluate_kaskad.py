@@ -87,7 +87,7 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BENCHMARKS = PROJECT_ROOT / "benchmarks"
 OZELLIK_DOSYASI = PROJECT_ROOT / "data" / "_tmp" / "rwf_ozellikler.json"
-MODEL_DOSYASI = PROJECT_ROOT / "backend" / "models" / "saldirganlik_lgbm.txt"
+MODEL_DOSYASI = PROJECT_ROOT / "models" / "saldirganlik_lgbm.txt"
 
 TOHUM = 42
 

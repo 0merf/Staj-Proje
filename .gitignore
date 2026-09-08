@@ -66,14 +66,20 @@ data/fall-01-cam0-rgb/*
 # ffmpeg concat listeleri gibi geçici dosyalar
 data/_tmp/*
 models/*
-# ⚠ `models/*` kök dizine ÇAPALI (ortada eğik çizgi var) — yani
-# `backend/models/` bu kuralla ELENMİYOR. Oradaki ağırlıklar
-# `*.pt` / `*.engine` / `*.onnx` desenleriyle eleniyor.
+# ⚠⚠ 08.09.2026 — İKİ MODEL DİZİNİ VARDI VE BU SESSİZ BİR HATAYDI.
+#
+# Üretim `config.py · resolve_path()` ile `<kök>/models/` okuyor;
+# ölçüm betikleri ise `backend/models/` yazıyordu. Eğitilen model
+# üretimin BAKMADIĞI yere kaydediliyordu — `SaldirganlikModeli`
+# "model yok" deyip sessizce devre dışı kalıyordu.
+#
+# ⚠ Ayrıca YOLO ağırlıkları İKİ YERDE birden duruyordu (~100 MB kopya).
+# 16 betik `<kök>/models/` okuyacak şekilde düzeltildi.
 backend/models/*
 # ⭐ İSTİSNA: eğittiğimiz saldırganlık modeli (138 KB). Üçüncü taraf
 # ağırlık değil, BİZİM çıktımız ve K5/K8 sayılarının kaynağı.
 # Git'e girmezse makalenin hiçbir sayısı yeniden üretilemez.
-!backend/models/saldirganlik_lgbm.txt
+!models/saldirganlik_lgbm.txt
 !**/.gitkeep
 
 # ⚠ SOURCE.md dosyalari git'e GİRER — PLAN.md §7.2:

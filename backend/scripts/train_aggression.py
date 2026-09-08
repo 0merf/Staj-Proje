@@ -96,7 +96,7 @@ def _ozellik_dosyasi(args: argparse.Namespace) -> Path:
     if ad:
         return PROJECT_ROOT / "data" / "_tmp" / ad
     return OZELLIK_DOSYASI
-MODEL_DOSYASI = PROJECT_ROOT / "backend" / "models" / "saldirganlik_lgbm.txt"
+MODEL_DOSYASI = PROJECT_ROOT / "models" / "saldirganlik_lgbm.txt"
 
 TOHUM = 42
 
@@ -343,10 +343,10 @@ def _ozellik_cikar(args: argparse.Namespace) -> int:
     from sentinel.inference.pose.yolo import YoloPoseEstimator
 
     dedektor = UltralyticsDetector(
-        PROJECT_ROOT / "backend" / "models" / "yolo26s.pt",
+        PROJECT_ROOT / "models" / "yolo26s.pt",
         imgsz=args.imgsz, half=True,
     )
-    poz = YoloPoseEstimator(PROJECT_ROOT / "backend" / "models" / "yolo26s-pose.pt")
+    poz = YoloPoseEstimator(PROJECT_ROOT / "models" / "yolo26s-pose.pt")
     dedektor.warmup(1)
     poz.warmup(8)
 

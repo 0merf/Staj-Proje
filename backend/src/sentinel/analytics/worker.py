@@ -42,6 +42,7 @@ import signal
 import sys
 import time
 from collections import Counter
+from pathlib import Path
 from types import FrameType
 from typing import Any
 
@@ -58,6 +59,11 @@ from sentinel.analytics.features.person import KisiOzellikleri, cikar
 from sentinel.analytics.features.window import Ornek, PencereDeposu
 from sentinel.analytics.fusion import RiskFuzyonu, RiskSonucu
 from sentinel.analytics.ifade import IfadeSinyali
+from sentinel.analytics.model import (
+    ASGARI_PAY,
+    SaldirganlikModeli,
+    iz_paylari,
+)
 from sentinel.bus.streams import connect
 from sentinel.config import PROJECT_ROOT, settings
 from sentinel.logging import configure_logging, get_logger
@@ -75,6 +81,21 @@ def _handle_signal(_sig: int, _frame: FrameType | None) -> None:
     log.info("kapatma_sinyali_alindi")
 
 
+def _model_sutun_yolu() -> Path | None:
+    """Model sütun sırasını taşıyan en yeni ölçüm JSON'u.
+
+    ⚠ Sütun SIRASI model dosyasıyla birlikte sabitlendi ve ayrı bir
+    dosyada duruyor. Alfabetik yeniden üretmek yetmez: eğitim
+    `sorted()` kullanıyor ama o varsayıma dayanmak sessiz bir hata
+    kaynağı olurdu. `SaldirganlikModeli` sütun sayısını model
+    dosyasıyla karşılaştırıp uyuşmazlıkta devre dışı kalıyor.
+    """
+    kayitlar = sorted(
+        (PROJECT_ROOT / "benchmarks").glob("saldirganlik_model_*.json")
+    )
+    return kayitlar[-1] if kayitlar else None
+
+
 class AnalyticsWorker:
     """`inference.results` akışını tüketip anomali üretir."""
 
@@ -90,6 +111,25 @@ class AnalyticsWorker:
         self._normal = NormalProfilDeposu(PROJECT_ROOT / "data" / "profiles")
         # SALDIRGANLIK — kişi + çift özelliklerinden tırmanma skoru
         self._tirmanma = TirmanmaSkorlayici()
+        # ⭐⭐ ÖĞRENİLMİŞ MODEL — P-56, hakem denetiminin en ağır bulgusu
+        #
+        # 08.09.2026'ya kadar canlı boru hattında HİÇBİR öğrenilmiş
+        # model yoktu: K5 F1 = 0.889 yalnızca çevrim dışı betiklerde
+        # ölçülüyordu. Ve bu, füzyonun EN AĞIR sinyalini (0.40)
+        # P-52'de ayırt etmediği ölçülen kural kümesine bırakıyordu.
+        # K7 koşusunda üretilen 39 alarmın SIFIRI saldırganlıktandı.
+        #
+        # Model kamera seviyesinde karar veriyor, kural iz seviyesinde
+        # atıf yapıyor (bkz. analytics/model.py modül başlığı).
+        self._model: SaldirganlikModeli | None = None
+        if settings.aggression_model_enabled:
+            self._model = SaldirganlikModeli(
+                settings.aggression_model_weights,
+                _model_sutun_yolu(),
+            )
+            if not self._model.etkin:
+                log.warning("saldirganlik_modeli_devre_disi_kurala_donuluyor")
+                self._model = None
         # FÜZYON — beş sinyali tek risk skorunda birleştirir (PLAN §6.6)
         self._fuzyon = RiskFuzyonu()
         # İFADE — KADEME 2b çıktısını füzyona taşıyan katman.
@@ -268,6 +308,11 @@ class AnalyticsWorker:
         kamera_pencereleri = self._pencereler.kamera_pencereleri(camera)
         ciftler = pair.kamera_ciftleri(kamera_pencereleri)
         skorlar = self._tirmanma.degerlendir(camera, ozellikler, ciftler, ts)
+        # ⭐ Öğrenilmiş modeli besle — kayan 5 sn penceresi (P-56).
+        # ⚠ Kural skorlarından SONRA çağrılıyor çünkü modelin girdisinin
+        # bir kısmı kural bileşenleri (eğitimde de öyleydi).
+        if self._model is not None:
+            self._model.besle(camera, ozellikler, skorlar, ts)
         for skor in skorlar:
             if skor.seviye in ("uyari", "alarm"):
                 self._tirmanma_yayinla(camera, skor, ts)
@@ -446,6 +491,23 @@ class AnalyticsWorker:
         # İz kimliği → o izin sinyalleri
         tirmanma_map = {s.track_id: s.skor for s in tirmanma}
 
+        # ⭐⭐ SALDIRGANLIK SİNYALİ: model KARAR, kural ATIF (P-56)
+        #
+        # 08.09.2026'ya kadar bu sinyal doğrudan kural skoruydu ve
+        # P-52 onun gerçek görüntüde ayırt etmediğini ölçmüştü
+        # (kavga/normal oranı 1.01). Füzyondaki ağırlığı 0.40 —
+        # yani en ağır sinyal bilgisizdi.
+        #
+        #     saldirganlik(iz) = model_kamera × pay(iz)
+        #
+        # Model "ne kadar riskli" (ölçülmüş F1 0.889), kural "kim"
+        # sorusunu yanıtlıyor. Model yoksa `model_skoru` None kalır
+        # ve eski davranışa dönülür — bilerek, sessizce.
+        model_skoru = self._model.degerlendir(camera) if self._model else None
+        paylar = iz_paylari(tirmanma) if model_skoru is not None else {}
+        if model_skoru is not None:
+            metrics.aggression_model_score.labels(cam=camera).set(model_skoru)
+
         # Kural sinyali: bu izde ateşleyen kuralların EN YÜKSEĞİ.
         # ⚠ Toplam değil azami — iki kural birden ateşlemek, birinin
         # iki katı kadar riskli demek değil.
@@ -467,7 +529,11 @@ class AnalyticsWorker:
                 continue
             anomali_skor, _kanit = anomali_skorlari.get(iz, (0.0, {}))
             sinyaller = fusion.Sinyaller(
-                saldirganlik=tirmanma_map.get(iz, 0.0),
+                saldirganlik=(
+                    model_skoru * paylar.get(iz, ASGARI_PAY)
+                    if model_skoru is not None
+                    else tirmanma_map.get(iz, 0.0)
+                ),
                 anomali=anomali_skor,
                 kural=kural_map.get(iz, 0.0),
                 ifade=ifade_skorlari.get(iz, 0.0),

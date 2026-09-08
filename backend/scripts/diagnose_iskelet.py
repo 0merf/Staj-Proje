@@ -170,7 +170,7 @@ def main() -> int:
     from sentinel.inference.pose.yolo import YoloPoseEstimator
 
     dedektor = UltralyticsDetector(
-        PROJECT_ROOT / "backend" / "models" / "yolo26s.pt",
+        PROJECT_ROOT / "models" / "yolo26s.pt",
         imgsz=args.imgsz, half=True,
     )
     dedektor.warmup(1)
@@ -188,7 +188,7 @@ def main() -> int:
     t0 = time.time()
     for yap in YAPILANDIRMALAR:
         poz = YoloPoseEstimator(
-            PROJECT_ROOT / "backend" / "models" / "yolo26s-pose.pt",
+            PROJECT_ROOT / "models" / "yolo26s-pose.pt",
             crop_size=int(yap["kirpinti"]),
             conf_threshold=float(yap["conf"]),
         )
