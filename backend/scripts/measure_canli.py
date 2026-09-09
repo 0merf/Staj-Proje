@@ -174,14 +174,29 @@ def _kaynak() -> dict[str, Any]:
         cikti["not"] = "psutil kurulu değil — CPU/RAM ölçülemedi"
         return cikti
 
-    for p in psutil.process_iter(["pid", "name", "cmdline"]):
+    # ⚠⚠ 09.09.2026 — BU BLOK BOZUKTU VE İKİ GÜN YANLIŞ RAPOR ÜRETTİ
+    #
+    # `uv run` bir rol için ÜÇ python.exe üretiyor: nohup → uv → küçük
+    # bir başlatıcı → ASIL süreç. Eski kod ilk eşleşeni alıyordu ve o
+    # genellikle başlatıcıydı: her rol için hep `15.5 MB / %0.0`.
+    #
+    # ⭐ Toplam doğruydu (`toplam_cpu` ayrı hesaplanıyordu) ama
+    # KIRILIM anlamsızdı — ve P-58'deki "10 çekirdek nerede" sorusunu
+    # iki gün boyunca cevapsız bırakan tam olarak buydu. Kırılım
+    # düzelir düzelmez suçlu (analitik worker, 795% CPU) ilk bakışta
+    # göründü.
+    #
+    # Düzeltme: aynı rol için birden çok aday varsa EN BÜYÜK RSS'li
+    # olan asıl süreçtir (başlatıcı ~4 MB, asıl yüzlerce MB).
+    adaylar: dict[str, Any] = {}
+    for p in psutil.process_iter(["pid", "name", "cmdline", "memory_info"]):
         try:
+            if p.info["name"] != "python.exe":
+                continue
             cmd = " ".join(p.info.get("cmdline") or [])
             if "sentinel." not in cmd:
                 continue
-            # ⚠ `uv run` iki süreç üretir (sarmalayıcı + asıl);
-            # sarmalayıcının RAM'i asılınkine dâhil değil ve
-            # ikisini toplamak çift saymak olmaz (CLAUDE.md tuzaklar).
+            rss = p.info["memory_info"].rss / 1024 / 1024
             for anahtar, etiket in (
                 ("ingest.worker", "alim"),
                 ("inference.worker", "cikarim"),
@@ -190,16 +205,47 @@ def _kaynak() -> dict[str, Any]:
                 ("api.main", "api"),
             ):
                 if anahtar in cmd:
-                    with p.oneshot():
-                        ram = p.memory_info().rss / 1024 / 1024
-                        cpu = p.cpu_percent(interval=None)
-                    cikti["surecler"].append(
-                        {"rol": etiket, "pid": p.info["pid"],
-                         "ram_mb": round(ram, 1), "cpu_yuzde": round(cpu, 1)}
-                    )
-                    cikti["toplam_ram_mb"] += ram
-                    cikti["toplam_cpu"] += cpu
+                    onceki = adaylar.get(etiket)
+                    if onceki is None or rss > onceki[1]:
+                        adaylar[etiket] = (p, rss)
                     break
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+
+    # ⚠ KOPYA UYARISI: aynı rolde birden çok ASIL süreç varsa iki
+    # takım worker koşuyor demektir (P-58'de gerçekten oldu:
+    # 40 RTSP akışı, iki kopya YOLO, iki `--owner` alım).
+    kopya: dict[str, int] = {}
+    for p in psutil.process_iter(["name", "cmdline", "memory_info"]):
+        try:
+            if p.info["name"] != "python.exe":
+                continue
+            cmd = " ".join(p.info.get("cmdline") or [])
+            if p.info["memory_info"].rss / 1024 / 1024 < 50:
+                continue
+            for anahtar, etiket in (
+                ("ingest.worker", "alim"),
+                ("inference.worker", "cikarim"),
+                ("analytics.worker", "analitik"),
+            ):
+                if anahtar in cmd:
+                    kopya[etiket] = kopya.get(etiket, 0) + 1
+                    break
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+    cikti["kopya_uyarisi"] = {r: n for r, n in kopya.items() if n > 1}
+
+    for etiket, (p, rss) in adaylar.items():
+        try:
+            with p.oneshot():
+                cpu = p.cpu_percent(interval=None)
+                thread = p.num_threads()
+            cikti["surecler"].append(
+                {"rol": etiket, "pid": p.pid, "ram_mb": round(rss, 1),
+                 "cpu_yuzde": round(cpu, 1), "thread": thread}
+            )
+            cikti["toplam_ram_mb"] += rss
+            cikti["toplam_cpu"] += cpu
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue
     cikti["toplam_ram_mb"] = round(cikti["toplam_ram_mb"], 1)
@@ -388,17 +434,19 @@ def main() -> int:
     # ─── Kaynak ───
     print("\n═══ KAYNAK KULLANIMI ═══")
     if kaynaklar and kaynaklar[-1].get("surecler"):
-        print(f"{'rol':<12} {'RAM (MB)':>10} {'CPU %':>8}")
+        print(f"{'rol':<12} {'RAM (MB)':>10} {'CPU %':>8} {'çekirdek':>10} {'thread':>8}")
         # Süreç başına medyan — anlık değer dalgalanıyor.
         roller: dict[str, list[tuple[float, float]]] = {}
         for k in kaynaklar:
             for s_ in k["surecler"]:
                 roller.setdefault(s_["rol"], []).append(
-                    (s_["ram_mb"], s_["cpu_yuzde"]))
+                    (s_["ram_mb"], s_["cpu_yuzde"], s_.get("thread", 0)))
         for rol, degerler in sorted(roller.items()):
             ram = statistics.median(d[0] for d in degerler)
             cpu = statistics.median(d[1] for d in degerler)
-            print(f"{rol:<12} {ram:>10.1f} {cpu:>8.1f}")
+            th = statistics.median(d[2] for d in degerler)
+            print(f"{rol:<12} {ram:>10.1f} {cpu:>8.1f} {cpu / 100:>10.2f} "
+                  f"{th:>8.0f}")
         print(f"{'TOPLAM':<12} "
               f"{statistics.median(k['toplam_ram_mb'] for k in kaynaklar):>10.1f} "
               f"{statistics.median(k['toplam_cpu'] for k in kaynaklar):>8.1f}")
@@ -406,6 +454,14 @@ def main() -> int:
               f"{statistics.median(k.get('sistem_ram_yuzde', 0) for k in kaynaklar):.0f}")
     else:
         print("  ⚠ psutil yok ya da süreç bulunamadı")
+
+    kopyalar = (kaynaklar[-1].get("kopya_uyarisi") if kaynaklar else {}) or {}
+    if kopyalar:
+        print("\n⚠⚠ KOPYA SÜREÇ UYARISI — ÖLÇÜM GEÇERSİZ SAYILMALI")
+        for rol, n in kopyalar.items():
+            print(f"   {rol}: {n} adet asıl süreç (olması gereken 1)")
+        print("   İki takım worker aynı anda koşuyor; kaynak ölçümü")
+        print("   ve gecikme sayıları anlamsız. Önce temizleyin.")
 
     atilan = son.get("kare_atildi") or {}
     if atilan:

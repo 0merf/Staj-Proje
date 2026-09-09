@@ -1,0 +1,77 @@
+{
+  "olculdu": "2026-09-09T10:03:23.180331+00:00",
+  "sure_s": 149.6,
+  "ornek": 8,
+  "isinma_s": 40,
+  "gpu": {
+    "ad": "NVIDIA GeForce RTX 3070 Laptop GPU",
+    "toplam_vram_mb": 8192.0
+  },
+  "referans": {
+    "gecikme_p50_ms": 205.0,
+    "gecikme_p95_ms": 463.0,
+    "analiz_fps": 2.75,
+    "ornekleme_fps": 3.64
+  },
+  "model": {
+    "skor_ureten_kamera": 18,
+    "medyan": 0.0729,
+    "azami": 0.3899
+  },
+  "alarm_turleri": {
+    "fall": 17.0,
+    "loitering": 17.0,
+    "crowd": 69.0,
+    "running": 6.0,
+    "aggression": 7.0
+  },
+  "gecikme": {
+    "p50_ms": 180.7,
+    "p95_ms": 634.3,
+    "yontem": "histogram kova ara değerlemesi — kesin değer değil"
+  },
+  "verim": {
+    "analiz_fps": 2.843,
+    "ornekleme_fps": 2.843
+  },
+  "kaynak": {
+    "surecler": [
+      {
+        "rol": "cikarim",
+        "pid": 13408,
+        "ram_mb": 1070.0,
+        "cpu_yuzde": 88.7,
+        "thread": 6
+      },
+      {
+        "rol": "analitik",
+        "pid": 19768,
+        "ram_mb": 133.8,
+        "cpu_yuzde": 91.7,
+        "thread": 2
+      },
+      {
+        "rol": "alim",
+        "pid": 11740,
+        "ram_mb": 1246.2,
+        "cpu_yuzde": 190.4,
+        "thread": 362
+      },
+      {
+        "rol": "alarm",
+        "pid": 20840,
+        "ram_mb": 53.7,
+        "cpu_yuzde": 0.1,
+        "thread": 2
+      }
+    ],
+    "toplam_ram_mb": 2503.7,
+    "toplam_cpu": 370.9,
+    "kopya_uyarisi": {},
+    "sistem_ram_yuzde": 76.1
+  },
+  "atilan_kare": {
+    "no_slot": 235.0,
+    "gate_idle": 26.0
+  }
+}
