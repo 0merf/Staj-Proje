@@ -5708,3 +5708,102 @@ Ve bu projede yer gerçeği eksikliği, ölçüm aracı hatalarından daha
 uzun süre (18 gün) fark edilmeden durdu — çünkü **bir sayıyı
 yanlış ölçmek şüphe uyandırır, hiç ölçmemek uyandırmaz.**
 
+
+---
+
+### P-69 · ⭐⭐⭐ En büyük hızlanma tek satırlık bir AYARDAN geldi — ve mimari değişikliği gereksiz kıldı
+
+**Tarih:** 09.09.2026 · **Faz:** 3
+
+**Neden bakıldı:** P-67'de kamera bölüştürme ölçülürken atılan kareler
+arasında `no_slot = 4482` göze çarptı. Paylaşımlı bellek havuzu
+tükeniyordu.
+
+---
+
+#### Bulgu: `.env` kodun varsayılanını ÜÇTE BİRE düşürmüş
+
+```
+backend/src/sentinel/config.py :  shm_slot_count = 128   ⬅ kod varsayılanı
+.env                           :  SHM_SLOT_COUNT=48      ⬅ yürürlükteki
+```
+
+48 slot × 2.76 MB = 133 MB. 96 slot = 265 MB. Yani kısıtlama bir bellek
+zorunluluğu değildi — 16 GB'lık makinede 130 MB fark yaratıyordu.
+
+Bu değer `.env`'e ne zaman ve neden konduğu **belgelenmemişti**.
+
+---
+
+#### ⭐⭐ Ölçüm: tek satır, en büyük kazanç
+
+Tek çıkarım worker'ı, aynı kod, aynı ölçüm aracı:
+
+| ölçüt | 48 slot | **96 slot** | fark |
+|---|---|---|---|
+| verim | 45.1 kare/sn (2.25 FPS/kam) | **55.7 (2.78)** | **+%23** |
+| gecikme p50 | 359 ms | **147 ms** | **−%59** |
+| gecikme p95 | 638 ms | **240 ms** | **−%62** |
+
+⭐ **Gecikme neredeyse üçte birine indi.** Mekanizma: havuz tükenince
+alım katmanı kareyi atıyordu (`no_slot`) ve hayatta kalan kareler daha
+uzun kuyrukta bekliyordu. Havuz büyüyünce hem daha az kare atılıyor hem
+kuyruk boşalıyor.
+
+---
+
+#### ⭐⭐⭐ VE ASIL BULGU: İKİ İYİLEŞTİRME TOPLANMIYOR
+
+Dört yapılandırma, aynı ölçüm aracı, aynı 240-300 sn pencereler:
+
+| yapılandırma | verim (kare/sn) | p50 | p95 | sistem RAM |
+|---|---|---|---|---|
+| 1 parça + 48 slot (taban) | 45.1 | 359 | 638 | %84 |
+| 2 parça + 48 slot | 53.7 | 183 | 411 | %98 |
+| **1 parça + 96 slot** | **55.7** | **147** | **240** | **%80** |
+| 2 parça + 96 slot | 50.8 | 170 | 387 | %98 |
+
+⭐ **En iyi yapılandırma en basit olanı: tek worker + yeterli slot.**
+
+İkisini birleştirmek **geriye götürdü** (55.7 → 50.8). Sebep: slot
+düzeltmesi, bölüştürmenin çözmeye çalıştığı darboğazı ortadan
+kaldırdı. Kalan tek etki, ikinci worker'ın CPU ve RAM çekişmesi — yani
+saf zarar.
+
+> ⭐⭐ **Bölüştürme bir BELİRTİYİ tedavi ediyormuş.** Worker'ın "kare
+> bekliyor" görünmesinin sebebi seri döngü değil, **üreticinin slot
+> bulamamasıydı.** İki worker koyunca her biri daha az beklediği için
+> toplam iyileşiyordu; asıl sebep düzeltilince ikinci worker'ın
+> yapacak işi kalmadı.
+
+⚠ **Bu, P-65'teki teşhisimi kısmen çürütüyor.** "Çıkarım worker'ı tek
+çekirdekte doyuyor, darboğaz mimaride" demiştim. Doğruydu ama **eksikti**:
+worker 0.89 çekirdekte doyuyordu, evet — ama sistemin verimini
+sınırlayan şey o değil, **kendisine kare ulaşamamasıydı.** Doğru teşhis
+"tek çekirdek tavanı" değil, "üretici-tüketici arasındaki tampon
+yetersiz".
+
+---
+
+#### Rapor için ⭐ neden değerli
+
+Makalede kullanılacak dört satırlık bir tablo ve tek cümlelik bir ders:
+
+> *"Aynı donanımda dört yapılandırma aynı ölçüm aracıyla kıyaslandı.
+> Mimari bir değişiklik (süreç düzeyinde paralelleştirme) gecikmeyi
+> %49 iyileştirdi; tek satırlık bir tampon ayarı ise %59 iyileştirdi ve
+> ek kaynak gerektirmedi. İkisi birleştirildiğinde sonuç, yalnızca
+> ayarın uygulandığı duruma göre KÖTÜLEŞTİ (%23 verim kaybı), çünkü
+> mimari değişiklik ayarın çözdüğü darboğaza yönelikti."*
+
+**Öğrenilen ders:** Bir mimari değişikliği ölçmeden önce, o mimarinin
+çözmeye çalıştığı darboğazın **gerçekten mimari olduğundan** emin
+olunmalı. Aksi hâlde doğru ölçülmüş, doğru raporlanmış ve **gereksiz**
+bir karmaşıklık eklenmiş olur.
+
+⚠ Ve daha basit bir ders: **çalışma zamanı ayarları, kod
+varsayılanlarıyla birlikte denetlenmeli.** `.env` sessizce kodun
+varsayılanının üçte birini dayatıyordu ve bunu 18 gün kimse fark
+etmedi. P-42'de "16 ayar okunmuyordu" bulunmuştu; bu onun tersi —
+**ayar okunuyordu ama yanlış değerdeydi ve gerekçesi yoktu.**
+
