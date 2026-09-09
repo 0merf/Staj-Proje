@@ -373,7 +373,15 @@ class InferenceWorker:
             )
             if batch and self._batch_fill_s > 0:
                 batch = self._partiyi_doldur(batch)
-            self.wait_ms.append((time.perf_counter() - t_wait) * 1000.0)
+            _bekleme = (time.perf_counter() - t_wait) * 1000.0
+            self.wait_ms.append(_bekleme)
+            # ⚠ `bekleme_IS_DEGIL` adı bilinçli: bu süre CPU harcamıyor,
+            # kare gelmesini bekliyor. Diğer aşamalarla TOPLANMAMALI.
+            # Adı uyarmazsa toplanır — P-61'de `decode_duration` tam olarak
+            # böyle "çözme süresi" sanılmıştı.
+            metrics.inference_duration.labels(stage="bekleme_IS_DEGIL").observe(
+                _bekleme / 1000.0,
+            )
             if batch:
                 batch = self._drop_stale(batch)
             if batch:
@@ -527,10 +535,49 @@ class InferenceWorker:
         return batch
 
     def _run_batch(self, batch: list) -> None:  # type: ignore[type-arg]
+        # ⭐ TOPLAM PARTİ SÜRESİ — aşamaların ARASINDA kalan işi görmek için.
+        #
+        # Aşamaları tek tek ölçmek yetmiyor: ilk kırılımda aşamalar
+        # 6.97 ms/kare veriyordu ama kare başına gerçek CPU ~15 ms'ti.
+        # Aradaki fark, hiçbir aşamanın içinde olmayan iş demek —
+        # tespitleri Track nesnelerine çevirmek, poz kırpıntılarını
+        # hazırlamak, döngü yükü, metrik çağrıları.
+        #
+        # ⚠ Parçaları ölçüp toplamı ölçmemek, "kalanı sıfırdır" demeyi
+        # sessizce varsaymaktır. Toplamı da ölçünce fark GÖRÜNÜR hale
+        # geliyor ve ancak o zaman kovalanabiliyor.
+        t_parti = time.perf_counter()
+        try:
+            self._run_batch_ic(batch)
+        finally:
+            # ⚠ `observe` SANİYE bekliyor; `perf_counter` farkı zaten saniye.
+            metrics.inference_duration.labels(stage="parti_TOPLAM").observe(
+                (time.perf_counter() - t_parti) / max(len(batch), 1),
+            )
+
+    def _run_batch_ic(self, batch: list) -> None:  # type: ignore[type-arg]
         # Kareleri paylaşımlı bellekten oku — kopyalama yok
         t_read = time.perf_counter()
         images = [self._pool.read(message.ref) for message in batch]
-        self.read_ms.append((time.perf_counter() - t_read) * 1000.0)
+        _okuma = (time.perf_counter() - t_read) * 1000.0
+        self.read_ms.append(_okuma)
+        # ⚠⚠ 09.09.2026 — BU SÜRELER ZATEN ÖLÇÜLÜYORDU, DIŞARI ÇIKMIYORDU
+        #
+        # `read_ms` / `publish_ms` / `release_ms` / `wait_ms` Gün 1'den beri
+        # toplanıyor ama yalnızca konsol özetine basılıyordu. Prometheus'a
+        # çıkmadıkları için hiçbir ölçüm betiği göremiyordu.
+        #
+        # Sonucu: çıkarım worker'ının kare başına 15.2 ms CPU'sunun
+        # yalnızca 4.58 ms'si (%30) açıklanabiliyordu; kalan %70 "tutkal"
+        # diye bilinmeyen bir kutuydu (P-65). Kutunun içi zaten
+        # ölçülmüştü — sadece kimse bakamıyordu.
+        #
+        # ⭐ P-60'ın aynısı: `queue_depth` de yayınlanıyordu, hiçbir betik
+        # okumuyordu. Aynı hafta ikinci kez: veri toplamak, veriyi
+        # GÖRÜNÜR kılmak değildir.
+        metrics.inference_duration.labels(stage="shm_read").observe(
+            _okuma / 1000.0 / len(batch),
+        )
 
         t0 = time.perf_counter()
         try:
@@ -601,9 +648,16 @@ class InferenceWorker:
             self._run_expression(batch, images, tracked, now_wall)
 
         t_publish = time.perf_counter()
+        # ⭐ Serileştirme ile yayınlama AYRI ölçülüyor: ikisi farklı
+        # müdahale gerektiriyor. Serileştirme saf CPU (JSON kurma) —
+        # çözümü msgpack ya da daha yalın bir yük. Yayınlama Valkey I/O —
+        # çözümü çağrıları boru hattına almak. Birlikte ölçülselerdi
+        # hangisine yatırım yapacağımızı bilemezdik.
+        _seri_ms = 0.0
         for message, detections in zip(batch, tracked, strict=True):
             source_w, source_h = message.source_size
             latency = (now_wall - message.captured_at) * 1000.0
+            _t_seri = time.perf_counter()
             payload = _serialize(
                 detections,
                 motion=message.motion_ratio,
@@ -613,6 +667,7 @@ class InferenceWorker:
                 letterbox=message.letterbox,
                 latency_ms=latency,
             )
+            _seri_ms += (time.perf_counter() - _t_seri) * 1000.0
             self._results.publish(
                 message.camera,
                 payload,
@@ -626,11 +681,23 @@ class InferenceWorker:
             # Uçtan uca gecikme: kare yakalandığından sonuç yazılana kadar
             self.e2e_ms.append(latency)
             metrics.end_to_end_latency.observe(latency / 1000.0)
-        self.publish_ms.append((time.perf_counter() - t_publish) * 1000.0)
+        _yayin_toplam = (time.perf_counter() - t_publish) * 1000.0
+        self.publish_ms.append(_yayin_toplam)
+        metrics.inference_duration.labels(stage="serialize").observe(
+            _seri_ms / 1000.0 / len(batch),
+        )
+        # Yayınlama = toplam − serileştirme (yani saf Valkey I/O + sayaçlar)
+        metrics.inference_duration.labels(stage="publish").observe(
+            max(_yayin_toplam - _seri_ms, 0.0) / 1000.0 / len(batch),
+        )
 
         t_release = time.perf_counter()
         self._release(batch)
-        self.release_ms.append((time.perf_counter() - t_release) * 1000.0)
+        _iade = (time.perf_counter() - t_release) * 1000.0
+        self.release_ms.append(_iade)
+        metrics.inference_duration.labels(stage="slot_release").observe(
+            _iade / 1000.0 / len(batch),
+        )
 
     def _run_expression(
         self,

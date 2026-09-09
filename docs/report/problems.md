@@ -5292,3 +5292,127 @@ neyin boşta durduğunu ve çözümün ne olduğunu** söylüyor.
 Bir tavanı öğrenmenin tek yolu **ona dayanmaktır** — arzı artırıp
 sistemin nerede kırıldığını görmek. Gözlemsel veri doyma noktasını
 gösteremez; müdahaleli deney gösterir.
+
+---
+
+### P-66 · ⭐⭐⭐ "Ölçülmeyen %70 tutkal" diye bir şey YOKMUŞ — kendi bulgumu çürüttüm
+
+**Tarih:** 09.09.2026 · **Faz:** 3
+
+**Ne iddia etmiştim (P-65 · §4):**
+
+> *"Model çıkarımı, çıkarım worker'ının CPU'sunun yalnızca %30'u.
+> Kalan %70 ölçülmüyor: Valkey okuma, paylaşımlı bellek erişimi, sonuç
+> sözlüğünün kurulması, JSON serileştirme, yayınlama, ACK, slot iadesi."*
+
+Bu iddia **yanlıştı** ve üzerine bir mimari öneri listesi kurmuştum.
+
+---
+
+#### Nasıl ortaya çıktı
+
+Kullanıcı "önce A'yı yap, o %70'i ölç" dedi. Ölçmek için eksik
+aşamalara metrik eklendi — ve eklenince hesap **tutmadı**: aşamalar
+6.97 ms/kare veriyordu, parti toplamı 31 ms/kare. Sonra parti toplamı
+da ölçüldü, açık büyüdü.
+
+Açığı kovalarken hata bulundu.
+
+#### Kök sebep: AYNI METRİKTE İKİ FARKLI BİRİM
+
+`sentinel_inference_duration_seconds` altındaki aşamalar iki farklı şey
+yazıyordu:
+
+```python
+# KARE başına (mevcut aşamalar — bölüyorlar)
+metrics.inference_duration.labels(stage="detect").observe(infer_s / len(batch))
+metrics.inference_duration.labels(stage="pose").observe(pose_s / len(batch))
+
+# PARTİ başına (benim eklediklerim — bölmüyorlardı)
+metrics.inference_duration.labels(stage="publish").observe(_yayin / 1000.0)
+metrics.inference_duration.labels(stage="serialize").observe(_seri / 1000.0)
+```
+
+İkisini aynı tabloda topladım. Üstüne bir hata daha: parti toplamını
+bir zaman penceresinde, aşamaları başka bir pencerede okuyup
+karşılaştırdım.
+
+⭐ **Üç hata, üçü de bu projenin klasiği:**
+
+| # | hata | daha önce |
+|---|---|---|
+| 1 | kümülatif histogramdan doğrudan ortalama | P-60 |
+| 2 | iki farklı birimi toplamak | ⭐ yeni tür |
+| 3 | iki farklı pencereyi karşılaştırmak | P-17, P-36 |
+
+---
+
+#### Düzeltilmiş ölçüm — tek pencere, fark alarak, tek birim
+
+150 sn · 6941 kare · 1040 parti · 6.67 kare/parti · 46.3 kare/sn
+
+```
+aşama              ms/KARE   partinin %
+pose                 11.64      50%      ⬅ EN BÜYÜK KALEM
+detect                7.43      32%
+track                 1.56       7%
+publish               1.19       5%
+serialize             0.59       3%
+emotion               0.47       2%
+slot_release          0.33       1%
+shm_read              0.00       0%
+────────────────────────────────────────
+ölçülen aşamalar     23.22     100%
+PARTİ TOPLAMI        23.26
+AÇIKLANMAYAN          0.04       0%     ✅ hesap KAPANIYOR
+```
+
+⭐ **Doğrulama:** aşamaların toplamı parti toplamına 0.04 ms farkla
+eşit, ve parti meşguliyeti %108 (ölçüm hatası içinde %100). Yani
+döngünün tamamı açıklandı. Önceki tabloda böyle bir kapanış kontrolü
+**yoktu** — olsaydı hata ilk gün görülürdü.
+
+> ⭐⭐ **Parçaları ölçüp TOPLAMI ölçmemek, "kalan sıfırdır" demeyi
+> sessizce varsaymaktır.** Toplam ölçülünce fark görünür hale geliyor
+> ve ancak o zaman kovalanabiliyor. Her kırılım ölçümü bir kapanış
+> kontrolü içermeli.
+
+---
+
+#### Gerçek tablo, ve öneri listesinin DEĞİŞMESİ
+
+| | iddia (P-65) | ölçülen (P-66) |
+|---|---|---|
+| model işi (pose+detect+track+emotion) | %30 | **%91** |
+| tutkal (publish+serialize+release+shm) | %70 | **%9** |
+
+Bu, `mimari-hizlandirma.md`'deki sıralamayı ters çeviriyor:
+
+| seçenek | P-65'e göre | P-66'ya göre |
+|---|---|---|
+| C · döngüyü boru hattına çevir (tutkalı örtüştür) | ⭐ büyük kazanç | ❌ **tutkal %9, tavan %9 kazanç** |
+| D · tutkalı ucuzlat (msgpack, pipeline) | ⭐ değerli | ❌ **aynı sebeple değersiz** |
+| B · çok worker (kamera bölüştürerek) | ⭐⭐ en iyi | ⭐⭐ **hâlâ en iyi** — iş GPU işi, süreçler paralelleşir |
+| E · TensorRT | ❌ "kaldıraç değil, %3" | ⭐ **yeniden değerli: detect+pose bütçenin %82'si** |
+
+⚠ **TensorRT hakkındaki "kaldıraç değil" cümlem de aynı yanlış tablodan
+türemişti.** `detect` bütçenin %3'ü sanılıyordu; ölçülen **%32**. Poz
+da eklenince hızlandırılabilir GPU işi **%82**. ADR-0006 yeniden
+değerlendirilmeli.
+
+⭐ Ve asıl hedef netleşti: **poz tek başına bütçenin yarısı.** Kaldıraç
+sırası artık `pose > detect >> diğer her şey`.
+
+---
+
+**Öğrenilen ders:** Bir ölçüm aracı eklerken **birimi metriğin adına
+yazmak** gerekiyor. `stage="publish"` iki farklı şeyi ifade edebilir
+ve etti. Bu yüzden yeni aşamalar kare başına normalize edildi ve
+`parti_TOPLAM` ile `bekleme_IS_DEGIL` adları birimi/anlamı ada
+gömüyor — okuyan bir daha aynı hatayı yapmasın diye.
+
+⚠ Ve daha rahatsız edici olan: yanlış tablo bir **öneri listesi**
+doğurmuştu ve o liste commit'lenmişti. Ölçüm hatası yalnızca bir sayıyı
+değil, **verilecek kararı** bozuyordu. Kullanıcı "önce ölç" demeseydi
+bir günü yanlış seçeneği (C) kovalayarak geçirecektik.
+

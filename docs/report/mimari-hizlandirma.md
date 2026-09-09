@@ -1,5 +1,12 @@
 # Boru Hattı Hızlandırma — ölçülmüş durum ve seçenekler
 
+> ⚠⚠ **09.09 AKŞAMI DÜZELTİLDİ (P-66).** Bu belgenin ilk sürümü
+> "kare başına 15.2 ms'nin %70'i ölçülmeyen tutkal" diyordu. **Yanlıştı**
+> — aynı metrikte iki farklı birim (kare başına / parti başına)
+> toplanmıştı. Ölçülünce döngünün **%91'i model işi**, tutkal **%9**
+> çıktı. Aşağıdaki §1 ve §4 buna göre güncellendi; C ve D seçenekleri
+> düştü, TensorRT (E) yükseldi.
+
 > **Durum:** karar verilmedi, seçenekler ölçüme dayalı olarak sıralandı.
 > Kaynak ölçümler: P-58, P-60, P-61, P-65 (`problems.md`).
 > Tarih: 09.09.2026
@@ -29,10 +36,30 @@ uçtan uca gecikme       : p50 172–178 ms · p95 322–396 ms
 | **ÖLÇÜLMEYEN** | **10.6** | **%70** |
 | toplam (0.89 çekirdek ÷ 55.6 kare/sn) | 15.2 | %100 |
 
-⚠ **Model çıkarımı, çıkarım worker'ının CPU'sunun yalnızca üçte biri.**
-Kalan üçte iki ölçülmüyor: Valkey okuma, paylaşımlı bellek erişimi,
-sonuç sözlüğünün kurulması, JSON serileştirme, yayınlama, ACK, slot
-iadesi.
+⚠⚠ **YUKARIDAKİ TABLO YANLIŞTIR — P-66'da çürütüldü.** Bilerek
+bırakıldı: raporda "ölçüm aracı hatası" örneği olarak kullanılacak.
+Doğrusu aşağıda.
+
+### ✅ DÜZELTİLMİŞ KIRILIM (tek pencere, fark alarak, tek birim)
+
+150 sn · 6941 kare · 1040 parti · 46.3 kare/sn
+
+| aşama | ms/kare | pay |
+|---|---|---|
+| **pose** | **11.64** | **%50** |
+| **detect** | **7.43** | **%32** |
+| track | 1.56 | %7 |
+| publish | 1.19 | %5 |
+| serialize | 0.59 | %3 |
+| emotion | 0.47 | %2 |
+| slot_release | 0.33 | %1 |
+| shm_read | 0.00 | %0 |
+| **ölçülen toplam** | **23.22** | **%100** |
+| PARTİ TOPLAMI (kapanış kontrolü) | 23.26 | — |
+| açıklanmayan | **0.04** | **%0** ✅ |
+
+⭐ **Döngünün %91'i model işi, %9'u tutkal.** Kaldıraç sırası:
+`pose > detect >> diğer her şey`. Poz tek başına bütçenin yarısı.
 
 ---
 
@@ -126,7 +153,13 @@ bölüştürülmeli (sharding). Her kamera tam olarak bir worker'a ait olur.
 En basit uygulama: worker'a `--cameras` filtresi; kendisine ait olmayan
 kareyi işlemeden ACK'ler. (İsraflı ama tek satır; temizi ayrı akış.)
 
-### C. Ana döngüyü BORU HATTINA çevirmek (tek süreç, çok iş parçacığı)
+### ❌ C. Ana döngüyü BORU HATTINA çevirmek — P-66 SONRASI DÜŞTÜ
+
+⚠ Bu seçeneğin tüm gerekçesi "tutkal %70" idi. Tutkal **%9** ölçüldü;
+tamamen örtüşse bile tavan kazanç %9. Emek/kazanç oranı kötü.
+Aşağıdaki değerlendirme tarihsel kayıt için bırakıldı.
+
+<details><summary>eski değerlendirme</summary>
 
 Döngüyü üç aşamaya bölmek: `getir/çöz` → `GPU` → `sonuç kur/yayınla`,
 aralarında sınırlı kuyruklar. GPU işi yine sırayla akar ama 10.6 ms'lik
@@ -141,7 +174,9 @@ tutkal onunla **örtüşür**.
 - → **A yapılmadan bu seçenek kumar.** A, tutkalın dağılımını verince
   bu seçeneğin işe yarayıp yaramayacağı belli olur.
 
-### D. Tutkalın kendisini ucuzlatmak
+</details>
+
+### ❌ D. Tutkalın kendisini ucuzlatmak — P-66 SONRASI DÜŞTÜ
 
 A'nın sonucuna göre hedefli müdahaleler: JSON yerine msgpack,
 Valkey çağrılarını pipeline'lamak, gereksiz kopyaları kaldırmak.
@@ -149,24 +184,33 @@ Valkey çağrılarını pipeline'lamak, gereksiz kopyaları kaldırmak.
 - **Çaba:** A'nın bulgusuna bağlı, muhtemelen 1-2 saat
 - **Avantaj:** hem B hem C'ye yarar (serileştirilen iş küçülür)
 
-### E. TensorRT — ⚠ bu kaldıraç DEĞİL
+### ⭐ E. TensorRT — P-66 SONRASI YÜKSELDİ
 
-1.40× ölçüldü ama yalnızca `detect` üzerinde ve `detect` 15.2 ms'nin
-**1.80'i**. En iyi ihtimalle kare başına 0.5 ms kazandırır — %3.
-Darboğaz orada değil. (ADR-0006 zaten üretime almamıştı; bu ölçüm o
-kararı **güçlendiriyor**.)
+⚠ İlk değerlendirmem *"kaldıraç değil, %3"* diyordu ve **yanlış
+tablodan türemişti**: `detect`in bütçenin %3'ü olduğu sanılıyordu,
+ölçülen **%32**. Poz da eklenince hızlandırılabilir GPU işi **%82**.
+
+1.40× hızlanma ölçülmüştü (`detect`, tespitler birebir aynı). Aynı
+oran poza da uygularsa: 19.07 → 13.6 ms/kare, yani **kare başına
+~%23 kazanç**. ADR-0006 yeniden değerlendirilmeli.
+
+⚠ Poz için TensorRT ölçülmedi — varsayım değil, ölçüm gerekiyor.
 
 ---
 
 ## 5. ÖNERİLEN SIRA
 
 ```
-A (ölç, 30 dk)  →  B (kamera bölüştürme, 1 sa)  →  A'ya göre C ya da D
+A (ölç) ✅ YAPILDI → B (kamera bölüştürme, 1 sa) → E (TensorRT, poz dâhil)
 ```
 
-Gerekçe: B en ucuz **ve** en büyük beklenen kazanç, çünkü kod zaten
-destekliyor ve engel sanılan VRAM kısıtı ölçümle çürüdü. A, B'den önce
-yapılırsa B'nin sonucunu da açıklayabilir.
+⭐ A yapıldı ve **öneri sırasını değiştirdi** (P-66): C ve D düştü,
+E yükseldi. Bu, "önce ölç" ilkesinin bu projedeki en somut
+karşılığı — ölçmeden gidilseydi bir gün yanlış seçeneğe (C)
+harcanacaktı.
+
+B hâlâ birinci: iş GPU model işi ve süreçler arasında gerçekten
+paralelleşir; GPU %25-44'te, VRAM %7'de.
 
 ---
 
