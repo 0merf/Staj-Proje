@@ -5807,3 +5807,115 @@ varsayılanının üçte birini dayatıyordu ve bunu 18 gün kimse fark
 etmedi. P-42'de "16 ayar okunmuyordu" bulunmuştu; bu onun tersi —
 **ayar okunuyordu ama yanlış değerdeydi ve gerekçesi yoktu.**
 
+
+---
+
+### P-70 · ⭐⭐ TensorRT 1.61× — ama üretimde PARTİ BOYUTUNDA KIRILIYOR
+
+**Tarih:** 09.09.2026 · **Faz:** 3
+
+**Neden bakıldı:** P-66 kırılımı, hızlandırılabilir GPU işinin bütçenin
+**%82'si** olduğunu gösterdi (`pose` %50 + `detect` %32). Daha önce
+*"TensorRT kaldıraç değil, %3"* demiştim ve o cümle yanlış tablodan
+türemişti.
+
+---
+
+#### İzole ölçüm: kazanç GERÇEK ve tespitler AYNI
+
+```
+             parti ms   kare ms      p90
+PyTorch        30.233     3.779   31.324
+TensorRT       18.741     2.343   20.310
+HIZLANMA: 1.61×   (+%38 süre kazancı)
+```
+
+⭐ Önceki ölçüm 1.40× idi; TensorRT 10.13 ve FP16 ile **1.61×**.
+
+**Tespit eşdeğerliği — hız doğru sonuçla mı geliyor:**
+
+```
+PyTorch tespit  : 20        eşleşen                   : 20
+TensorRT tespit : 20        PyTorch'ta var TRT'de yok : 0
+ortalama IoU    : 0.9915    TRT'de var PyTorch'ta yok : 0
+```
+
+⚠ Bu kontrol **zorunluydu**: hızlanma, sonucu bozarak da elde edilebilir.
+Ölçmeden "hızlandı" demek, neyi kaybettiğini bilmemek olurdu.
+
+---
+
+#### 🔴 ÜRETİMDE ÇALIŞMADI — ve sebebi tam olarak belgeliydi
+
+Motor üretime alınıp canlı boru hattı başlatıldı:
+
+```
+AssertionError: input size torch.Size([5, 3, 640, 640])
+                not equal to max model size (8, 3, 640, 640)
+AssertionError: input size torch.Size([1, 3, 640, 640]) ...
+```
+
+**Her kısmi parti hata veriyor.** Motor `dynamic=False` ile ihraç
+edilmek zorundaydı (YOLO26'nın dikkat bloğu dinamik şekillerde TensorRT
+çekirdeği bulamıyor — `export_tensorrt.py` bunu belgeliyor) ve sabit
+parti **yalnızca tam 8 kare** kabul ediyor.
+
+Üretimde parti dağılımı: medyan **6.67 kare**, sık sık 1, 5, 6, 7.
+
+⭐ **ADR-0006 bunu zaten öngörmüştü** ve TensorRT'yi tam da bu yüzden
+üretime almamıştı. Bugünkü ölçüm o kararı **doğruladı** — ama artık
+tahminle değil, canlı hatayla.
+
+---
+
+#### Dolgu yapılırsa ne kazanılır — hesaplandı, uygulanmadı
+
+Kısmi partiyi 8'e tamamlamak (kare tekrarı) mümkün; bedeli, boş yerlerin
+tam parti kadar maliyet üretmesi:
+
+```
+üretim medyan partisi          : 6.67 kare
+TRT dolgulu etkin maliyet      : 8/6.67 × 2.343 = 2.81 ms/kare
+PyTorch (aynı koşul)           : 3.78 ms/kare
+                                 ─────────────
+net kazanç                     : ~1.34×  (izoledeki 1.61× değil)
+```
+
+Üretim kırılımında `detect` 7.43 ms/kare ve toplam 23.22 ms/kare.
+1.34× uygulanırsa: 7.43 → 5.54, toplam 23.22 → 21.3 ms → **~%9 verim**.
+
+⚠ **Uygulanmadı.** Gerekçe: dolgu kodu, sahte karelerin sonuçlarının
+atılmasını da gerektiriyor ve yanlış yapılırsa **hayalet tespitler**
+üretir — sessiz ve tehlikeli bir hata sınıfı. Kalan sürede %9 için
+alınacak risk değil. Kayıt olarak bırakılıyor.
+
+---
+
+#### ⚠ Yan bulgu: ihraç betiği YANLIŞ DİZİNE yazıyor
+
+Motor `backend/models/yolo26s.engine`'e yazıldı; üretim
+`<kök>/models/` okuyor. Bu, `.gitignore`'da **08.09'da belgelenmiş**
+"iki model dizini" hatasının tekrarı:
+
+> *"Üretim `<kök>/models/` okuyor; ölçüm betikleri `backend/models/`
+> yazıyordu. Eğitilen model üretimin BAKMADIĞI yere kaydediliyordu."*
+
+O gün 16 betik düzeltilmişti; `export_tensorrt.py` Ultralytics'in kendi
+çıktı yolunu kullandığı için düzeltmenin dışında kalmış.
+
+> ⭐ P-60 ve P-62 ile aynı ders, üçüncü kez: **düzeltme taşınmadıysa
+> yapılmamıştır.** Bu sefer kaçan yer, yolu kendisi belirlemeyen bir
+> üçüncü taraf kütüphanesiydi.
+
+---
+
+#### Karar
+
+**TensorRT üretime ALINMADI.** Gerekçe artık iki katmanlı:
+1. Sabit parti, üretim parti dağılımıyla uyumsuz (canlıda doğrulandı)
+2. Dolgu ile net kazanç ~%9; taşıdığı hayalet-tespit riski buna değmez
+
+⭐ Ama ölçüm **saklanıyor ve raporlanacak**: 1.61× hızlanma, tespitler
+birebir aynı (IoU 0.9915). Bu, "denendi ve şu sebeple alınmadı"
+demenin ölçülmüş hâli — "denenmedi"den çok farklı.
+

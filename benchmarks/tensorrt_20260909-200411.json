@@ -1,0 +1,28 @@
+{
+ "olculdu": "2026-09-09T17:04:11.429251+00:00",
+ "batch": 8,
+ "imgsz": 640,
+ "tur": 30,
+ "olcum_per_tur": 10,
+ "pytorch_ms_batch": {
+  "p50": 30.233,
+  "p90": 31.324,
+  "ort": 30.314
+ },
+ "tensorrt_ms_batch": {
+  "p50": 18.741,
+  "p90": 20.31,
+  "ort": 19.001
+ },
+ "pytorch_ms_kare": 3.779,
+ "tensorrt_ms_kare": 2.343,
+ "hizlanma": 1.613,
+ "tespit_pytorch": 20,
+ "tespit_tensorrt": 20,
+ "esdegerlik": {
+  "eslesen": 20,
+  "pytorch_da_var_trt_de_yok": 0,
+  "trt_de_var_pytorch_da_yok": 0,
+  "ortalama_iou": 0.9915
+ }
+}
