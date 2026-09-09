@@ -6,12 +6,29 @@ Alım worker'larının paylaşımlı belleğe yazdığı kareleri okur, **kamera
 arası toplu (batch)** olarak modele verir, sonuçları JSON olarak
 `inference.results` akışına yazar ve slotu havuza geri verir.
 
-⚠ TEK KOPYA KURALI
-------------------
-Sistemde **yalnızca bir** çıkarım süreci çalışır. Sebep VRAM: her süreç
-model ağırlıklarının kendi kopyasını yükler. 4 süreç × ~4.6 GB = 18 GB,
-elimizde 8 GB var (PLAN.md §2.2). Ayrıca tek süreç, 20 kameradan gelen
-kareleri tek batch'te işleyerek GPU verimini kat kat artırır.
+⚠ "TEK KOPYA" KURALI — dayandığı sayı 09.09.2026'da ÇÜRÜDÜ (P-67)
+------------------------------------------------------------------
+Kural şöyleydi: *"Sistemde yalnızca bir çıkarım süreci çalışır. Sebep
+VRAM: her süreç model ağırlıklarının kendi kopyasını yükler.
+4 süreç × ~4.6 GB = 18 GB, elimizde 8 GB var (PLAN.md §2.2)."*
+
+**Ölçüldü: süreç başına 571 MB** (PyTorch'un ayırdığı 415 MB). 4.6 GB
+varsayımı **8 kat** fazlaydı ve hiç ölçülmemişti. Üç süreç ≈ 1.7 GB —
+8 GB'lık kartta rahat.
+
+Ve tek süreç olmanın bedeli ölçüldü: ana döngü SERİ, tavanı **bir
+çekirdek** (0.89 çekirdek / 20). Sistem 20 kamerada 2.78 FPS'te
+sıkışırken GPU %25-44, VRAM %7, 19 çekirdek boştaydı (P-65/P-66).
+
+⚠⚠ ÇOK WORKER'IN ZORUNLU KOŞULU: KAMERA BÖLÜŞTÜRME
+BoT-SORT takipçisinin durumu worker'ın İÇİNDE, kamera başına tutuluyor.
+Tüketici grubu kareleri gelişigüzel dağıtır; aynı kameranın kareleri
+ikiye bölünürse izler kopar ve arıza SESSİZ olur. Her kamera tam olarak
+bir worker'a ait olmalı → `--cameras` (bkz. `_kendi_kameram`).
+
+Toplu işlemenin önemi değişmedi: tek süreç, 20 kameradan gelen kareleri
+tek batch'te işleyerek GPU verimini artırıyor. Bölüştürme bu kazancı
+worker başına küçültüyor — ölçülmesi gereken denge bu.
 
 Toplu işlemenin önemi
 ---------------------
@@ -252,6 +269,8 @@ class InferenceWorker:
         block_ms: int = 500,
         max_age_ms: int = 0,
         batch_fill_ms: int = 0,
+        kameralar: list[str] | None = None,
+        parca: int | None = None,
     ) -> None:
         self._detector = detector
         self._pose = pose
@@ -262,11 +281,22 @@ class InferenceWorker:
         self._max_age_s = max_age_ms / 1000.0 if max_age_ms > 0 else 0.0
         # ⚠ Parti doldurma — varsayılan KAPALI, gerekçesi aşağıda
         self._batch_fill_s = batch_fill_ms / 1000.0 if batch_fill_ms > 0 else 0.0
+        # ⭐ Bu worker'a ait kamera kümesi (boş = hepsi). Çok worker'lı
+        # bölüştürmede AYRIK olmalı — gerekçesi `_kendi_kameram`.
+        self._kameralar: frozenset[str] = frozenset(kameralar or ())
         # Kamera başına ayrı takipçi durumu (bkz. tracker/botsort.py)
         self._tracker = BotSortTracker(frame_rate=int(settings.target_fps))
 
         self._client = connect()
-        self._frames = FrameStream(self._client)
+        # ⭐ PARÇA AKIŞI (P-67): `--parca N` verilirse yalnızca
+        # `frames.ready.N` okunur. Alım katmanı kameraları oraya
+        # yönlendiriyor, yani bu worker'a YALNIZCA kendi kameraları
+        # geliyor — filtreleyip atmaya gerek yok, kayıp da yok.
+        self._frames = FrameStream(
+            self._client,
+            stream=(f"{settings.stream_frames}.{parca}" if parca is not None
+                    else settings.stream_frames),
+        )
         self._results = ResultStream(self._client)
         self._allocator = SlotAllocator(self._client, settings.shm_slot_count)
         self._frames.ensure_group(GROUP)
@@ -382,6 +412,8 @@ class InferenceWorker:
             metrics.inference_duration.labels(stage="bekleme_IS_DEGIL").observe(
                 _bekleme / 1000.0,
             )
+            if batch:
+                batch = self._kendi_kameram(batch)
             if batch:
                 batch = self._drop_stale(batch)
             if batch:
@@ -776,6 +808,45 @@ class InferenceWorker:
                 metrics.pose_crops.labels(result="skeleton").inc()
         return out
 
+    def _kendi_kameram(self, batch: list) -> list:  # type: ignore[type-arg]
+        """Bu worker'a ait OLMAYAN kareleri işlemeden bırakır (P-67 · B).
+
+        ⚠⚠ NEDEN KAMERA BÖLÜŞTÜRME ŞART — naif paylaşım SESSİZCE BOZAR
+        ----------------------------------------------------------------
+        Birden çok çıkarım worker'ı aynı tüketici grubundan okuyabilir ve
+        Valkey kareleri aralarında **gelişigüzel** dağıtır. Ama BoT-SORT
+        takipçisinin durumu **worker'ın içinde, kamera başına** tutuluyor
+        (`self._tracker.update(m.camera, ...)`).
+
+        Aynı kameranın kareleri iki worker'a bölünürse her ikisinde de
+        **yarım iz** oluşur: kimlikler kopar, hız vektörleri saçmalar ve
+        zamansal özelliklerin (pencere, tırmanma, model) tamamı bozulur.
+        Ve arıza SESSİZDİR — sistem çalışmaya, alarm üretmeye devam eder.
+
+        Bu yüzden her kamera **tam olarak bir** worker'a ait olmalı.
+
+        ⚠ ATILAN KARE MUTLAKA SERBEST BIRAKILMALI
+        `_release` çağrılmazsa slot havuza dönmez ve üretici birkaç
+        saniye içinde `no_slot`a düşer — P-38'in aynısı. Bu yüzden
+        `_drop_stale` ile aynı deseni izliyor.
+
+        ⚠ İSRAF DÜRÜSTÇE: bu tasarımda her worker TÜM kareleri okuyup
+        çoğunu atıyor. Temiz çözüm kamera başına ayrı akış olurdu; bu
+        sürüm ölçüm yapabilmek için bilinçli olarak basit tutuldu.
+        Atılanlar `reason="baska_worker"` ile sayılıyor, gizlenmiyor.
+        """
+        if not self._kameralar:
+            return batch
+        benim = [m for m in batch if m.camera in self._kameralar]
+        digeri = [m for m in batch if m.camera not in self._kameralar]
+        if digeri:
+            self._release(digeri)
+            for message in digeri:
+                metrics.frames_dropped.labels(
+                    cam=message.camera, reason="baska_worker",
+                ).inc()
+        return benim
+
     def _drop_stale(self, batch: list) -> list:  # type: ignore[type-arg]
         """Çok eskimiş kareleri İŞLEMEDEN atar.
 
@@ -1105,6 +1176,19 @@ def main() -> int:
     )
     parser.add_argument("--worker-id", default="inference-0")
     parser.add_argument("--metrics-port", type=int, default=9110)
+    parser.add_argument(
+        "--parca", type=int, default=None,
+        help="Bu worker'ın PARÇA numarası (0..N-1). Yalnızca "
+             "`frames.ready.<N>` akışını okur. Alım katmanı kameraları "
+             "oraya yönlendirir (INFERENCE_SHARDS). ⭐ Tercih edilen yol.",
+    )
+    parser.add_argument(
+        "--cameras", nargs="*", default=None,
+        help="⚠ ESKİ/KAYIPLI YOL — yalnızca tanı için. Tek akıştan okuyup "
+             "başkasının karesini ATAR; tüketici grubu o kareyi ötekine "
+             "vermediği için YOK OLUR (ölçüldü: %50 kayıp, P-67). "
+             "Üretimde `--parca` kullanın.",
+    )
     parser.add_argument("--duration", type=float, default=None)
     parser.add_argument("--stats-interval", type=float, default=5.0)
     args = parser.parse_args()
@@ -1147,6 +1231,8 @@ def main() -> int:
         pose=pose,
         expression=expression,
         worker_id=args.worker_id,
+        kameralar=args.cameras,
+        parca=args.parca,
         batch_size=args.batch_size,
         batch_fill_ms=args.batch_fill_ms,
         max_age_ms=(

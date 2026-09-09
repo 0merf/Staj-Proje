@@ -5416,3 +5416,177 @@ doğurmuştu ve o liste commit'lenmişti. Ölçüm hatası yalnızca bir sayıy�
 değil, **verilecek kararı** bozuyordu. Kullanıcı "önce ölç" demeseydi
 bir günü yanlış seçeneği (C) kovalayarak geçirecektik.
 
+
+---
+
+### P-67 · ⭐⭐⭐ Çok worker'lı bölüştürme ÖLÇÜLDÜ — ve ilk uygulamam karelerin yarısını yok etti
+
+**Tarih:** 09.09.2026 · **Faz:** 3
+
+**Fikir kullanıcınındı:**
+
+> *"Bu çıkarım worker'ı sadece tek çekirdekte çalışıyor ve 20 kameradan
+> da çıkarım yapıyorsa, ilk 4 kameranın çıkarımını 1 çekirdeğe, sonraki
+> 4 kamerayı başka bir çekirdeğe diyerekten 20 kamerayı 5 çekirdeğe
+> paylaştırsak nasıl olur?"*
+
+Doğru fikir, doğru gerekçe. P-65/P-66 tam da bunu gösteriyordu: çıkarım
+worker'ı **0.89 çekirdekte** doyuyor, GPU %41'de, VRAM %7'de, 19
+çekirdek boşta.
+
+---
+
+#### 1. Önce engel sanılan kural: mimari kural 3 ÇÜRÜDÜ
+
+> *"Modeller tek süreçte tek kopya. 4 worker × 4.6 GB = VRAM patlar."*
+
+Bu sayı **hiç ölçülmemişti**. Ölçüldü:
+
+```
+tek worker  :  571 MB / 8192 MB   (PyTorch'un ayırdığı 415 MB)
+iki worker  : 1134 MB / 8192 MB   → worker başına 567 MB
+```
+
+**4.6 GB varsayımı 8 kat fazlaydı.** Kural, ölçülmemiş bir sayıya
+dayanarak bir mimari seçeneği 18 gün boyunca kapalı tuttu.
+
+---
+
+#### 2. 🔴 İLK UYGULAMAM KARELERİN YARISINI YOK ETTİ
+
+En basit yol denendi: tek akış, tek tüketici grubu, her worker
+kendisine ait olmayan kareyi atsın (`--cameras` filtresi).
+
+**Ölçüm:**
+
+```
+90 sn penceresinde
+  alım yayınladı        : 5236
+  çıkarım analiz etti   : 2626
+  "baska_worker" atıldı : 2610
+  analiz/yayın          : %50
+```
+
+⭐⭐⭐ **Tam yarısı yok oldu.** Sebep: Valkey tüketici grubu her kareyi
+**tek** tüketiciye verir. Kendisine ait olmayanı atan worker, o kareyi
+ötekine geçirmiyor — **imha ediyor.**
+
+⚠⚠ **Ve tuzak sinsiydi: metrikler İYİLEŞMİŞ göründü.**
+
+```
+                 tek worker    "bölüştürülmüş" (bozuk)
+verim              46.3            28.0 kare/sn   ⬅ düştü
+gecikme p50         172             104 ms        ⬅ İYİLEŞTİ (!)
+gecikme p95         322             238 ms        ⬅ İYİLEŞTİ (!)
+```
+
+İşin yarısı atılınca kuyruk boşaldı ve gecikme düzeldi. Yalnızca
+gecikmeye bakan biri bunu **başarı** sanardı.
+
+> ⭐ **Bir metriğin iyileşmesi sistemin iyileştiği anlamına gelmiyor.**
+> Kare muhasebesi (P-60'ta eklenmişti) olmasaydı bu hata "bölüştürme
+> gecikmeyi yarıya indirdi" diye rapora girecekti.
+
+---
+
+#### 3. Doğru tasarım: PARÇA BAŞINA AYRI AKIŞ
+
+Kayıp, filtrelemenin doğasında. Çözüm yönlendirmeyi **üretici** tarafına
+almak: alım katmanı her kamerayı kendi parça akışına yazıyor
+(`frames.ready.0`, `frames.ready.1`), her worker yalnızca kendi akışını
+okuyor. Her kare tam olarak bir akışta, bir grupta, bir worker'da.
+
+```python
+ozet = zlib.crc32(camera.encode("utf-8")) % parca_sayisi
+return f"{settings.stream_frames}.{ozet}"
+```
+
+⚠ **`hash()` KULLANILMADI.** Python'ın string hash'i süreçler arasında
+rastgeleleştirilir (PYTHONHASHSEED); alım ve çıkarım süreçleri farklı
+sonuç üretir, kameralar kaybolur ve hata **sessiz** olurdu. `crc32`
+deterministik.
+
+⚠ **Aynı kamera her zaman aynı parçaya gitmeli:** BoT-SORT durumu
+worker'ın içinde kamera başına tutuluyor. Bölünürse izler kopar.
+
+⚠ **Havuz sıfırlama artık TÜM parça akışlarını temizliyor.** Biri
+atlanırsa eski mesajlar geçersiz slot referanslarıyla kalır ve aynı
+slot iki kez dağıtılır (P-10'un çok akışlı hâli).
+
+Doğrulandı: `baska_worker = 0`, kayıp yolu kapandı.
+
+---
+
+#### 4. ✅ TEMİZ A/B — aynı kod, aynı yöntem, aynı ölçüm aracı
+
+| ölçüt | 1 parça | 2 parça | fark |
+|---|---|---|---|
+| **verim** | 45.1 kare/sn (2.25 FPS/kam) | **53.7 (2.68)** | **+%19** |
+| **gecikme p50** | 359 ms | **183 ms** | **−%49** |
+| **gecikme p95** | 638 ms | **411 ms** | **−%36** |
+| çıkarım CPU | 0.90 çekirdek | 1.77 (2 × 0.89) | ×2 |
+| toplam CPU | 4.13 çekirdek | 5.37 | +%30 |
+| VRAM | 571 MB | 1134 MB | ×2 |
+| GPU kullanımı | %41 | %38 | ~aynı |
+| **sistem RAM** | %84 | **%98** | ⚠ |
+| model skoru medyan | 0.184 | 0.209 | +%14 |
+
+⭐ **Asıl kazanç verimde değil GECİKMEDE: p50 yarıya indi.** Sebep
+mekanik: iki worker aynı anda çalışınca bir karenin kuyrukta bekleme
+süresi yarılanıyor.
+
+⭐⭐ **Her iki worker da tam 0.89 çekirdekte doydu** — P-65'in "tavan
+bir çekirdek" tahmini worker başına birebir doğrulandı.
+
+---
+
+#### 5. ⚠ Verim neden 2× DEĞİL: darboğaz YUKARI TAŞINDI
+
+```
+ALIM        2.67 çekirdek   ⬅ artık en büyük tüketici
+CIKARIM p0  0.89
+CIKARIM p1  0.89
+atılan: gate_idle 8535 · stale 4843 · no_slot 4482
+```
+
+İki worker ~86 kare/sn tüketebilir ama alım 55 kare/sn üretiyor. Ve
+`no_slot` 4482: **48 slotluk paylaşımlı bellek havuzu tükeniyor.**
+
+Yani bölüştürme çıkarım tavanını kaldırdı; kısıt alım katmanına ve slot
+havuzuna geçti. Bir ölçekleme deneyinin göstermesi gereken tam olarak
+budur.
+
+**Sonraki kaldıraçlar (ölçülmüş sırayla):**
+1. `shm_slot_count` artır (48 → 96) — `no_slot` 4482 diyor
+2. Alım katmanı: BGR dönüşümü kare başına 1.61 ms CPU (P-61)
+3. TensorRT: detect+pose bütçenin %82'si (P-66)
+
+---
+
+#### 6. ⚠⚠ BEDELİ — dürüstçe
+
+**Sistem RAM %84 → %98.** İki worker × ~2.75 GB. 16 GB'lık makinede bu
+sınır. P-65'te bozuk rejim %92 RAM'de görülmüştü; %98 rahat değil.
+
+⚠ Bu yüzden `inference_shards` **varsayılan 1** bırakıldı. Açmak
+bilinçli bir karar olmalı ve RAM izlenmeli.
+
+⚠ **Model skoru medyanı 0.184 → 0.209 (+%14) değişti.** P-65 §3'teki
+uyarı doğrulandı: analiz hızı değişince 5 saniyelik pencerenin içeriği
+ve türevler kayıyor, skorlar kayıyor. **Hızlandırma doğruluğu
+değiştiriyor** — bu yüzden her yapılandırmada eşikler yeniden
+kalibre edilmeli.
+
+⚠ Alarm sayısı bu pencerelerde 0 çıktı (her iki koşuda da), yani alarm
+oranı üzerinden kıyas YAPILAMADI. Daha uzun koşu gerekiyor.
+
+---
+
+**Öğrenilen ders:** Bir ölçekleme değişikliğini yalnızca hız
+metrikleriyle değerlendirmek, işin yarısını atan bir uygulamayı
+"başarı" diye kaydetmeye yol açar. **Muhasebe (giren = çıkan + atılan)
+hız ölçümünden önce gelir.**
+
+⭐ Ve fikrin sahibi haklı çıktı: 18 gündür ölçülmemiş bir varsayım
+(4.6 GB/worker) yüzünden kapalı duran seçenek, açıldığında gecikmeyi
+yarıya indirdi.

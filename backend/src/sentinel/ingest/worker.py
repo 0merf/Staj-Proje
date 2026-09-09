@@ -321,7 +321,20 @@ class IngestWorker:
         self._target_fps = target_fps if target_fps is not None else float(settings.target_fps)
         self._client = connect()
         self._allocator = SlotAllocator(self._client, settings.shm_slot_count)
-        self._stream = FrameStream(self._client)
+        # ⭐ PARÇA BAŞINA AYRI AKIŞ (P-67). `inference_shards=1` iken
+        # tek akış — eski davranışın birebir aynısı.
+        #
+        # ⚠ Neden filtre değil ayrı akış: tek akış + tüketici grubunda
+        # her kare TEK tüketiciye gider; kendisine ait olmayanı atan bir
+        # worker onu yok eder, ötekine geçirmez. Ölçüldü: %50 kayıp.
+        self._parca_sayisi = max(1, int(settings.inference_shards))
+        self._akislar = {
+            ad: FrameStream(self._client, stream=ad)
+            for ad in {
+                FrameStream.parca_akisi(c, self._parca_sayisi) for c in cameras
+            }
+        }
+        self._stream = next(iter(self._akislar.values()))
         self._tasks: list[CameraTask] = []
         self._watched_cache: set[str] = set()
         # Son uygulanan kapasite tavanı — yalnızca değişince loglamak için
@@ -349,7 +362,12 @@ class IngestWorker:
             # SIRA ÖNEMLİ: önce akışı temizle, sonra slotları dağıt.
             # Ters sırada, eski mesajları okuyan bir tüketici slotları
             # ikinci kez serbest bırakır ve havuz bozulur (P-10).
-            self._stream.reset()
+            # ⚠ TÜM parça akışları temizlenmeli. Biri atlanırsa eski
+            # mesajlar geçersiz slot referanslarıyla orada kalır ve
+            # tüketici onları "geri verince" aynı slot iki kez dağıtılır
+            # (P-10'un çok akışlı hâli).
+            for akis in self._akislar.values():
+                akis.reset()
             self._allocator.reset()
 
     def start(self) -> None:
@@ -364,11 +382,14 @@ class IngestWorker:
         metrics.worker_up.labels(component="ingest", worker_id=self.worker_id).set(1)
 
         for camera in self.cameras:
+            # ⭐ Her kamera KENDİ parça akışına yazar (P-67). Eşleme
+            # deterministik (crc32) — aynı kamera her zaman aynı parçaya,
+            # yoksa takip kimlikleri kopar.
             task = CameraTask(
                 camera,
                 self._pool,
                 self._allocator,
-                self._stream,
+                self._akislar[FrameStream.parca_akisi(camera, self._parca_sayisi)],
                 target_fps=self._target_fps,
             )
             thread = threading.Thread(target=task.run, name=f"cam:{camera}", daemon=True)

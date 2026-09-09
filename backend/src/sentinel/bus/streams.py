@@ -10,6 +10,7 @@ Valkey'in kapasitesinin binde biri.
 
 from __future__ import annotations
 
+import zlib
 from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Any
@@ -210,6 +211,27 @@ class FrameStream:
         self._client = client
         self._stream = stream or settings.stream_frames
         self._maxlen = maxlen or settings.stream_frames_maxlen
+
+    @staticmethod
+    def parca_akisi(camera: str, parca_sayisi: int) -> str:
+        """Bir kameranın hangi çıkarım akışına yazılacağını söyler (P-67).
+
+        ⚠ AYNI KAMERA HER ZAMAN AYNI PARÇAYA GİTMELİ
+        BoT-SORT takipçisinin durumu çıkarım worker'ının içinde, kamera
+        başına tutuluyor. Bir kameranın kareleri iki worker'a bölünürse
+        her ikisinde de yarım iz oluşur, kimlikler kopar ve zamansal
+        özelliklerin tamamı bozulur — üstelik SESSİZCE.
+
+        Bu yüzden eşleme **deterministik**: kamera adının kararlı bir
+        özeti. `hash()` KULLANILMIYOR — Python'ın string hash'i süreçler
+        arasında rastgeleleştirilir (PYTHONHASHSEED), yani alım ve
+        çıkarım süreçleri farklı sonuç üretirdi. Sessiz ve teşhisi çok
+        zor bir hata olurdu.
+        """
+        if parca_sayisi <= 1:
+            return settings.stream_frames
+        ozet = zlib.crc32(camera.encode("utf-8")) % parca_sayisi
+        return f"{settings.stream_frames}.{ozet}"
 
     def reset(self) -> None:
         """Akışı tamamen temizler.

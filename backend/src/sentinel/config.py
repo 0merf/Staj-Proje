@@ -58,6 +58,27 @@ class Settings(BaseSettings):
     valkey_url: str = ""
 
     stream_frames: str = "frames.ready"
+    # ⭐ ÇIKARIM PARÇA (SHARD) SAYISI — çok worker'lı bölüştürme (P-67)
+    #
+    # 1 = tek akış, tek çıkarım worker'ı (varsayılan, eski davranış).
+    # N > 1 = alım katmanı kameraları N ayrı akışa yönlendirir
+    # (`frames.ready.0`, `frames.ready.1`, ...) ve her çıkarım worker'ı
+    # YALNIZCA kendi akışını okur.
+    #
+    # ⚠⚠ NEDEN AYRI AKIŞ, TEK AKIŞ + FİLTRE DEĞİL
+    # İlk denemede tek akış + tüketici grubu kullanıldı ve her worker
+    # kendisine ait olmayan kareyi atıyordu. Ama tüketici grubu her
+    # kareyi **tek** tüketiciye verir: atılan kare ötekine GİTMİYOR,
+    # yok oluyordu. Ölçüldü: 5236 yayınlanan karenin 2626'sı analiz
+    # edildi — **%50 kayıp**.
+    #
+    # ⚠ Ve tuzak sinsiydi: iş yarıya inince kuyruk boşaldı ve gecikme
+    # "iyileşti" (p50 172 → 104 ms). Metrik düzelirken sistem
+    # bozuluyordu.
+    #
+    # Ayrı akışta her kare tam olarak bir akışta, bir grupta, bir
+    # worker'da olur — kayıp da çift slot iadesi de imkânsız.
+    inference_shards: int = 1
     stream_results: str = "inference.results"
     stream_frames_maxlen: int = 200
     stream_results_maxlen: int = 5000
