@@ -5104,3 +5104,191 @@ seçildiği için gerçek yanlılık bundan biraz küçüktür.
 **Öğrenilen ders:** Bir yanlılığı *işaretlemek* onu raporlamak değildir.
 "Bu sayı optimistik" cümlesi okuyucuya karar verdirmiyor; "+0.020"
 verdiriyor. Uyarılar sayıya çevrilmediği sürece dipnot olarak kalıyor.
+
+---
+
+### P-65 · ⭐⭐⭐ K2 neden tutmuyor: darboğaz GPU değil, TEK ÇEKİRDEK
+
+**Tarih:** 09.09.2026 · **Faz:** 3
+
+**Neden bakıldı:** Kullanıcının sorusu, P-63'ün üzerine geldi:
+
+> *"Bu 24.75 FPS'lik model 20 kamerada mı çalışıyordu? Eğer 20 kamera
+> için 24.75 FPS'lik bir analizimiz varsa neden onu kullanmıyoruz,
+> fazla analiz daha kaliteli sonuç değil midir? Hedef 4 demiştik, bu
+> 4'ü neye göre söylemişiz? Sisteme sınır mı vermişiz?"*
+
+Üç ayrı soru ve üçünün de cevabı ölçülmemişti.
+
+---
+
+#### 1. Önce bir kavram düzeltmesi: "24.75 FPS modeli" canlıda hiç koşmadı
+
+`train_aggression.py · _klip_ozellikleri` bir **video dosyasını**
+`cv2.VideoCapture` ile açıyor ve kare atlıyor:
+
+```python
+adim = max(1, round(kaynak_fps / ornek_fps))   # RWF klipleri 30 FPS
+```
+
+- `ornek_fps=2.75` → adım 11 → 11 karede bir
+- `ornek_fps=24.75` → adım 1 → **her kare**
+
+Yani "24.75 FPS" = *çevrimdışı, tek klip, GPU'yu tek başına kullanarak,
+5 saniyelik bir dosyanın her karesini işlemek*. 20 kameralı canlı
+sistemde böyle bir analiz **hiçbir zaman olmadı**. P-63'teki hata,
+canlı sistemin hızını değiştirmedi — yalnızca canlı sisteme, farklı
+bir kare hızının dağılımıyla eğitilmiş bir model koydu.
+
+---
+
+#### 2. ⭐⭐⭐ "Kapasite" metriği kapasiteyi ölçmüyordu — ÜÇÜNCÜ kez
+
+`sentinel_pipeline_capacity_fps` 58.5 kare/sn gösteriyordu ve
+"kapasitenin %95'indeyiz" diye okunuyordu. Hesabı şu:
+
+```python
+anlik = (self.processed - self._capacity_window_processed) / pencere
+```
+
+Bu **gerçekleşen verim** — worker yetişiyorken bu sayı *gelen kare
+hızına* eşit. `consumer_lag = 0` ölçüldüğüne göre worker geride
+değildi, **kare bekliyordu**. Yani 58.5 bir tavan değil, **arz**.
+
+> ⭐ Aynı hafta üçüncü kez: `decode_duration` beklemeyi ölçüyordu
+> (P-61), `queue_depth` geri basıncı ölçmüyordu (P-60), şimdi de
+> `pipeline_capacity` kapasiteyi ölçmüyor. Üçü de **adının vadettiğini
+> ölçmeyen** metrikler.
+
+---
+
+#### 3. Doyma noktası ÖLÇÜLDÜ: girdiyi artırmak analizi YAVAŞLATTI
+
+`TARGET_FPS` geçici olarak 4 → 8 yapıldı (`.env`'e dokunulmadan, ortam
+değişkeniyle), aynı ölçüm tekrarlandı:
+
+```
+ölçüt                    TARGET_FPS=4   TARGET_FPS=8
+örnekleme (yayınlanan)        2.78          4.37   ↑ arz arttı
+ANALİZ EDİLEN                 2.78          1.88   ↓ %32 DÜŞTÜ
+gecikme p50 (ms)               173           433   ↑ 2.5 kat
+izlenmeyen kayıp              ~%0         %56.9   ⬅ 10 260 kare
+tüketici gecikmesi (lag)         0            40   ⬅ gerçek birikme
+alım CPU (çekirdek)           2.10          3.79   ↑
+ÇIKARIM CPU (çekirdek)        0.89          0.89   ⬅ DEĞİŞMEDİ
+sistem RAM                     %84           %92
+```
+
+⭐⭐⭐ **Çıkarım worker'ı ne verirsen ver 0.89 çekirdekte sabit
+kalıyor** — ve daha çok kare verildiğinde verimi *düşüyor*.
+
+Mekanizma: çıkarım worker'ının ana döngüsü **seri**. Tavanı bir
+çekirdek. Alım katmanı daha çok kare üretince aynı çekirdekleri
+paylaşan çıkarım sürecinden CPU çalıyor (alım 2.10 → 3.79 çekirdek),
+ve sınırlı akış (MAXLEN) fazlalığı sessizce atıyor.
+
+⚠ Bu mekanizma `_refresh_capacity` docstring'inde **zaten yazılıydı**:
+
+> *"Üretimi kısmak tüketimi HIZLANDIRIYOR. Alışılmadık ama mekanizma
+> net: daha az kare → daha az alım CPU'su → çıkarıma daha çok
+> çekirdek."*
+
+Yazılıydı ama **ölçülmemişti**, ve o yüzden `capacity_backpressure_enabled`
+`False`'ta duruyordu. Şimdi hem ölçüldü hem büyüklüğü belli.
+
+---
+
+#### 4. ⭐⭐ Donanımda yer var, MİMARİDE yok
+
+Doymuş rejimde ölçülen:
+
+```
+çıkarım worker CPU : 0.89 çekirdek   /  20 mantıksal çekirdek   ⬅ %4.5
+GPU kullanımı      : %41
+VRAM               : 571 MB / 8192 MB                          ⬅ %7
+```
+
+**19 çekirdek boşta, GPU'nun yarısı boşta, VRAM'in %93'ü boşta** — ve
+sistem yine de 20 kamerada 2.78 FPS'te sıkışıyor.
+
+Ve çıkarımın tek çekirdeği nereye gidiyor:
+
+```
+aşama       ms/KARE
+pose           2.50
+detect         1.80
+track          0.22
+emotion        0.06
+─────────────────────
+ölçülen        4.58
+GERÇEK        15.2   (0.89 çekirdek / 58.5 kare-sn)
+─────────────────────
+ÖLÇÜLMEYEN    10.6   ⬅ %70
+```
+
+⚠ **Model çıkarımı, çıkarım worker'ının CPU'sunun yalnızca %30'u.**
+Kalan %70 ölçülmüyor: Valkey okuma, paylaşımlı bellek erişimi, sonuç
+JSON'unun kurulması, yayınlama, ACK, slot iadesi. Aşama histogramları
+döngünün üçte birini kapsıyor.
+
+---
+
+#### 5. Kullanıcının sorularının cevapları — tek tek
+
+| Soru | Cevap |
+|---|---|
+| Panelde 24.75 FPS'lik model mi vardı? | Evet, o model yüklüydü — ama 20 kameranın hepsi için ve **2.75 FPS'lik veriyle besleniyordu** |
+| Çalışıyor muydu, kuyruğa yatıyor muydu? | Evet. Skor üretiyordu (18/20 kamera), alarm üretiyordu, panel canlıydı. Arıza tam da bu yüzden sessizdi |
+| Tek kamerada mı 20 kamerada mı? | 20 kamerada. Model tek kopya, kamera başına ayrı kayan pencere |
+| 24.75 FPS analizimiz varsa neden kullanmıyoruz? | **Öyle bir analizimiz yok.** 24.75 yalnızca çevrimdışı eğitim verisi hazırlama ayarıydı. 20 kamerayı 24.75 FPS'te işlemek 495 kare/sn ister; ölçülen tavan ~58 |
+| "Hedef 4" neye göre? | `.env · TARGET_FPS=4`, elle yazılmış bir ayar. **Ölçüme dayanmıyordu** — ve kapasite geri basıncı (`capacity_backpressure_enabled`) `False` olduğu için gerçek bir tavan da uygulanmıyordu |
+| 4'ten fazlası çalışıyorsa neden kullanmıyoruz? | Denendi (8 FPS): analiz 2.78 → 1.88 **düştü**, gecikme 2.5 kat arttı, karelerin %57'si atıldı |
+| Sınır mı verdik? | İki sınır var: (a) elle yazılmış `TARGET_FPS=4`, (b) sınırlı akış `MAXLEN`. Ama **asıl sınır ikisi de değil** — çıkarım döngüsünün tek çekirdeği |
+
+---
+
+#### ⭐ Ve bu, P-60'ta askıda kalan RAM sorusunu da kapatıyor
+
+P-58/P-60'ta "sistem RAM'i %90'a çıkınca verim yarıya düşüyor"
+gözlemi askıda bırakılmıştı. Bu deney onu **yeniden üretti ve
+açıkladı**: 8 FPS koşusunda RAM yine %92'ye çıktı ve verim yine
+düştü — ama sebep RAM değil, **aşırı arzın kendisi**. Daha çok kare
+= daha çok uçuşan tampon (RAM ↑) + daha çok alım CPU'su (çıkarım ↓).
+
+RAM yükselişi bir **yan etki**, bir sebep değil. Korelasyon gerçekti,
+nedensellik yanlıştı.
+
+> ⭐ Askıda bırakılan bir soru, başka bir sorunun ölçümüyle kapandı.
+> Rami bilerek şişirmek gerekmedi — doğru deney zaten başka bir
+> kapıdan geliyordu.
+
+---
+
+#### Bu ne DEĞİŞTİRİYOR — dürüst kapsam
+
+⚠ **Bu kayıt bir düzeltme değil, bir teşhis.** Çıkarım döngüsünü
+paralelleştirmek (kare çözme/serileştirme işini ana döngüden ayırmak)
+gerçek çözüm ama mimari bir değişiklik ve kalan sürede kapsam dışı.
+`CLAUDE.md · ASKIDA` listesinde "boru hattı paralelleştirmesi" olarak
+zaten duruyordu; artık **gerekçesi ölçülmüş** halde duruyor.
+
+**K2 için raporda yazılacak dürüst ifade:**
+
+> *"K2 (≥4 analiz FPS/kamera) tutmadı: ölçülen 2.78. Sebep GPU ya da
+> VRAM yetersizliği değildir — ölçüm sırasında GPU %41, VRAM %7, 20
+> mantıksal çekirdeğin 19'u boştaydı. Bağlayıcı kısıt, çıkarım
+> worker'ının seri ana döngüsüdür: yükü ne olursa olsun 0.89 çekirdekte
+> doyuyor. Örnekleme hızı 8 FPS'e çıkarıldığında analiz edilen kare
+> hızı artmadı, 2.78'den 1.88'e DÜŞTÜ ve karelerin %57'si atıldı;
+> çünkü artan alım yükü aynı çekirdekleri paylaşan çıkarım sürecinden
+> CPU çalmaktadır. Bu, donanım değil mimari bir sınırdır ve çözümü
+> boru hattının paralelleştirilmesidir."*
+
+⭐ Bu ifade, "yetmedi" demekten çok daha güçlü: **neyin yetmediğini,
+neyin boşta durduğunu ve çözümün ne olduğunu** söylüyor.
+
+**Öğrenilen ders:** "Sistem kapasitesinin %95'inde" cümlesi, kapasiteyi
+ölçtüğünü sandığın bir metrikten geliyorsa hiçbir şey ifade etmez.
+Bir tavanı öğrenmenin tek yolu **ona dayanmaktır** — arzı artırıp
+sistemin nerede kırıldığını görmek. Gözlemsel veri doyma noktasını
+gösteremez; müdahaleli deney gösterir.
