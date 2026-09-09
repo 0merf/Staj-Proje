@@ -66,6 +66,18 @@ data/fall-01-cam0-rgb/*
 # ffmpeg concat listeleri gibi geçici dosyalar
 data/_tmp/*
 models/*
+# ⚠ 09.09.2026 — MODEL KÜNYELERİ İSTİSNA (P-63)
+#
+# Ağırlık dosyaları git'e girmez (büyük, yeniden üretilebilir) ama
+# KÜNYELER girer: hangi kare hızıyla, hangi özellik dosyasıyla, kaç
+# klip ile eğitildiği. Birkaç KB.
+#
+# Neden: bir FPS taraması üretim modelinin üzerine beş kez yazdı ve
+# üretimde 24.75 FPS'te eğitilmiş bir model bir gün boyunca oturdu.
+# Kimse fark etmedi çünkü model dosyası KENDİSİNİN NE OLDUĞUNU
+# söylemiyordu. Künyeyi yoksaymak, tam da düzeltmeye çalıştığımız
+# körlüğü geri getirirdi.
+!models/*.kunye.json
 # ⚠⚠ 08.09.2026 — İKİ MODEL DİZİNİ VARDI VE BU SESSİZ BİR HATAYDI.
 #
 # Üretim `config.py · resolve_path()` ile `<kök>/models/` okuyor;

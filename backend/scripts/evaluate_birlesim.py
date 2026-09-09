@@ -114,9 +114,226 @@ def _f1(skorlar: list[float], etiketler: list[int]) -> dict[str, float]:
     return en_iyi
 
 
+def _bootstrap_analiz(
+    birlesimler: dict[str, list[float]],
+    etiketler: list[int],
+    *,
+    tekrar: int = 10_000,
+    tohum: int = 20260909,
+) -> dict[str, Any]:
+    """⭐⭐ AUC farkının güven aralığı — 96 klip için ZORUNLU.
+
+    ⚠ NEDEN GEREKLİ
+    ---------------
+    Bildirilen sayı **96 klip** üzerinde. Birleşim 0.968, en iyi tek
+    model 0.937 — fark +0.032. Bu fark gerçek bir üstünlük mü, yoksa 96
+    klibin hangi klipler olduğunun bir tesadüfü mü? Tek bir sayı bunu
+    söyleyemez.
+
+    ⭐ NEDEN **EŞLEŞTİRİLMİŞ** (paired) BOOTSTRAP
+    ---------------------------------------------
+    İki modelin AUC'sini ayrı ayrı bootstrap'layıp aralıklarına bakmak
+    YANLIŞ olurdu: iki model **aynı kliplerde** değerlendiriliyor, yani
+    hataları ilişkili. "Zor" klipler ikisini birden aşağı çeker.
+
+    Doğrusu: her tekrarda **aynı klip örneklemesi** üzerinde iki AUC de
+    hesaplanıp FARK alınıyor. Böylece kliplerin ortak zorluğu farkta
+    sadeleşiyor ve kalan şey modeller arası gerçek fark oluyor.
+
+    ⚠ Bu, projede iki kez yakalanan hatanın (P-41: karşılaştırma iki
+    değişkeni birden değiştiriyordu) istatistiksel karşılığı: kıyas
+    yapılırken değişmemesi gereken şey sabit tutulmalı.
+
+    ⚠ BOOTSTRAP NE YAPMAZ
+    ---------------------
+    Elimizdeki 96 klibin RWF-2000'in geri kalanını temsil ettiğini
+    VARSAYAR. Örneklem yanlıysa bootstrap onu düzeltmez — yalnızca
+    "bu dağılımdan 96 klip daha çekseydik ne olurdu" sorusunu
+    cevaplar. Yani **örnekleme belirsizliğini** ölçer, **yanlılığı**
+    değil.
+    """
+    import random
+
+    # ⚠ S311 bastırılıyor: bu bir İSTATİSTİK örneklemesi, kriptografi
+    # değil. Tekrarlanabilirlik ZORUNLU (aynı tohum = aynı güven
+    # aralığı); `secrets` burada yanlış araç olurdu.
+    rng = random.Random(tohum)  # noqa: S311
+    n = len(etiketler)
+    adlar = list(birlesimler)
+    # Tek modeller ile birleşimleri ayır: kıyas "birleşim vs EN İYİ TEK".
+    tekler = ["iskelet (LightGBM)", "video (R3D-18)"]
+    en_iyi_tek = max(tekler, key=lambda a: _auc(birlesimler[a], etiketler))
+
+    ornekler: list[list[int]] = []
+    for _ in range(tekrar):
+        idx = [rng.randrange(n) for _ in range(n)]
+        # ⚠ Tek sınıflı örnekleme AUC'yi tanımsız yapar — atlanıyor.
+        e = [etiketler[i] for i in idx]
+        if 0 < sum(e) < n:
+            ornekler.append(idx)
+
+    dagilimlar: dict[str, list[float]] = {ad: [] for ad in adlar}
+    for idx in ornekler:
+        e = [etiketler[i] for i in idx]
+        for ad in adlar:
+            s = birlesimler[ad]
+            dagilimlar[ad].append(_auc([s[i] for i in idx], e))
+
+    def _yuzdelik(dizi: list[float], oran: float) -> float:
+        d = sorted(dizi)
+        k = (len(d) - 1) * oran
+        alt, ust = int(k), min(int(k) + 1, len(d) - 1)
+        return d[alt] + (d[ust] - d[alt]) * (k - alt)
+
+    cikti: dict[str, Any] = {
+        "tekrar": len(ornekler),
+        "istenen_tekrar": tekrar,
+        "referans_tek_model": en_iyi_tek,
+        "auc_araliklari": {},
+        "fark_araliklari": {},
+    }
+
+    print(f"\n═══ ⭐ BOOTSTRAP · {len(ornekler)} tekrar · %95 GA ═══")
+    print(f"{'yöntem':<22} {'AUC':>7} {'%2.5':>8} {'%97.5':>8} {'genişlik':>9}")
+    for ad in adlar:
+        gozlenen = _auc(birlesimler[ad], etiketler)
+        alt, ust = _yuzdelik(dagilimlar[ad], 0.025), _yuzdelik(dagilimlar[ad], 0.975)
+        print(f"{ad:<22} {gozlenen:>7.3f} {alt:>8.3f} {ust:>8.3f} {ust - alt:>9.3f}")
+        cikti["auc_araliklari"][ad] = {
+            "gozlenen": round(gozlenen, 4),
+            "ga_alt": round(alt, 4), "ga_ust": round(ust, 4),
+        }
+
+    print(f"\n─── FARK: her birleşim EKSİ '{en_iyi_tek}' (eşleştirilmiş) ───")
+    print(f"{'yöntem':<22} {'Δ AUC':>8} {'%2.5':>8} {'%97.5':>8} {'P(Δ>0)':>8}  karar")
+    taban = dagilimlar[en_iyi_tek]
+    for ad in adlar:
+        if ad == en_iyi_tek:
+            continue
+        farklar = [a - b for a, b in zip(dagilimlar[ad], taban, strict=True)]
+        gozlenen = _auc(birlesimler[ad], etiketler) - _auc(birlesimler[en_iyi_tek], etiketler)
+        alt, ust = _yuzdelik(farklar, 0.025), _yuzdelik(farklar, 0.975)
+        p_ustun = sum(1 for f in farklar if f > 0) / len(farklar)
+        anlamli = alt > 0
+        print(f"{ad:<22} {gozlenen:>+8.3f} {alt:>+8.3f} {ust:>+8.3f} {p_ustun:>8.3f}"
+              f"  {'✅ ANLAMLI' if anlamli else '❌ sıfırı içeriyor'}")
+        cikti["fark_araliklari"][ad] = {
+            "gozlenen": round(gozlenen, 4),
+            "ga_alt": round(alt, 4), "ga_ust": round(ust, 4),
+            "p_ustun": round(p_ustun, 4),
+            "anlamli": bool(anlamli),
+        }
+
+    # ⚠⚠ KAZANANIN LANETİ (winner's curse)
+    # "0.968" dört birleşim kuralı arasından EN İYİSİ ve seçim, F1'in
+    # hesaplandığı AYNI 96 klip üzerinde yapıldı. Yani bildirilen sayı
+    # tanımı gereği iyimser: dört gürültülü tahminin maksimumu, tek bir
+    # tahminden büyük çıkar — kurallar aynı derecede iyi olsa bile.
+    #
+    # Büyüklüğü ölçülüyor: her bootstrap tekrarında "en iyi kural"ın AUC'si
+    # ile ÖNCEDEN SEÇİLMİŞ kuralın (ortalama) AUC'si karşılaştırılıyor.
+    kural_adlari = [a for a in adlar if a not in tekler]
+    if len(kural_adlari) > 1 and "ortalama" in dagilimlar:
+        en_iyiler = [
+            max(dagilimlar[a][i] for a in kural_adlari)
+            for i in range(len(ornekler))
+        ]
+        onceden = dagilimlar["ortalama"]
+        iyimserlik = sum(a - b for a, b in zip(en_iyiler, onceden, strict=True)) / len(en_iyiler)
+        print(f"\n─── KAZANANIN LANETİ ({len(kural_adlari)} kural arasından seçim) ───")
+        print(f"  'en iyi kural' ile ÖNCEDEN seçilmiş kural farkı: {iyimserlik:+.4f} AUC")
+        print("  ⚠ Bu, kural seçiminin getirdiği İYİMSERLİK payı. Raporda")
+        print("    bildirilen sayı önceden seçilmiş kural (ortalama) olmalı.")
+        cikti["kazananin_laneti"] = {
+            "kural_sayisi": len(kural_adlari),
+            "iyimserlik_auc": round(iyimserlik, 4),
+            "onceden_secilen": "ortalama",
+        }
+
+    return cikti
+
+
+def _esik_yanliligi(
+    birlesimler: dict[str, list[float]],
+    etiketler: list[int],
+    *,
+    tekrar: int = 400,
+    tohum: int = 20260909,
+) -> dict[str, Any]:
+    """⭐ Bildirilen F1 ne kadar iyimser? — eşik aynı kümede seçiliyor.
+
+    ⚠ CLAUDE.md bu yanlılığı K5 için Gün 12'den beri İŞARETLİYOR ama
+    hiç SAYISALLAŞTIRMADI:
+
+    > *"`en_iyi_esik`, F1'in hesaplandığı aynı 120 klip üzerinde
+    > aranıyor. Yani bildirilen F1 optimistik."*
+
+    "Optimistik" bir uyarı; **ne kadar** optimistik olduğu bir sayı.
+    Uyarıyı sayıya çevirmeden rapora yazmak, okuyucuya karar
+    verdirmiyor.
+
+    YÖNTEM — tekrarlı yarı-yarıya bölme:
+      1. 96 klip rastgele iki eşit yarıya bölünür (sınıf dengesi
+         korunarak — küçük kümede bu şart, yoksa bir yarı tek sınıflı
+         çıkabilir)
+      2. Eşik BİRİNCİ yarıda seçilir
+      3. F1 İKİNCİ yarıda ölçülür (o eşiği hiç görmemiş klipler)
+      4. Yüzlerce kez tekrarlanıp ortalaması alınır
+
+    Fark = **iyimserlik payı**. Bu, aynı kümede seçilen eşiğin şişirdiği
+    miktardır ve raporda F1'in yanına yazılmalıdır.
+
+    ⚠ Bu yöntem F1'i AŞAĞI çeker çünkü eşik yarım veriyle seçiliyor
+    (48 klip). Yani ölçülen iyimserlik payı bir ÜST sınır: gerçek
+    yanlılık bundan biraz küçük.
+    """
+    import random
+
+    rng = random.Random(tohum)  # noqa: S311  (istatistik, kriptografi değil)
+    poz = [i for i, y in enumerate(etiketler) if y == 1]
+    neg = [i for i, y in enumerate(etiketler) if y == 0]
+
+    cikti: dict[str, Any] = {"tekrar": tekrar, "yontem": "tekrarlı katmanlı yarı-yarıya"}
+    print(f"\n═══ ⭐ EŞİK SEÇİM YANLILIĞI · {tekrar} tekrar ═══")
+    print(f"{'yöntem':<22} {'F1 (aynı küme)':>15} {'F1 (ayrı yarı)':>15} {'iyimserlik':>11}")
+
+    for ad, skorlar in birlesimler.items():
+        icerideki = _f1(skorlar, etiketler)["f1"]
+        disaridakiler: list[float] = []
+        for _ in range(tekrar):
+            p, n_ = poz[:], neg[:]
+            rng.shuffle(p)
+            rng.shuffle(n_)
+            a_idx = p[: len(p) // 2] + n_[: len(n_) // 2]
+            b_idx = p[len(p) // 2 :] + n_[len(n_) // 2 :]
+            if not a_idx or not b_idx:
+                continue
+            esik = _f1([skorlar[i] for i in a_idx], [etiketler[i] for i in a_idx])["esik"]
+            sb = [skorlar[i] for i in b_idx]
+            eb = [etiketler[i] for i in b_idx]
+            tp = sum(1 for s, y in zip(sb, eb, strict=True) if s >= esik and y == 1)
+            fp = sum(1 for s, y in zip(sb, eb, strict=True) if s >= esik and y == 0)
+            fn = sum(1 for s, y in zip(sb, eb, strict=True) if s < esik and y == 1)
+            disaridakiler.append(
+                2 * tp / (2 * tp + fp + fn) if (2 * tp + fp + fn) else 0.0
+            )
+        disarida = sum(disaridakiler) / max(len(disaridakiler), 1)
+        print(f"{ad:<22} {icerideki:>15.3f} {disarida:>15.3f} {icerideki - disarida:>+11.3f}")
+        cikti[ad] = {
+            "f1_ayni_kume": round(icerideki, 4),
+            "f1_ayri_yari": round(disarida, 4),
+            "iyimserlik": round(icerideki - disarida, 4),
+        }
+    return cikti
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="İskelet + video birleşimi")
-    ap.parse_args()
+    ap.add_argument("--bootstrap", type=int, default=10_000,
+                    help="eşleştirilmiş bootstrap tekrar sayısı (0 = atla)")
+    ap.add_argument("--esik-tekrar", type=int, default=400,
+                    help="eşik yanlılığı için yarı-yarıya bölme tekrarı")
+    args = ap.parse_args()
 
     for y in (OZELLIKLER, LGBM_DOSYASI, VIDEO_DOSYASI,
               TENSOR_DIZINI / "_ust.json"):
@@ -236,6 +453,12 @@ def main() -> int:
     print(f"\n  hata örtüşmesi: %{ortusme * 100:.0f} "
           f"(düşük = bağımsız = birleşim kazandırır)")
 
+    # ─── ⭐⭐ BOOTSTRAP — "bu fark gerçek mi, yoksa 96 klipte şans mı?" ───
+    bs = (_bootstrap_analiz(birlesimler, etiketler, tekrar=args.bootstrap)
+          if args.bootstrap > 0 else {})
+    yanlilik = (_esik_yanliligi(birlesimler, etiketler, tekrar=args.esik_tekrar)
+                if args.esik_tekrar > 0 else {})
+
     # ─── Maliyet ───
     ort_ms = sum(sureler) / len(sureler) if sureler else 0.0
     saniyede = KAMERA_SAYISI * CANLI_FPS
@@ -254,6 +477,18 @@ def main() -> int:
         "olculdu": datetime.now(UTC).isoformat(),
         "val_klip": len(ortak),
         "sonuclar": sonuc,
+        "bootstrap": bs,
+        "esik_yanliligi": yanlilik,
+        # ⭐ Klip başına skorlar SAKLANIYOR: bundan sonraki her istatistiksel
+        # analiz (yeni bootstrap, farklı birleşim kuralı, hata analizi)
+        # modelleri yeniden koşturmadan yapılabilsin diye. Bu dosya
+        # olmadan her soru için 96 klip yeniden çıkarılıyordu.
+        "klip_skorlari": {
+            "klip": ortak,
+            "etiket": etiketler,
+            "iskelet": [round(s, 6) for s in s_iskelet],
+            "video": [round(s, 6) for s in s_video],
+        },
         "hata_bagimsizligi": {
             "yalniz_iskelet": yalniz_i, "yalniz_video": yalniz_v,
             "ikisi": ikisi, "ortusme": round(ortusme, 3),

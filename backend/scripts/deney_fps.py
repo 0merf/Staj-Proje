@@ -207,7 +207,13 @@ def main() -> int:
         cikti = subprocess.run(  # noqa: S603
             [sys.executable, str(Path(__file__).parent / "train_aggression.py"),
              "--egit", "--ozellik-dosyasi", ad,
-             "--tahmin-cikti", tahmin_ad],
+             "--tahmin-cikti", tahmin_ad,
+             # ⚠⚠ 09.09.2026 — BU BAYRAK OLMADAN TARAMA ÜRETİMİ EZİYORDU
+             # Beş koşunun her biri `models/saldirganlik_lgbm.txt`ye
+             # yazıyordu; üretimde kalan, döngünün SON bitirdiği model
+             # oluyordu (24.75 FPS · AUC 0.918) — en iyisi (16.50) değil,
+             # üretimin hızı (2.75) hiç değil. Tam anlatım: P-63.
+             "--model-cikti", f"models/_deney/fps_{abs(hash(etiket)) % 100000}.txt"],
             capture_output=True, text=True, encoding="utf-8", errors="replace",
             cwd=str(Path(__file__).parents[1]), check=False,
         )

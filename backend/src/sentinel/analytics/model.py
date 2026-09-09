@@ -80,6 +80,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from sentinel import metrics
+from sentinel.config import settings
 from sentinel.logging import get_logger
 
 if TYPE_CHECKING:
@@ -270,6 +271,75 @@ class SaldirganlikModeli:
         self._sutunlar = sutunlar
         self.etkin = True
         log.info("saldirganlik_modeli_yuklendi", ozellik=len(sutunlar))
+        self._kunye_dogrula(model_yolu)
+
+    @staticmethod
+    def _kunye_dogrula(model_yolu: Path) -> None:
+        """Modelin eğitildiği kare hızı üretiminkiyle uyuşuyor mu?
+
+        ⚠⚠ 09.09.2026 — BU KONTROL OLMADIĞI İÇİN YANLIŞ MODEL ÜRETİMDE
+        OTURDU (P-63)
+        ----------------------------------------------------------------
+        FPS taraması (`deney_fps.py`) beş model eğitip her birini aynı
+        dosyaya yazıyordu. Üretimde kalan, taramanın SON bitirdiği
+        modeldi: **24.75 FPS**'te eğitilmiş olan. Üretim ise **2.75
+        FPS**'te örnekliyor.
+
+        Özellikler 5 saniyelik pencere üzerinde hesaplanıyor; kare hızı
+        değişince pencerenin içindeki kare sayısı ve dolayısıyla hız /
+        ivme türevleri sistematik olarak kayıyor. Yani model, eğitildiği
+        dağılımdan farklı bir dağılımla besleniyordu.
+
+        Bedeli ölçüldü: aynı 96 klip, aynı özellikler —
+        **AUC 0.927 → 0.836**.
+
+        ⚠ Sütun sayısı kontrolü bunu YAKALAYAMAZ: beş varyantın hepsi 99
+        sütun üretiyor. Uyuşmazlık sayıda değil **dağılımda**.
+
+        ⚠ NEDEN HATA DEĞİL UYARI: üretim hızı uyarlanabilir (kapasiteye
+        göre 2-4 FPS arası oynuyor), yani tam eşitlik beklenemez. Sert
+        bir eşitlik kontrolü, meşru koşularda modeli kapatırdı. Uyarı,
+        insanın bakması gereken yeri gösteriyor — sessizlik ise hiçbir
+        şey göstermiyordu.
+        """
+        kunye_yolu = model_yolu.with_suffix(".kunye.json")
+        if not kunye_yolu.exists():
+            log.warning(
+                "saldirganlik_model_kunyesi_YOK",
+                not_="model hangi kare hızıyla eğitildi bilinmiyor; "
+                     "train_aggression.py yeniden koşturulup künye üretilmeli",
+            )
+            return
+        try:
+            kunye = json.loads(kunye_yolu.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as hata:
+            log.warning("saldirganlik_model_kunyesi_okunamadi", hata=str(hata))
+            return
+
+        egitim_fps = kunye.get("egitim_fps")
+        if egitim_fps is None:
+            log.warning("saldirganlik_model_egitim_fps_bilinmiyor",
+                        ozellik_dosyasi=kunye.get("ozellik_dosyasi"))
+            return
+
+        # ⚠ TEK BİR HEDEFLE KIYASLAMAK YANLIŞ ALARM ÜRETİR
+        # `target_fps` (4) *istenen* hız; üretim kapasite sınırı yüzünden
+        # ~2.75'te koşuyor (ölçüldü) ve hareketsiz kamerada
+        # `target_fps_idle`e (1) kadar iniyor. Yani üretimin tek bir kare
+        # hızı yok, bir BANDI var. Doğru soru "eşit mi" değil,
+        # **"bandın içinde mi"**.
+        alt = float(settings.target_fps_idle)
+        ust = float(max(settings.target_fps, settings.target_fps_high_risk))
+        if not (alt <= float(egitim_fps) <= ust):
+            log.error(
+                "saldirganlik_model_FPS_UYUSMAZLIGI",
+                egitim_fps=egitim_fps, uretim_bandi=f"{alt}-{ust}",
+                not_="model üretimin örnekleme bandı DIŞINDA bir kare "
+                     "hızıyla eğitilmiş; skorlar güvenilir değil (P-63)",
+            )
+        else:
+            log.info("saldirganlik_model_kunyesi_uyumlu",
+                     egitim_fps=egitim_fps, uretim_bandi=f"{alt}-{ust}")
 
     @staticmethod
     def _sutunlari_oku(sutun_yolu: Path | None) -> list[str]:

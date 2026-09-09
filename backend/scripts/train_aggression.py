@@ -98,6 +98,28 @@ def _ozellik_dosyasi(args: argparse.Namespace) -> Path:
     return OZELLIK_DOSYASI
 MODEL_DOSYASI = PROJECT_ROOT / "models" / "saldirganlik_lgbm.txt"
 
+# Özellik dosyası → o dosyanın çıkarıldığı kare hızı (P-55 · deney_fps.py).
+# ⚠ Künyeye yazılıyor çünkü model dosyası bunu KENDİ SÖYLEMİYOR — ve
+# söylemediği için 24.75 FPS'te eğitilmiş bir model, 2.75 FPS'te koşan
+# üretimde bir gün boyunca fark edilmeden oturdu (P-63).
+_DOSYA_FPS = {
+    "rwf_ozellikler.json": 2.75,      # ⬅ ÜRETİMİN HIZI
+    "rwf_ozellikler_4fps.json": 4.00,
+    "rwf_fps825.json": 8.25,
+    "rwf_fps165.json": 16.50,
+    "rwf_fps2475.json": 24.75,
+}
+
+
+def _ozellik_fps(ad: str) -> float | None:
+    """Özellik dosyasının kare hızı; bilinmiyorsa `None`.
+
+    ⚠ `None` "hız yok" değil **"bilmiyorum"** demek. İkisini karıştırmak,
+    bu projede defalarca yakalanan "sonuç yok" ile "yanlış yere baktım"
+    karışıklığı olurdu.
+    """
+    return _DOSYA_FPS.get(ad or OZELLIK_DOSYASI.name)
+
 TOHUM = 42
 
 # ⚠ ÖZELLİK ADLARI `aggression.py · bilesenler` ile BİREBİR AYNI
@@ -558,8 +580,42 @@ def _egit(args: argparse.Namespace) -> int:
     for ad, deger in onem[:8]:
         print(f"  {ad:24} {deger:>6}")
 
-    MODEL_DOSYASI.parent.mkdir(parents=True, exist_ok=True)
-    model.booster_.save_model(str(MODEL_DOSYASI))
+    # ⚠⚠ 09.09.2026 — BU SATIR ÜRETİM MODELİNİ SESSİZCE EZİYORDU (P-63)
+    #
+    # `deney_fps.py` bu betiği FPS taraması için **beş kez** alt süreçte
+    # çağırıyor (2.75 / 4.00 / 8.25 / 16.50 / 24.75) ve her çağrı aynı
+    # dosyanın üzerine yazıyordu. Üretimde kalan model, taramanın EN SON
+    # bitirdiği modeldi — yani 24.75 FPS'te eğitilmiş olan (AUC 0.918),
+    # en iyisi olan 16.50 değil, üretimin kendi hızı olan 2.75 hiç değil.
+    #
+    # Deney bir ARAŞTIRMA aracı; üretim yapıtını değiştirmemeli. Artık
+    # çıktı yolu seçilebilir ve tarama kendi dizinine yazıyor.
+    hedef_model = (
+        (PROJECT_ROOT / args.model_cikti) if getattr(args, "model_cikti", "")
+        else MODEL_DOSYASI
+    )
+    hedef_model.parent.mkdir(parents=True, exist_ok=True)
+    model.booster_.save_model(str(hedef_model))
+
+    # ⭐ YANIN A KÜNYE YAZILIYOR — "bu model hangi veriyle eğitildi"
+    #
+    # Model dosyası tek başına hangi kare hızındaki özelliklerle
+    # eğitildiğini SÖYLEMİYOR. Söylemediği için de yanlış modelin
+    # üretimde oturduğu bir gün boyunca fark edilmedi. Künye, üretim
+    # tarafının uyuşmazlığı görebilmesi için (bkz. `analytics/model.py`).
+    kunye = {
+        "olculdu": datetime.now(UTC).isoformat(),
+        "ozellik_dosyasi": getattr(args, "ozellik_dosyasi", "") or OZELLIK_DOSYASI.name,
+        "egitim_fps": _ozellik_fps(getattr(args, "ozellik_dosyasi", "")),
+        "egitim_klip": len(veri["train"]),
+        "dogrulama_klip": len(veri["val"]),
+        "sutunlar": sutunlar,
+        "auc": round(auc, 4),
+        "f1": round(f1, 4),
+    }
+    hedef_model.with_suffix(".kunye.json").write_text(
+        json.dumps(kunye, ensure_ascii=False, indent=1), encoding="utf-8",
+    )
 
     cikti = {
         "olculdu": datetime.now(UTC).isoformat(),
@@ -617,6 +673,11 @@ def main() -> int:
     ap.add_argument(
         "--ozellik-dosyasi", default="",
         help="data/_tmp altında dosya adı (FPS taraması için ayrı dosya)",
+    )
+    ap.add_argument(
+        "--model-cikti", default="",
+        help="modeli buraya yaz (proje köküne göreli). Boş = üretim yolu. "
+             "⚠ Taramalar/deneyler BUNU vermeli, yoksa üretim modeli ezilir (P-63)",
     )
     ap.add_argument(
         "--haric-onek", default="",

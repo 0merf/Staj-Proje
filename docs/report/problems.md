@@ -4898,3 +4898,209 @@ dönerler) ACK'lenip listeden düşürülüyor.
 analiz demek; kimse fark etmezdi. Ama mekanizma sınırsız: her sert
 kapanış kalıcı bir tortu bırakıyordu ve hiçbir şey onları temizlemiyordu.
 
+
+---
+
+### P-63 · ⭐⭐⭐ Bir DENEY, üretim modelinin üzerine yazmıştı — bir gün fark edilmedi
+
+**Tarih:** 09.09.2026 · **Faz:** 3
+
+**Neden bakıldı:** Birleşim iddiasına (AUC 0.968) bootstrap eklenip
+betik yeniden koşuldu. Beklenen: aynı sayılar + güven aralıkları.
+Görülen:
+
+```
+                    08.09'daki      09.09'daki
+iskelet (LightGBM)     0.9267          0.836    ⬅ 0.09 DÜŞMÜŞ
+video (R3D-18)         0.9366          0.937    ⬅ aynı
+ortalama               0.9684          0.950
+```
+
+Video modeli aynı, iskelet yolu düşmüş. Aynı betik, aynı val kümesi,
+aynı özellik dosyası. Değişen tek şey **model dosyası**.
+
+---
+
+#### Kök sebep: FPS taraması üretim yapıtını beş kez ezdi
+
+`deney_fps.py`, FPS eğrisini çıkarmak için `train_aggression.py`'ı beş
+kez alt süreçte çağırıyor (2.75 / 4.00 / 8.25 / 16.50 / 24.75 FPS). Her
+çağrı sonunda tek bir satır koşuyordu:
+
+```python
+model.booster_.save_model(str(MODEL_DOSYASI))   # models/saldirganlik_lgbm.txt
+```
+
+Yani **beş model, tek dosya**. Üretimde kalan, döngünün en son
+bitirdiği modeldi. Eğitim JSON'ları zaman sırasına dizilince eşleşme
+kesin:
+
+| sıra | FPS | deney AUC | eğitim JSON AUC |
+|---|---|---|---|
+| 1 | 2.75 (üretimin hızı) | 0.906 | 0.9057 |
+| 2 | 4.00 | 0.903 | 0.9026 |
+| 3 | 8.25 | 0.936 | 0.9359 |
+| 4 | **16.50 (en iyi)** | **0.949** | 0.9487 |
+| 5 | **24.75** | 0.918 | **0.9184 ⬅ SON YAZAN** |
+
+⭐⭐⭐ **Üretimde 24.75 FPS'te eğitilmiş bir model oturuyordu.** En
+iyisi (16.50) değil; üretimin kendi hızı (2.75) hiç değil. Seçilmiş bile
+değildi — sadece döngünün son adımıydı.
+
+#### Neden önemli: eğitim/servis kare hızı uyuşmazlığı
+
+Özellikler **5 saniyelik pencere** üzerinde hesaplanıyor. Kare hızı
+değişince pencerenin içindeki kare sayısı değişiyor ve hız/ivme
+türevleri sistematik olarak kayıyor. Yani model, eğitildiğinden farklı
+bir dağılımla besleniyordu.
+
+Bedeli ölçüldü — aynı 96 klip, aynı özellikler, yalnızca model farklı:
+
+```
+2.75 FPS modeli  (doğru)  : AUC 0.927 · F1 0.889
+24.75 FPS modeli (yanlış) : AUC 0.836
+                            ─────────
+                            −0.091 AUC
+```
+
+⚠ **Mevcut sütun kontrolü bunu yakalayamazdı.** Kod zaten
+`booster.num_feature() != len(sutunlar)` kontrolü yapıyor — ama beş
+varyantın hepsi **99 sütun** üretiyor. Uyuşmazlık sayıda değil,
+**dağılımda**. Yapısal kontroller dağılım hatalarını görmez.
+
+#### ⚠ Ve arıza tam anlamıyla sessizdi
+
+Model yükleniyordu. Sütun sayısı doğruydu. Skor üretiyordu (18/20
+kamerada, medyan 0.075). Alarm da üretiyordu. Canlı doğrulama betiği
+"✅ Model canlıda skor üretiyor" diyordu — **ve doğru söylüyordu.**
+Üretilen skorların yanlış modelden geldiğini gösteren hiçbir sinyal
+yoktu.
+
+> ⭐ "Çalışıyor" ile "doğru çalışıyor" arasındaki farkı hiçbir sağlık
+> kontrolü göstermiyordu. Model dosyası **kendisinin ne olduğunu
+> söylemiyordu.**
+
+#### Üç ayrı düzeltme
+
+**1. Deney artık üretim yapıtına dokunmuyor.** `train_aggression.py`'a
+`--model-cikti` eklendi; `deney_fps.py` her FPS için `models/_deney/`
+altına yazıyor. Bir araştırma aracı üretim durumunu değiştirmemeli.
+
+**2. Modelin yanına KÜNYE yazılıyor** (`saldirganlik_lgbm.kunye.json`):
+hangi özellik dosyası, hangi kare hızı, kaç klip, AUC/F1. Model dosyası
+artık kendisinin ne olduğunu söylüyor.
+
+**3. Üretim yüklerken künyeyi DOĞRULUYOR** (`analytics/model.py ·
+_kunye_dogrula`). Üretimde doğrulandı:
+
+```
+[info] saldirganlik_modeli_yuklendi        ozellik=99
+[info] saldirganlik_model_kunyesi_uyumlu   egitim_fps=2.75 uretim_bandi=1.0-8.0
+```
+
+⚠ **Neden hata değil uyarı, ve neden "bant":** ilk yazdığım kontrol
+`settings.target_fps` (4) ile eşitlik arıyordu ve **yanlış alarm
+verecekti** — üretim kapasite sınırı yüzünden ~2.75'te koşuyor,
+hareketsiz kamerada 1'e iniyor. Üretimin tek bir kare hızı yok, bir
+**bandı** var (`target_fps_idle` … `target_fps_high_risk` = 1–8). Doğru
+soru "eşit mi" değil "bandın içinde mi". 24.75 bandın çok dışında,
+2.75 içinde.
+
+**Öğrenilen ders:** Bir deney, üretimin okuduğu hiçbir dosyaya
+yazmamalı. Yazıyorsa, o dosya **kendisinin ne olduğunu söylemeli** ve
+okuyan taraf **doğrulamalı**. Üçünden biri eksikse arıza sessiz olur.
+
+⚠ **Bu kaydın asıl rahatsız edici yanı:** hata 08.09 akşamı oluştu ve
+09.09'da yalnızca **başka bir iş için** (bootstrap) betik yeniden
+koşulduğu için ortaya çıktı. Kimse aramıyordu. Bir gün boyunca
+"üretimde öğrenilmiş model var" diye rapor edilen şey, yanlış modeldi.
+
+---
+
+### P-64 · ⭐⭐ Birleşim iddiası bootstrap sınavını GEÇTİ — ama kıl payı
+
+**Tarih:** 09.09.2026 · **Faz:** 3
+
+**Neden yapıldı:** CLAUDE.md, P-54'ü *"ilk kez bir iddia ölçülünce DOĞRU
+çıktı"* diye kutluyordu: birleşim AUC 0.968 vs en iyi tek model 0.937.
+Ama o sayı **96 klip** üzerindeydi ve hiç güven aralığı hesaplanmamıştı.
+96 örnekte 0.031'lik bir fark gürültü de olabilirdi.
+
+#### Yöntem: EŞLEŞTİRİLMİŞ bootstrap
+
+10 000 tekrar. Her tekrarda 96 klip yerine koyarak yeniden örnekleniyor
+ve **aynı örneklem üzerinde** iki AUC de hesaplanıp farkı alınıyor.
+
+⚠ Eşleştirme şart: iki model **aynı kliplerde** değerlendiriliyor, yani
+hataları ilişkili — "zor" klipler ikisini birden aşağı çeker. Ayrı ayrı
+bootstrap'layıp aralıklara bakmak, P-41'in hatasının istatistiksel
+karşılığı olurdu (kıyasta değişmemesi gereken şeyin değişmesi).
+
+#### Sonuç
+
+```
+yöntem                    Δ AUC     %2.5    %97.5   P(Δ>0)  karar
+ortalama                 +0.032   +0.001   +0.069    0.980  ✅ ANLAMLI
+azami (VEYA)             +0.027   -0.007   +0.068    0.930  ❌ sıfırı içeriyor
+çarpım                   +0.020   -0.006   +0.048    0.930  ❌
+asgari (VE)              +0.002   -0.032   +0.033    0.529  ❌
+iskelet (LightGBM)       -0.010   -0.080   +0.058    0.384  ❌
+```
+
+⭐ **İddia ayakta: ortalama birleşim, en iyi tek modelden anlamlı
+biçimde iyi.** Ama alt sınır **+0.001** — sıfırın kıl payı üstünde.
+
+**Raporda yazılacak dürüst ifade:**
+
+> *"İki bağımsız kaynağın ortalaması, en iyi tek modelden 0.032 AUC
+> daha iyi (%95 GA: +0.001 … +0.069; 10 000 eşleştirilmiş bootstrap,
+> 96 doğrulama klibi). Fark istatistiksel olarak anlamlı, ancak güven
+> aralığının alt sınırı sıfıra çok yakındır: bu örneklem büyüklüğü
+> farkın YÖNÜNÜ desteklemekte, BÜYÜKLÜĞÜNÜ hassas biçimde
+> kestirmemektedir."*
+
+⚠ Dört birleşim kuralından yalnızca biri anlamlı. "VEYA" kuralı
+gözlemde 0.964 ile çok yakın ama aralığı sıfırı içeriyor — yani
+"hangi kural daha iyi" sorusu bu veriyle **cevaplanamıyor**.
+
+#### ⭐ Kazananın laneti ölçüldü
+
+"0.968", dört kural arasından **en iyisi** ve seçim F1'in hesaplandığı
+aynı 96 klipte yapıldı. Bu tanımı gereği iyimser. Büyüklüğü ölçüldü:
+
+```
+'en iyi kural' ile ÖNCEDEN seçilmiş kural (ortalama) farkı: +0.0014 AUC
+```
+
+Küçük — çünkü "ortalama" zaten en iyilerden biri. Yine de raporda
+bildirilecek sayı **önceden seçilmiş kural** olmalı, "kuralları
+deneyip en iyisini aldık" değil.
+
+#### ⭐⭐ Ve K5'in Gün 12'den beri işaretli yanlılığı SAYIYA çevrildi
+
+CLAUDE.md şunu yazıyordu ama hiç ölçmemişti:
+
+> *"`en_iyi_esik`, F1'in hesaplandığı aynı 120 klip üzerinde aranıyor.
+> Yani bildirilen F1 optimistik."*
+
+"Optimistik" bir uyarı; **ne kadar** olduğu bir sayı. Tekrarlı katmanlı
+yarı-yarıya bölmeyle ölçüldü (eşik bir yarıda seçiliyor, F1 diğer yarıda
+ölçülüyor, 400 tekrar):
+
+```
+yöntem                  F1 (aynı küme)  F1 (ayrı yarı)  iyimserlik
+iskelet (LightGBM)               0.889           0.858      +0.031
+video (R3D-18)                   0.911           0.883      +0.028
+ortalama                         0.937           0.916      +0.020
+azami (VEYA)                     0.936           0.918      +0.018
+```
+
+⭐ **K5 yanlılık düzeltmesinden SONRA da tutuyor: F1 0.916 ≥ 0.85.**
+Hedefin geçilmesi eşik seçiminin bir yan ürünü değil.
+
+⚠ Bu yöntem bir **ÜST sınır** veriyor: eşik yarım veriyle (48 klip)
+seçildiği için gerçek yanlılık bundan biraz küçüktür.
+
+**Öğrenilen ders:** Bir yanlılığı *işaretlemek* onu raporlamak değildir.
+"Bu sayı optimistik" cümlesi okuyucuya karar verdirmiyor; "+0.020"
+verdiriyor. Uyarılar sayıya çevrilmediği sürece dipnot olarak kalıyor.
