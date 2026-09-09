@@ -1,0 +1,75 @@
+{
+  "olculdu": "2026-09-09T10:36:45.329481+00:00",
+  "yontem": "duvar saati + CPU zamanı (psutil.cpu_times farkı)",
+  "cekirdek": 20,
+  "omp_num_threads": "1",
+  "kamera": "cam-15",
+  "imgsz": 640,
+  "tespit_sayisi": 1,
+  "asamalar": [
+    {
+      "asama": "on_isleme",
+      "duvar_ms": 0.356,
+      "cpu_ms": 0.375,
+      "paralellik": 1.05,
+      "tekrar": 500
+    },
+    {
+      "asama": "tespit",
+      "duvar_ms": 10.135,
+      "cpu_ms": 9.219,
+      "paralellik": 0.91,
+      "tekrar": 100
+    },
+    {
+      "asama": "poz",
+      "duvar_ms": 10.895,
+      "cpu_ms": 10.469,
+      "paralellik": 0.96,
+      "tekrar": 100
+    },
+    {
+      "asama": "yuz_tespit",
+      "duvar_ms": 0.0,
+      "cpu_ms": 0.0,
+      "paralellik": 0.0,
+      "tekrar": 100
+    },
+    {
+      "asama": "decode_cpu",
+      "duvar_ms": 0.451,
+      "cpu_ms": 0.938,
+      "paralellik": 2.08,
+      "tekrar": 150
+    }
+  ],
+  "eski_iddialar": {
+    "on_isleme": {
+      "ms": 3.87,
+      "kayit": "P-18",
+      "not": "6.78 → 3.87 iddiası"
+    },
+    "tespit": {
+      "ms": 6.3,
+      "kayit": "P-33",
+      "not": "%53'ü ileri geçiş"
+    },
+    "poz": {
+      "ms": null,
+      "kayit": "benchmark_pose",
+      "not": "kayıt yok"
+    },
+    "yuz_tespit": {
+      "ms": 1.46,
+      "kayit": "P-30",
+      "not": "YuNet"
+    },
+    "ifade": {
+      "ms": 7.4,
+      "kayit": "P-30",
+      "not": "eski iddia 58 ms'ti"
+    }
+  },
+  "yirmi_kamera_cekirdek": 1.23,
+  "uyari": "Kod ve kütüphaneler eski ölçümlerden bu yana değişti; bu sayılar 'eski sayı yanlıştı' demez, yalnızca bugünün doğru yöntemle ölçülmüş hâlidir."
+}

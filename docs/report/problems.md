@@ -33,6 +33,174 @@ ama **belirti / sebep / çözüm** üçlüsü mutlaka olsun.
 
 <!-- Yeni kayıtlar buraya, en yenisi en üstte -->
 
+### P-59 · ⭐⭐⭐ Duygu analizi ÜRETİMDE HİÇ ÇALIŞMIYORDU + eski ölçümler yeniden yapıldı
+
+**Tarih:** 09.09.2026 · **Faz:** 3 · **Kaybedilen süre:** ~2 saat
+
+**Neden bakıldı:** Kullanıcının uyarısı:
+
+> *"Sen en son CPU ölçüm metriğini yanlış yazmışsın ve hep %0.0
+> geliyor demişsin. Yani demem o ki bu önceki ölçümlerde yanlış
+> olabilir... özellikle ilk 10-15 güne kadar olan günlerdeki ölçüm ve
+> bulgulardan çok emin değilim."*
+
+Haklıydı. P-58'de bulunan hata (**duvar saati ≠ CPU zamanı**) tek bir
+ölçümün değil, bir **ölçüm sınıfının** hatasıydı ve o sınıftaki hiçbir
+eski sayı doğrulanmamıştı.
+
+---
+
+#### 1. 🔴 ÖNCE: duygu analizi üretimde çalışmıyormuş
+
+Ölçüm sırasında ifade sınıflandırıcısı patladı:
+
+```
+AttributeError: module 'onnxruntime' has no attribute
+                'set_default_logger_severity'
+```
+
+Üretim loglarına bakıldı — **aynı hata orada da vardı:**
+
+```
+[error] ifade_kademesi_kurulamadi
+        error="AttributeError: module 'onnxruntime' has no attribute ..."
+```
+
+⭐⭐⭐ **Şartnamedeki üç YZ görevinden biri — "duygu analizi" —
+üretimde HİÇ kurulamıyordu.** KADEME 2b sessizce devre dışı kalıyor
+ve boru hattı hatasız çalışmaya devam ediyordu.
+
+**Kök sebep:** `site-packages/onnxruntime/__init__.py` **YOKTU.** Tüm
+DLL'ler, `.pyd`'ler ve alt paketler yerindeydi ama paket girişi
+eksikti; Python `onnxruntime`u **boş bir namespace paketi** olarak
+çözüyordu (`__file__` = None, 0 özellik). `emotiefflib` 1.1.1 o modülde
+`set_default_logger_severity` arayınca patlıyordu.
+
+Muhtemel sebep: daha önceki disk temizliğinde (P-?? · C: diski dolmuştu)
+yarım kalan bir işlem.
+
+**Çözüm:** `uv pip install --force-reinstall --no-deps onnxruntime-gpu==1.28.0`
+
+Doğrulandı:
+```
+onnxruntime 1.28.0 · set_default_logger_severity: True
+sağlayıcılar: TensorRT · CUDA · CPU
+ifade sınıflandırıcı → [('Fear', 0.343)]  ✅
+```
+
+⚠ **Bu, CLAUDE.md'deki bir iddiayı da düzeltiyor.** Orada
+*"03.09 · İfade sinyali füzyona BAĞLANDI — 'duygu analizi' ilk kez
+karara katılıyor (P-43)"* yazıyor. Bağlantı doğru kurulmuştu ama
+sınıflandırıcının kendisi (muhtemelen sonradan) kırılmıştı. **P-43'ten
+sonra hiçbir kriter yeniden ölçülmediği için fark edilmedi** — bu da
+denetimde (§5.3) zaten işaretlenmiş bir eksiklikti.
+
+> ⭐ "Bağladık" demek "çalışıyor" demek değil. P-43/P-44/P-45'in
+> dersi bir kez daha, bu sefer **kütüphane sürümü** kılığında.
+
+---
+
+#### 2. Eski ölçümler yeniden yapıldı — duvar saati VE CPU zamanıyla
+
+`scripts/yeniden_olc.py` yazıldı. Her aşama için **iki sayı** üretiyor:
+
+```
+duvar saati (ms) — "kullanıcı ne kadar bekledi"
+CPU zamanı  (ms) — "kaç çekirdek-milisaniye harcandı"
+paralellik       — CPU / duvar
+```
+
+**Sonuç (cam-20, yakın çekim, 80 tekrar):**
+
+```
+aşama       duvar ms   CPU ms   paralellik   eski iddia   kayıt
+on_isleme     0.466     0.938      2.01        3.87       P-18
+tespit       10.609    10.547      0.99        6.30       P-33
+poz          11.796    11.719      0.99         —          —
+yuz_tespit    1.465     1.562      1.07        1.46       P-30  ✅
+ifade         6.248    86.719     13.88        7.40       P-30  ⬅⬅
+decode_cpu    1.858    28.958     15.58         —          —    ⬅⬅
+```
+
+⭐⭐⭐ **P-30'un "ifade 7.4 ms/yüz" iddiası: DUVAR SAATİ DOĞRU
+(6.25 ms) AMA CPU ZAMANI 86.7 ms — 14 KAT.**
+
+Sayı yanlış değildi; **yanlış büyüklüktü**. P-58'in dersi burada
+ikinci kez ve **bağımsız bir ölçümle** doğrulandı.
+
+⭐ `yuz_tespit` (YuNet) ise **birebir doğrulandı**: iddia 1.46 ms,
+ölçülen 1.465 ms, paralellik 1.07 (tek iş parçacıklı). Yani P-30'un
+yarısı sağlam, yarısı eksik.
+
+**20 kamera × 2.9 FPS bütçesinde:**
+
+```
+aşama         CPU ms/sn   çekirdek
+ifade              5030      5.03   ⬅ TEK BAŞINA 5 ÇEKİRDEK
+decode_cpu         2143      2.14
+poz                 680      0.68
+tespit              612      0.61
+yuz_tespit           91      0.09
+on_isleme            54      0.05
+TOPLAM                       8.61 çekirdek (20'nin %43'ü)
+```
+
+---
+
+#### 3. Thread sınırının zarar vermediği doğrulandı
+
+P-58'de `OMP_NUM_THREADS=1` tüm boru hattına uygulanmıştı. Zarar
+verip vermediği A/B ile ölçüldü:
+
+```
+aşama       thread=1        thread=20
+            duvar   CPU     duvar   CPU
+on_isleme   0.340  0.344    0.356  0.375
+tespit     10.421 10.312   10.201  9.531
+poz        10.896 10.469   11.280 11.406
+```
+
+⭐ **Fark yok.** Tespit ve poz GPU'da koşuyor; CPU iş parçacığı
+sayısı onları etkilemiyor. Sınır güvenli.
+
+⚠ Ama **ifade ONNX Runtime kullanıyor ve o `OMP_NUM_THREADS`'i
+DİNLEMİYOR** — kendi `intra_op_num_threads` ayarı var. 13.88 paralellik
+bunu gösteriyor. **Açık iş:** ONNX oturumuna `intra_op_num_threads=1`
+vermek 5.03 çekirdeği ciddi biçimde düşürebilir.
+
+---
+
+#### ⚠ Bu ölçümün kendi sınırları — dürüstçe
+
+1. **`decode_cpu` sayısı şüpheli.** Betikte en SON ölçülüyor ve o ana
+   kadar ONNX Runtime'ın iş parçacığı havuzları uyanmış oluyor. CPU
+   zamanı **süreç geneli** olduğu için o havuzların beklerken dönmesi
+   decode'un hanesine yazılıyor. Aynı ölçüm ONNX yüklenmeden önce
+   0.94 ms CPU veriyordu, sonra 28.96. **Gerçek decode maliyeti
+   ikisinin arasında ve ayrıca ölçülmeli.**
+
+2. **Üretim ölçümü değil.** `cv2.VideoCapture` ile DOSYADAN okuma
+   ölçüldü; üretimde PyAV ile RTSP okunuyor. Farklı kod yolu.
+
+3. **Tek kare, tek kişi.** Tespit tek karede 10.6 ms çıkıyor ama
+   üretimde partili koşuyor: ölçülen `inference_duration` 12.30 ms /
+   5.05 kare = **2.44 ms/kare**. Yani tek kare ölçümü tespiti
+   **4 kat pahalı** gösteriyor. Parti etkisi büyük ve bu betik onu
+   yakalamıyor.
+
+4. **Karşılaştırma zemini yok.** Kod, mimari ve kütüphaneler o
+   günden bu yana değişti. Bu sayılar *"eski sayı yanlıştı"* demez;
+   yalnızca **bugünün doğru yöntemle ölçülmüş hâli**dir.
+
+**Öğrenilen ders:** Bir ölçüm hatası bulunduğunda sorulacak soru
+*"bu sayıyı düzelttim mi"* değil, **"aynı hatayı hangi başka
+ölçümlerde yaptım"**dır. P-58'i tek bir olay sanıp geçseydik, ifadenin
+14 kat eksik ölçüldüğü ve duygu analizinin hiç çalışmadığı ortaya
+çıkmayacaktı.
+
+
+---
+
 ### P-58 · ⭐⭐⭐ Gecikme 2.2 kat artışının GERÇEK sebebi: NumPy/BLAS iş parçacığı havuzu
 
 **Tarih:** 09.09.2026 · **Faz:** 3 · **Kaybedilen süre:** ~4 saat (iki gün)
