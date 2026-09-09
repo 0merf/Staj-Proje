@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import time
 from pathlib import Path
+from typing import Any
 
 import cv2
 import numpy as np
@@ -123,18 +124,88 @@ class EmotiEffExpressionClassifier:
     ⚠ Çıktı bir DUYGU İDDİASI değildir (base.py modül başlığı).
     """
 
-    def __init__(self, *, model_name: str = "enet_b0_8_best_vgaf", device: str = "cpu") -> None:
+    def __init__(
+        self,
+        *,
+        model_name: str = "enet_b0_8_best_vgaf",
+        device: str = "cpu",
+        thread: int = 1,
+    ) -> None:
+        """
+        Args:
+            thread: ONNX Runtime iş parçacığı sayısı. ⚠ Varsayılan 1 —
+                gerekçesi aşağıda.
+        """
+        import onnxruntime as ort
         from emotiefflib.facial_analysis import EmotiEffLibRecognizer
 
         started = time.perf_counter()
-        self._recognizer = EmotiEffLibRecognizer(
-            engine="onnx", model_name=model_name, device=device
-        )
+
+        # ⚠⚠⚠ ONNX OTURUMUNA İŞ PARÇACIĞI SINIRI ENJEKTE EDİLİYOR (P-60)
+        #
+        # `emotiefflib` oturumu şöyle kuruyor ve dışarıdan ayar
+        # almıyor:
+        #     ort.InferenceSession(model_bytes, providers=["CPU..."])
+        #
+        # `SessionOptions` verilmediği için ONNX Runtime kendi
+        # varsayılanını kullanıyor: **çekirdek sayısı kadar** iş
+        # parçacığı (bu makinede 20) ve havuz işler arasında meşgul
+        # bekliyor.
+        #
+        # Ölçüldü (P-59, `yeniden_olc.py`):
+        #     ifade  duvar 6.25 ms · CPU 86.72 ms · paralellik 13.88×
+        #     20 kamera bütçesinde TEK BAŞINA 5.03 ÇEKİRDEK
+        #
+        # ⚠ `OMP_NUM_THREADS=1` (P-58) BURAYA İŞLEMİYOR: ONNX Runtime
+        # kendi iş parçacığı havuzunu kullanıyor, OpenMP'yi değil.
+        # Bu yüzden ayrı bir müdahale gerekiyor.
+        #
+        # ⭐ ÖLÇÜLDÜ (40 tahmin, 96×96 yüz, bu makine 20 çekirdek):
+        #
+        #     thread   duvar ms   CPU ms   paralellik
+        #        1       13.44     13.28      0.99     ⬅ varsayılan
+        #        2        8.96     17.97      2.00
+        #        4        6.68     26.56      3.98
+        #       20        9.15    175.39     19.17     ⬅ ESKİ davranış
+        #
+        # ⭐⭐ Eski varsayılan HER AÇIDAN kötüydü: duvar saatinde bile
+        # thread=4'ten yavaş (9.15 ⟷ 6.68) ama CPU'da **13 kat** pahalı.
+        # Klasik aşırı paralelleştirme — küçük bir modelde iş parçacığı
+        # eşgüdüm maliyeti işin kendisini geçiyor.
+        #
+        # `thread=1` seçildi çünkü 20 kameralı sistemde kısıt CPU, duvar
+        # saati değil: ifade kademesi zaten seyreltilmiş çalışıyor ve
+        # +7 ms gecikme karşılığında ~0.8 çekirdek kazanılıyor.
+        #
+        # ⭐ YÖNTEM: `InferenceSession` yalnızca BU kurulum boyunca
+        # sarmalanıyor ve hemen geri alınıyor. Kütüphaneyi kalıcı
+        # olarak yamamak, aynı süreçteki başka ONNX kullanıcılarını
+        # (YuNet, TensorRT dışa aktarımı) da etkilerdi.
+        orijinal = ort.InferenceSession
+
+        def _sinirli(*a: Any, **kw: Any) -> Any:
+            if "sess_options" not in kw and len(a) < 2:
+                secenek = ort.SessionOptions()
+                secenek.intra_op_num_threads = thread
+                secenek.inter_op_num_threads = thread
+                kw["sess_options"] = secenek
+            return orijinal(*a, **kw)
+
+        ort.InferenceSession = _sinirli
+        try:
+            self._recognizer = EmotiEffLibRecognizer(
+                engine="onnx", model_name=model_name, device=device
+            )
+        finally:
+            # ⚠ `finally`: kurulum patlasa bile kütüphane eski hâline
+            # dönmeli. Yamalı bırakmak sessiz bir yan etki olurdu.
+            ort.InferenceSession = orijinal
         self.classified = 0
         log.info(
             "ifade_modeli_yuklendi",
             model=model_name,
             device=device,
+            thread=thread,
             load_ms=round((time.perf_counter() - started) * 1000),
         )
 
