@@ -235,6 +235,10 @@ class AnalyticsWorker:
                 self._fuzyon.buda(time.time())
                 self._ifade.buda(time.time())
                 self._normal.kaydet()
+                # ⭐ Ölmüş tüketicide asılı kalan sonuçları geri al (P-60).
+                # Budamayla aynı periyot: ikisi de "arka plan bakımı" ve
+                # ikisi de sessiz sızıntı önlüyor.
+                self._sahipsizleri_topla()
                 last_prune = now
             if now - last_report >= stats_interval:
                 self._rapor(now - started)
@@ -714,6 +718,16 @@ class AnalyticsWorker:
     # ─── Raporlama ───────────────────────────────────────────
 
     def _rapor(self, elapsed: float) -> None:
+        # ⭐ Analitik worker'ın kendi birikmesi HİÇ ÖLÇÜLMÜYORDU (P-60).
+        # Çıkarım yetişse bile analitik geri kalabilir ve bu, gecikme
+        # histogramında görünmez: `end_to_end_latency` çıkarım worker'ında
+        # gözlemleniyor, analitik ondan SONRA geliyor.
+        gecikme = self._grup_gecikmesi()
+        if gecikme is not None:
+            metrics.consumer_lag.labels(
+                queue=settings.stream_results, group=GROUP,
+            ).set(gecikme)
+
         hiz = self.islenen / elapsed if elapsed > 0 else 0.0
         print(
             f"  {self.islenen:>6} sonuç · {hiz:5.1f}/sn · "
@@ -722,6 +736,80 @@ class AnalyticsWorker:
             f"(saldırganlık {self.saldirganlik}) · {self._kurallar.stats}",
             flush=True,
         )
+
+    def _sahipsizleri_topla(self, *, bosta_ms: int = 30_000, adet: int = 200) -> int:
+        """Ölmüş bir tüketicide asılı kalan sonuçları geri alır ve işler.
+
+        ⚠⚠ 09.09.2026 — BU OLMADAN HER SERT KAPANIŞ SESSİZ KAYIP BIRAKIYOR
+        ------------------------------------------------------------------
+        `XREADGROUP` ile okunan her kayıt, ACK gelene kadar o tüketiciye
+        **asılı (pending)** kalıyor. Analitik worker sert kapatılırsa
+        (kill, çökme, `stop_all`) elindeki kayıtlar asılı kalıyor; yeni
+        worker `>` ile yalnızca YENİ kayıtları okuduğu için onlar
+        **sonsuza dek işlenmiyor.**
+
+        Ölçüldü (09.09.2026, canlı sistem):
+
+            bekleyen kayıt : 180   (hepsi `analytics-0`'da)
+            boşta kalma    : medyan 7 427 130 ms ≈ 2 saat 4 dakika
+                             en çok 9 924 258 ms ≈ 2 saat 45 dakika
+
+        180 analiz sonucu iki saattir kimsenin bakmadığı bir listede
+        duruyordu. Arıza **sessiz**: worker ayakta, akış akıyor, sayaçlar
+        artıyor — yalnızca o kayıtlar hiç işlenmiyor.
+
+        ⭐ Çıkarım worker'ının kare akışında bu kurtarma ZATEN VARDI
+        (`FrameStream.sahipsizleri_topla`, P-38'den sonra yazıldı) ve
+        docstring'i sebebini tek tek anlatıyor. Sonuç akışına
+        taşınmamıştı. **Bir düzeltmenin bir akışta yapılmış olması, onu
+        diğerinde yapılmış saymıyor** — P-60'ın `measure_k4` /
+        `measure_canli` ikilisinde çıkan dersinin aynısı.
+
+        Returns:
+            Geri alınıp işlenen kayıt sayısı.
+        """
+        try:
+            _sonraki, kayitlar, _silinen = self._client.xautoclaim(
+                settings.stream_results,
+                GROUP,
+                self._worker_id,
+                min_idle_time=bosta_ms,
+                count=adet,
+            )
+        except Exception as exc:
+            if "NOGROUP" not in str(exc):
+                log.warning("sahipsiz_toplama_hatasi", error=f"{type(exc).__name__}: {exc}")
+            return 0
+
+        gecerli = [(mid, alanlar) for mid, alanlar in (kayitlar or []) if alanlar]
+        # ⚠ Akıştan düşmüş (MAXLEN) ama hâlâ asılı kayıtlar boş alanlarla
+        # dönüyor. İçerikleri yok, işlenemezler; ACK'lenmezse sonsuza dek
+        # toplanmaya çalışılırlar.
+        for mid, alanlar in kayitlar or []:
+            if not alanlar:
+                self._client.xack(settings.stream_results, GROUP, mid)
+
+        if gecerli:
+            log.info("sahipsiz_sonuc_geri_alindi", adet=len(gecerli))
+            self._isle([(settings.stream_results, gecerli)])
+        return len(gecerli)
+
+    def _grup_gecikmesi(self) -> int | None:
+        """`XINFO GROUPS`'un `lag` alanı — teslim edilmemiş kayıt sayısı.
+
+        ⚠ `None` "birikme yok" DEĞİL, "ölçemedim" demek. Bu worker akışa
+        `ResultStream` nesnesiyle değil doğrudan istemciyle bağlanıyor,
+        o yüzden sorgu burada tekrarlanıyor.
+        """
+        try:
+            for g in self._client.xinfo_groups(settings.stream_results):
+                if g.get("name") != GROUP:
+                    continue
+                lag = g.get("lag")
+                return int(lag) if lag is not None else None
+        except Exception:
+            return None
+        return None
 
     def _bitir(self, elapsed: float) -> None:
         print()

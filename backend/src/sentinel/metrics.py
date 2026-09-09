@@ -46,11 +46,59 @@ motion_gate_ratio = Gauge(
     ["cam"],
 )
 
-decode_duration = Histogram(
-    "sentinel_decode_duration_seconds",
-    "Kare başına çözme + BGR dönüşüm süresi",
+# ⚠⚠ 09.09.2026 — ESKİ ADI `decode_duration`'DI VE YANLIŞ ŞEYİ ÖLÇÜYORDU
+#
+# Eski kod (`ingest/worker.py`):
+#
+#     last = time.perf_counter()          # önceki karenin İŞİ BİTTİĞİNDE
+#     for frame in decoder.frames():
+#         now = time.perf_counter()       # yeni kare GELDİĞİNDE
+#         decode_duration.observe(now - last)
+#
+# Aradaki süre çözme işi değil, **bir sonraki karenin gelmesini
+# bekleme** süresiydi — ve o bekleme hedef FPS'in belirlediği kare
+# aralığıyla (2.75 FPS'te ~360 ms) tanımlıydı. Yani metrik, adının
+# söylediği şeyi değil, kendi ayarımızı ölçüyordu. Kovaların tavanı
+# 0.25 sn olduğu için de neredeyse her gözlem `+Inf`'e düşüyordu.
+#
+# ⭐ Aralığın kendisi işe yarar bir sayı — sadece adı yanlıştı. Dürüst
+# adıyla bırakıldı.
+frame_interval = Histogram(
+    "sentinel_frame_interval_seconds",
+    "Kareler arası duvar saati aralığı — BEKLEME dâhil, iş DEĞİL "
+    "(örnekleme temposunu gösterir)",
     ["cam"],
-    buckets=(0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.25),
+    buckets=(0.02, 0.05, 0.1, 0.2, 0.35, 0.5, 1.0, 2.0),
+)
+
+# ⭐⭐ ASIL İŞİ ÖLÇEN METRİKLER — duvar saati DEĞİL, CPU ZAMANI (P-58/P-60)
+#
+# Neden duvar saati olmaz: `container.decode()` ağdan veri beklerken
+# BLOKE oluyor. Onu `perf_counter` ile ölçmek, hatayı bir kat aşağıda
+# tekrarlamak olurdu — yine beklemeyi ölçerdik.
+#
+# `time.thread_time()` yalnızca O İŞ PARÇACIĞININ harcadığı CPU'yu
+# sayar; bloke geçen süre sayılmaz. Kamera başına bir iş parçacığı
+# olduğu için tam da istediğimiz şey.
+#
+# ⚠ NEDEN HISTOGRAM DEĞİL COUNTER: Windows'ta `GetThreadTimes`
+# çözünürlüğü ~15.6 ms. Kare başına ~2 ms'lik bir işi tek tek ölçmek
+# çoğunlukla 0 verirdi. Ama sayaç MONOTON birikiyor; kare sınırlarında
+# okunan farkların toplamı teleskoplanıp `son − ilk` oluyor. Yani
+# TOPLAM doğru, yalnızca dağılım ölçülemiyor. Kare başına maliyet
+# `frames_received` ile bölünerek elde edilir.
+decode_cpu_seconds = Counter(
+    "sentinel_decode_cpu_seconds_total",
+    "H.264 çözmede harcanan İŞ PARÇACIĞI CPU zamanı "
+    "(örnekleme sonucu atılan kareler dâhil — decode bedeli yine ödenir)",
+    ["cam"],
+)
+
+bgr_cpu_seconds = Counter(
+    "sentinel_bgr_cpu_seconds_total",
+    "BGR renk dönüşümünde harcanan İŞ PARÇACIĞI CPU zamanı "
+    "(yalnızca örneklenen kareler)",
+    ["cam"],
 )
 
 gate_duration = Histogram(
@@ -262,10 +310,49 @@ pipeline_capacity = Gauge(
     "Çıkarım worker'ının ölçülen tüketim hızı — üretici bunu hedefler",
 )
 
+# ⚠⚠ 09.09.2026 — AÇIKLAMASI YANLIŞTI: BU GERİ BASINÇ GÖSTERGESİ DEĞİL
+#
+# Değer `XLEN`, yani akışta TUTULAN kayıt sayısı. Ama `XACK` bir kaydı
+# akıştan **silmiyor** (bunu `streams.py:365` zaten yazıyordu); kayıtlar
+# ancak `MAXLEN` budamasıyla düşüyor. Sonuç: akış birkaç saniye içinde
+# tavana çakılıyor ve orada kalıyor — tüketici ister yetişsin ister
+# yetişmesin.
+#
+# Ölçüldü (09.09, sağlıklı sistem, hiçbir birikme yok):
+#
+#     inference.results : 5001   ⬅ ayar tam 5000, yani TAVAN + 1
+#     frames.ready      :   86
+#
+# 5001 sayısı bir birikme değil, yalnızca "akış dolu" demek. Bu metriğe
+# bakıp "kuyruk şişmiş" demek yanlış olurdu.
+#
+# ⭐ Bilgi kodda ZATEN VARDI — `streams.py`'daki yorum XACK'in silmediğini
+# açıkça yazıyor. Eksik olan, o bilginin metriğin AÇIKLAMASINA
+# taşınmasıydı. Doğru bilgi yanlış yerde durunca yanlış bilgiyle aynı
+# sonucu veriyor.
 queue_depth = Gauge(
     "sentinel_queue_depth",
-    "Kuyruktaki mesaj sayısı — geri basınç göstergesi",
+    "Akışta TUTULAN kayıt sayısı (XLEN). ⚠ Geri basınç göstergesi DEĞİL: "
+    "XACK kaydı silmez, akış MAXLEN tavanına çakılır. Birikme için "
+    "`sentinel_consumer_lag` kullanın",
     ["queue"],
+)
+
+# ⭐ ASIL GERİ BASINÇ GÖSTERGESİ — tüketici grubunun GECİKMESİ
+#
+# `XINFO GROUPS` her grup için `lag` veriyor: akışa yazılmış ama o
+# gruba HENÜZ TESLİM EDİLMEMİŞ kayıt sayısı. `XLEN`'in aksine tüketici
+# yetiştikçe sıfıra iniyor, geri kaldıkça büyüyor — yani gerçekten
+# birikmeyi ölçüyor.
+#
+# ⚠ Neden gerekti: bir ölçümde alım 2.77 FPS yayınlarken çıkarım 1.42
+# FPS analiz ediyordu ve aradaki kareler HİÇBİR metrikte görünmüyordu
+# (P-60). `frames_dropped` alım tarafını sayıyor, `XLEN` tavana çakılı.
+# Birikmenin görülebileceği tek yer buydu ve ölçülmüyordu.
+consumer_lag = Gauge(
+    "sentinel_consumer_lag",
+    "Tüketici grubuna henüz teslim edilmemiş kayıt sayısı — GERÇEK birikme",
+    ["queue", "group"],
 )
 
 shm_slots_free = Gauge(
@@ -319,14 +406,16 @@ __all__ = [
     "anomalies_total",
     "auth_failures",
     "batch_size",
+    "bgr_cpu_seconds",
     "camera_fps",
     "camera_target_fps",
     "camera_up",
-    "decode_duration",
+    "decode_cpu_seconds",
     "detections_found",
     "end_to_end_latency",
     "expressions_classified",
     "false_alarm_suppressed",
+    "frame_interval",
     "frames_dropped",
     "frames_published",
     "frames_received",

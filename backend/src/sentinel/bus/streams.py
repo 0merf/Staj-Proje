@@ -352,8 +352,38 @@ class FrameStream:
 
     @property
     def depth(self) -> int:
-        """Akıştaki mesaj sayısı — geri basınç göstergesi."""
+        """Akışta TUTULAN kayıt sayısı (`XLEN`).
+
+        ⚠ GERİ BASINÇ GÖSTERGESİ DEĞİL. `XACK` kaydı akıştan silmiyor
+        (bkz. `islenmemis_slotlar` docstring'i); kayıtlar ancak `MAXLEN`
+        budamasıyla düşüyor. Akış birkaç saniyede tavana çakılıyor ve
+        tüketici yetişse de yetişmese de orada kalıyor.
+
+        Birikmeyi ölçmek için `grup_gecikmesi()` kullanılmalı.
+        """
         return int(self._client.xlen(self._stream))
+
+    def grup_gecikmesi(self, group: str) -> int | None:
+        """Gruba henüz TESLİM EDİLMEMİŞ kayıt sayısı — gerçek birikme.
+
+        `XINFO GROUPS`'un `lag` alanı. `XLEN`'in aksine tüketici
+        yetiştikçe sıfıra iniyor.
+
+        Returns:
+            Gecikme, ya da grup/alan yoksa `None`. ⚠ `None` "sıfır"
+            demek DEĞİL — "ölçemedim" demek. İkisini karıştırmak, bu
+            projede defalarca yakalanan "sonuç yok" ile "yanlış yere
+            baktım" karışıklığının ta kendisi olurdu.
+        """
+        try:
+            for g in self._client.xinfo_groups(self._stream):
+                if g.get("name") != group:
+                    continue
+                lag = g.get("lag")
+                return int(lag) if lag is not None else None
+        except (ResponseError, TypeError, ValueError):
+            return None
+        return None
 
     def islenmemis_slotlar(self, group: str) -> set[int]:
         """Henüz İŞLENMEMİŞ mesajların işaret ettiği slot numaraları.
@@ -478,7 +508,25 @@ class ResultStream:
 
     @property
     def depth(self) -> int:
+        """Akışta TUTULAN kayıt sayısı — ⚠ geri basınç DEĞİL, bkz.
+        `FrameStream.depth`."""
         return int(self._client.xlen(self._stream))
+
+    def grup_gecikmesi(self, group: str) -> int | None:
+        """Gruba henüz teslim edilmemiş kayıt sayısı (`XINFO GROUPS.lag`).
+
+        `None` = ölçülemedi (grup yok ya da sunucu alanı vermiyor);
+        sıfır DEĞİL.
+        """
+        try:
+            for g in self._client.xinfo_groups(self._stream):
+                if g.get("name") != group:
+                    continue
+                lag = g.get("lag")
+                return int(lag) if lag is not None else None
+        except (ResponseError, TypeError, ValueError):
+            return None
+        return None
 
     @property
     def name(self) -> str:

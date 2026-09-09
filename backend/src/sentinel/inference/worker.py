@@ -831,6 +831,14 @@ class InferenceWorker:
         metrics.shm_slots_free.set(self._allocator.available)
         metrics.queue_depth.labels(queue=self._frames.name).set(self._frames.depth)
         metrics.queue_depth.labels(queue=self._results.name).set(self._results.depth)
+        # ⭐ ASIL geri basınç: gruba teslim edilmemiş kayıt (P-60).
+        # `depth` (XLEN) MAXLEN tavanına çakılıyor ve birikmeyi
+        # gösteremiyor; `lag` tüketici yetiştikçe sıfıra iniyor.
+        gecikme = self._frames.grup_gecikmesi(GROUP)
+        if gecikme is not None:
+            metrics.consumer_lag.labels(
+                queue=self._frames.name, group=GROUP,
+            ).set(gecikme)
         self._gpu_olc()
         print(f"  {self.summary(elapsed, since=now)}", flush=True)
 

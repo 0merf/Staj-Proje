@@ -1,0 +1,98 @@
+{
+  "olculdu": "2026-09-09T11:16:21.233248+00:00",
+  "sure_s": 234.5,
+  "ornek": 12,
+  "isinma_s": 150,
+  "gpu": {
+    "ad": "NVIDIA GeForce RTX 3070 Laptop GPU",
+    "toplam_vram_mb": 8192.0
+  },
+  "referans": {
+    "gecikme_p50_ms": 205.0,
+    "gecikme_p95_ms": 463.0,
+    "analiz_fps": 2.75,
+    "ornekleme_fps": 3.64
+  },
+  "model": {
+    "skor_ureten_kamera": 18,
+    "medyan": 0.0778,
+    "azami": 0.4596
+  },
+  "alarm_turleri": {
+    "fall": 7.0,
+    "running": 1.0,
+    "aggression": 5.0,
+    "crowd": 24.0,
+    "loitering": 3.0
+  },
+  "gecikme": {
+    "p50_ms": 172.5,
+    "p95_ms": 321.9,
+    "pencere_ornek": 13050,
+    "yontem": "pencere FARKI üzerinden histogram kova ara değerlemesi — kesin değer değil, ama worker uptime'ından bağımsız"
+  },
+  "verim": {
+    "analiz_fps": 2.782,
+    "ornekleme_fps": 2.782,
+    "yayinlanan": 13049,
+    "analiz_edilen": 13050,
+    "izlenmeyen_kayip": -1
+  },
+  "kuyruk": {
+    "frames.ready": {
+      "medyan": 94.0,
+      "azami": 94.0
+    },
+    "inference.results": {
+      "medyan": 5001.0,
+      "azami": 5001.0
+    }
+  },
+  "kaynak": {
+    "surecler": [
+      {
+        "rol": "api",
+        "pid": 22592,
+        "ram_mb": 110.9,
+        "cpu_yuzde": 2.0,
+        "thread": 1
+      },
+      {
+        "rol": "alim",
+        "pid": 23764,
+        "ram_mb": 1298.8,
+        "cpu_yuzde": 202.1,
+        "thread": 356
+      },
+      {
+        "rol": "alarm",
+        "pid": 20560,
+        "ram_mb": 99.1,
+        "cpu_yuzde": 0.1,
+        "thread": 2
+      },
+      {
+        "rol": "cikarim",
+        "pid": 25200,
+        "ram_mb": 2951.6,
+        "cpu_yuzde": 86.8,
+        "thread": 6
+      },
+      {
+        "rol": "analitik",
+        "pid": 22088,
+        "ram_mb": 149.0,
+        "cpu_yuzde": 82.7,
+        "thread": 2
+      }
+    ],
+    "toplam_ram_mb": 4609.4,
+    "toplam_cpu": 373.7,
+    "kopya_uyarisi": {},
+    "sistem_ram_yuzde": 83.2
+  },
+  "atilan_kare": {
+    "no_slot": 112.0,
+    "gate_idle": 7.0
+  }
+}

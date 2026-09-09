@@ -27,6 +27,7 @@ import av
 import av.error
 import numpy as np
 
+from sentinel import metrics
 from sentinel.logging import get_logger
 
 log = get_logger(__name__)
@@ -116,13 +117,36 @@ class RtspDecoder:
         self.close()
 
     def open(self) -> None:
-        options = {
-            "rtsp_transport": self._transport,
-            "timeout": self._timeout_us,  # soket zaman aşımı (mikrosaniye)
-            "max_delay": "500000",
-            "fflags": "nobuffer",
-            "flags": "low_delay",
-        }
+        # ⚠ CANLI AKIŞ SEÇENEKLERİ YALNIZCA AĞ KAYNAKLARINA UYGULANIR
+        #
+        # `fflags=nobuffer` ve `flags=low_delay` gecikmeyi kırpmak için
+        # var: demuxer'a "tampon biriktirme, hemen ver" diyor. Canlı
+        # RTSP'de doğru; **dosyada yıkıcı** — ölçüldü: aynı mp4 bu
+        # seçeneklerle **0 kare** çözüyor, seçeneksiz 45 kare. Suçlu tek
+        # başına `nobuffer` (diğer dördü çıkarılınca dosya yine boş
+        # kalıyor, yalnızca `nobuffer` çıkarılınca düzeliyor).
+        #
+        # `rtsp_transport` ve `timeout` zaten RTSP demuxer'ının
+        # seçenekleri; mp4 demuxer'ına verilmeleri en iyi ihtimalle
+        # anlamsız.
+        #
+        # ⚠ Üretimde yalnızca `rtsp://` kullanılıyor, yani bu üretim
+        # davranışını DEĞİŞTİRMİYOR. Dosya yolunu açılabilir kılmak,
+        # dekoderin gerçek bir videoyla test edilebilmesi için gerekti —
+        # ve test edilemeyen bir ölçüm aracı bu projede tam olarak
+        # sorunun kaynağı.
+        canli = "://" in self._url and not self._url.startswith("file://")
+        options = (
+            {
+                "rtsp_transport": self._transport,
+                "timeout": self._timeout_us,  # soket zaman aşımı (mikrosaniye)
+                "max_delay": "500000",
+                "fflags": "nobuffer",
+                "flags": "low_delay",
+            }
+            if canli
+            else {}
+        )
         self._container = av.open(self._url, options=options, timeout=None)
         stream = self._container.streams.video[0]
         # Kare atlamak yerine ÇÖZÜP atıyoruz; thread'li çözme CPU'yu daha iyi kullanır.
@@ -158,8 +182,34 @@ class RtspDecoder:
         next_emit = 0.0
         emitted = 0
 
+        # ⭐⭐ ÇÖZME MALİYETİ CPU ZAMANIYLA ÖLÇÜLÜYOR (P-60)
+        #
+        # Eski `decode_duration` metriği çözmeyi değil kareler arası
+        # BEKLEMEYİ ölçüyordu. Doğrusunu duvar saatiyle yapmak da mümkün
+        # değil: `container.decode()` ağdan veri beklerken bloke oluyor,
+        # yani `perf_counter` farkı yine beklemeyi içerirdi — hata bir
+        # kat aşağıda tekrarlanmış olurdu.
+        #
+        # `time.thread_time()` yalnızca BU iş parçacığının CPU'sunu
+        # sayar; bloke geçen süre girmez. Kamera başına bir iş parçacığı
+        # olduğu için ölçtüğümüz şey tam olarak "bu kameranın çözme işi".
+        #
+        # ⚠ Sayaç Prometheus'ta Counter: Windows'ta iş parçacığı CPU
+        # çözünürlüğü ~15.6 ms olduğu için kare başına fark çoğu zaman 0
+        # çıkar, ama farklar teleskoplanıp TOPLAMI doğru verir.
+        cozme_cpu = metrics.decode_cpu_seconds.labels(cam=self._camera_id)
+        bgr_cpu = metrics.bgr_cpu_seconds.labels(cam=self._camera_id)
+        cpu_isareti = time.thread_time()
+
         try:
             for frame in self._container.decode(stream):
+                # Bir önceki `yield`den bu yana geçen CPU = bu karenin
+                # çözme işi. Örnekleme yüzünden atılacak kareler de
+                # buraya giriyor — ve girmeli: decode bedeli ödendi.
+                simdi_cpu = time.thread_time()
+                cozme_cpu.inc(max(simdi_cpu - cpu_isareti, 0.0))
+                cpu_isareti = simdi_cpu
+
                 self._decoded += 1
                 pts_s = float(frame.pts * time_base) if frame.pts is not None else 0.0
 
@@ -187,6 +237,16 @@ class RtspDecoder:
 
                 self._sequence += 1
                 emitted += 1
+
+                # ⭐ BGR dönüşümü ayrı ölçülüyor: çözmeden bağımsız bir
+                # maliyet ve yalnızca ÖRNEKLENEN karelerde ödeniyor.
+                # Ayrı tutmak, örnekleme hızını düşürmenin neyi
+                # kazandırdığını (ve neyi kazandırmadığını) gösteriyor:
+                # decode bedeli düşmez, BGR bedeli düşer.
+                bgr_basi = time.thread_time()
+                goruntu = frame.to_ndarray(format="bgr24")
+                bgr_cpu.inc(max(time.thread_time() - bgr_basi, 0.0))
+
                 yield DecodedFrame(
                     camera_id=self._camera_id,
                     sequence=self._sequence,
@@ -194,8 +254,18 @@ class RtspDecoder:
                     # olmak zorunda (gerekçe: DecodedFrame.timestamp)
                     timestamp=time.time(),
                     pts_seconds=pts_s,
-                    image=frame.to_ndarray(format="bgr24"),
+                    image=goruntu,
                 )
+
+                # ⚠ `yield` tüketici işini bitirene kadar bloke eder;
+                # o süre BU iş parçacığının CPU'suna yazılır ve çözmenin
+                # hanesine geçmemeli. İşareti dönüşten SONRA tazeliyoruz.
+                #
+                # ⭐ Bu satır kaldırılınca `test_yield_ICINDE_yakilan_cpu...`
+                # düşüyor: çözme CPU'su 328 ms okunuyor, tüketicinin
+                # yaktığı 300 ms'in tamamı çözmeye atfediliyor. Testin
+                # gerçekten bir şey doğruladığı böyle sınandı.
+                cpu_isareti = time.thread_time()
 
                 if max_frames is not None and emitted >= max_frames:
                     return

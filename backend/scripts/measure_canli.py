@@ -139,6 +139,39 @@ def _kovalar(
     return kovalar
 
 
+def _kova_farki(
+    son: dict[float, float], ilk: dict[float, float],
+) -> dict[float, float]:
+    """İki kümülatif histogram anlık görüntüsünün farkı.
+
+    ⚠⚠ 09.09.2026 — BU FONKSİYON YOKTU VE p50/p95'İ ANLAMSIZ YAPIYORDU
+    ------------------------------------------------------------------
+    Prometheus histogramı **kümülatif**: süreç başından beri her şeyi
+    sayıyor. Bu betik yüzdeliği doğrudan o kümülatif kovadan alıyordu,
+    yani bildirdiği sayı ölçüm penceresinin değil **worker'ın tüm
+    ömrünün** p50/p95'iydi.
+
+    İki sonucu vardı:
+
+      1. Aynı sistem, aynı kod, farklı sayı — sonuç worker'ın ölçümden
+         ÖNCE ne kadar süredir ayakta olduğuna bağlıydı.
+      2. `--isinma` bayrağı YALAN söylüyordu: attığı şey ilk 90 saniyenin
+         **örnekleriydi**, ama o saniyelerin gecikmeleri histogramda
+         sonsuza dek kalıyordu (P-28 tam da bunu engellemek içindi).
+
+    ⭐ `measure_k4.py` bunu DOĞRU yapıyor (`_kova_farki`, aynı ad). Bu
+    betik ondan SONRA yazıldı ve düzeltmeyi devralmadı. Aynı projede
+    aynı hatanın iki kez yapılması, düzeltmenin koda değil yalnızca **o
+    dosyaya** konmuş olmasındandır.
+
+    ⚠ Verim sayıları (`analiz_kare`, `kare_yayinlandi`) zaten fark
+    alarak hesaplanıyordu — yani betik sayaçlarda doğru, histogramda
+    yanlış davranıyordu. Hata "unutmak" değil, **iki metrik tipini aynı
+    sanmak**tı.
+    """
+    return {sinir: sayac - ilk.get(sinir, 0.0) for sinir, sayac in son.items()}
+
+
 def _yuzdelik(kovalar: dict[float, float], oran: float) -> float | None:
     """Kümülatif histogramdan yüzdelik — ARA DEĞERLEME, kesin değil.
 
@@ -306,15 +339,39 @@ def _ornek_al() -> dict[str, Any]:
             veri["alarm_turleri"] = turler
 
         if rol == "cikarim":
-            k = _kovalar(o, "sentinel_end_to_end_latency_seconds")
-            veri["gecikme_p50_ms"] = (
-                (_yuzdelik(k, 0.50) or 0) * 1000 if k else None
-            )
-            veri["gecikme_p95_ms"] = (
-                (_yuzdelik(k, 0.95) or 0) * 1000 if k else None
-            )
+            # ⚠ Yüzdelik BURADA hesaplanmıyor — ham kovalar saklanıyor.
+            # Sebep: histogram kümülatif; yüzdelik ancak ölçüm penceresinin
+            # İKİ UCU arasındaki FARKTAN alınabilir (bkz. `_kova_farki`).
+            veri["gecikme_kova"] = _kovalar(
+                o, "sentinel_end_to_end_latency_seconds")
             sayac = _sec(o, "sentinel_end_to_end_latency_seconds_count")
             veri["analiz_kare"] = sum(v for _e, v in sayac)
+            veri["kapasite_fps"] = next(
+                (v for _e, v in _sec(o, "sentinel_pipeline_capacity_fps")), None)
+        if rol in ("cikarim", "alim"):
+            # ⭐ KUYRUK DERİNLİĞİ — metrik Gün 1'den beri yayınlanıyordu ve
+            # HİÇBİR ölçüm betiği okumuyordu (ne measure_k4 ne bu betik).
+            #
+            # Neden önemli: örnekleme 2.77 FPS iken analiz 1.42 FPS ölçüldüğü
+            # koşular var. Aradaki kareler bir yere gidiyor ve `frames_dropped`
+            # onları saymıyor — çünkü kayıp alım tarafında değil, sınırlı
+            # akışın (`maxlen`) kuyruğundan düşerek oluyor. Derinlik, o
+            # kaybın TEK gözlemlenebilir izi.
+            veri.setdefault("kuyruk", {}).update({
+                e.get("queue", "?"): v
+                for e, v in _sec(o, "sentinel_queue_depth")
+            })
+            # ⭐ ASIL geri basınç. `queue_depth` (XLEN) MAXLEN tavanına
+            # çakılıyor — ölçüldü: inference.results sağlıklı sistemde
+            # bile 5001 (ayar 5000). `lag` ise tüketici yetiştikçe
+            # sıfıra iniyor, yani gerçekten birikmeyi gösteriyor.
+            veri.setdefault("gecikme_lag", {}).update({
+                f"{e.get('queue', '?')}/{e.get('group', '?')}": v
+                for e, v in _sec(o, "sentinel_consumer_lag")
+            })
+            bos = next((v for _e, v in _sec(o, "sentinel_shm_slots_free")), None)
+            if bos is not None:
+                veri["shm_bos_slot"] = bos
         if rol == "alim":
             veri["kare_yayinlandi"] = sum(
                 v for _e, v in _sec(o, "sentinel_frames_published_total")
@@ -411,8 +468,14 @@ def main() -> int:
     # ─── Gecikme ve verim ───
     print("\n═══ GECİKME VE VERİM (referans: model ENTEGRE DEĞİLKEN) ═══")
     print(f"{'ölçüt':<22} {'şimdi':>10} {'referans':>10} {'fark':>10}")
-    p50 = [o["gecikme_p50_ms"] for o in ornekler if o.get("gecikme_p50_ms")]
-    p95 = [o["gecikme_p95_ms"] for o in ornekler if o.get("gecikme_p95_ms")]
+    # ⭐ Yüzdelik, pencerenin İKİ UCU arasındaki histogram FARKINDAN.
+    # Böylece ısınma gerçekten atılmış oluyor (P-28) ve sonuç worker'ın
+    # uptime'ından bağımsız hale geliyor.
+    fark_kova = _kova_farki(
+        son.get("gecikme_kova") or {}, ilk_o.get("gecikme_kova") or {})
+    pencere_ornek = max(fark_kova.values()) if fark_kova else 0.0
+    p50_ms = (_yuzdelik(fark_kova, 0.50) or 0) * 1000 if pencere_ornek else None
+    p95_ms = (_yuzdelik(fark_kova, 0.95) or 0) * 1000 if pencere_ornek else None
     kare_farki = (son.get("analiz_kare") or 0) - (ilk_o.get("analiz_kare") or 0)
     analiz_fps = kare_farki / max(sure, 1e-9) / KAMERA_SAYISI
     yayin_farki = (son.get("kare_yayinlandi") or 0) - (
@@ -420,23 +483,62 @@ def main() -> int:
     ornekleme_fps = yayin_farki / max(sure, 1e-9) / KAMERA_SAYISI
 
     satirlar = [
-        ("gecikme p50 (ms)", statistics.median(p50) if p50 else 0,
-         REFERANS["gecikme_p50_ms"]),
-        ("gecikme p95 (ms)", statistics.median(p95) if p95 else 0,
-         REFERANS["gecikme_p95_ms"]),
+        ("gecikme p50 (ms)", p50_ms or 0, REFERANS["gecikme_p50_ms"]),
+        ("gecikme p95 (ms)", p95_ms or 0, REFERANS["gecikme_p95_ms"]),
         ("analiz FPS/kamera", analiz_fps, REFERANS["analiz_fps"]),
         ("örnekleme FPS/kam", ornekleme_fps, REFERANS["ornekleme_fps"]),
     ]
     for ad, simdi, ref in satirlar:
         fark = simdi - ref
         print(f"{ad:<22} {simdi:>10.2f} {ref:>10.2f} {fark:>+10.2f}")
+    print(f"\n  gecikme örneği (pencere içi): {pencere_ornek:.0f} kare")
+    if pencere_ornek < 500:
+        print("  ⚠ Örnek az — yüzdelikler gürültülü, süreyi artırın.")
+
+    # ─── ⭐ KARE MUHASEBESİ — kayıp nerede ───
+    # Örnekleme ve analiz arasındaki fark, hiçbir sayaçta görünmeyen
+    # bir kayıptır: sınırlı akıştan (`maxlen`) düşen kareler.
+    kayip = yayin_farki - kare_farki
+    print("\n═══ ⭐ KARE MUHASEBESİ ═══")
+    print(f"  alım yayınladı      : {yayin_farki:>10.0f}")
+    print(f"  çıkarım analiz etti : {kare_farki:>10.0f}")
+    print(f"  FARK (izlenmeyen)   : {kayip:>10.0f}  "
+          f"(%{100 * kayip / max(yayin_farki, 1):.1f})")
+    if kayip > 0.05 * max(yayin_farki, 1):
+        print("  ⚠ Yayınlanan karelerin >%5'i analiz edilmedi. `frames_dropped`")
+        print("    bunları saymıyor → kayıp akış kuyruğunda (maxlen) oluyor.")
+
+    kuyruklar: dict[str, list[float]] = {}
+    for o in ornekler:
+        for ad_, v in (o.get("kuyruk") or {}).items():
+            kuyruklar.setdefault(ad_, []).append(v)
+    lagler: dict[str, list[float]] = {}
+    for o in ornekler:
+        for ad_, v in (o.get("gecikme_lag") or {}).items():
+            lagler.setdefault(ad_, []).append(v)
+
+    if kuyruklar or lagler:
+        print("\n═══ ⭐ GERİ BASINÇ ═══")
+        if lagler:
+            print("tüketici gecikmesi (lag) — GERÇEK birikme göstergesi")
+            print(f"  {'kuyruk/grup':<32} {'medyan':>8} {'azami':>8}")
+            for ad_, dizi in sorted(lagler.items()):
+                print(f"  {ad_:<32} {statistics.median(dizi):>8.0f} {max(dizi):>8.0f}")
+        else:
+            print("  ⚠ `sentinel_consumer_lag` görülmedi — worker'lar bu")
+            print("    metriği yayınlayan sürümden ÖNCE başlatılmış olabilir.")
+        if kuyruklar:
+            print("\nakış uzunluğu (XLEN) — ⚠ birikme DEĞİL, MAXLEN tavanı")
+            print(f"  {'kuyruk':<32} {'medyan':>8} {'azami':>8}")
+            for ad_, dizi in sorted(kuyruklar.items()):
+                print(f"  {ad_:<32} {statistics.median(dizi):>8.0f} {max(dizi):>8.0f}")
 
     # ─── Kaynak ───
     print("\n═══ KAYNAK KULLANIMI ═══")
     if kaynaklar and kaynaklar[-1].get("surecler"):
         print(f"{'rol':<12} {'RAM (MB)':>10} {'CPU %':>8} {'çekirdek':>10} {'thread':>8}")
         # Süreç başına medyan — anlık değer dalgalanıyor.
-        roller: dict[str, list[tuple[float, float]]] = {}
+        roller: dict[str, list[tuple[float, float, float]]] = {}
         for k in kaynaklar:
             for s_ in k["surecler"]:
                 roller.setdefault(s_["rol"], []).append(
@@ -485,12 +587,21 @@ def main() -> int:
         },
         "alarm_turleri": turler,
         "gecikme": {
-            "p50_ms": round(statistics.median(p50), 1) if p50 else None,
-            "p95_ms": round(statistics.median(p95), 1) if p95 else None,
-            "yontem": "histogram kova ara değerlemesi — kesin değer değil",
+            "p50_ms": round(p50_ms, 1) if p50_ms else None,
+            "p95_ms": round(p95_ms, 1) if p95_ms else None,
+            "pencere_ornek": int(pencere_ornek),
+            "yontem": "pencere FARKI üzerinden histogram kova ara değerlemesi "
+                      "— kesin değer değil, ama worker uptime'ından bağımsız",
         },
         "verim": {"analiz_fps": round(analiz_fps, 3),
-                  "ornekleme_fps": round(ornekleme_fps, 3)},
+                  "ornekleme_fps": round(ornekleme_fps, 3),
+                  "yayinlanan": int(yayin_farki),
+                  "analiz_edilen": int(kare_farki),
+                  "izlenmeyen_kayip": int(kayip)},
+        "kuyruk_xlen": {ad_: {"medyan": statistics.median(d), "azami": max(d)}
+                        for ad_, d in kuyruklar.items()},
+        "tuketici_lag": {ad_: {"medyan": statistics.median(d), "azami": max(d)}
+                         for ad_, d in lagler.items()},
         "kaynak": kaynaklar[-1] if kaynaklar else {},
         "atilan_kare": atilan,
     }, ensure_ascii=False, indent=2), encoding="utf-8")

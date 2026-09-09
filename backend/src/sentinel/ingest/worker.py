@@ -168,7 +168,12 @@ class CameraTask:
                     return
 
                 now = time.perf_counter()
-                metrics.decode_duration.labels(cam=self.camera).observe(now - last)
+                # ⚠ Bu ARALIK, çözme süresi DEĞİL (P-60). Metriğin eski adı
+                # `decode_duration`'dı ve adı yalan söylüyordu; asıl çözme
+                # ve BGR maliyeti artık `decoder.py` içinde CPU zamanıyla
+                # ölçülüyor. Aralık yine de yararlı: örnekleme temposunun
+                # gerçekte tutup tutmadığını gösteriyor.
+                metrics.frame_interval.labels(cam=self.camera).observe(now - last)
                 self.stats.received += 1
                 metrics.frames_received.labels(cam=self.camera).inc()
 

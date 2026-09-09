@@ -4528,3 +4528,373 @@ açık konteyner adları (`sentinel-*`), ayrı ağ (`sentinel-net`) ve
 ad-alanlı volume'lar (`sentinel_*`).
 
 ---
+### P-60 · ⭐⭐ "Açıklanamayan p95 değişkenliği" — üç ayrı sebebi vardı, üçü de ölçüm aracında
+
+**Tarih:** 09.09.2026 · **Faz:** 3
+
+**Neden bakıldı:** P-58 kapanırken dürüst bir açık bırakılmıştı:
+
+> *"Düzeltmeden sonraki iki koşu arasında değişkenlik yüksek:
+> p50 172.50 vs 247.66 ms. İkisinde de CPU aynı (%402), GPU %35,
+> çıkarım kapasitesi 410 kare/sn (28 yapıyor). **Hiçbir kaynak dolu
+> değil.** Muhtemel aday: sistem RAM'i %90."*
+
+RAM hipotezi test edilmeden önce, **iddiayı taşıyan sayının kendisi**
+kontrol edildi. İyi ki edilmiş.
+
+---
+
+#### 1. 🔴 Sayı, ölçüm penceresinin değil worker'ın TÜM ÖMRÜNÜN p95'iydi
+
+`measure_canli.py` yüzdeliği doğrudan Prometheus histogramından
+alıyordu:
+
+```python
+k = _kovalar(o, "sentinel_end_to_end_latency_seconds")
+veri["gecikme_p50_ms"] = (_yuzdelik(k, 0.50) or 0) * 1000
+```
+
+Prometheus histogramı **kümülatif**: süreç başından beri her şeyi
+sayar. Yani bildirilen p50/p95, ölçüm penceresinin değil, worker'ın
+**başlangıcından o ana kadarki** dağılımıydı.
+
+İki sonucu vardı:
+
+1. **Sonuç, worker'ın ölçümden önceki uptime'ına bağlıydı.** Yeni
+   başlatılmış bir worker'da ısınma kütlenin büyük kısmıydı; saatlerdir
+   koşan birinde seyrelmişti. Aynı sistem, aynı kod, **farklı sayı**.
+2. ⭐ **`--isinma` bayrağı yalan söylüyordu.** Attığı şey ilk 90
+   saniyenin *örnekleriydi*; ama o saniyelerin gecikmeleri histogramda
+   sonsuza dek kalıyordu. P-28 tam da bunu engellemek için yazılmıştı.
+
+⚠⚠ **`measure_k4.py` bunu DOĞRU yapıyor** — içinde `_kova_farki` adlı
+bir fonksiyon var ve docstring'i sebebi açıkça yazıyor. `measure_canli.py`
+ondan **sonra** yazıldı ve düzeltmeyi devralmadı.
+
+> ⭐ Düzeltme koda değil, **bir dosyaya** konmuştu. Bir sonraki dosya
+> aynı hatayı sıfırdan yaptı.
+
+⭐ Daha ince bir ayrıntı: aynı betik **verim** sayılarını (`analiz_kare`,
+`kare_yayinlandi`) fark alarak doğru hesaplıyordu. Yani hata unutkanlık
+değil, **iki metrik tipini (sayaç vs histogram) aynı sanmak**tı.
+
+---
+
+#### 2. ⭐ Arşivlenmiş 8 koşuya bakılınca: değişkenlik rastgele DEĞİLDİ
+
+"Açıklanamayan değişkenlik" diye kaydedilen sayılar sıralanınca
+p50 ile analiz FPS'i neredeyse mükemmel ters korelasyonda çıktı:
+
+```
+kosu         fps    p50     p95  ANALITIK%   ALIM%  toplam%  ram%
+0908-1443   1.66    450     739     1138.9   295.9   1525.1   84.4
+0908-1459   1.67    455     723     1039.6   290.9   1420.6   87.9
+0909-0842   1.69    454    1047     1005.0   305.3   1401.5   90.1
+0909-0913   1.62    457    1075      821.3   327.1   1235.7   81.2
+0909-0853   2.75    149     477       70.7   185.5    344.3   86.2   (model KAPALI)
+0909-0924   2.68    172     424       96.7   197.1    382.0   89.4
+0909-1003   2.84    181     634       91.7   190.4    370.9   76.1
+0909-0936   1.42    248     726       55.4   275.2    416.0   90.4   ⬅ AYKIRI
+```
+
+⭐ **İki ayrık rejim var, aralarında hiçbir şey yok:**
+
+| rejim | ANALITIK CPU | analiz FPS | p50 |
+|---|---|---|---|
+| BLAS düzeltmesi YOK | 821–1139% | 1.62–1.69 | ~455 ms |
+| BLAS düzeltmesi VAR | 55–97% | 2.68–2.84 | 149–181 ms |
+
+Yani "değişkenlik" sanılan şeyin çoğu, **farklı kod sürümlerinin
+karşılaştırılmasıydı.** P-58'in kendi tablosundaki 149 ms'lik koşu ise
+`skor_ureten_kamera: 0` — yani **model KAPALI kontrol koşusu**, bir
+tekrar değil.
+
+> ⭐ Denetimde yazdığım cümle burada kendi başıma geldi:
+> *"Hiçbir kriter aynı kod sürümünde ölçülmedi."*
+
+---
+
+#### 3. ⭐⭐ Geriye TEK aykırı koşu kaldı — ve PID'leri aynıydı
+
+`0909-0936` (fps 1.42) ile `0909-1003` (fps 2.84) karşılaştırılınca:
+
+```
+                   0936      1003
+alim   pid        11740     11740   ⬅ AYNI SÜREÇ
+cikarim pid       13408     13408   ⬅ AYNI SÜREÇ
+analitik pid      19768     19768   ⬅ AYNI SÜREÇ
+analiz FPS         1.42      2.84
+alim CPU %        275.2     190.4
+cikarim RSS MB   2982.0    1070.0
+sistem RAM %       90.4      76.1
+```
+
+**Hiçbir şey yeniden başlatılmadı, kod değişmedi, ölçüm aracı aynıydı
+— verim iki katına çıktı.** Değişen tek şey bellek baskısı.
+
+Bu, P-58'in RAM hipotezini destekliyor ama **kanıtlamıyor**: iki koşu,
+tek gözlem. Kontrollü tekrar gerekiyor.
+
+---
+
+#### 4. ⭐⭐⭐ Kareler nereye gidiyor — ölçen metrik VARDI, kimse okumuyordu
+
+Bütün koşularda `ornekleme_fps` sabit (2.72–2.84) ama `analiz_fps`
+1.42 ile 2.84 arasında. Aradaki kareler bir yere gidiyor. `no_slot`
+atılma sayısı ise **rejimden bağımsız** sabit (183–263) — yani
+paylaşımlı bellek havuzu suçlu değil.
+
+Kalan tek yol: kareler **sınırlı akışın (`maxlen`) kuyruğundan
+düşüyor.** `frames_dropped_total` bunu saymıyor, çünkü kayıp alım
+tarafında değil, Valkey akışının kuyruk sonunda oluyor.
+
+⭐⭐ Ve bunu ölçen metrik **Gün 1'den beri yayınlanıyordu**:
+
+```python
+# src/sentinel/metrics.py
+queue_depth = Gauge("sentinel_queue_depth",
+                    "Kuyruktaki mesaj sayısı — geri basınç göstergesi",
+                    ["queue"])
+# ingest/worker.py:491 ve inference/worker.py:832-833 → set ediliyor
+```
+
+**Hiçbir ölçüm betiği okumuyordu** — ne `measure_k4.py` ne
+`measure_canli.py`. Sistemin en önemli geri basınç göstergesi
+üretiliyor, Prometheus'a gidiyor, ve karar veren hiçbir araç bakmıyordu.
+
+> ⭐ P-40'ın (panel kare yerine kişi sayıyordu) kardeşi: orada alet
+> **yanlış** ölçüyordu, burada alet **doğru** ölçüyor ama **kimse
+> bakmıyor**. İkisinin sonucu aynı: körlük.
+
+---
+
+#### Yapılan düzeltmeler — `measure_canli.py`
+
+1. `_kova_farki()` eklendi; yüzdelik artık pencerenin **iki ucu
+   arasındaki farktan** alınıyor → sonuç uptime'dan bağımsız, `--isinma`
+   gerçekten çalışıyor.
+2. `queue_depth` ve `shm_slots_free` okunuyor, medyan+azami raporlanıyor.
+3. ⭐ **Kare muhasebesi** eklendi: `yayınlanan − analiz edilen =
+   izlenmeyen kayıp`. %5'i aşarsa uyarı basıyor. Bu fark daha önce
+   hiçbir yerde yazılmıyordu.
+4. `pipeline_capacity` okunuyor; gecikme örneği sayısı (pencere içi)
+   raporlanıyor — az örnekte yüzdelik gürültülü, artık görünüyor.
+
+---
+
+#### ✅ SONUÇ — düzeltilmiş araçla üç kontrollü koşu
+
+Aynı worker süreçleri, aynı kod, arka arkaya üç ölçüm (her biri 400 sn,
+150 sn ısınma atıldı, panel kapalı):
+
+| koşu | p50 (ms) | p95 (ms) | analiz FPS | yayın | analiz | izlenmeyen |
+|---|---|---|---|---|---|---|
+| 1 | 172.5 | 321.9 | 2.78 | 13 049 | 13 050 | ~0 |
+| 2 | 177.5 | 392.6 | 2.78 | 13 101 | 13 093 | 8 |
+| 3 | 177.4 | 396.0 | 2.82 | 13 235 | 13 197 | 38 |
+
+```
+p50 yayılım : 172.5 – 177.5   (%2.8)    ⬅ eskiden 149 – 457
+p95 yayılım : 321.9 – 396.0   (%20.0)   ⬅ eskiden 423 – 1075
+```
+
+⭐ **"Açıklanamayan değişkenlik" büyük ölçüde ölçüm aracındaydı.** p50
+artık %3'lük bir bantta. Kalan %20'lik p95 yayılımı 13 bin örneklik bir
+**kuyruk istatistiği** için olağan örnekleme gürültüsü — açıklanacak bir
+gizem değil, `p95`'in doğası.
+
+⚠ **RAM hipotezi test edilemedi ve ASKIDA kalıyor.** Üç koşunun üçünde
+de sistem RAM'i %83-85'teydi; %90 eşiğine hiç çıkılmadı, dolayısıyla o
+rejim yeniden üretilemedi. Dürüst ifade: *"Ölçüm aracı düzeltildikten
+sonra %83-85 RAM'de değişkenlik kalmadı; %90'da gözlenen tek seferlik
+verim düşüşü doğrulanamadı da çürütülemedi de."*
+
+⚠ **Kare kaybı hipotezi ÇÜRÜDÜ.** "Kareler sınırlı akışın kuyruğundan
+düşüyor" diye tahmin etmiştim; muhasebe eklenince kayıp **%0.3'ün
+altında** çıktı. Sağlıklı rejimde kayıp yok. Örnekleme 2.77 iken analiz
+1.42 ölçülen koşu, yalnızca **bozuk rejime** ait.
+
+#### ⚠ Bu kaydın kendi sınırı — dürüstçe
+
+**Öğrenilen ders (P-58'in dersinin devamı):** Bir ölçümde
+"açıklanamayan değişkenlik" varsa, aranacak ilk yer sistem değil
+**ölçüm aracıdır**. Bu projede dokuzuncu kez.
+
+Ve bu sefer yeni bir tür: **düzeltme yapıldı ama taşınmadı.** P-28'in
+çözümü `measure_k4.py`'da duruyordu; sonraki betik aynı hatayı sıfırdan
+yaptı. Bir düzeltmenin gerçekten yapılmış sayılması için, aynı hatayı
+yapabilecek **diğer yerlere de** taşınması gerekiyor.
+
+
+---
+
+### P-61 · ⭐⭐ `decode_duration` düzeltildi — ve düzeltmenin kendisi iki yeni şey buldu
+
+**Tarih:** 09.09.2026 · **Faz:** 3
+
+**Neden bakıldı:** P-56'da not düşülmüştü: *"`decode_duration` çözme
+süresini değil kareler arası BEKLEMEYİ ölçüyor."* Kayıt vardı, düzeltme
+yoktu.
+
+---
+
+#### 1. Hata: metrik kendi ayarımızı ölçüyordu
+
+```python
+last = time.perf_counter()          # önceki karenin İŞİ BİTTİĞİNDE
+for frame in decoder.frames():
+    now = time.perf_counter()       # yeni kare GELDİĞİNDE
+    decode_duration.observe(now - last)
+```
+
+Aradaki süre çözme işi değil, **bir sonraki karenin gelmesini bekleme**
+süresi. Ve o bekleme, hedef FPS'in belirlediği kare aralığıyla tanımlı:
+2.75 FPS'te ~360 ms. Yani metrik, çözücünün maliyetini değil **kendi
+örnekleme ayarımızı** raporluyordu. Kova tavanı 0.25 sn olduğu için de
+gözlemlerin neredeyse tamamı `+Inf`'e düşüyordu — histogram hiçbir
+şekilde okunamıyordu bile.
+
+⭐ 17 gün panoda durdu. Sayı **makul** göründüğü için kimse bakmadı.
+
+#### 2. ⚠ Doğrusunu duvar saatiyle yapmak da mümkün DEĞİLDİ
+
+İlk düzeltme denemem, çözmeyi `perf_counter` ile ölçmekti. Yanlış olurdu:
+`container.decode()` ağdan veri beklerken **bloke oluyor**, yani ölçüm
+yine beklemeyi içerirdi — hata bir kat aşağıda tekrarlanmış olurdu.
+
+Çözüm P-58'in dersinden geldi: **duvar saati ≠ CPU zamanı.**
+`time.thread_time()` yalnızca o iş parçacığının harcadığı CPU'yu sayar;
+bloke geçen süre girmez. Kamera başına bir iş parçacığı olduğu için
+ölçtüğümüz şey tam olarak "bu kameranın çözme işi".
+
+İki yeni sayaç: `sentinel_decode_cpu_seconds_total` (her çözülen kare —
+örneklemeyle atılanlar dâhil, çünkü decode bedeli yine ödeniyor) ve
+`sentinel_bgr_cpu_seconds_total` (yalnızca yayınlanan kareler). Eski
+metrik silinmedi, **adı dürüst hale getirildi**:
+`sentinel_frame_interval_seconds` — sayının kendisi işe yarıyor,
+yanlış olan adıydı.
+
+#### 3. ⭐⭐ İLK ÖLÇÜM: çözme, alım worker'ının CPU'sunun yalnızca %5'i
+
+20 kamera, ~600 sn, üretim koşusu:
+
+```
+örneklenen kare başına  : çözme 1.58 ms + BGR 1.61 ms CPU
+20 kamera bütçesinde    : çözme 0.118 + BGR 0.121 = 0.239 çekirdek
+alım worker'ının ölçülen toplamı            : 2.10 çekirdek
+                                              ─────────────
+çözme + BGR'nin payı                        : %11
+çözmenin tek başına payı                    : %5.6
+```
+
+⭐ **BGR renk dönüşümü, H.264 çözmekle neredeyse aynı pahada** (1.61 vs
+1.58 ms). Bu ikisini ayrı ölçmenin pratik değeri şu: örnekleme hızını
+düşürmek **decode bedelini düşürmüyor** (her kare yine çözülüyor) ama
+**BGR bedelini doğrudan düşürüyor**. Yani uyarlanabilir FPS'in
+kazandırdığı şeyin yarısı buradaydı ve daha önce hiç ayrıştırılmamıştı.
+
+⭐ Ve "decode darboğaz" iddiası (P-07/P-09'da zaten çürütülmüştü) artık
+**sayıyla** kapandı: alım worker'ının 2.1 çekirdeğinin 0.12'si çözme.
+Geri kalanı hareket filtresi, letterbox ön işleme ve paylaşımlı bellek
+yazımı.
+
+⚠ **Bu sayının sınırı:** Windows'ta iş parçacığı CPU çözünürlüğü
+~15.6 ms; tek bir çözme parçası ~0.17 ms. Sayaç monoton biriktiği için
+**toplam** güvenilir, ama çözme/BGR arasındaki payın kesinliği bu
+çözünürlükle sınırlı. Büyüklük mertebesi sağlam, virgülden sonrası
+değil.
+
+#### 4. ⭐ Yan bulgu: `fflags=nobuffer` dosya çözmeyi TAMAMEN bozuyor
+
+Dekoderin testi yazılırken çıktı: aynı mp4, canlı akış seçenekleriyle
+**0 kare** çözüyor, seçeneksiz 45 kare. Beş seçenek tek tek çıkarıldı,
+suçlu tek başına `nobuffer`:
+
+```
+çıkarılan: rtsp_transport -> 0 kare        çıkarılan: fflags -> 45 kare ✅
+çıkarılan: timeout        -> 0 kare        çıkarılan: flags  -> 0 kare
+çıkarılan: max_delay      -> 0 kare        TAM SET            -> 0 kare
+```
+
+`nobuffer` ve `low_delay` canlı akışta gecikme kırpmak için var; dosyada
+yıkıcı. Seçenekler artık yalnızca ağ kaynaklarına uygulanıyor. Üretim
+yalnızca `rtsp://` kullandığı için **üretim davranışı değişmedi** — ama
+dekoder ilk kez gerçek bir videoyla test edilebilir hale geldi.
+
+#### 5. ⚠ Testin kendisi de bir kez yanlış yazıldı — ve ölçülerek yakalandı
+
+İlk yazdığım test docstring'inde *"bu test eski kodda düşerdi"* diyordu.
+Ölçünce yanlış çıktı:
+
+```
+duvar saati toplam      :  554.4 ms
+ESKİ metrik toplasaydı  :   46.3 ms   ⬅ küçük!
+YENİ çözme CPU          :   15.6 ms
+```
+
+Sebep: eski metriğin şiştiği yer **canlı akışın tempo sınırı**. Yerel
+dosyada sonraki kare anında hazır — bekleme yok, eski metrik de küçük.
+Yani birim testi üretimdeki hatayı **yeniden üretemez**.
+
+> ⭐ Test etmediği şeyi test ettiğini söyleyen bir test, yanlış bir
+> sayıdan daha tehlikelidir: yeşil yanar ve soru sordurmaz. P-49'un
+> (ölçütün TANIMI yanlıştı) birim testi kılığındaki hâli.
+
+Test, kanıtlayabildiği şeye daraltıldı: **atıf sınırı** — tüketicinin
+harcadığı CPU çözmenin hanesine yazılmamalı. Sonra kod bilerek bozulup
+testin gerçekten yakaladığı doğrulandı:
+
+```
+`yield` sonrası CPU işareti kaldırıldı
+  -> çözme CPU'su 328 ms okundu (tüketicinin yaktığı 300 ms dâhil)
+  -> test DÜŞTÜ ✅
+```
+
+**Öğrenilen ders:** Bir testin geçmesi, bir şey doğruladığı anlamına
+gelmiyor. Yeni yazılan her kritik test, **kodu bilerek bozup**
+düştüğü görülerek kabul edilmeli.
+
+---
+
+### P-62 · ⭐⭐ İki saattir kimsenin bakmadığı 180 analiz sonucu
+
+**Tarih:** 09.09.2026 · **Faz:** 3
+
+**Neden bakıldı:** P-60'ta eklenen `consumer_lag` metriği doğrulanırken
+`XPENDING` de okundu. Beklenen: birkaç kayıt. Görülen:
+
+```
+bekleyen kayıt : 180   (hepsi `analytics-0` tüketicisinde)
+boşta kalma    : en az 737 ms
+                 medyan 7 427 130 ms  ≈ 2 saat 4 dakika
+                 en çok 9 924 258 ms  ≈ 2 saat 45 dakika
+```
+
+**Mekanizma:** `XREADGROUP` ile okunan her kayıt, ACK gelene kadar o
+tüketiciye **asılı** kalıyor. Analitik worker sert kapatılırsa (kill,
+çökme, `stop_all`) elindeki kayıtlar asılı kalıyor. Yeni worker `>` ile
+yalnızca YENİ kayıtları okuduğu için o kayıtlar **sonsuza dek
+işlenmiyor**.
+
+Arıza tam anlamıyla sessiz: worker ayakta, akış akıyor, sayaçlar
+artıyor, panel çalışıyor — yalnızca o 180 sonuç hiç analiz edilmiyor.
+
+⭐⭐ **Bu, P-38'in birebir aynısı — bir akış aşağıda.** P-38'de bir
+çökme, paylaşımlı bellek slotlarını kalıcı sızdırıyordu ve çözümü
+`FrameStream.sahipsizleri_topla()` (XAUTOCLAIM) idi. O düzeltme
+**kare akışına** yazıldı, docstring'i sebebini üç paragraf anlattı —
+ve **sonuç akışına hiç taşınmadı.**
+
+> ⭐ P-60 ile aynı ders, aynı gün, ikinci kez: **bir düzeltmenin bir
+> yerde yapılmış olması, onu diğerinde yapılmış saymıyor.** Bu sefer
+> düzeltmenin kendi docstring'i, taşınması gereken yeri tarif ediyordu.
+
+**Çözüm:** `AnalyticsWorker._sahipsizleri_topla()` — 30 saniyede bir
+(budama ile aynı periyot) `XAUTOCLAIM` ile sahipsiz kayıtları geri alıp
+işliyor. MAXLEN ile akıştan düşmüş ama hâlâ asılı kayıtlar (boş alanla
+dönerler) ACK'lenip listeden düşürülüyor.
+
+⚠ **Etkisinin büyüklüğü küçük, sınıfı büyük.** 180 kayıt ~3 saniyelik
+analiz demek; kimse fark etmezdi. Ama mekanizma sınırsız: her sert
+kapanış kalıcı bir tortu bırakıyordu ve hiçbir şey onları temizlemiyordu.
+

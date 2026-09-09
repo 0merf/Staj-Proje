@@ -263,8 +263,24 @@ def _ornek_al() -> dict[str, Any]:
                 olcumler, "sentinel_frames_dropped_total", "reason"
             )
             veri["bos_slot"] = _tek(olcumler, "sentinel_shm_slots_free")
+            veri["kuyruk"] = _etikete_gore(
+                olcumler, "sentinel_queue_depth", "queue"
+            )
         elif bilesen == "inference":
             veri["bos_slot"] = _tek(olcumler, "sentinel_shm_slots_free")
+            # ⭐ KUYRUK DERİNLİĞİ — geri basıncın tek gözlemlenebilir izi.
+            #
+            # ⚠⚠ Bu metrik Gün 1'den beri yayınlanıyordu ve HİÇBİR ölçüm
+            # betiği okumuyordu (P-60). Örnekleme 2.77 FPS iken analiz
+            # 1.42 FPS ölçülen koşular var; aradaki kareler `frames_dropped`
+            # sayaçlarında GÖRÜNMÜYOR, çünkü kayıp alım tarafında değil,
+            # sınırlı akışın (`maxlen`) kuyruk sonunda oluyor.
+            #
+            # ⭐ P-40'ın kardeşi: orada alet yanlış ölçüyordu, burada alet
+            # doğru ölçüyor ama kimse bakmıyordu. Sonuç aynı: körlük.
+            veri["kuyruk"] = _etikete_gore(
+                olcumler, "sentinel_queue_depth", "queue"
+            )
             veri["kapasite_fps"] = _tek(olcumler, "sentinel_pipeline_capacity_fps")
             veri["vram_bayt"] = _tek(olcumler, "sentinel_gpu_memory_used_bytes")
             veri["tespit"] = _toplam(olcumler, "sentinel_detections_total")
@@ -493,6 +509,22 @@ def _degerlendir(ornekler: list[dict[str, Any]], sure: float) -> dict[str, Any]:
                 else None
             ),
             "atilan_kare": {k: round(v) for k, v in atilan_fark.items()},
+            # ⭐ KARE MUHASEBESİ (P-60) — yayınlanan ile analiz edilen
+            # arasındaki fark hiçbir sayaçta görünmüyor; sınırlı akıştan
+            # düşen kareler burada ortaya çıkıyor.
+            "kare_yayinlandi": round(
+                (son_ing.get("kare_yayinlandi") or 0)
+                - (ilk_ing.get("kare_yayinlandi") or 0)
+            ),
+            "kare_analiz_edildi": round(
+                (son_inf.get("analiz_kare") or 0)
+                - (ilk_inf.get("analiz_kare") or 0)
+            ),
+            # ⚠ Gauge — fark alınmaz, son anlık değer okunur.
+            "kuyruk_derinligi": {
+                **(son_ing.get("kuyruk") or {}),
+                **(son_inf.get("kuyruk") or {}),
+            },
             "anomali_uretildi": round(
                 son["veri"].get("analytics", {}).get("anomali", 0)
                 - ilk["veri"].get("analytics", {}).get("anomali", 0)
@@ -604,6 +636,17 @@ def main() -> int:
           f"{b['olay_yazildi']:.0f} olay yazıldı")
     if b["atilan_kare"]:
         print(f"  atılan kare: {b['atilan_kare']}")
+
+    # ⭐ KARE MUHASEBESİ (P-60)
+    yay, anl = b["kare_yayinlandi"], b["kare_analiz_edildi"]
+    kayip = yay - anl
+    print(f"  kare muhasebesi: yayın {yay} → analiz {anl} · "
+          f"izlenmeyen fark {kayip} (%{100 * kayip / max(yay, 1):.1f})")
+    if kayip > 0.05 * max(yay, 1):
+        print("    ⚠ >%5 kare analiz edilmedi ve hiçbir sayaç bunu görmüyor →")
+        print("      kayıp sınırlı akışın (maxlen) kuyruk sonunda oluyor.")
+    if b["kuyruk_derinligi"]:
+        print(f"  kuyruk derinliği: {b['kuyruk_derinligi']}")
 
     cikti = {
         "olculdu": datetime.now(UTC).isoformat(),

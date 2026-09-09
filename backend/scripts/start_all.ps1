@@ -75,9 +75,69 @@ function Wait-Url {
     return $false
 }
 
+# ─── 0. KOPYA SÜREÇ ÖN KONTROLÜ ──────────────────────────────
+#
+# ⚠⚠ 09.09.2026 — BU KONTROL YOKTU VE İKİ GÜN KAYBETTİRDİ (P-58)
+#
+# Bu betik hiçbir şey sormadan yeni bir takım worker başlatıyordu.
+# Zaten bir takım koşuyorsa sonuç: 40 RTSP akışı, İKİ KOPYA YOLO
+# (mimari kural 3 ihlali — "modeller tek süreçte tek kopya"), ve iki
+# `--owner` alım worker'ı aynı paylaşımlı bellek havuzu için yarışıyor.
+#
+# Belirti sinsi: sistem ÇALIŞIYOR görünüyor, yalnızca yavaş. RAM %98.7,
+# gecikme iki katı. Suçlu iki gün boyunca modelde arandı.
+#
+# ⚠ CLAUDE.md bu tuzağı zaten yazıyordu — *"Her `uv run` 2 python.exe
+# üretir; 2 normal, 4 = kopya var demektir."* Yazılı bir uyarı, otomatik
+# bir kontrolün yerini tutmuyor.
+#
+# ⚠ NEDEN RSS FİLTRESİ: `uv run` bir rol için birden çok python.exe
+# üretiyor (sarmalayıcılar + asıl süreç). Sarmalayıcılar ~5-25 MB,
+# asıl süreçler 100 MB - 3 GB. Sarmalayıcıları saymak yanlış alarm
+# üretirdi; `measure_canli.py` de aynı ölçütü kullanıyor.
+function Test-KopyaSurec {
+    $desenler = @{
+        "alim"     = "sentinel.ingest.worker"
+        "cikarim"  = "sentinel.inference.worker"
+        "analitik" = "sentinel.analytics.worker"
+        "alarm"    = "sentinel.alerting.worker"
+    }
+    $bulunan = @{}
+    $surecler = Get-CimInstance Win32_Process -Filter "Name='python.exe'" -ErrorAction SilentlyContinue
+    foreach ($p in $surecler) {
+        if ($p.WorkingSetSize -lt 50MB) { continue }   # sarmalayıcı, asıl değil
+        foreach ($rol in $desenler.Keys) {
+            if ($p.CommandLine -and $p.CommandLine.Contains($desenler[$rol])) {
+                if (-not $bulunan.ContainsKey($rol)) { $bulunan[$rol] = @() }
+                $bulunan[$rol] += $p.ProcessId
+            }
+        }
+    }
+    return $bulunan
+}
+
+$mevcut = Test-KopyaSurec
+if ($mevcut.Count -gt 0) {
+    Write-Host ""
+    Write-Host "⚠⚠ ZATEN ÇALIŞAN WORKER VAR — BAŞLATILMADI" -ForegroundColor Red
+    Write-Host "═══════════════════════════════════════════" -ForegroundColor Red
+    foreach ($rol in ($mevcut.Keys | Sort-Object)) {
+        Write-Host ("   {0,-10} pid: {1}" -f $rol, ($mevcut[$rol] -join ", "))
+    }
+    Write-Host ""
+    Write-Host "Üstüne ikinci takım başlatmak sistemi bozar (P-58):" -ForegroundColor Yellow
+    Write-Host "  · iki kopya YOLO -> VRAM (mimari kural 3 ihlali)"
+    Write-Host "  · iki --owner alım worker'ı aynı shm havuzu icin yarışır"
+    Write-Host "  · sistem ÇALIŞIYOR görünür, sadece iki kat yavaş olur"
+    Write-Host ""
+    Write-Host "Önce durdurun:  pwsh backend/scripts/stop_all.ps1" -ForegroundColor Cyan
+    exit 1
+}
+
 Write-Host ""
 Write-Host "SENTINEL başlatılıyor" -ForegroundColor Cyan
 Write-Host "═════════════════════"
+Write-Host "  ✓ kopya süreç kontrolü temiz" -ForegroundColor Green
 
 # ─── 1. Altyapı ───────────────────────────────────────────────
 if (-not $SkipDocker) {
