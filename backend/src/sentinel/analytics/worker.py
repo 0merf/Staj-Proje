@@ -142,6 +142,10 @@ class AnalyticsWorker:
         # gereken `dt`. Kameralar farklı hızlarda analiz edildiği için
         # (uyarlanabilir FPS) sabit adım kullanmak yanlış olurdu.
         self._son_degerlendirme: dict[str, float] = {}
+        # Kamera başına son görülen kaynak-video zamanı (saniye).
+        # Alarm üretilince olayın kanıtına yazılıyor → alarm videoda
+        # bulunup izlenebiliyor (yer gerçeği, bkz. `_kare_isle`).
+        self._son_pts: dict[str, float] = {}
 
         self.islenen = 0
         self.anomaliler = 0
@@ -273,6 +277,20 @@ class AnalyticsWorker:
         veri = json.loads(alanlar.get("data", "{}"))
         tespitler = veri.get("detections", [])
         ts = float(alanlar.get("ts", 0.0)) or time.time()
+
+        # ⭐⭐ KAYNAK VİDEODAKİ ZAMAN — yer gerçeğinin anahtarı.
+        #
+        # Olay kaydında bugüne kadar yalnızca duvar saati vardı ve
+        # kameralarımız sonsuz döngüdeki video dosyaları olduğu için o
+        # saat videodaki ana çevrilemiyordu. Sonuç: sistem alarm
+        # üretiyor, kimse alarmın GERÇEK olup olmadığını söyleyemiyordu.
+        #
+        # Kamera başına son görülen `pts` tutuluyor; alarm üretildiği an
+        # o değer olayın kanıtına yazılıyor. Böylece her alarm kaynak
+        # videoda tam olarak bulunup izlenebiliyor.
+        pts = veri.get("pts")
+        if pts is not None:
+            self._son_pts[camera] = float(pts)
 
         self.islenen += 1
 
@@ -591,6 +609,7 @@ class AnalyticsWorker:
                 "cam": camera,
                 "type": "risk",
                 "ts": f"{ts:.6f}",
+                "pts": f"{self._son_pts.get(camera, -1.0):.3f}",
                 "data": json.dumps(
                     {
                         "cam": camera,
@@ -651,6 +670,7 @@ class AnalyticsWorker:
                 "cam": camera,
                 "type": "aggression",
                 "ts": f"{ts:.6f}",
+                "pts": f"{self._son_pts.get(camera, -1.0):.3f}",
                 "data": json.dumps(
                     {
                         "cam": camera,
@@ -696,6 +716,7 @@ class AnalyticsWorker:
                 "cam": anomali.camera,
                 "type": anomali.tur.value,
                 "ts": f"{ts:.6f}",
+                "pts": f"{self._son_pts.get(anomali.camera, -1.0):.3f}",
                 "data": json.dumps(anomali.to_dict(), separators=(",", ":")),
             },
             maxlen=1000,

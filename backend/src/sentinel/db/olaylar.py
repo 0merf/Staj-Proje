@@ -86,7 +86,32 @@ class Olay:
                 track_id=(
                     int(veri["track"]) if veri.get("track") is not None else None
                 ),
-                kanit=veri.get("evidence") or {},
+                # ⭐⭐ `video_pts` KANITA EKLENİYOR — yer gerçeğinin anahtarı
+                #
+                # Bu alan olmadan bir alarmın doğru olup olmadığı
+                # DOĞRULANAMIYORDU: kayıtta yalnızca duvar saati (`ts`)
+                # vardı ve kameralarımız sonsuz döngüdeki video dosyaları
+                # olduğu için o saat videodaki ana çevrilemiyordu.
+                #
+                # Sonuç ağırdı: sistem alarm üretiyor, hiç kimse o
+                # alarmın gerçek olup olmadığını söyleyemiyordu. K7'nin
+                # "11.69 alarm/kamera-saat" sayısı bu yüzden bir ALARM
+                # oranı, yanlış alarm oranı değil.
+                #
+                # ⭐ `kanit` zaten `jsonb` → VERİTABANI ŞEMASI DEĞİŞMİYOR.
+                # Yeni sütun, migrasyon, indeks gerekmedi.
+                #
+                # ⚠ `-1` = bilinmiyor. Sıfırla karıştırılmamalı: 0.0
+                # videonun BAŞI demek, -1 "ölçemedim" demek.
+                kanit={
+                    **(veri.get("evidence") or {}),
+                    **(
+                        {"video_pts": float(alanlar["pts"])}
+                        if alanlar.get("pts") is not None
+                        and float(alanlar["pts"]) >= 0
+                        else {}
+                    ),
+                },
                 tamlik=(
                     float(veri["completeness"])
                     if veri.get("completeness") is not None

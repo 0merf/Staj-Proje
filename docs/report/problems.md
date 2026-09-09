@@ -5590,3 +5590,121 @@ hız ölçümünden önce gelir.**
 ⭐ Ve fikrin sahibi haklı çıktı: 18 gündür ölçülmemiş bir varsayım
 (4.6 GB/worker) yüzünden kapalı duran seçenek, açıldığında gecikmeyi
 yarıya indirdi.
+
+---
+
+### P-68 · ⭐⭐⭐ Alarmların DOĞRULUĞU hiç doğrulanamıyordu — yer gerçeği eklendi
+
+**Tarih:** 09.09.2026 · **Faz:** 3
+
+**Kullanıcının tespiti — projenin en büyük bilimsel açığı:**
+
+> *"Bu alarmların yanlış olduğunu nereden biliyorsun, elle doğruladın mı?
+> Sistem alarm veriyor ama bu alarmı doğrulayan bir şey yok. Bu bizim
+> projenin en büyük sıkıntılarından biri olmaz mı?"*
+
+⚠ **Ve haklıydı — üstelik ben aynı gün o hatayı yapmıştım.** 8 FPS
+deneyinde "yanlış alarm artıyor" diye yazmıştım. Ölçtüğüm şey alarm
+SAYISIYDI; hangisinin yanlış olduğunu bilmiyordum ve bilemezdim.
+Doğrusu: *"skorlar şişti, alarm oranı arttı; ne kadarının yanlış olduğu
+ölçülmedi."*
+
+---
+
+#### Durum: yer gerçeği VARDI ama YANLIŞ YERDE
+
+| kaynak | seviye | hangi kriter |
+|---|---|---|
+| RWF-2000 | klip (kavga var/yok) | K5 |
+| Avenue | **kare seviyesi** | K6 |
+| cam-16 (UR Fall) | olay anı biliniyor | düşme kuralı |
+| cam-15 | elle görsel (07.09) | tek kamera |
+| cam-18 | kontrol (tanımı gereği olay yok) | K7 |
+
+**Eksik olan: 20 kameralık çiftliğin geneli — ve K7 tam da orada
+ölçülüyor.** Bu yüzden bildirilen "11.69 alarm/kamera-saat" bir *alarm
+oranı*dır, yanlış alarm oranı değil. CLAUDE.md bunu zaten dürüstçe
+yazıyordu ama **çözmüyordu**.
+
+---
+
+#### ⭐ Çözüm mümkündü, çünkü kameralarımız VİDEO DOSYASI
+
+Gerçek bir IP kamerada geçmişe dönüp "o alarm anında ne oluyordu"
+diye bakmak imkânsız olurdu — kayıt yoksa kanıt da yok. Bizim
+kameralarımız sonsuz döngüdeki dosyalar; her alarmın kaynak videoda
+tam olarak nereye denk geldiği **bulunabilir**.
+
+⚠ **Eksik olan ölçüm değil, ölçümün TAŞINMASIYDI.**
+
+`FrameMessage.pts` (kaynak videodaki saniye) boru hattında **Gün 1'den
+beri vardı** (`bus/streams.py:157`). Çıkarım worker'ı sonucu
+yayınlarken onu düşürüyordu. Olay kaydında yalnızca duvar saati (`ts`)
+kalıyordu — ve kameralar döngüde olduğu için duvar saati videodaki ana
+çevrilemiyordu.
+
+> ⭐ P-60 ve P-62 ile aynı kalıp, üçüncü kez: **bilgi sistemde vardı,
+> ihtiyaç duyulan yere ulaşmıyordu.** Orada `queue_depth` yayınlanıyordu
+> kimse okumuyordu; burada `pts` üretiliyordu, kimse taşımıyordu.
+
+---
+
+#### Yapılan — üç küçük değişiklik
+
+1. `_serialize(..., pts=message.pts)` → sonuç yüküne `"pts"` eklendi
+2. Analitik kamera başına son `pts`'i tutuyor, olay yayınlarken yazıyor
+3. `Olay.akistan` onu `kanit["video_pts"]` olarak kaydediyor
+
+⭐ **`kanit` zaten `jsonb` → VERİTABANI ŞEMASI DEĞİŞMEDİ.** Yeni sütun,
+migrasyon, indeks gerekmedi.
+
+⚠ `-1` = "ölçemedim", `0.0` = "videonun başı". İkisi karıştırılmıyor;
+`-1` olan olaylar kayda hiç girmiyor.
+
+**Canlıda doğrulandı:**
+
+```
+cam-03   running      video_pts=436.445
+cam-16   risk         video_pts=432.392
+cam-13   crowd        video_pts=427.866
+cam-16   fall         video_pts=376.912
+```
+
+#### Araç: `scripts/alarm_klipleri.py`
+
+Her alarmın etrafından **6 saniyelik klip** kesiyor (alarm anı ortada,
+3 sn öncesinden başlıyor) ve etiketleme için CSV şablonu üretiyor.
+Sınandı: **12/12 klip kesildi.**
+
+⚠ **Alarm anı klibin ORTASINDA, başında değil.** Bir alarmın doğru olup
+olmadığına karar vermek olayın ÖNCESİNİ görmeyi gerektiriyor; yalnızca
+alarm anından itibaren kesmek "neden alarm verdi" sorusunu
+cevaplanamaz kılardı.
+
+⚠ **`ffmpeg` CLI kullanılmadı** — bu makinede PATH'te yok (PyAV
+kütüphaneyi gömüyor, komut satırı aracını değil). OpenCV zaten
+bağımlılık; dış araca bağlanmak betiği "benim makinemde çalışıyor"
+sınıfına sokardı.
+
+---
+
+#### ⚠ Bu yöntemin sınırı — dürüstçe, ÖNCEDEN
+
+Bu yöntem **kesinlik** (precision) ölçer: *"sistemin verdiği
+alarmların kaçı gerçek?"*
+
+**Duyarlılık (recall) ÖLÇÜLEMEZ:** kaçırılan olayları bulmak için
+videoların TAMAMININ etiketlenmesi gerekirdi. Yani bu ölçüm
+"sistem olayları kaçırıyor mu" sorusunu cevaplamıyor ve raporda
+böyle yazılacak.
+
+⚠ **Etiketleme kuralı önce yazılmalı, klipler izlenmeden.** Sonradan
+tanımlamak, gördüğünü haklı çıkaracak bir tanım seçmek olurdu —
+P-49'un dersi: ölçütün TANIMI olayın tanımını yanlış çizebiliyor.
+
+**Öğrenilen ders:** Bir sistemin ürettiği kararı doğrulayamıyorsan,
+o sistem hakkında söylediğin her doğruluk cümlesi bir varsayımdır.
+Ve bu projede yer gerçeği eksikliği, ölçüm aracı hatalarından daha
+uzun süre (18 gün) fark edilmeden durdu — çünkü **bir sayıyı
+yanlış ölçmek şüphe uyandırır, hiç ölçmemek uyandırmaz.**
+

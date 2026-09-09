@@ -214,6 +214,7 @@ def _serialize(
     height: int,
     letterbox: Letterbox | None = None,
     latency_ms: float = 0.0,
+    pts: float = 0.0,
 ) -> str:
     """Sonucu JSON'a çevirir.
 
@@ -245,6 +246,27 @@ def _serialize(
             # ne kadar geriden çizmesi gerektiğini HESAPLAYABİLİYOR —
             # kullanıcının gözüyle tahmin etmesine gerek kalmıyor.
             "lat": round(latency_ms),
+            # ⭐⭐ KAYNAK VİDEODAKİ ZAMAN (saniye) — YER GERÇEĞİNİN ANAHTARI
+            #
+            # ⚠ Bu alan olmadan bir alarmın DOĞRU olup olmadığı
+            # doğrulanamıyordu. Olay kaydında yalnızca duvar saati (`ts`)
+            # vardı; kameralarımız sonsuz döngüdeki video dosyaları
+            # olduğu için duvar saati videodaki ana çevrilemiyordu.
+            #
+            # Sonuç: sistem alarm üretiyordu ve **hiç kimse o alarmın
+            # gerçek olup olmadığını söyleyemiyordu.** K7'nin
+            # "11.69 alarm/kamera-saat" sayısı bu yüzden bir ALARM
+            # oranıdır, yanlış alarm oranı değil.
+            #
+            # `pts` ile her alarm kaynak videoda tam olarak bulunabiliyor:
+            #     ffmpeg -ss <pts-3> -t 6 -i data/videos/<cam>.mp4 klip.mp4
+            # İzle, "gerçek / yanlış" etiketle → K7 ilk kez GERÇEK bir
+            # yanlış alarm oranı olur.
+            #
+            # ⭐ Bilgi boru hattında zaten VARDI (`FrameMessage.pts`);
+            # yalnızca sonuç yükünde düşürülüyordu. Eksik olan ölçüm
+            # değil, ölçümün TAŞINMASIYDI.
+            "pts": round(pts, 3),
             "detections": detections,
         },
         separators=(",", ":"),
@@ -698,6 +720,7 @@ class InferenceWorker:
                 height=source_h,
                 letterbox=message.letterbox,
                 latency_ms=latency,
+                pts=message.pts,
             )
             _seri_ms += (time.perf_counter() - _t_seri) * 1000.0
             self._results.publish(
