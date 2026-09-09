@@ -1,0 +1,143 @@
+{
+  "olculdu": "2026-09-09T09:24:59.009341+00:00",
+  "sure_s": 341.5,
+  "ornek": 18,
+  "isinma_s": 60,
+  "gpu": {
+    "ad": "NVIDIA GeForce RTX 3070 Laptop GPU",
+    "toplam_vram_mb": 8192.0
+  },
+  "referans": {
+    "gecikme_p50_ms": 205.0,
+    "gecikme_p95_ms": 463.0,
+    "analiz_fps": 2.75,
+    "ornekleme_fps": 3.64
+  },
+  "model": {
+    "skor_ureten_kamera": 18,
+    "medyan": 0.0801,
+    "azami": 0.3899
+  },
+  "alarm_turleri": {
+    "fall": 6.0,
+    "loitering": 6.0,
+    "crowd": 16.0,
+    "aggression": 2.0
+  },
+  "gecikme": {
+    "p50_ms": 172.5,
+    "p95_ms": 423.5,
+    "yontem": "histogram kova ara değerlemesi — kesin değer değil"
+  },
+  "verim": {
+    "analiz_fps": 2.679,
+    "ornekleme_fps": 2.736
+  },
+  "kaynak": {
+    "surecler": [
+      {
+        "rol": "analitik",
+        "pid": 3044,
+        "ram_mb": 25.7,
+        "cpu_yuzde": 0.0
+      },
+      {
+        "rol": "cikarim",
+        "pid": 3588,
+        "ram_mb": 4.0,
+        "cpu_yuzde": 0.0
+      },
+      {
+        "rol": "alim",
+        "pid": 9588,
+        "ram_mb": 1391.0,
+        "cpu_yuzde": 197.1
+      },
+      {
+        "rol": "analitik",
+        "pid": 12564,
+        "ram_mb": 148.9,
+        "cpu_yuzde": 96.7
+      },
+      {
+        "rol": "analitik",
+        "pid": 19020,
+        "ram_mb": 4.0,
+        "cpu_yuzde": 0.0
+      },
+      {
+        "rol": "analitik",
+        "pid": 19552,
+        "ram_mb": 5.7,
+        "cpu_yuzde": 0.0
+      },
+      {
+        "rol": "alim",
+        "pid": 20632,
+        "ram_mb": 25.7,
+        "cpu_yuzde": 0.0
+      },
+      {
+        "rol": "alim",
+        "pid": 20972,
+        "ram_mb": 5.7,
+        "cpu_yuzde": 0.0
+      },
+      {
+        "rol": "cikarim",
+        "pid": 21220,
+        "ram_mb": 5.7,
+        "cpu_yuzde": 0.0
+      },
+      {
+        "rol": "alarm",
+        "pid": 21296,
+        "ram_mb": 101.5,
+        "cpu_yuzde": 0.0
+      },
+      {
+        "rol": "alarm",
+        "pid": 21596,
+        "ram_mb": 25.7,
+        "cpu_yuzde": 0.0
+      },
+      {
+        "rol": "alim",
+        "pid": 21764,
+        "ram_mb": 4.0,
+        "cpu_yuzde": 0.0
+      },
+      {
+        "rol": "cikarim",
+        "pid": 22852,
+        "ram_mb": 25.8,
+        "cpu_yuzde": 0.0
+      },
+      {
+        "rol": "alarm",
+        "pid": 23236,
+        "ram_mb": 5.7,
+        "cpu_yuzde": 0.0
+      },
+      {
+        "rol": "alarm",
+        "pid": 24408,
+        "ram_mb": 4.0,
+        "cpu_yuzde": 0.0
+      },
+      {
+        "rol": "cikarim",
+        "pid": 24544,
+        "ram_mb": 3048.3,
+        "cpu_yuzde": 88.2
+      }
+    ],
+    "toplam_ram_mb": 4831.0,
+    "toplam_cpu": 382.0,
+    "sistem_ram_yuzde": 89.4
+  },
+  "atilan_kare": {
+    "no_slot": 233.0,
+    "gate_idle": 2.0
+  }
+}

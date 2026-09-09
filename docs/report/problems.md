@@ -33,6 +33,180 @@ ama **belirti / sebep / çözüm** üçlüsü mutlaka olsun.
 
 <!-- Yeni kayıtlar buraya, en yenisi en üstte -->
 
+### P-58 · ⭐⭐⭐ Gecikme 2.2 kat artışının GERÇEK sebebi: NumPy/BLAS iş parçacığı havuzu
+
+**Tarih:** 09.09.2026 · **Faz:** 3 · **Kaybedilen süre:** ~4 saat (iki gün)
+
+**Belirti:** Öğrenilmiş model üretime alındıktan sonra (P-56):
+
+```
+ölçüt              model YOKKEN   model VARKEN
+gecikme p50 (ms)         205            455
+gecikme p95 (ms)         463           1047
+analiz FPS/kamera       2.75           1.69
+```
+
+P-57'de bunu "doyum noktası" ile açıklamıştım ve kuyruk teorisi
+sayıları tutmuştu (beklenen 2.33×, ölçülen 2.22×). **O açıklama
+yanlıştı** — doğru bir mekanizma, yanlış bir suçlu.
+
+---
+
+#### Dört hipotez, üçü çürüdü
+
+| # | hipotez | test | sonuç |
+|---|---|---|---|
+| 1 | Kopya süreçler | iki tam takım worker bulundu ve temizlendi | ❌ RAM %98.7→%61 ama **gecikme aynı** |
+| 2 | Modelin kendi işi | üretime histogram konuldu | ❌ kare başına **0.86 ms** — masum |
+| 3 | LightGBM OpenMP | `num_threads=1` | ❌ CPU 1427%→1341%, gecikme **aynı** |
+| 4 | **NumPy/BLAS havuzu** | `OMP/OPENBLAS/MKL_NUM_THREADS=1` | ✅ **ÇÖZDÜ** |
+
+**Hipotez 1 — kopya süreçler.** Sistemde gerçekten iki tam takım
+worker koşuyordu: 40 RTSP akışı, iki kopya YOLO (mimari kural 3
+ihlali), iki `--owner` alım worker'ı aynı paylaşımlı bellek havuzu
+için yarışıyor. RAM %98.7'den %61'e düştü. **Ama gecikme 454 ms'te
+kaldı** — suçlu değillerdi.
+
+⚠ CLAUDE.md bu tuzağı açıkça yazıyordu: *"2 normal, 4 = kopya var
+demektir."* Ben yine de düştüm.
+
+**Hipotez 2 — model.** Üretime aşama bazlı histogram kondu:
+
+```
+besle    0.041 ms   ·   ozet  0.507 ms   ·   tahmin  0.307 ms
+kare başına TOPLAM: 0.864 ms   →  bir çekirdeğin %2.6'sı
+```
+
+⭐ Ve bu, sentetik benchmark'ın (0.789 ms) **doğru** olduğunu
+gösterdi — 1.1 kat fark. Yani benchmark suçlanamazdı.
+
+---
+
+#### ⭐⭐⭐ Suçlu nasıl bulundu: SÜREÇ BAŞINA CPU
+
+Asıl ilerleme, hiç yapmadığım bir ölçümü yapmakla geldi. `measure_canli.py`
+süreç başına CPU'yu **yanlış okuyordu**: `uv run` iki python.exe
+üretiyor (sarmalayıcı + asıl) ve betik sarmalayıcıyı yakalıyordu —
+her rol için hep `15.5 MB / %0.0` gösteriyordu. Toplam doğruydu,
+**kırılım anlamsızdı** ve tam da bu yüzden iki gün boyunca 10
+çekirdeğin nerede olduğunu göremedim.
+
+RSS'e göre asıl süreci seçen bir betik yazılınca:
+
+```
+rol          CPU %    çekirdek   thread
+ALIM         294.0      2.94       440
+CIKARIM       91.4      0.91        26
+ANALITIK     795.5      7.96        59    ⬅⬅ 8 ÇEKİRDEK
+ALARM          0.0      0.00        21
+```
+
+**Analitik worker 8 çekirdek yiyordu** — kendi ölçülen işi kare
+başına 0.86 ms iken.
+
+---
+
+#### Mekanizma: `np.array()` bir iş parçacığı havuzu uyandırıyor
+
+Modelin tek NumPy çağrısı —
+
+```python
+x = np.array([[ozet.get(c, float("nan")) for c in self._sutunlar]])
+```
+
+— NumPy'ın BLAS arka ucunu (OpenBLAS) tetikliyor. BLAS havuzu
+**çekirdek sayısı kadar** iş parçacığı açıyor (bu makinede 20) ve
+işler arasında **meşgul bekliyor** (busy-wait, `OMP_WAIT_POLICY`
+varsayılanı). Saniyede ~27 tahminle havuz hiç uykuya geçmiyor —
+sürekli dönüyor.
+
+**Ortam değişkenleri sınırlandığında:**
+
+```
+ANALITIK CPU     795.5%  →  38.3%    (7.96 → 0.38 çekirdek · 21 KAT)
+ANALITIK thread     59   →  3
+sistem CPU        %94.1  →  %33.8
+```
+
+⭐ Ve bu iş parçacıkları **hiçbir şey kazandırmıyordu**: tahmin
+girdimiz **tek satır × 99 özellik**. Böyle bir işlemi 20 çekirdeğe
+yaymanın faydası yok, yalnızca zararı var.
+
+---
+
+#### ⚠⚠ ASIL DERS: DUVAR SAATİ ≠ CPU ZAMANI
+
+Modelin içine koyduğum histogram `predict`i **0.307 ms** ölçüyordu ve
+bu sayı **doğruydu**. İş 20 iş parçacığına yayıldığı için duvar
+saati gerçekten küçüktü. Ama CPU zamanı 20 katıydı ve asıl maliyet
+havuzun **beklerken dönmesiydi**.
+
+> ⭐ Bir işlemin maliyetini *"ne kadar sürdü"* diye ölçmek, paralel
+> çalışan bir şey için **yanlış sorudur**. Doğru soru: *"kaç
+> çekirdek-saniye harcadı"*.
+
+Bu, projedeki ölçüm aracı hatalarının yeni bir türü: araç doğru
+çalışıyordu, **yanlış büyüklüğü** ölçüyordu. Önceki hatalar
+girdiyi, tasarımı, ölçütün tanımını, yer gerçeğini bozuyordu;
+bu sefer **birim** yanlıştı.
+
+---
+
+#### Sonuç
+
+```
+                model AÇIK   model KAPALI   DÜZELTME SONRASI   K4 referansı
+p50 (ms)          454.15        149.02         172.50            205
+p95 (ms)         1047.40        477.11         423.48            463
+analiz FPS          1.69          2.74           2.68            2.75
+CPU toplam        1427.1%        368.1%         401.6%             —
+```
+
+⭐ **Model açık, gecikme K4 referansından DÜŞÜK.** Modelin gerçek
+maliyeti: `401.6 − 368.1 = %33.5` = **0.34 çekirdek** (önce 10.6).
+
+**Düzeltme `sentinel/__init__.py`'a kondu, `.env`'e değil.** Sebep:
+NumPy'ın BLAS havuzu **import anında** kuruluyor ve boyutunu o anki
+ortam değişkenlerinden okuyor; sonradan değiştirmek etkisiz. Paketin
+`__init__.py`'ı, hiçbir alt modül `numpy` import etmeden önce
+çalışıyor — ayarın konabileceği tek doğru yer orası.
+
+⚠ Başlatma betiğine yazmak da çalışırdı ama kırılgan: worker elle
+başlatılırsa (geliştirme, hata ayıklama, test) ayar kaybolur ve sorun
+sessizce geri gelir.
+
+⚠ Ayar **tüm** worker'lara uygulanıyor. Zarar verip vermediği ölçüldü:
+çıkarım worker'ının iş parçacığı 26 → 7 düştü ama **CPU'su değişmedi**
+(%88-90) — çünkü işi GPU'da. Alım ve alarm da etkilenmedi.
+
+---
+
+#### ⚠ Kapanmayan kısım — dürüstçe
+
+Düzeltmeden sonraki iki koşu arasında değişkenlik yüksek:
+
+```
+koşu 1: p50 172.50 ms · analiz 2.68 FPS
+koşu 2: p50 247.66 ms · analiz 1.41 FPS
+```
+
+İkisinde de CPU aynı (%402, sistem %46), GPU %35, çıkarım kapasitesi
+410 kare/sn (28 yapıyor). **Hiçbir kaynak dolu değil.** Yani kalan
+değişkenliğin sebebi ayrı ve henüz bilinmiyor. Muhtemel aday: sistem
+RAM'i %90 (15.7 GB'ın 14.1'i) ve bunun getirdiği sayfalama.
+
+Bu **ayrı bir soru** ve raporda böyle yazılacak: ana darboğaz
+çözüldü, artık gecikme referansın altında, ama koşular arası
+değişkenlik açıklanmadı.
+
+**Öğrenilen ders:** Bir sürecin kaynak kullanımını ölçerken *toplam*
+yetmez — **süreç başına** kırılım gerekir. İki gün boyunca "10
+çekirdek nerede" diye sorup bulamamamın tek sebebi, o kırılımı
+gösteren aracın sessizce yanlış süreci okumasıydı.
+
+
+---
+
 ### P-57 · ⭐⭐⭐ Model eklenince gecikme 2.2 KAT arttı — sebep model değil, DOYUM NOKTASI
 
 **Tarih:** 08.09.2026 · **Faz:** 3 · **Kaybedilen süre:** ~2 saat

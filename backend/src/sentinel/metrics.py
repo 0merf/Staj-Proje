@@ -191,6 +191,23 @@ anomalies_total = Counter(
 # olasılığı. İkisini tek gauge'da toplamak, modelin mi füzyonun mu
 # konuştuğunu ayırt edilemez yapardı — P-40'ta panelin kare yerine
 # kişi sayması tam bu tür bir karışıklıktı.
+# ⚠⚠ MODELİN GERÇEK ÜRETİM MALİYETİ (P-57)
+#
+# Sentetik benchmark iki kez yanlış sonuç verdi:
+#   1. pencereyi 814 kareye şişirdi → 24.84 ms (58× abartı)
+#   2. düzeltilince 0.79 ms dedi → ama A/B ölçümü modelin 10.6
+#      ÇEKİRDEK yediğini gösterdi (246× eksik tahmin)
+#
+# ⭐ Ders: sentetik ölçüm, üretimin girdi dağılımını taklit edemiyor.
+# Bu histogram maliyeti GERÇEK veriyle, GERÇEK kamera sayısıyla ve
+# GERÇEK kişi yoğunluğuyla ölçüyor.
+aggression_model_duration = Histogram(
+    "sentinel_aggression_model_duration_seconds",
+    "Saldirganlik modeli asama suresi (besle / degerlendir)",
+    ["asama"],
+    buckets=(0.0005, 0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.25, 0.5, 1.0),
+)
+
 aggression_model_score = Gauge(
     "sentinel_aggression_model_score",
     "Ogrenilmis saldirganlik modelinin kamera basina olasiligi (0-1)",

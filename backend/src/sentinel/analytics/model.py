@@ -74,10 +74,12 @@ hattı durmaz.
 from __future__ import annotations
 
 import json
+import time
 from collections import deque
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from sentinel import metrics
 from sentinel.logging import get_logger
 
 if TYPE_CHECKING:
@@ -227,7 +229,29 @@ class SaldirganlikModeli:
         try:
             import lightgbm as lgb
 
-            self._booster = lgb.Booster(model_file=str(model_yolu))
+            # ⚠⚠⚠ `num_threads=1` HAYATİ — P-57'nin asıl cevabı
+            #
+            # LightGBM OpenMP kullanıyor ve varsayılan olarak ÇEKİRDEK
+            # SAYISI kadar iş parçacığı açıyor (bu makinede 20).
+            # OpenMP havuzu işler arasında **meşgul bekliyor**
+            # (busy-wait); saniyede ~27 tahmin gelince havuz hiç
+            # uykuya geçmiyor ve sürekli dönüyor.
+            #
+            # Ölçülen sonuç: modelin KENDİ işi kare başına 0.86 ms
+            # (bir çekirdeğin %2.6'sı) ama A/B ölçümünde modeli açmak
+            # sistemin CPU'sunu %368 → %1427'ye çıkarıyordu.
+            # Aradaki ~10.6 çekirdek, dönen OpenMP havuzuydu.
+            #
+            # ⭐ Ve bu iş parçacıkları hiçbir şey kazandırmıyor:
+            # girdimiz TEK SATIR × 99 özellik. Böyle bir tahmini
+            # paralelleştirmenin faydası yok, yalnızca zararı var.
+            #
+            # ⚠ Duvar saati ölçümü bunu GÖSTEREMEZ: `predict` 0.307 ms
+            # sürüyor görünüyor çünkü iş 20 thread'e yayılıyor. Duvar
+            # saati küçük, CPU zamanı büyük. İki farklı şey.
+            self._booster = lgb.Booster(
+                model_file=str(model_yolu), params={"num_threads": 1},
+            )
         except Exception as hata:
             log.warning("saldirganlik_modeli_yuklenemedi", hata=str(hata))
             return
@@ -274,6 +298,7 @@ class SaldirganlikModeli:
         """Bu karenin verisini kameranın penceresine ekler."""
         if not self.etkin:
             return
+        t0 = time.perf_counter()
 
         kare_kisileri = [
             {
@@ -297,6 +322,9 @@ class SaldirganlikModeli:
             self._bilesen.setdefault(camera, deque()).append((ts, satir))
 
         self._buda(camera, ts)
+        metrics.aggression_model_duration.labels(asama="besle").observe(
+            time.perf_counter() - t0
+        )
 
     def _buda(self, camera: str, ts: float) -> None:
         """Pencereyi süreye göre kırpar.
@@ -318,21 +346,37 @@ class SaldirganlikModeli:
         if not bilesen:
             return None
         ham = self._ham.get(camera)
+
+        # ⚠⚠ İKİ AŞAMA AYRI ÖLÇÜLÜYOR — sentetik benchmark iki kez
+        # yanlış söyledi (P-57): önce 24.84 ms (pencereyi 814 kareye
+        # şişirmişti), sonra 0.79 ms. A/B ölçümü ise modelin 10.6
+        # ÇEKİRDEK yediğini gösterdi. Sentetik ölçüm üretimin girdi
+        # dağılımını taklit edemiyor; maliyet burada, gerçek veriyle
+        # ölçülüyor.
+        t0 = time.perf_counter()
         ozet = pencere_ozeti(
             [s for _t, s in bilesen],
             [k for _t, k in ham] if ham else [],
+        )
+        metrics.aggression_model_duration.labels(asama="ozet").observe(
+            time.perf_counter() - t0
         )
         if not ozet:
             return None
         try:
             import numpy as np
 
+            t1 = time.perf_counter()
             # ⚠ EKSİK ALAN `NaN` — eğitimle AYNI kural.
             x = np.array([[ozet.get(c, float("nan")) for c in self._sutunlar]])
-            return float(self._booster.predict(x)[0])
+            sonuc = float(self._booster.predict(x)[0])
+            metrics.aggression_model_duration.labels(asama="tahmin").observe(
+                time.perf_counter() - t1
+            )
         except Exception as hata:
             log.warning("saldirganlik_model_tahmin_hatasi", hata=str(hata))
             return None
+        return sonuc
 
     def unut(self, camera: str) -> None:
         """Kamera kapandığında pencereyi bırakır."""
