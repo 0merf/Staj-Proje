@@ -176,4 +176,27 @@ export const ANOMALI_TR: Record<string, string> = {
   // der. Adlandırma farkı taşımalı: operatör tek bir gözleme mi
   // yoksa bir birikime mi baktığını bilmeli.
   risk: 'RİSK (birleşik)',
+  // ⚠ 10.09'da EKLENDİ — üretimde vardı, sözlükte yoktu.
+  // Panelde ham anahtar görünüyordu ("AGGRESSİON"): Türkçe bir
+  // arayüzün ortasında İngilizce bir alan adı. Sözlükte olmayan tür
+  // sessizce ham hâliyle geçiyordu; artık `types.test.ts` bunu
+  // yakalıyor (arka uçtaki tür listesiyle karşılaştırarak).
+  aggression: 'SALDIRGANLIK',
 }
+
+/** Arka ucun ürettiği TÜM olay türleri (`analytics/`, `alerting/`).
+ *
+ * ⚠ Bu liste bir KOPYA ve kopyalar bayatlar. Bayatlamayı sessiz
+ * olmaktan çıkarmak için `types.test.ts` her ikisini karşılaştırıyor:
+ * arka uçta yeni bir tür eklenirse ve buraya yansımazsa test düşüyor.
+ * Kopyanın kendisini yok edemiyoruz (ön yüz Python okumuyor), ama
+ * sapmasını yakalayabiliyoruz. */
+export const OLAY_TURLERI = [
+  'aggression',
+  'crowd',
+  'fall',
+  'loitering',
+  'risk',
+  'running',
+  'unusual',
+] as const

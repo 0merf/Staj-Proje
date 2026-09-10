@@ -4,6 +4,24 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SENTINEL — Canlı İzleme</title>
+    <!-- ⚠ TEMA REACT'TEN ÖNCE UYGULANIYOR — "flash" önlemi.
+         Bu üç satır React içine taşınırsa sayfa bir kare KOYU açılır,
+         sonra açığa atlar. Kullanıcının gördüğü ilk kare doğru olmalı.
+         Kayıtlı tercih yoksa işletim sisteminin tercihi kullanılıyor:
+         varsayılanı biz seçmiyoruz. -->
+    <script>
+      try {
+        var t = localStorage.getItem('sentinel-tema')
+        if (!t) {
+          t = window.matchMedia('(prefers-color-scheme: light)').matches
+            ? 'acik'
+            : 'koyu'
+        }
+        if (t === 'acik') document.documentElement.dataset.tema = 'acik'
+      } catch (e) {
+        /* depolama kapalı — koyu temayla devam */
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

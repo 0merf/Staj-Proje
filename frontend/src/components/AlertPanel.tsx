@@ -117,7 +117,7 @@ function saat(rx: number): string {
  * tarayıcı 50 eşzamanlı istek açar. Klip ancak operatör açtığında
  * isteniyor.
  */
-function KlipOynatici({ anahtar }: { anahtar: string }) {
+export function KlipOynatici({ anahtar }: { anahtar: string }) {
   const [acik, setAcik] = useState(false)
   const [hata, setHata] = useState(false)
 

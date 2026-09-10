@@ -21,51 +21,19 @@
  * DOĞRU YERDE olması, yarım saniye daha taze olmasından önemli —
  * üstelik alarm ayrı kanaldan gecikmesiz geliyor.
  */
-import { buffers, useStore } from '../store'
-import { startTrace, stopTrace, isTracing } from '../lib/trace'
-import { useState } from 'react'
+import { useStore } from '../store'
 
 export function SyncControl() {
   const buffer = useStore((s) => s.videoBufferMs)
   const setBuffer = useStore((s) => s.setVideoBufferMs)
   const video = useStore((s) => s.videoLatencyMs)
   const ai = useStore((s) => s.aiLatencyMs)
-  const playing = useStore((s) => s.playing)
-  const [tracing, setTracing] = useState(isTracing())
 
   // Tampon, analiz gecikmesini aşmalı ki ara değerleme mümkün olsun.
   // Pay bırakıyoruz: gecikme dalgalanıyor, sınırda kalırsak yarı yarıya
   // tahmine düşeriz.
   const suggestion = ai !== null ? Math.min(2000, Math.round((ai * 1.3 + 100) / 50) * 50) : null
   const interpolating = video !== null && ai !== null && video > ai
-
-  const toggleTrace = async () => {
-    if (tracing) {
-      await stopTrace({ videoBufferMs: buffer, videoLatencyMs: video, aiLatencyMs: ai })
-      setTracing(false)
-    } else {
-      // ⚠ İlk açık kamerayı almak yetmiyor: boş bir otopark seçilirse
-      // takip edilecek kimse olmaz ve kayıt boş çıkar (ilk denemede
-      // tam olarak bu oldu). En çok kişi görülen kamerayı seçiyoruz.
-      let best: string | null = null
-      let bestCount = 0
-      for (const cam of playing) {
-        const buffer = buffers.get(cam)
-        const last = buffer?.[buffer.length - 1]
-        const count = last?.detections.filter((d) => d.id !== undefined).length ?? 0
-        if (count > bestCount) {
-          bestCount = count
-          best = cam
-        }
-      }
-      if (!best) {
-        console.warn('[iz] kimlikli tespit olan açık kamera yok')
-        return
-      }
-      startTrace(best)
-      setTracing(true)
-    }
-  }
 
   return (
     <div className="flex items-center gap-3">
@@ -88,16 +56,33 @@ export function SyncControl() {
         <span className="w-16 font-mono text-xs text-ink">{buffer} ms</span>
       </div>
 
+      {/* ⚠⚠ SABİT GENİŞLİKLER — süs değil, kullanılabilirlik düzeltmesi
+          (10.09).
+
+          Buradaki üç değer de sürekli değişiyor: `video —` → `video
+          512ms`, `tahmin` → `ara değerleme`, ve öneri düğmesi gelip
+          gidiyor. Genişlikleri içeriğe bağlı olduğu için üst şeridin
+          TAMAMI her saniye sağa sola kayıyordu; kullanıcının bildirdiği
+          şikâyet buydu ("o yazı dönüşünce soldaki butonlar sağa
+          kayıyor").
+
+          Çözüm bir yerleşim düzeltmesi: her değişken alana EN UZUN
+          içeriğine yetecek sabit bir yer ayrılıyor. Düğme yokken de
+          yeri korunuyor (`invisible`, `hidden` değil — `hidden`
+          yerleşimden çıkarır ve kaymayı geri getirirdi). */}
       <div className="flex items-center gap-2 font-mono text-[10px] text-muted">
-        <span title="Videonun ölçülen gecikmesi">
+        <span className="w-[74px]" title="Videonun ölçülen gecikmesi">
           video {video === null ? '—' : `${Math.round(video)}ms`}
         </span>
         <span className="text-line">·</span>
-        <span title="Analiz yolunun ölçülen gecikmesi (sunucu raporluyor)">
+        <span
+          className="w-[80px]"
+          title="Analiz yolunun ölçülen gecikmesi (sunucu raporluyor)"
+        >
           analiz {ai === null ? '—' : `${Math.round(ai)}ms`}
         </span>
         <span
-          className={interpolating ? 'text-ok' : 'text-warn'}
+          className={`w-[78px] ${interpolating ? 'text-ok' : 'text-warn'}`}
           title={
             interpolating
               ? 'Video analizden geride — kutular iki gerçek ölçüm arasında ARA DEĞERLENİYOR'
@@ -108,25 +93,17 @@ export function SyncControl() {
         </span>
       </div>
 
-      {suggestion !== null && suggestion !== buffer && (
+      <div className="w-[92px]">
         <button
-          onClick={() => setBuffer(suggestion)}
+          onClick={() => suggestion !== null && setBuffer(suggestion)}
           title="Analiz gecikmesini aşacak tampon — ara değerlemeyi devreye sokar"
-          className="rounded-md border border-ok/40 px-2 py-0.5 text-[10px] text-ok hover:bg-ok/10"
+          className={`w-full rounded-md border border-ok/40 px-2 py-0.5 text-[10px] text-ok hover:bg-ok/10 ${
+            suggestion !== null && suggestion !== buffer ? '' : 'invisible'
+          }`}
         >
-          öner: {suggestion} ms
+          öner: {suggestion ?? 0} ms
         </button>
-      )}
-
-      <button
-        onClick={toggleTrace}
-        title="Çizilen kutunun konumunu kaydeder; takılmayı sayısal incelemek için"
-        className={`rounded-md border px-2 py-0.5 text-[10px] ${
-          tracing ? 'border-bad/50 text-bad' : 'border-line text-muted hover:text-ink'
-        }`}
-      >
-        {tracing ? '● kaydı bitir' : 'iz kaydet'}
-      </button>
+      </div>
     </div>
   )
 }

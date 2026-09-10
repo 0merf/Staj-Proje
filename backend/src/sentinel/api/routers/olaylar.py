@@ -87,6 +87,10 @@ KLIP_DESENI = re.compile(
 # sessizce boş sonuç dönmeyi de engelliyor.
 KAMERA_DESENI = r"^[A-Za-z0-9_-]{1,32}$"
 TUR_DESENI = r"^[a-z_]{1,32}$"
+# Ciddiyet KAPALI bir küme — biçim değil, TAM LİSTE doğrulanıyor.
+# Üç değerin dışında bir şey gelirse sorgu boş dönerdi ve kullanıcı
+# "olay yok" sanırdı; burada 422 ile açıkça reddediliyor.
+CIDDIYET_DESENI = r"^(attention|warning|alarm)$"
 
 
 @router.get("")
@@ -96,16 +100,29 @@ async def olay_listesi(
     camera: Annotated[str | None, Query(pattern=KAMERA_DESENI)] = None,
     tur: Annotated[str | None, Query(pattern=TUR_DESENI)] = None,
     saat: Annotated[int | None, Query(ge=1, le=24 * 90)] = 24,
+    ciddiyet: Annotated[str | None, Query(pattern=CIDDIYET_DESENI)] = None,
+    bas: Annotated[float | None, Query(ge=0)] = None,
+    bit: Annotated[float | None, Query(ge=0)] = None,
 ) -> dict[str, Any]:
     """Olay geçmişi — en yeniden eskiye.
 
     `saat`: kaç saat geriye bakılacağı. Üst sınır 90 gün, çünkü ham
     satırlar zaten 30 gün sonra siliniyor (`db/schema.py · SAKLAMA_GUN`)
     ve daha uzun bir aralık istemek boşuna tarama demek.
+
+    `bas`/`bit`: belirli bir zaman penceresi (unix saniye). Verilirse
+    `saat` yok sayılır. Zaman çizelgesinde bir hücreye tıklandığında
+    tam o saatin olaylarını getirmek için eklendi.
     """
     try:
         kayitlar = await depo.son_olaylar(
-            limit=limit, camera=camera, tur=tur, saat=saat
+            limit=limit,
+            camera=camera,
+            tur=tur,
+            saat=saat,
+            ciddiyet=ciddiyet,
+            bas=bas,
+            bit=bit,
         )
     except Exception as exc:
         # ⚠ İstisna metni ISTEMCIYE VERİLMİYOR (PLAN §11.1 / G09).

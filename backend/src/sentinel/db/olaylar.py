@@ -172,12 +172,21 @@ async def son_olaylar(
     camera: str | None = None,
     tur: str | None = None,
     saat: float | None = None,
+    ciddiyet: str | None = None,
+    bas: float | None = None,
+    bit: float | None = None,
 ) -> list[dict[str, Any]]:
     """Olay geçmişini sorgular — operatörün 'dün gece ne oldu' sorusu.
 
     ⚠ Parametreler BAĞLANIYOR, birleştirilmiyor. Filtreler kullanıcı
     girdisinden geliyor ve bu bir SQL enjeksiyon yüzeyi (PLAN §11.1
     Öncelik-1). Sütun adları sabit, yalnızca değerler dışarıdan.
+
+    ⚠ `bas`/`bit` (unix saniye) 10.09'da eklendi. Sebep: zaman
+    çizelgesindeki bir hücre "cam-13, saat 14:00" demek ve o hücreye
+    tıklayınca TAM O SAATİN olayları gerekiyor. `saat` parametresi
+    yalnızca "son N saat" diyebiliyordu, geçmişte bir PENCERE
+    seçilemiyordu — çizelge bu yüzden tıklanamaz bir ısı haritasıydı.
     """
     kosullar = ["TRUE"]
     parametreler: dict[str, Any] = {"limit": max(1, min(limit, 1000))}
@@ -187,7 +196,21 @@ async def son_olaylar(
     if tur:
         kosullar.append("tur = :tur")
         parametreler["tur"] = tur
-    if saat is not None:
+    if ciddiyet:
+        kosullar.append("ciddiyet = :ciddiyet")
+        parametreler["ciddiyet"] = ciddiyet
+    # ⚠ `bas`/`bit` verilirse `saat` YOK SAYILIYOR: ikisi birlikte
+    # "son 24 saat İÇİNDE ama 3 gün önceki şu saat" gibi hiçbir zaman
+    # sonuç veremeyecek bir koşul üretirdi. Belirli pencere isteyen
+    # daha spesifiktir, o kazanır.
+    if bas is not None or bit is not None:
+        if bas is not None:
+            kosullar.append("ts >= to_timestamp(:bas)")
+            parametreler["bas"] = float(bas)
+        if bit is not None:
+            kosullar.append("ts < to_timestamp(:bit)")
+            parametreler["bit"] = float(bit)
+    elif saat is not None:
         kosullar.append("ts >= now() - make_interval(hours => :saat)")
         parametreler["saat"] = int(saat)
 

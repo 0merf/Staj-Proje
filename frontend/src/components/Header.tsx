@@ -1,6 +1,7 @@
 import { useStore } from '../store'
 import { ViewModeToggle } from './ViewModeToggle'
 import { SyncControl } from './SyncControl'
+import { TemaSecici } from './TemaSecici'
 
 interface HeaderProps {
   kullanici: { kullanici_adi: string; rol: string }
@@ -27,7 +28,11 @@ export function Header({ kullanici }: HeaderProps) {
           <span className="text-xs text-muted">{connection}</span>
         </div>
 
-        <span className="text-xs text-muted">
+        {/* ⚠ `tabular-nums` + sabit genişlik: sayaç saniyede bir
+            değişiyor ve orantılı rakamlarla her değişimde metnin
+            genişliği oynuyordu — yanındaki gezinme düğmelerini
+            kaydırarak. */}
+        <span className="w-[190px] shrink-0 text-xs tabular-nums text-muted">
           {ready}/{cameras.length} kamera yayında · {playing} açık
         </span>
 
@@ -68,10 +73,12 @@ export function Header({ kullanici }: HeaderProps) {
                 if (all === on) toggle(c.name)
               })
             }}
-            className="rounded-md border border-line px-3 py-1 text-xs text-muted hover:text-ink"
+            className="w-[104px] shrink-0 rounded-md border border-line px-3 py-1 text-xs text-muted hover:text-ink"
           >
             {playing === cameras.length ? 'hepsini kapat' : 'hepsini aç'}
           </button>
+
+          <TemaSecici />
 
           {/* ⚠ ROL GÖSTERİLİYOR — süs değil.
               Operatör hangi yetkiyle bağlı olduğunu bilmeli: `viewer`

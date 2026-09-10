@@ -26,6 +26,25 @@ const KULLANICI = process.env.E2E_USER ?? 'e2e-test'
 const PAROLA = process.env.E2E_PASSWORD ?? ''
 const DIZIN = '../docs/report/screenshots'
 
+// ⚠ VARSAYILAN OLARAK KOŞMUYOR (10.09).
+//
+// Kullanıcının isteği: *"her koşuda yeni bir görsel çıkarmaya gerek
+// yok, kapat o özelliği. 1 kere çıkarırız, eğer değiştirirsek yeniden
+// çıkartırız — ama NİHAİ MODELDEN çıkarttırırız."*
+//
+// Haklı ve gerekçesi teknik: her koşu 7.6 MB'lık yeni PNG üretiyordu
+// ve hepsi git geçmişine kalıcı olarak giriyordu. Dahası rapora
+// girecek görüntülerin TEK bir sürümden gelmesi gerekiyor; her koşuda
+// yenilemek, raporun farklı bölümlerinde farklı sistem sürümlerinin
+// görüntülerini kullanma riski taşıyor.
+//
+// Elle üretmek için:
+//   $env:EKRAN_GORUNTUSU="1"; npx playwright test e2e/ekran-goruntusu.spec.ts
+test.skip(
+  !process.env.EKRAN_GORUNTUSU,
+  'Rapor görüntüleri elle üretiliyor — EKRAN_GORUNTUSU=1 ile çalıştırın.',
+)
+
 // ⚠ Baskı için 2× ölçek: makale PDF'inde 1× görüntüler bulanık çıkıyor.
 test.use({ viewport: { width: 1600, height: 950 }, deviceScaleFactor: 2 })
 

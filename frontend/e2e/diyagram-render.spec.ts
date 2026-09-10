@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 /**
@@ -99,10 +99,30 @@ for (const dosya of dosyalar) {
       console.log(`\n⚠ ${dosya} — SAGA TASAN METINLER:\n  ${tasanlar.join('\n  ')}`)
     }
 
-    await page.locator('svg').screenshot({
-      path: resolve(KAYNAK, dosya.replace('.svg', '.png')),
-    })
+    // ─── PNG: her koşuda DEĞİL, istenince ───
+    //
+    // Kullanıcı isteği: her koşuda yeni görsel üretmek git geçmişini
+    // şişiriyor. Ama PNG'yi hiç yenilememek de bir tuzak: 10.09'da
+    // SVG düzenlendi, PNG yenilenmedi ve commit'lenen görüntü koddan
+    // BİR DÜZENLEME GERİDEYDİ. Gözle bakmasam fark etmeyecekti.
+    //
+    // Çözüm: doğrulama HER koşuda çalışıyor (ucuz ve değerli), PNG
+    // yalnızca istenince yazılıyor — ama PNG'nin BAYAT olup olmadığı
+    // her koşuda denetleniyor. Böylece ne çöp üretiliyor ne de sessiz
+    // bir tutarsızlık kalıyor.
+    const pngYolu = resolve(KAYNAK, dosya.replace('.svg', '.png'))
+    if (process.env.EKRAN_GORUNTUSU) {
+      await page.locator('svg').screenshot({ path: pngYolu })
+    } else {
+      const svgZaman = statSync(resolve(KAYNAK, dosya)).mtimeMs
+      const pngZaman = existsSync(pngYolu) ? statSync(pngYolu).mtimeMs : 0
+      expect(
+        pngZaman,
+        `${dosya}: PNG, SVG'den ESKİ (bayat). Yenilemek için: ` +
+          `EKRAN_GORUNTUSU=1 npx playwright test e2e/diyagram-render.spec.ts`,
+      ).toBeGreaterThanOrEqual(svgZaman)
+    }
 
-    expect(tasanlar, `${dosya}: metin viewBox disina tasiyor`).toEqual([])
+    expect(tasanlar, `${dosya}: metin taşıyor ya da üstü örtülüyor`).toEqual([])
   })
 }
