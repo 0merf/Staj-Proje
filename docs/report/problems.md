@@ -7513,3 +7513,99 @@ düşük skorluyor. Erken uyarının olmamasının mekanizması bu.
 Bu kontrol bu projede **iki kez** atlandı: P-79'da alarm oranı test
 videolarının uzunluğunu ölçüyordu, burada da avans kliplerin kırpma
 biçimini ölçüyor. İkisi de "sistemin davranışı" diye raporlanacaktı.
+
+---
+
+### P-85 · ⭐⭐ Alarm etiketlemesi tamamlandı (19 bağımsız olay) — ve zayıf halka BELİRLENDİ: `fall` 0.60
+
+**Tarih:** 10.09.2026 · **Faz:** 3
+
+**Ne yapıldı:** P-77'de 40 klibin 19'u etiketlenmişti (12 bağımsız
+olay, kesinlik 0.917). Kalan 21 klip aynı ölçütle, **sırayla** (seçmece
+yok) etiketlendi.
+
+---
+
+#### 1. Sonuç: ham sayı ile bağımsız sayı arasında 2 KAT fark
+
+```
+ham etiketli alarm : 39 · doğru 37 → kesinlik 0.949  [0.831, 0.986]
+BAĞIMSIZ olay      : 19 · doğru 17 → kesinlik 0.895  [0.686, 0.971]
+```
+
+⚠ **Raporda kullanılacak sayı 0.895'tir**, 0.949 değil. Ham sayı
+döngüyle şişik: 39 alarm, `video_pts % video_süresi` ile
+tekilleştirilince **19 bağımsız olaya** düşüyor (P-79). Örneğin
+cam-16'nın 5 saniyelik videosundaki **tek** düşme, 8 ayrı alarm
+üretmişti.
+
+⚠ Güven aralığı **Wilson** yöntemiyle: n=19 ve p=0.895 gibi uç bir
+oranda normal yaklaşım 1'i aşan bir üst sınır verir — yani imkânsız
+bir değer raporlanırdı.
+
+---
+
+#### 2. ⭐⭐ ASIL BULGU: hata TEK BİR KURALDA toplanıyor
+
+```
+tür     bağımsız n   doğru   kesinlik            %95 GA
+crowd            9       9       1.00      [0.70, 1.00]
+risk             5       5       1.00      [0.57, 1.00]
+fall             5       3       0.60      [0.23, 0.88]   ⬅
+loitering        0       —          —      ölçülemez (kural gereği)
+```
+
+**İki yanlış alarmın ikisi de `fall`, ve ikisi de AYNI mekanizma:**
+
+| olay | görülen | kuralın gördüğü |
+|---|---|---|
+| cam-19 · 344.1 sn | bir kişi **eğilip çanta alıyor** | en/boy oranı yükseldi + gövde eğildi |
+| cam-17 · 40.8 sn | donut dükkânında **öne eğilmiş oturan** kişi (devrilmiş sandalyeler var ama kimse yerde değil) | aynı |
+
+⭐ Bu, rastgele dağılmış bir hata değil: `fall` kuralı **"yere düşmek"
+ile "eğilmek/çömelmek"** arasında ayrım yapamıyor. Kuralın kendi
+koruması (*"eğim değişim hızı > 40°/sn"*) hızlı eğilme hareketlerini
+elemeye yetmiyor.
+
+> ⭐⭐ **Toplu kesinlik (0.895) bu bulguyu GİZLİYORDU.** Tür bazında
+> kırılım olmasaydı "sistem %90 kesinlikte" denip geçilecekti; oysa
+> iki kural kusursuz, biri zayıf. İyileştirme bütçesi nereye
+> harcanacaksa cevabı bu tablo veriyor.
+
+---
+
+#### 3. Etiketleme sırasında öğrenilen bir yöntem notu
+
+3 numaralı klipte ilk bakışta *"2-3 kişi var, kalabalık değil"* denip
+**0** verilecekti. Yakınlaştırılınca **4 kişi** sayıldı (ikili yürüyen
++ arabadaki + kenardaki) ve ölçüt sağlanıyordu.
+
+> ⚠ Küçük/uzak nesnelerde **küçültülmüş bir kontak sayfasına bakarak
+> "yok" demek**, sistemi haksız yere cezalandırıyor. Sınırdaki her
+> karar için tam çözünürlükte bakıldı.
+
+Bir klip **boş** bırakıldı: cam-17 `running` — sahne kesikli bir
+derleme ve 150 karenin 6'sından motosikletli/yaya ayrımı yapılamadı.
+Kural gereği analiz dışı (*"emin değilim"i 0 saymak cezalandırmak, 1
+saymak kayırmaktır*).
+
+---
+
+#### 4. Raporda kullanılacak ifade
+
+> *"Sistemin ürettiği 40 alarmın 39'u elle etiketlenmiştir (1 alarm
+> için karar verilememiş ve analiz dışı bırakılmıştır). Kaynak
+> videolar sonsuz döngüde yayınlandığından alarmlar döngüdeki konuma
+> göre tekilleştirilmiş ve 39 alarmın 19 bağımsız olaya karşılık
+> geldiği görülmüştür. Bu 19 olay üzerinden kesinlik (precision)
+> 0.895'tir (%95 Wilson aralığı [0.686, 0.971]). Tür bazında
+> kırılımda hata tek bir kuralda toplanmaktadır: `crowd` 9/9,
+> `risk` 5/5, `fall` 3/5. Her iki yanlış alarm da düşme kuralının
+> eğilme/çömelme hareketini düşme sanmasından kaynaklanmaktadır.
+> `loitering` türü, 45 saniyelik bir kuralın 6 saniyelik klipten
+> doğrulanamaması nedeniyle bu yöntemle ölçülememiştir ve '0 örnek'
+> olarak raporlanmaktadır."*
+
+⚠ Sınırlar değişmedi: bu bir **kesinlik** ölçümüdür, duyarlılık
+ölçülmemiştir; tek değerlendirici vardır ve ikinci gözle uyum
+hesaplanmamıştır.
