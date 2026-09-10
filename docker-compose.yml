@@ -206,6 +206,42 @@ services:
     networks: [sentinel]
     logging: *default-logging
 
+  # ─── CADDY — TLS sonlandırma + TEK GİRİŞ NOKTASI (G18) ───
+  #
+  # ⭐ P-37'nin TAM çözümü. O gün bulunmuştu: API kimlik doğrulamalı,
+  # VİDEO değil. Uygulanan çözüm bir ağ kısıtıydı (port 127.0.0.1'e
+  # bağlandı) — bu erişimi sınırlar, açığı KAPATMAZ.
+  #
+  # Caddy videoyu API ile aynı kökene alıyor ve `forward_auth` ile
+  # her WHEP isteğini önce FastAPI'ye sorduruyor. Yetkisizse video
+  # baytı bile akmıyor.
+  #
+  # ⚠ Varsayılan KAPALI (`tls` profili). Sebep: geliştirme sırasında
+  # tarayıcı sertifika uyarısı iterasyonu yavaşlatıyor ve mevcut
+  # ölçüm betikleri düz HTTP kullanıyor. Açmak:
+  #     docker compose --profile tls up -d caddy
+  #     -> https://127.0.0.1:8443/app
+  caddy:
+    image: caddy:2.10-alpine
+    container_name: sentinel-caddy
+    profiles: ["tls"]
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${CADDY_HTTPS_PORT:-8443}:8443"
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    # ⚠ API bu makinede NATIVE çalışıyor (Docker'da değil).
+    # Linux'ta `host.docker.internal` otomatik gelmez; açıkça
+    # eşleniyor ki yapılandırma taşınabilir olsun.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - mediamtx
+    networks: [sentinel]
+    logging: *default-logging
+
   # ─── GARAGE — S3 uyumlu klip arşivi ───
   #  ⚠ Tek seferlik "layout" kurulumu gerektirir → Hafta 4'e ertelendi.
   #    Klipler Gün 19'a kadar gerekmiyor; o zamana dek STORAGE_BACKEND=localfs.
@@ -350,6 +386,8 @@ networks:
     driver: bridge
 
 volumes:
+  caddy-data:
+  caddy-config:
   postgres-data:
   prometheus-data:
   grafana-data:

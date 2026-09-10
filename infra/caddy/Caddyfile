@@ -1,0 +1,103 @@
+# ═══════════════════════════════════════════════════════════════
+#  SENTINEL — TLS sonlandırma ve TEK GİRİŞ NOKTASI (G18)
+# ═══════════════════════════════════════════════════════════════
+#
+# ⭐ NEDEN BU DOSYA VAR — P-37'NİN TAM ÇÖZÜMÜ
+# --------------------------------------------
+# 30.08.2026'da bulunan açık: **API kimlik doğrulamalıydı ama VİDEO
+# değildi.** `/api/*` uçları JWT istiyordu; MediaMTX'in WHEP video
+# akışı (:8889) ise hiçbir kimlik sormuyordu. Kamera görüntüsünü
+# alabilmek için tek gereken adresi bilmekti.
+#
+# O gün uygulanan çözüm bir **ağ kısıtıydı**: port `127.0.0.1`'e
+# bağlandı. Bu, açığı kapatmaz — yalnızca erişimi aynı makineyle
+# sınırlar. Makinede çalışan herhangi bir süreç (ya da tarayıcıdaki
+# herhangi bir sekme) hâlâ görüntüyü çekebilir.
+#
+# ⚠ Gözetim sisteminde bu ayrım önemli: kayıtları koruyup canlı
+# görüntüyü açık bırakmak, kapıyı kilitleyip pencereyi açık bırakmaktır.
+#
+# ⭐⭐ ASIL ÇÖZÜM: video da API ile AYNI KÖKENDEN geçsin ve aynı
+# kimlik doğrulamasını kullansın. Bu dosyanın yaptığı bu.
+#
+# NASIL ÇALIŞIYOR
+# ---------------
+#   tarayıcı ──HTTPS──> Caddy ─┬─ /api, /ws, /app  → FastAPI
+#                              └─ /<kamera>/whep   → forward_auth → MediaMTX
+#                                    │
+#                                    └─ önce FastAPI'ye sorulur:
+#                                       "bu istek yetkili mi?"
+#
+# ⭐ Çerez tabanlı kimlik burada işe yarıyor: token `HttpOnly` çerezde
+# (`sentinel_token`) ve tarayıcı onu AYNI KÖKENE otomatik gönderiyor.
+# Video ayrı bir portta kalsaydı çerez gitmezdi ve bu tasarım mümkün
+# olmazdı. Yani "tek giriş noktası" bir kolaylık değil, kimlik
+# doğrulamasının ÖN KOŞULU.
+#
+# ⚠ NEDEN `tls internal`
+# Caddy kendi yerel sertifika otoritesini kullanıyor. Let's Encrypt
+# gerçek bir alan adı ister; bu bir yerel kurulum. Tarayıcı sertifikayı
+# tanımadığı için ilk açılışta uyarı gösterir — bu beklenen davranış
+# ve raporda böyle yazılacak. Üretimde gerçek alan adı + otomatik
+# ACME ile aynı yapılandırma değişmeden çalışır.
+#
+# ⚠ NEDEN 8443
+# 443 ayrıcalıklı port; Windows'ta yönetici gerektirebiliyor ve bu
+# makinede başka bir proje (`teknofest`) çalışıyor. 8443 çakışmasız.
+{
+	# Yönetim API'si kapalı: gereksiz bir yüzey.
+	admin off
+	# Yerel CA ile sertifika üretimi.
+	local_certs
+}
+
+https://127.0.0.1:8443, https://localhost:8443 {
+	# ─── Güvenlik başlıkları ───
+	# Bunlar tarayıcıya "bu siteye nasıl davranacağını" söylüyor.
+	# Uygulama kodunda yapılamayacak korumalar; tam da vekilin işi.
+	header {
+		# HTTPS'i zorunlu kıl (tarayıcı bir daha HTTP denemesin)
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		# MIME tipi tahminini kapat — XSS vektörü
+		X-Content-Type-Options "nosniff"
+		# Çerçeveye gömülmeyi engelle (clickjacking)
+		X-Frame-Options "DENY"
+		# Yönlendiren bilgisini sızdırma
+		Referrer-Policy "no-referrer"
+		# Sunucu sürümünü gizle
+		-Server
+	}
+
+	# ═══ VİDEO — KİMLİK DOĞRULAMASI ZORUNLU ═══
+	#
+	# MediaMTX'in WHEP uçları: /<kamera>/whep (POST) ve
+	# /<kamera>/whep/<oturum> (PATCH/DELETE).
+	@video path_regexp video ^/(cam-[A-Za-z0-9._-]+)/whep
+
+	handle @video {
+		# ⭐ İSTEK ÖNCE FastAPI'YE SORULUYOR.
+		# `/api/v1/auth/ben` oturum geçerliyse 200, değilse 401 döner.
+		# 2xx dışında bir yanıt gelirse Caddy isteği MediaMTX'e HİÇ
+		# iletmez — video baytı bile akmaz.
+		#
+		# ⚠ `host.docker.internal`: API bu makinede NATIVE çalışıyor
+		# (Docker'da değil — CLAUDE.md §2 geliştirme stratejisi).
+		forward_auth host.docker.internal:8001 {
+			uri /api/v1/auth/ben
+			# Çerez ve köken başlıkları aynen taşınıyor; kimlik
+			# doğrulaması onlara bakıyor.
+			header_up Cookie {http.request.header.Cookie}
+			header_up Origin {http.request.header.Origin}
+		}
+		reverse_proxy mediamtx:8889
+	}
+
+	# ═══ Diğer her şey: API + panel ═══
+	handle {
+		reverse_proxy host.docker.internal:8001 {
+			# WebSocket yükseltmesi için gerekli başlıklar Caddy
+			# tarafından otomatik taşınıyor.
+			header_up X-Forwarded-Proto https
+		}
+	}
+}

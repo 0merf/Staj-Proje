@@ -6402,3 +6402,121 @@ diyordu:
 > hızını %50 düşürmektedir. Video karelerinin hiçbiri düşmemiştir
 > (0/8254). Ölçüm başsız tarayıcıda yapılmıştır."*
 
+
+---
+
+### P-76 · ⭐⭐⭐ G18 — video ARTIK gerçekten kimlik doğrulamasından geçiyor (P-37'nin tam çözümü)
+
+**Tarih:** 10.09.2026 · **Faz:** 3
+
+**Bağlam:** Makale siber güvenlik ve teknoloji alanında yayımlanacak.
+Kullanıcının tespiti: *"bu Caddy dediğin şey siber güvenlikle alakalı
+olmuyor mu?"* — evet, ve projedeki en büyük açık kalıntısını kapatıyor.
+
+---
+
+#### Açık neydi (P-37, 30.08.2026)
+
+**API kimlik doğrulamalıydı, VİDEO değildi.** `/api/*` uçları JWT
+istiyordu; MediaMTX'in WHEP video akışı (`:8889`) hiçbir kimlik
+sormuyordu. Kamera görüntüsünü almak için tek gereken **adresi
+bilmekti**.
+
+O gün uygulanan çözüm bir **ağ kısıtıydı**: port `127.0.0.1`'e
+bağlandı.
+
+⚠ **Bu açığı kapatmaz, erişimi sınırlar.** Makinede çalışan herhangi
+bir süreç — ya da tarayıcıdaki herhangi bir sekme — hâlâ canlı
+görüntüyü çekebilirdi. Gözetim sisteminde bu ayrım önemli: kayıtları
+koruyup canlı görüntüyü açık bırakmak, kapıyı kilitleyip pencereyi
+açık bırakmaktır.
+
+---
+
+#### ⭐ Çözümün anahtarı: TEK KÖKEN, kolaylık değil ZORUNLULUK
+
+Token `HttpOnly` çerezde tutuluyor (`sentinel_token`) — bilinçli bir
+karar: JavaScript okuyamadığı için XSS tokenı çalamıyor.
+
+⭐ Ama bunun bir sonucu var: **tarayıcı çerezi yalnızca AYNI KÖKENE
+gönderir.** Video ayrı portta (`:8889`) kaldığı sürece çerez oraya
+gitmez ve video kimlik doğrulaması **mimari olarak imkânsızdır.**
+
+Yani "tek giriş noktası" bir düzen tercihi değil, kimlik
+doğrulamasının **ön koşulu**. Caddy'nin buradaki rolü TLS'ten önce bu.
+
+```
+tarayıcı ──HTTPS──> Caddy ─┬─ /api, /ws, /app  → FastAPI
+                           └─ /<kamera>/whep   → forward_auth → MediaMTX
+                                 │
+                                 └─ önce FastAPI'ye sorulur:
+                                    "bu istek yetkili mi?"  (401 ise
+                                    video baytı bile akmaz)
+```
+
+---
+
+#### ✅ İDDİA ÖLÇÜLDÜ — dört uçtan da
+
+```
+istek                                        sonuç
+─────────────────────────────────────────────────────────────
+doğrudan MediaMTX'e kimliksiz WHEP (:8889)    400  ⬅ isteği KABUL ediyor
+Caddy üzerinden KİMLİKSİZ WHEP                401  ⬅ ENGELLENDİ ✅
+Caddy üzerinden GİRİŞ YAPMIŞ WHEP             400  ⬅ GEÇTİ ✅
+Caddy üzerinden panel                         200  ✅
+Caddy üzerinden API (kimliksiz)               401  ✅
+```
+
+⚠ **"Giriş yapmış → 400" iyi bir sonuçtur:** Caddy isteği geçirdi ve
+MediaMTX geçerli bir SDP teklifi bekliyordu (biz `v=0` gönderdik).
+Yetki kapısı açıldı demektir.
+
+⭐ **Her iki yön de sınandı.** Yalnızca "kimliksiz engelleniyor mu"
+bakmak yarım bir testtir: meşru kullanıcıyı da kesen bir güvenlik
+katmanı **"güvenli ama çalışmıyor"** durumudur ve o da bir arızadır.
+
+---
+
+#### Ek olarak uygulanan güvenlik başlıkları
+
+Uygulama kodunda yapılamayacak, tam da vekilin işi olan korumalar:
+
+| başlık | ne yapıyor |
+|---|---|
+| `Strict-Transport-Security` | tarayıcı bir daha HTTP denemesin |
+| `X-Content-Type-Options: nosniff` | MIME tahminini kapat (XSS vektörü) |
+| `X-Frame-Options: DENY` | çerçeveye gömülmeyi engelle (clickjacking) |
+| `Referrer-Policy: no-referrer` | yönlendiren bilgisi sızmasın |
+| `-Server` | sunucu sürümünü gizle |
+
+Dördü de E2E testiyle doğrulanıyor (`e2e/g18-tls.spec.ts`, 4/4 geçti).
+
+---
+
+#### ⚠ Kararlar ve sınırlar — dürüstçe
+
+1. **Varsayılan KAPALI** (`--profile tls`). Sebep: geliştirmede
+   sertifika uyarısı iterasyonu yavaşlatıyor ve mevcut ölçüm betikleri
+   düz HTTP kullanıyor. Açmak: `docker compose --profile tls up -d caddy`.
+   ⚠ Bu, "güvenlik özelliği yazıldı ama açılmadı" durumudur ve raporda
+   böyle yazılacak — sessizce kapalı bırakmak P-42'nin hatası olurdu.
+
+2. **`tls internal`** — Caddy'nin yerel CA'sı. Let's Encrypt gerçek bir
+   alan adı ister; bu yerel bir kurulum. Tarayıcı ilk açılışta uyarı
+   gösterir. **Üretimde aynı yapılandırma, gerçek alan adıyla ve
+   otomatik ACME ile değişmeden çalışır.**
+
+3. **Port 8443**, 443 değil: 443 ayrıcalıklı ve bu makinede başka bir
+   proje çalışıyor.
+
+4. ⚠ **Kimlik doğrulaması yalnızca "oturum geçerli mi" diye soruyor,
+   "bu kullanıcı BU kameraya bakabilir mi" diye sormuyor.** Kamera
+   bazlı yetki (G05) kullanıcı kararıyla kapsam dışı; `forward_auth`
+   yapısı onu eklemeye hazır (uç değiştirmek yeter).
+
+**Öğrenilen ders:** Bir açığı **ağ katmanında** kapatmak (portu
+`127.0.0.1`'e bağlamak) çoğu zaman "kapatıldı" diye kaydedilir. Ama
+ağ kısıtı bir **erişim sınırı**dır, kimlik doğrulaması değildir. İkisi
+farklı sorulara cevap verir: "kim ulaşabilir" ile "kim yetkilidir".
+
