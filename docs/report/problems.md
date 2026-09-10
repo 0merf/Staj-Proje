@@ -7609,3 +7609,166 @@ saymak kayırmaktır*).
 ⚠ Sınırlar değişmedi: bu bir **kesinlik** ölçümüdür, duyarlılık
 ölçülmemiştir; tek değerlendirici vardır ve ikinci gözle uyum
 hesaplanmamıştır.
+
+---
+
+### P-86 · ⭐⭐⭐ Tek giriş noktası kuruldu ama NELERİN geçtiği sayılmamıştı — `/metrics` dışarıya açıktı
+
+**Tarih:** 10.09.2026 · **Faz:** 3
+
+**Neden bakıldı:** Kullanıcı makaleye geçmeden önce son bir denetim
+istedi: *"kontrol etmediğimiz, bakmadığımız, test etmediğimiz bir yer
+bir kod, analiz falan kalmadı değil mi?"* Kaldığı ortaya çıktı.
+
+---
+
+#### 0. ⚠ ÖNCE DENETİM ARACIM EKSİK ÖLÇTÜ
+
+İlk deneme, FastAPI'nin `app.routes` listesini gezip her ucun kimlik
+bağımlılığını yazdırmaktı. Sonuç: **10 uç**, üçü korumasız.
+
+Ama olay ve oturum uçları listede YOKTU. Sebep: yeni FastAPI
+sürümünde `include_router` ile eklenen router'lar `_IncludedRouter`
+nesnesi olarak duruyor ve iç yolları bu gezinmede görünmüyor.
+
+> ⭐⭐ **Denetim aracı yüzeyin yarısını göremiyordu ve bunu
+> söylemiyordu.** "10 uç var, 3'ü açık" diye rapor edilseydi, sayı
+> makul göründüğü için kimse şüphelenmezdi. P-60'ın (`queue_depth`
+> yayında ama kimse bakmıyor) ve P-65'in (`pipeline_capacity`
+> kapasiteyi ölçmüyor) aynı ailesi.
+
+**Düzeltme yaklaşımı — nesne grafiğini kurcalamak yerine GERÇEĞİ
+ölçmek:** OpenAPI şemasından tüm yollar alındı ve her birine
+**kimliksiz gerçek istek** atıldı. Ne iddia edildiği değil, ne
+döndüğü ölçüldü.
+
+```
+OpenAPI'de 16 yol · kimliksiz yanıtlar
+  13 uç → 401 / 422   ✅
+  GET /api/v1/system/live → 200   (canlılık probu, veri yok — kabul)
+  GET /metrics            → 200   ⬅ AÇIK
+  GET /                   → 200   ⬅ AÇIK
+```
+
+---
+
+#### 1. Bulgu: iç uçlar TEK GİRİŞ NOKTASINDAN dışarı sızıyordu
+
+Caddy (G18) yapılandırmasının sonunda bir "diğer her şeyi geçir"
+bloğu var:
+
+```caddy
+handle {
+    reverse_proxy host.docker.internal:8001
+}
+```
+
+Bu blok, FastAPI'de kimlik doğrulaması olmayan uçları da dışarı
+açıyordu. Doğrulandı (Caddy üzerinden, `https://localhost:8443`):
+
+```
+GET /metrics  → 200 · 218 satır Prometheus verisi
+GET /         → 200 · geliştirme durum paneli
+```
+
+⚠ **Gözetim sisteminde `/metrics` zararsız değil.** İçeriği:
+kamera adları, kamera başına alarm sayıları, kare hızları, uçtan uca
+gecikme histogramları, uç nokta envanteri ve trafik sayaçları. Yani
+sisteme **hiç girmeden** "kaç kamera var, hangisi ne kadar alarm
+üretiyor, sistem ne kadar yüklü, hangi uçlar mevcut" öğrenilebiliyordu.
+Bu bir veri sızıntısı değil ama bir **keşif (reconnaissance)**
+yüzeyidir ve saldırının ilk adımını ucuzlatır.
+
+> ⭐⭐⭐ **P-37 tekrarlıyor, bir katman yukarıda.** 30.08'de bulgu
+> şuydu: *"API korunuyordu ama VİDEO korunmuyordu."* Çözüm tek giriş
+> noktası kurmaktı. Bugünkü bulgu: **tek giriş noktası kuruldu ama o
+> noktadan NELERİN geçtiği sayılmadı.** Kapıyı tek noktaya indirmek,
+> o noktadan geçenleri saymayı gerektirir — aksi hâlde tek kapı,
+> unutulan her şeyi de içeri alır.
+
+---
+
+#### 2. Düzeltme ve NEDEN Caddy katmanında
+
+```caddy
+@ic_uclar path /metrics /metrics/*
+handle @ic_uclar { respond 404 }
+redir / /app/ 302
+```
+
+⚠ Kimlik doğrulamasını FastAPI'ye koymak **yanlış katman** olurdu:
+Prometheus `127.0.0.1:8001/metrics` adresini **doğrudan** kazıyor,
+Caddy'den geçmiyor. FastAPI'de koruma, gözlemlenebilirliği bozardı.
+Doğru katman **dışarıya bakan** katmandır.
+
+Kök için 404 yerine **yönlendirme** seçildi: açığı kapatırken
+kullanıcıyı doğru yere (panele) götürüyor.
+
+**Doğrulandı:**
+
+```
+Caddy üzerinden          düzeltme öncesi → sonrası
+  /metrics                     200      →  404  ✅
+  /                            200      →  302 → /app/  ✅
+  /app/                        200      →  200  (bozulmadı)
+  /api/v1/cameras              401      →  401  (bozulmadı)
+Prometheus (127.0.0.1:8001)
+  /metrics                     200      →  200 · 218 satır  ✅ kazıma sağlam
+```
+
+`e2e/g18-tls.spec.ts` içine nöbetçi test eklendi.
+
+---
+
+#### 3. Aynı denetimde çıkan İKİNCİ bulgu: 11 ÖLÜ AYAR (P-42 tekrarı)
+
+`.env`'deki 69 ayarın **11'i kodda hiç okunmuyordu.** İkisi doğrudan
+yanlış beyandı:
+
+| ayar | okuyan biri ne sanır | gerçek |
+|---|---|---|
+| `CLIP_URL_SECRET`, `CLIP_URL_EXPIRE_SECONDS` | imzalı/süreli klip URL'leri var (G21) | **yok** — klip ucu JWT + beyaz liste ile korunuyor |
+| `RATE_LIMIT_API_PER_MINUTE` | tüm API hız sınırlı | **yalnızca GİRİŞ** sınırlı (`RATE_LIMIT_LOGIN_PER_MINUTE` gerçekten çalışıyor) |
+| `S3_*` (5 adet) | klipler Garage/S3'te | **yerel diskte** (`data/clips`) — Garage hiç bağlanmadı |
+| `BOOTSTRAP_ADMIN_*` | ilk admin otomatik oluşuyor | `scripts/kullanici_ekle.py` ile elle |
+| `CAMERAS_PER_WORKER` | kamera bölüştürme üretimde | üretimde tek worker (P-69) |
+
+⚠ Ayarlar **silinmedi**, `⛔ KODDA OKUNMUYOR — <sebep>` açıklamasıyla
+yorum satırına alındı. Sebep: bunlar aynı zamanda **kapsam dışı
+bırakılan özelliklerin kaydı**; silmek o kaydı da yok ederdi.
+Kalan 58 ayarın tamamının kodda karşılığı olduğu doğrulandı.
+
+> ⭐ **Bir ayarın `.env`'de bulunması, okunduğu anlamına gelir.**
+> Okunmayan bir ayar yalnızca ölü kod değil, **yanlış bir güvenlik
+> beyanıdır**: `.env`'i okuyan bir denetçi "imzalı klip URL'leri
+> yapılandırılmış" sonucuna varır.
+
+---
+
+#### 4. Aynı denetimde çıkan ÜÇÜNCÜ bulgu: Garage belge/kod sapması
+
+`CLAUDE.md §4` mimari şeması *"Alarm Motoru → klip (Garage)"* diyor
+ve teknoloji tablosunda Garage "nesne deposu" olarak listeli.
+**Gerçek:** klipler yerel diske yazılıyor, Garage konteyneri
+`--profile storage` altında ve hiç başlatılmadı; kodda tek bir S3
+çağrısı yok.
+
+Bu, mimari kural 0'ın (*"belgede yazan ile kodda olan aynı olmalı"*)
+ihlali. Kapsam dışı bırakma kararı **gerekçesiyle** yazıldı:
+tek makineli bir kurulumda nesne deposu bir dağıtık depolama
+sorununu çözüyor; bu projede o sorun yok ve klip erişimi zaten
+kimlik doğrulamalı bir API ucundan geçiyor.
+
+---
+
+#### 5. Öğrenilen ders
+
+> ⭐⭐ **"Güvenli mi?" sorusunun cevabı, yüzeyin SAYILMASIYLA başlar.**
+> Bu projede güvenlik hep tek tek kontrollerle ilerledi (parola
+> hash'i, JWT, RBAC, path traversal…) ve her biri doğru yapıldı.
+> Eksik olan, **envanterdi**: hangi uçlar var, hangisi dışarı bakıyor,
+> hangisi kimlik istiyor. Envanter çıkarılınca açık ilk denemede
+> göründü.
+
+Ve envanteri çıkaran aracın kendisi de sınanmalı: ilk sürümü uçların
+yarısını görmüyordu ve bunu söylemiyordu.

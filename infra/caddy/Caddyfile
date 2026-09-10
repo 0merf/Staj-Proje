@@ -68,6 +68,40 @@ https://127.0.0.1:8443, https://localhost:8443 {
 		-Server
 	}
 
+	# ═══ İÇ UÇLAR — DIŞARIYA KAPALI (10.09, P-86) ═══
+	#
+	# ⚠ BULUNAN AÇIK: Aşağıdaki `handle` bloğu "diğer HER ŞEYİ"
+	# FastAPI'ye geçiriyordu. FastAPI'de kimlik doğrulaması olmayan
+	# üç uç var ve ikisi buradan dışarı sızıyordu:
+	#
+	#   GET /metrics  → 200, 218 satır Prometheus verisi
+	#   GET /         → 200, geliştirme durum paneli
+	#
+	# `/metrics` bir gözetim sisteminde zararsız değil: kamera
+	# adlarını, kamera başına alarm sayılarını, kare hızlarını,
+	# gecikmeleri ve uç nokta envanterini veriyor. Yani sisteme hiç
+	# girmeden "kaç kamera var, hangisi ne kadar alarm üretiyor,
+	# sistem ne kadar yüklü" öğrenilebiliyordu — saldırgan için
+	# keşif (reconnaissance) bilgisi.
+	#
+	# ⭐ Neden Caddy'de kapatılıyor, FastAPI'de değil:
+	# Prometheus `127.0.0.1:8001/metrics` adresini DOĞRUDAN kazıyor,
+	# Caddy'den geçmiyor. Kimlik doğrulamasını FastAPI'ye koymak
+	# kazımayı da bozardı. Doğru katman, dışarıya bakan katmandır.
+	#
+	# ⚠ P-37'nin dersi burada tekrarlanıyor: "API korunuyor" demek
+	# "her uç korunuyor" demek değil. Tek giriş noktası kurmak
+	# yetmiyor — o noktadan NELERİN geçtiği de sayılmalı.
+	@ic_uclar path /metrics /metrics/*
+	handle @ic_uclar {
+		respond 404
+	}
+
+	# Kök: geliştirme paneli yerine gerçek panele yönlendir.
+	# (404 vermek yerine yönlendirmek, açığı kapatırken kullanıcıyı
+	# da doğru yere götürüyor.)
+	redir / /app/ 302
+
 	# ═══ VİDEO — KİMLİK DOĞRULAMASI ZORUNLU ═══
 	#
 	# MediaMTX'in WHEP uçları: /<kamera>/whep (POST) ve

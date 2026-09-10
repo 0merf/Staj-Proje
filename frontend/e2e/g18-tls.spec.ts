@@ -75,6 +75,36 @@ test.describe('G18 — TLS ve video kimlik doğrulaması', () => {
     expect(b['server'] ?? '').not.toContain('Caddy')
   })
 
+  test('İÇ UÇLAR dışarıya sızmıyor: /metrics ve / (P-86)', async ({ request }) => {
+    // ⚠⚠ BU TEST BİR AÇIĞIN NÖBETÇİSİ.
+    //
+    // 10.09'da bulundu: Caddy'nin "diğer her şeyi geçir" bloğu
+    // FastAPI'nin kimlik doğrulaması OLMAYAN uçlarını da dışarı
+    // açıyordu. `/metrics` tek giriş noktasından 200 dönüyordu ve
+    // 218 satır Prometheus verisi veriyordu: kamera adları, kamera
+    // başına alarm sayıları, kare hızları, uç nokta envanteri.
+    //
+    // Bir gözetim sisteminde bu keşif (reconnaissance) bilgisidir —
+    // sisteme hiç girmeden "kaç kamera var, hangisi ne kadar alarm
+    // üretiyor" öğrenilebiliyordu.
+    //
+    // ⭐ P-37'nin dersi tekrar: "API korunuyor" ≠ "her uç korunuyor".
+    const olcum = await request.get(`${TLS_TABAN}/metrics`)
+    expect(
+      olcum.status(),
+      `/metrics dışarıya AÇIK (${olcum.status()}) — Caddyfile'daki @ic_uclar bloğu kalkmış olabilir`,
+    ).toBe(404)
+
+    // Kök, geliştirme durum panelini sunuyordu; artık gerçek panele
+    // yönlendiriyor (404 yerine yönlendirme: açığı kapatırken
+    // kullanıcıyı doğru yere götürüyor).
+    const kok = await request.get(`${TLS_TABAN}/`, { maxRedirects: 0 })
+    expect([301, 302, 307, 308], `kök yönlendirmiyor (${kok.status()})`).toContain(
+      kok.status(),
+    )
+    expect(kok.headers()['location'] ?? '').toContain('/app')
+  })
+
   test('panel HTTPS üzerinden açılıyor ve giriş çalışıyor', async ({ page }) => {
     await page.goto(`${TLS_TABAN}/app`)
     await page.locator('input[autocomplete="username"]').fill(KULLANICI)

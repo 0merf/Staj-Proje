@@ -1,11 +1,21 @@
 {
+  "olculdu": "2026-09-10",
+  "kaynak": "data\\annotations\\alarm_etiketleri_20260910.csv",
+  "tolerans_s": 6.0,
   "ham_alarm": 39,
   "ham_dogru": 37,
   "ham_kesinlik": 0.9487,
+  "ham_ga95": [
+    0.8311,
+    0.9858
+  ],
   "bagimsiz_olay": 19,
   "bagimsiz_dogru": 17,
   "bagimsiz_kesinlik": 0.8947,
-  "tolerans_s": 6.0,
+  "bagimsiz_ga95": [
+    0.6861,
+    0.9706
+  ],
   "tur_bazinda": {
     "crowd": {
       "n": 9,
@@ -32,20 +42,6 @@
       ]
     }
   },
-  "not": "Kesinlik ölçüsüdür, duyarlılık DEĞİL. Kaynak videolar döngüde olduğu için ham sayı şişkindir; bağımsız olay sayısı (kamera, tür, döngüdeki konum) üçlüsüne göre tekilleştirilmiştir.",
-  "ham_ga95": [
-    0.8311,
-    0.9858
-  ],
-  "bagimsiz_ga95": [
-    0.6861,
-    0.9706
-  ],
-  "yontem_ga": "Wilson skor aralığı — küçük n'de normal yaklaşımdan doğru (17/19 gibi uçlarda normal aralık 1'i aşar)",
-  "onceki_olcum": {
-    "tarih": "10.09 sabah",
-    "bagimsiz_olay": 12,
-    "kesinlik": 0.917,
-    "not": "n 12'den 19'a çıktı; nokta tahmin 0.917 -> 0.895"
-  }
+  "yontem_ga": "Wilson skor aralığı",
+  "not": "KESİNLİK ölçüsüdür, duyarlılık DEĞİL: yalnızca sistemin ürettiği alarmlara bakıldı, kaçırılan olaylar ölçülmedi. Kaynak videolar döngüde olduğu için ham sayı şişkindir; raporlanacak değer bağımsız olay sayısı üzerinden hesaplanandır."
 }
