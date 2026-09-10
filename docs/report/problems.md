@@ -6872,3 +6872,94 @@ düzeneğinin bir özelliğine bağlıysa, o ölçüt **taşınabilir değildir*
 Sayıyı raporlamak yetmez; hangi koşulda üretildiğini raporlamak
 gerekir — yoksa okuyucu onu kendi kurulumuyla kıyaslar ve yanılır.
 
+
+---
+
+### P-80 · ⭐⭐ K6 YENİDEN ÖLÇÜLDÜ (0.869 ✅) — ve doğruluk hiç değişmemiş
+
+**Tarih:** 10.09.2026 · **Faz:** 3
+
+**Neden yeniden ölçüldü:** Kullanıcının gerekçesi doğru: *"kod değişti,
+mimari değişti, birçok şey değişti — normal olarak yapmamız gerekir
+değil mi?"* K6'nın son ölçümü 05.09'daydı ve o tarihten sonra P-56'dan
+P-79'a yirmiden fazla değişiklik yapıldı.
+
+---
+
+#### Sonuç: 0.869 — ve önemli olan bu sayının DEĞİŞMEMESİ
+
+```
+kosu                fuzyon  katman_a   a+EMA  kural  saldırg   kare  klip
+01.09 (P-39 önce)    0.483     0.493      —   0.500    0.465   1439     9
+01.09 (P-39 sonra)   0.867     0.789      —   0.500    0.465   1439     9
+05.09                0.867     0.789   0.860  0.500    0.465   1439     9
+10.09 (BUGÜN)        0.869     0.789   0.860  0.500    0.457   1439     9
+```
+
+⭐ **Katman A tam olarak aynı: 0.789.** Füzyon 0.867 → 0.869 (gürültü
+içinde). Saldırganlık 0.465 → 0.457.
+
+**Bu, beklenen ve iyi bir sonuçtur.** Aradaki değişikliklerin tamamı
+performans ve altyapıydı:
+
+| değişiklik | ne değiştirdi |
+|---|---|
+| P-58 BLAS thread havuzu | CPU kullanımı (8 çekirdek → 0.38) |
+| P-63 yanlış model | **saldırganlık** yolunu (K5) |
+| P-69 slot havuzu 48→96 | gecikme (−%59) |
+| P-67 kamera bölüştürme | verim |
+| P-73 ifade eşiği/BGR | **ifade** yolunu |
+| P-74 B-kareleri | panel görüntüsünü |
+
+⚠ Hiçbiri Katman A'nın anomali skorunu üreten yola dokunmuyordu — ve
+ölçüm bunu doğruladı. **Bir düzeltmenin neyi değiştirmediğini
+göstermek, neyi değiştirdiğini göstermek kadar değerlidir:** yan etki
+olmadığının kanıtı.
+
+⭐ Saldırganlıktaki 0.465 → 0.457 düşüşü P-63 ile tutarlı: model
+değişti. Ama zaten şans seviyesinin altında olduğu için Avenue'da
+anlamı yok (aşağıya bakınız).
+
+---
+
+#### ⚠ Füzyon sınavı YİNE aynı sonucu verdi (P-41 doğrulandı)
+
+```
+katman_a (ham)          : 0.789
+katman_a + EMA (kontrol): 0.860   ⬅ tek sinyal, füzyonla AYNI yumuşatma
+füzyon (5 sinyal + EMA) : 0.869
+fark                    : +0.009
+```
+
+**Kazancın neredeyse tamamı EMA yumuşatmasından, sinyal
+birleştirmeden değil.** P-41'de bulunmuştu, bugün bağımsız bir koşuda
+tekrarlandı.
+
+⚠ Bu "füzyon işe yaramaz" demek DEĞİL: bu veri setinde beş sinyalden
+ikisi ölü (`kural` AUC **tam 0.500**, `saldırganlık` 0.457 — şans
+altı). Ölü sinyalleri birleştirmek bir şey kazandıramaz. Füzyonun
+gerçek kazancı K7'de (gürültü bastırma), K6'da değil.
+
+---
+
+#### ⚠ Bu ölçümün sınırları
+
+1. **Yalnızca 9 klip / 1439 kare / 69 anomali karesi (%4.8).** 12 test
+   klibi yer gerçeği olmadığı için ölçüm dışı bırakıldı. Örneklem
+   küçük; güven aralığı hesaplanmadı (P-64'teki bootstrap buraya da
+   uygulanmalıydı — açık iş).
+
+2. **`kural` bileşeni AUC tam 0.500** — Katman B kuralları Avenue'da
+   hiç ateşlemiyor. Avenue'nun anomalileri çanta fırlatma / bisiklet /
+   ters yön; bizim boru hattımız yalnızca **insan** tespit ediyor.
+   K6'yı taşıyan neredeyse tümüyle Katman A ve bu, kapsamın dürüst
+   sınırı olarak raporlanacak.
+
+3. **Isınma zorunlu:** profil 16 eğitim klibiyle 115 720 gözleme
+   ısıtılıyor. Isıtılmadan ölçüm AUC 0.500 veriyordu (P-39).
+
+**Öğrenilen ders:** Büyük bir değişiklik dizisinden sonra bir kriteri
+yeniden ölçmenin değeri, sayının değişmesinde değil — **değişmediğini
+görebilmekte.** Ölçmeseydik "bunca şey değişti, acaba doğruluk bozuldu
+mu?" sorusu açık kalırdı ve rapor onu taşıyamazdı.
+
