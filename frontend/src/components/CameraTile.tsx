@@ -284,7 +284,12 @@ export function CameraTile({ camera, webrtcBase }: Props) {
   }, [playing, camera.name])
 
   return (
-    <div className="overflow-hidden rounded-xl border border-line bg-panel">
+    <div
+      data-testid="kamera-kutucugu"
+      data-kamera={camera.name}
+      data-hazir={camera.ready ? '1' : '0'}
+      className="overflow-hidden rounded-xl border border-line bg-panel"
+    >
       <div className="flex items-center gap-2 px-3 py-2 text-sm">
         <span
           className={`h-2 w-2 rounded-full ${camera.ready ? 'bg-ok' : 'bg-bad'}`}

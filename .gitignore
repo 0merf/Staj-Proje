@@ -180,3 +180,10 @@ benchmarks/**/*.pkl
 backend/src/sentinel/api/static/app/
 *.tsbuildinfo
 benchmarks/traces/
+
+# E2E test kullanicisi parolasi (P-71) - ASLA commitlenmez
+frontend/.env.e2e
+
+# Playwright cikti dizinleri
+frontend/test-results/
+frontend/playwright-report/

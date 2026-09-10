@@ -83,7 +83,7 @@ function Panel({ kullanici }: { kullanici: { kullanici_adi: string; rol: string 
           Gözetim sisteminde "başka sayfadaydım" bir mazeret değil. */}
       <div className="flex min-h-0 flex-1">
         {sayfa === 'izgara' && (
-          <main className="grid flex-1 auto-rows-min gap-3 overflow-y-auto p-4 sm:grid-cols-2 lg:grid-cols-3">
+          <main data-testid="kamera-izgarasi" className="grid flex-1 auto-rows-min gap-3 overflow-y-auto p-4 sm:grid-cols-2 lg:grid-cols-3">
             {cameras.map((camera) => (
               <CameraTile key={camera.name} camera={camera} webrtcBase={webrtcBase} />
             ))}

@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
@@ -32,5 +33,17 @@ export default defineConfig(({ command }) => ({
     // Üretimde FastAPI'nin servis ettiği dizine derleniyor.
     outDir: '../backend/src/sentinel/api/static/app',
     emptyOutDir: true,
+  },
+  test: {
+    // ⚠ E2E DOSYALARI VITEST'TEN AYRILIYOR
+    //
+    // Vitest varsayılanı her `*.spec.ts`'i topluyor ve `e2e/` altındaki
+    // Playwright testlerini de çalıştırmaya kalkıyordu:
+    //     Error: Playwright Test did not expect test.beforeAll()
+    //
+    // İki koşucu, iki farklı iş: Vitest saf birim (altyapısız, ~2 sn),
+    // Playwright CANLI sisteme bağlanan zincir testi. Karıştırmak,
+    // birim testlerini ayakta sistem gerektirir hâle getirirdi.
+    exclude: ['e2e/**', 'node_modules/**', 'dist/**'],
   },
 }))
