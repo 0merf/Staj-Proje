@@ -7392,3 +7392,124 @@ kalktı.
 için istenen başlangıç ile gerçek başlangıç arasında 1-2 saniyeye
 kadar sapma olabilir (kliplerin 13.2-13.9 sn çıkması bundandır;
 istenen pencere 15 sn).
+
+---
+
+### P-84 · ⭐⭐⭐ K8 yeniden ölçüldü — ve ÖLÇÜTÜN TAVANI hedefin ALTINDA çıktı
+
+**Tarih:** 10.09.2026 · **Faz:** 3
+
+**Neden yeniden ölçüldü:** Kullanıcının gerekçesi: *"tüm sistem
+bittiğine göre K8'i yeniden ölçelim."* Son K8 ölçümü 07.09'daydı ve o
+tarihten sonra P-63 (üretimdeki yanlış model) düzeltildi — saldırganlık
+yolu doğrudan değişti. Ayrıca P-81 güven aralığı hesabını eklemişti
+ama K8 o hesapla **hiç koşturulmamıştı.**
+
+⚠ Kullanıcı ayrıca etiketlerin bayat olabileceğinden şüphelendi
+(*"onlar nerenin klibi, eski klipler olabilir"*). Kontrol edildi:
+`data/annotations/rwf_k8.json` · RWF-2000 **val/fight** · 07.09'da
+elle, boru hattı skorları görülmeden işaretlenmiş. Bayat değil, geçerli.
+
+---
+
+#### 1. Sonuç: ❌ tutmuyor — ama artık BELİRSİZLİĞİYLE
+
+Boru hattı durdurulmuş hâlde, 20 kavga + 30 normal klip:
+
+```
+ eşik  yakala  kaçır   geç  medyan avans             %95 GA   y.alarm
+ 0.10       7     13     6      -1.10 sn     [-1.87, -0.07]      13%
+ 0.15       4     16     4      -1.72 sn     [-2.13, -0.60]       7%
+ 0.20       2     18     2      -3.72 sn     [-4.30, -3.13]       3%
+ 0.25+      0     20     0             —                  —      ≤3%
+```
+
+⭐⭐ **Güven aralığının TAMAMI sıfırın altında** (0.10 eşiğinde
+[-1.87, -0.07]). Bu, öncekinden daha güçlü bir ifade: sistem "erken
+uyarmıyor" değil, **istatistiksel olarak GEÇ kalıyor.** Nokta tahmini
+tek başına bunu söyleyemezdi.
+
+⚠ 07.09'daki bağımsız ölçüm (cam-15h, UBI-Fights) aynı yöne işaret
+etmişti: tespit +1.76 sn GEÇ. **İki farklı veri seti, aynı sonuç.**
+
+---
+
+#### 2. ⭐⭐⭐ ASIL BULGU: HEDEF BU VERİ SETİNDE ULAŞILAMAZ
+
+Bir klipte elde edilebilecek **azami** avans, kavganın başlamasına
+kadarki bağlamdır — klip başlamadan önce uyarı veremezsiniz. Etiket
+dosyasından hesaplandı:
+
+```
+kavga başlangıç saniyeleri (20 klip, elle işaretlenmiş):
+0.23 0.23 0.23 0.23 0.27 0.27 0.27 0.27 0.30 0.33
+0.83 0.90 0.90 1.03 1.10 1.17 1.27 1.43 3.03 3.07
+
+medyan tavan : 0.58 sn
+azami tavan  : 3.07 sn
+K8 hedefi    : 2.00 sn
+hedefin FİZİKSEL olarak mümkün olduğu klip: 2/20
+```
+
+⭐⭐⭐ **Kusursuz bir dedektör — her klibin İLK KARESİNDE ateşleyen bir
+dedektör — bile medyan 0.58 sn avans üretirdi ve K8'i geçemezdi.**
+
+RWF-2000 klipleri zaten kavganın üstüne kırpılmış: veri seti "şiddet
+var mı yok mu" sorusu için tasarlanmış, "ne kadar önce" sorusu için
+değil. Ortalama 0.58 saniyelik bir pistte 2 saniyelik kalkış ölçülemez.
+
+> ⭐⭐ **Bu bir dedektör başarısızlığı değil, bir ÖLÇÜT–VERİ
+> uyuşmazlığıdır.** Ölçüt, veri setinin fiziksel olarak veremeyeceği
+> bir şeyi istiyor. P-49 (ölçütün TANIMI olayı yanlış çiziyordu) ve
+> P-50 (yer gerçeği BAŞKA bir soruyu yanıtlıyordu) ile aynı aile —
+> üçüncü hâli: **ölçütün TAVANI hedefin altında.**
+
+---
+
+#### 3. Peki ölçülebildiği yerde ne oldu?
+
+Tavanın yeterli olduğu tek verimiz cam-15h (UBI-Fights, olay öncesi
+**58 saniye** bağlam). Orada hedef fiziksel olarak mümkündü ve
+07.09'da ölçüldü:
+
+```
+model kavgayı normalden AYIRIYOR       : oran 2.756 ✅
+ama TIRMANMA penceresi normalden DÜŞÜK : 0.184 ⟷ 0.282  (oran 0.653)
+tespit gecikmesi                        : +1.76 sn (GEÇ)
+```
+
+⭐ Yani model şiddeti tanıyor ama **şiddete GİDEN tırmanmayı
+tanımıyor** — hatta tırmanma anları sıradan normal anlardan daha
+düşük skorluyor. Erken uyarının olmamasının mekanizması bu.
+
+---
+
+#### 4. Raporda kullanılacak dürüst ifade
+
+> *"K8 (≥2 sn erken uyarı) sağlanamamıştır. İki bağımsız ölçüm aynı
+> sonuca ulaşmıştır: RWF-2000 val alt kümesinde medyan avans −1.10 sn
+> (%95 GA [−1.87, −0.07]), UBI-Fights cam-15h kaydında ise tespit
+> olayın 1.76 saniye sonrasında gerçekleşmiştir. Ancak RWF-2000
+> ölçümünün yorumlanmasında kritik bir sınır vardır: klipler şiddet
+> anının üzerine kırpılmış olduğundan, kavga öncesi bağlamın medyanı
+> 0.58 saniyedir ve 20 klibin yalnızca 2'sinde 2 saniyelik bir avans
+> fiziksel olarak mümkündür. Dolayısıyla bu veri setinde ölçütün
+> tavanı hedefin altındadır ve sonuç, dedektörün başarısından bağımsız
+> olarak olumsuz çıkmak zorundadır. Kriterin anlamlı biçimde
+> ölçülebildiği tek kayıtta (58 saniyelik olay öncesi bağlam) ise
+> mekanizma ölçülmüştür: model şiddeti normalden ayırmakta (oran
+> 2.756) fakat şiddete giden tırmanma penceresini ayırmamaktadır
+> (0.184'e karşı 0.282)."*
+
+---
+
+#### 5. Öğrenilen ders
+
+> ⭐⭐ **Bir ölçütü raporlamadan önce, o ölçütün TAVANINI hesapla.**
+> "Hedef tutmadı" demek, ancak hedefin tutturulabilir olduğu
+> gösterildikten sonra bir bulgudur. Aksi hâlde ölçülen şey sistemin
+> performansı değil, veri setinin kurgusudur.
+
+Bu kontrol bu projede **iki kez** atlandı: P-79'da alarm oranı test
+videolarının uzunluğunu ölçüyordu, burada da avans kliplerin kırpma
+biçimini ölçüyor. İkisi de "sistemin davranışı" diye raporlanacaktı.
