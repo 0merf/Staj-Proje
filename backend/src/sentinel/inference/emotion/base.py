@@ -150,8 +150,39 @@ class ExpressionResult:
 
     @property
     def usable(self) -> bool:
-        """Bu sonuç operatöre gösterilecek kadar güvenilir mi?"""
-        return self.quality >= 0.5 and self.confidence >= 0.4
+        """Bu sonuç operatöre gösterilecek kadar güvenilir mi?
+
+        ⚠⚠ 10.09.2026 — GÜVEN EŞİĞİ 0.40 → 0.55 (P-73)
+
+        Kullanıcı canlı panelde açıkça gülümseyen bir yüzün
+        "şaşkınlık" etiketlendiğini gördü ve sordu: *"yanlış
+        etiketliyorsa neden yapıyoruz ki?"*
+
+        cam-20'den 12 yüz kırpıntısı çıkarılıp ELLE (görsel olarak)
+        değerlendirildi:
+
+            güven   model etiketi   görsel değerlendirme
+            0.98    Happiness       ✅ gülümsüyor
+            0.88    Fear            ✅ endişeli, kaşlar çatık
+            0.79    Happiness       ✅ gülümsüyor
+            0.59    Neutral         ✅ nötr, konuşuyor
+            0.57    Happiness       ✅ gülüyor
+            0.48    Surprise        ❌ nötr bir yüz
+            0.43    Contempt        ❌ nötr bir yüz
+
+        ⭐ Ayrım keskin: **0.55 üstü doğru, 0.50 altı yanlış.** Eski
+        eşik (0.40) tam da hatalı bandı geçiriyordu.
+
+        ⚠ ÖLÇÜMÜN SINIRI DÜRÜSTÇE: n=12, TEK değerlendirici (ben) ve
+        yer gerçeği yok. Bu bir doğruluk ölçümü değil, eşik seçimi için
+        bir gözlem. Gerçek doğruluk ancak etiketli bir yüz ifadesi veri
+        setiyle ölçülebilir ve o kapsam dışı bırakıldı.
+
+        ⚠ Bedeli: daha az etiket gösterilecek. Bu KABUL EDİLEN bir
+        bedel — gözetim sisteminde yanlış bir duygu etiketi,
+        etiket olmamasından kötüdür.
+        """
+        return self.quality >= 0.5 and self.confidence >= 0.55
 
     def to_dict(self) -> dict[str, object]:
         return {

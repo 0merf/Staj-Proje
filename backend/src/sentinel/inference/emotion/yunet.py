@@ -213,7 +213,25 @@ class EmotiEffExpressionClassifier:
         """Yüz listesini sınıflandırır: [(etiket, güven), ...]"""
         if not face_crops:
             return []
-        labels, scores = self._recognizer.predict_emotions(face_crops, logits=False)
+        # ⚠⚠ 10.09.2026 — KANAL SIRASI DÜZELTİLDİ (P-73)
+        #
+        # Boru hattı baştan sona **BGR**: PyAV `bgr24` veriyor, OpenCV
+        # BGR bekliyor, letterbox BGR taşıyor. Ama EmotiEffLib bir
+        # ImageNet ön işlemesi kullanan CNN sarıyor ve o modeller
+        # **RGB** ile eğitiliyor. Hiçbir yerde dönüşüm yoktu; modele
+        # kırmızı ile mavi kanalları YER DEĞİŞMİŞ yüzler gidiyordu.
+        #
+        # ⚠ Etkisi ölçüldü, abartılmamalı: 40 yüzlük örneklemde
+        # etiketlerin **%22'si** değişti (31/40 aynı kaldı). Yani hata
+        # gerçek ama sistemi tek başına bozmuyordu — asıl gürültü düşük
+        # güvenli tahminlerden geliyordu.
+        #
+        # ⭐ Yine de düzeltildi: bir modele eğitildiğinden farklı kanal
+        # sırasıyla girdi vermek, sonucu ölçülemez biçimde bozmaktır.
+        # "Fark küçük" bir gerekçe değil.
+        rgb_crops = [c[:, :, ::-1] if c.ndim == 3 and c.shape[2] == 3 else c
+                     for c in face_crops]
+        labels, scores = self._recognizer.predict_emotions(rgb_crops, logits=False)
         self.classified += len(face_crops)
 
         out: list[tuple[str, float]] = []

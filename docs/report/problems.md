@@ -6047,3 +6047,125 @@ aramak, yanlış yere emek harcamaktır. Ve bu projede açıklama, iki yıl
 boyunca kodun docstring'inde **yazılı** duruyordu — yazılı olması onu
 doğru yapmadı.
 
+
+---
+
+### P-73 · ⭐⭐ "Gülümseyen yüze şaşkınlık" — iki hata, biri benim aceleci teşhisim
+
+**Tarih:** 10.09.2026 · **Faz:** 3
+
+**Kullanıcının tespiti (canlı panelden ekran görüntüsüyle):** açıkça
+gülümseyen bir yüz **"şaşkınlık %100"** etiketlenmiş.
+
+> *"Yanlış etiketliyorsa neden yapıyoruz ki? Yüz duygu analizine
+> kesinlikle bak."*
+
+---
+
+#### 1. ⚠ İLK TEŞHİSİM YANLIŞTI — dağılıma bakıp hüküm verdim
+
+Canlı sayaçlara baktım:
+
+```
+cam-20 · 1222 sınıflandırma
+Happiness %27 · Surprise %22 · Contempt %19 · Neutral %15
+Fear %11 · Sadness %6 · Disgust %0
+```
+
+*"Altı sınıfa neredeyse eşit dağılmış — bu ayırt etmeyen bir modelin
+imzası"* dedim. **Yanlıştı.** Kırpıntıları diske döküp bakınca cam-20'nin
+**tek kişilik değil, çok kişilik bir yakın plan derlemesi** olduğu
+görüldü: farklı insanlar, farklı ifadeler. Dağılımın çeşitli olması
+videonun çeşitli olmasından.
+
+> ⭐ Bir dağılıma bakıp "model bozuk" demek, veriye bakmadan hüküm
+> vermektir. **Bakmak** on dakika sürdü ve teşhisi çevirdi.
+
+---
+
+#### 2. Gerçek hata #1: KANAL SIRASI (BGR → RGB dönüşümü YOKTU)
+
+Boru hattı baştan sona BGR (PyAV `bgr24`, OpenCV). EmotiEffLib ise
+ImageNet ön işlemesi kullanan bir CNN sarıyor — o modeller **RGB** ile
+eğitiliyor. `grep -rn "cvtColor.*RGB" inference/emotion/` **boştu**:
+hiçbir yerde dönüşüm yoktu.
+
+**Ölçüldü (40 yüz, aynı kırpıntılar iki kez):**
+
+```
+BGR (üretim)     ortalama güven 0.582
+RGB (dönüşümlü)  ortalama güven 0.594
+aynı etiketi veren: 31/40  (%78)
+→ etiketlerin %22'si DEĞİŞİYOR
+```
+
+⚠ **Etki abartılmamalı:** hata gerçek ama sistemi tek başına
+bozmuyordu. Yine de düzeltildi — bir modele eğitildiğinden farklı kanal
+sırasıyla girdi vermek sonucu **ölçülemez** biçimde bozar. *"Fark
+küçük"* bir gerekçe değil.
+
+---
+
+#### 3. Gerçek hata #2 (ASIL SEBEP): GÜVEN EŞİĞİ ÇOK DÜŞÜKTÜ
+
+12 yüz kırpıntısı diske döküldü ve **elle (görsel olarak)**
+değerlendirildi:
+
+| güven | model | görsel değerlendirme |
+|---|---|---|
+| 0.98 | Happiness | ✅ gülümsüyor |
+| 0.88 | Fear | ✅ endişeli, kaşlar çatık |
+| 0.79 | Happiness | ✅ gülümsüyor |
+| 0.59 | Neutral | ✅ nötr, konuşuyor |
+| 0.57 | Happiness | ✅ gülüyor |
+| **0.48** | **Surprise** | ❌ **nötr bir yüz** |
+| **0.43** | **Contempt** | ❌ **nötr bir yüz** |
+
+⭐⭐ **Ayrım keskin: 0.55 üstü doğru, 0.50 altı yanlış.** Ve eski eşik
+**0.40**'tı — yani tam da hatalı bandı geçiriyordu.
+
+**Düzeltme:** eşik 0.40 → **0.55**, hem sunucuda (`ExpressionResult.usable`)
+hem panelde (`EXPR_MIN_CONF`).
+
+⚠ İkisinin AYNI olması zorunlu: ayrışırlarsa panel, sunucunun
+güvenilmez saydığı bir etiketi gösterir ve iki taraf farklı şey iddia
+eder.
+
+⚠ **Bedeli kabul edildi:** daha az etiket gösterilecek. Gözetim
+sisteminde **yanlış bir duygu etiketi, etiket olmamasından kötüdür** —
+operatör ona göre karar verir.
+
+---
+
+#### 4. ⚠ Bu ölçümün sınırı — dürüstçe
+
+n = 12, **tek değerlendirici** (ben), yer gerçeği yok. Bu bir *doğruluk
+ölçümü değil*, eşik seçimi için bir **gözlem**. Gerçek doğruluk ancak
+etiketli bir yüz ifadesi veri setiyle (AffectNet, RAF-DB) ölçülebilir
+ve o kapsam dışı bırakıldı.
+
+Raporda böyle yazılacak: *"Sınıflandırıcının doğruluğu etiketli veri
+setiyle ölçülmemiştir; kullanılan güven eşiği, 12 örneklik görsel bir
+incelemeye dayanarak 0.40'tan 0.55'e yükseltilmiştir."*
+
+---
+
+#### 5. Yan düzeltme: etiket ekranda GÖRÜNMÜYORDU
+
+Etiket kutunun **altına** çiziliyordu (`y + h`). Kişi kadrajın alt
+yarısındaysa kutucuğun dışına taşıyor ve operatör onu hiç göremiyordu.
+Kullanıcı canlı panelde yakaladı.
+
+Yeni konum: kutunun **sağ üstü** (sol üstte zaten iz kimliği rozeti
+var). Kenara sığmazsa içeri alınıyor.
+
+> ⭐ Üç bulgunun üçü de **paneli açıp bakmakla** çıktı. Sistem 20 gündür
+> ölçülüyor ama ekranı kimse dikkatle izlememişti: etiket konumu,
+> yanlış etiketler ve (ayrıca) bir kameranın siyah kalması. **Ölçüm
+> aracı da gözle doğrulanmalı.**
+
+**Öğrenilen ders:** Bir sınıflandırıcının çıktısını "doğru mu" diye
+sorarken önce **girdisine bakmak** gerekiyor — kırpıntılar kusursuzdu,
+suçlu eşikti. Ve dağılım istatistiğine bakıp model hakkında hüküm
+vermek, veriye bakmamanın kestirme yoluydu.
+

@@ -44,7 +44,15 @@ export interface Expression {
  * Sunucudaki `ExpressionResult.usable` ile AYNI değerler olmalı
  * (backend `inference/emotion/base.py`). */
 export const EXPR_MIN_QUALITY = 0.5
-export const EXPR_MIN_CONF = 0.4
+// ⚠⚠ 10.09.2026 — 0.40 -> 0.55 (P-73). Sunucudaki `usable` ile AYNI
+// olmak zorunda; ayrışırlarsa panel sunucunun güvenilmez saydığı bir
+// etiketi gösterir (ya da tersi) ve iki taraf farklı şey iddia eder.
+//
+// Gerekçe: 12 yüzlük elle değerlendirmede 0.55 üstü etiketlerin hepsi
+// doğru, 0.50 altındakiler yanlıştı. Eski eşik tam hatalı bandı
+// geçiriyordu — kullanıcı panelde gülümseyen bir yüzde "şaşkınlık"
+// görüp sordu.
+export const EXPR_MIN_CONF = 0.55
 
 export interface FrameResult {
   type: 'frame'

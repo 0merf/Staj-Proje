@@ -237,7 +237,7 @@ export function CameraTile({ camera, webrtcBase }: Props) {
         ctx.fillStyle = '#06111f'
         ctx.fillText(label, x + 4, Math.max(11, y - 4))
 
-        // KADEME 2b — yüz ifadesi, kutunun ALTINDA.
+        // KADEME 2b — yüz ifadesi, kutunun SAĞ ÜSTÜNDE.
         //
         // ⚠ Yalnızca KALİTE VE GÜVEN eşiği geçilirse yazılıyor. Sunucu
         // her sınıflandırmayı gönderiyor (kalite skoruyla birlikte) ama
@@ -248,12 +248,28 @@ export function CameraTile({ camera, webrtcBase }: Props) {
         // Eşikler sunucudaki `ExpressionResult.usable` ile aynı.
         const expr = det.expr
         if (expr && expr.q >= EXPR_MIN_QUALITY && expr.conf >= EXPR_MIN_CONF) {
+          // ⚠ 10.09.2026 — ETİKET KUTUNUN ALTINDAYDI VE KESİLİYORDU
+          //
+          // Eski konum `y + h` (kutunun ALTI). Kişi kadrajın alt
+          // yarısındaysa etiket kutucuğun dışına taşıyor ve operatör
+          // onu HİÇ göremiyordu. Kullanıcı canlı panelde yakaladı:
+          // "cogu kamerada gozukmuyor".
+          //
+          // Yeni konum kutunun SAĞ ÜSTÜ. Sebep: sol üstte zaten iz
+          // kimliği + güven rozeti var (`#1 94%`), çakışırlardı.
+          //
+          // ⚠ Kenara sığmazsa İÇERİ alınıyor: sağ kenara yapışık bir
+          // kutuda etiket yine taşardı. Aynı düşünce dikeyde de var —
+          // kutu en üstteyse etiket kutunun İÇİNE kayıyor.
           const text = `${expr.tr} ${(expr.conf * 100).toFixed(0)}%`
           const ew = ctx.measureText(text).width + 8
+          const eh = 15
+          const ex = Math.min(x + w - ew, ctx.canvas.width - ew)
+          const ey = y - eh >= 0 ? y - eh : y
           ctx.fillStyle = '#1f6feb'
-          ctx.fillRect(x, y + h, ew, 15)
+          ctx.fillRect(Math.max(ex, 0), ey, ew, eh)
           ctx.fillStyle = '#f0f6fc'
-          ctx.fillText(text, x + 4, y + h + 11)
+          ctx.fillText(text, Math.max(ex, 0) + 4, ey + 11)
           ctx.fillStyle = ctx.strokeStyle
         }
 
