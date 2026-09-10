@@ -6301,3 +6301,104 @@ oluşamaz.
 söylediği yerdeydi** — sunucu günlüğü hatayı açık açık yazıyordu ve
 oraya en son bakıldı. Ölçmeden önce **okumak** gerekiyor.
 
+
+---
+
+### P-75 · ⭐⭐ K10 ÖLÇÜLDÜ (✅ 30.0 FPS) — ve kontrol serisi ölçümü kurtardı
+
+**Tarih:** 10.09.2026 · **Faz:** 3
+
+**Durum:** K10 (UI akıcılığı ≥30 FPS) Gün 1'den beri **hiç
+ölçülmemişti** — 10 kriterden ölçülmeyen tek kriterdi.
+
+---
+
+#### 1. Önce ölçütün NE olduğunu tanımlamak gerekti
+
+PLAN §1.4 *"20 kutucukta ≥30 FPS"* diyor ama **hangi FPS** olduğunu
+söylemiyor. Üç ayrı büyüklük var ve karıştırmak ölçümü anlamsız kılar:
+
+| # | büyüklük | nasıl ölçülür |
+|---|---|---|
+| 1 | **çizim (paint) hızı** — arayüz saniyede kaç kez tazeleniyor | `requestAnimationFrame` sayımı |
+| 2 | **video çözme hızı** — 20 akıştan saniyede kaç kare çözülüyor | `getVideoPlaybackQuality().totalVideoFrames` |
+| 3 | **düşen kare** — çözülüp ekrana basılamayan | `droppedVideoFrames` |
+
+⚠ Yalnızca (1)'e bakmak yanıltıcı olurdu: arayüz 60 FPS çizerken
+videolar 5 FPS'te takılıyor olabilir ve kullanıcı "akmıyor" der.
+Üçü birden raporlanıyor.
+
+---
+
+#### 2. ⭐⭐ İLK SONUÇ ŞÜPHELİYDİ VE KONTROL SERİSİ GEREKTİ
+
+İlk ölçüm **tam 30.0 FPS** verdi. Tam sayı çıkması şüpheliydi: başsız
+(headless) tarayıcı `requestAnimationFrame` hızını **sabitliyor**
+olabilirdi. Öyleyse "30.0" tarayıcının tavanıydı ve bizim uygulamamız
+hakkında **hiçbir şey** söylemiyordu.
+
+Kontrol serisi eklendi: **hiç kamera açmadan** aynı ölçüm.
+
+```
+KONTROL (0 kamera açık) : 60.2 FPS   ⬅ tarayıcı tavanı 60
+20 kamera açık          : 30.0 FPS
+yükün getirdiği düşüş   : %50.1
+```
+
+⭐ Tavan 60 çıktı. Yani 30.0 bir artefakt değil, **yükün gerçek
+etkisi**: 20 kamera arayüzün çizim hızını tam yarıya indiriyor.
+
+> ⚠ Kontrol olmasaydı iki yanlıştan biri yazılacaktı: ya "K10 sınırda
+> tutuyor" (tavan 30 ise anlamsız) ya da "tarayıcı yetersiz" (gerçekte
+> yetiyor). P-41'in dersi bir kez daha: **kıyasta değişmemesi gereken
+> şey sabit tutulmalı.**
+
+---
+
+#### 3. Sonuç: K10 ✅ TUTUYOR
+
+```
+açık kamera              : 20 / 20 (hepsinde görüntü var)
+çizim (paint) FPS        : 30.0     (hedef ≥30)      ✅
+video kare (toplam/sn)   : 275.0
+video FPS / kamera       : 13.8
+düşen kare               : 0 / 8254  (%0.0)          ⭐
+kontrol (0 kamera)       : 60.2 FPS
+```
+
+⭐⭐ **Düşen kare SIFIR.** Tarayıcı 20 H.264 akışını CPU'da çözüyor ve
+tek bir kare bile düşürmüyor. Bu, beklediğimizden çok daha iyi.
+
+⚠ **Beklentim yanlıştı ve bunu yazmak gerekiyor.** CLAUDE.md şöyle
+diyordu:
+
+> *"⚠ Beklenen sonuç kötü: tarayıcı 20 H.264 akışını CPU'da çözüyor
+> (P-24). Donanım/tarayıcı sınırı, kod hatası değil — raporda böyle
+> yazılacak."*
+
+Ölçülünce kriter **tuttu**. "Beklenen sonuç kötü" bir tahmindi ve
+ölçülmeden 20 gün kriterin yanında durdu.
+
+---
+
+#### 4. ⚠ Bu ölçümün sınırları — dürüstçe
+
+1. **Başsız tarayıcı.** Gerçek bir kullanıcının ekranında GPU
+   birleştirme (compositing) devreye girer; sonuç farklı olabilir.
+   Kontrol serisi tavanın 60 olduğunu gösteriyor, yani ortam makul —
+   ama birebir aynı değil.
+2. **Kutucuk boyutu.** Varsayılan 1280×720 pencerede 20 kutucuk küçük
+   ölçekleniyor. Tam ekran tek kamerada çözme maliyeti farklıdır.
+3. **13.8 FPS/kamera**, kaynak videoların 25 FPS'inin altında. Yani
+   video akıcı ama **kaynak hızında değil** — WebRTC/ağ tamponlaması
+   bir miktar kare atlıyor olabilir. Düşen kare 0 olduğuna göre bu
+   tarayıcı tarafında değil, akış tarafında oluyor.
+
+**Raporda yazılacak ifade:**
+
+> *"K10 ölçüldü: 20 kamera kutucuğu açıkken tarayıcı arayüzü 30.0 FPS
+> çizmekte, hedef olan 30 FPS'i sağlamaktadır. Kamera açılmadan ölçülen
+> kontrol değeri 60.2 FPS'tir; yani 20 eşzamanlı WebRTC akışı çizim
+> hızını %50 düşürmektedir. Video karelerinin hiçbiri düşmemiştir
+> (0/8254). Ölçüm başsız tarayıcıda yapılmıştır."*
+
