@@ -1,0 +1,102 @@
+{
+ "cam-01": {
+  "sure_sn": 300.1,
+  "cozunurluk": "1280x720",
+  "fps": 25.0
+ },
+ "cam-02": {
+  "sure_sn": 300.1,
+  "cozunurluk": "1280x720",
+  "fps": 25.0
+ },
+ "cam-03": {
+  "sure_sn": 300.1,
+  "cozunurluk": "1280x720",
+  "fps": 25.0
+ },
+ "cam-04": {
+  "sure_sn": 300.1,
+  "cozunurluk": "1280x720",
+  "fps": 25.0
+ },
+ "cam-05": {
+  "sure_sn": 300.1,
+  "cozunurluk": "1280x720",
+  "fps": 25.0
+ },
+ "cam-06": {
+  "sure_sn": 300.1,
+  "cozunurluk": "1280x720",
+  "fps": 25.0
+ },
+ "cam-07": {
+  "sure_sn": 70.5,
+  "cozunurluk": "1280x720",
+  "fps": 25.0
+ },
+ "cam-08": {
+  "sure_sn": 42.0,
+  "cozunurluk": "1280x720",
+  "fps": 25.0
+ },
+ "cam-09": {
+  "sure_sn": 300.0,
+  "cozunurluk": "1280x720",
+  "fps": 25.0
+ },
+ "cam-10": {
+  "sure_sn": 113.6,
+  "cozunurluk": "960x720",
+  "fps": 25.0
+ },
+ "cam-11": {
+  "sure_sn": 113.6,
+  "cozunurluk": "960x720",
+  "fps": 25.0
+ },
+ "cam-12": {
+  "sure_sn": 113.6,
+  "cozunurluk": "960x720",
+  "fps": 25.0
+ },
+ "cam-13": {
+  "sure_sn": 113.6,
+  "cozunurluk": "900x720",
+  "fps": 25.0
+ },
+ "cam-14": {
+  "sure_sn": 113.6,
+  "cozunurluk": "900x720",
+  "fps": 25.0
+ },
+ "cam-15": {
+  "sure_sn": 128.1,
+  "cozunurluk": "640x360",
+  "fps": 25.0
+ },
+ "cam-16": {
+  "sure_sn": 5.4,
+  "cozunurluk": "960x720",
+  "fps": 25.0
+ },
+ "cam-17": {
+  "sure_sn": 300.1,
+  "cozunurluk": "960x720",
+  "fps": 25.0
+ },
+ "cam-18": {
+  "sure_sn": 328.0,
+  "cozunurluk": "1280x720",
+  "fps": 25.0
+ },
+ "cam-19": {
+  "sure_sn": 345.0,
+  "cozunurluk": "1280x720",
+  "fps": 25.0
+ },
+ "cam-20": {
+  "sure_sn": 65.4,
+  "cozunurluk": "1280x720",
+  "fps": 25.0
+ }
+}

@@ -6673,3 +6673,202 @@ yazılacak.
 çıktı. Aynı olayı beş kez saymak, örneklem büyüklüğünü beş kat
 abartmaktır.
 
+
+---
+
+### P-78 · ⭐⭐ Öğrenilen "kamera normali" UNUTMUYOR — sahne değişince kalıcı olarak yanlış kalıyor
+
+**Tarih:** 10.09.2026 · **Faz:** 3
+
+**Kullanıcının sorusu:** *"Bu anomalilerde her kameranın kendi normali
+farklı olur şeyi vardı; şimdi bazı kameralar değişti, biz o kameraların
+normalini de öğretmemiz gerekmiyor mu?"*
+
+⭐ Haklıydı — ve sorun ölçülebilir çıktı.
+
+---
+
+#### Mimari kural 7 ve onun sessiz varsayımı
+
+> *"Her kameranın normali ayrı öğrenilir. Koridorda koşmak anomali,
+> spor salonunda değil."*
+
+Doğru bir kural. Ama içinde **yazılmamış bir varsayım** var: *kameranın
+sahnesi değişmez.*
+
+`NormalProfilDeposu` kümülatif istatistik tutuyor — ziyaret ızgarası,
+kişi sayısı, hız, yön, durağanlık. **Hiçbir unutma/yaşlandırma
+mekanizması yok:** `toplam_ornek` en baştan artıyor, eski örnekler
+hiç ağırlık kaybetmiyor.
+
+---
+
+#### Ölçülen kanıt: cam-15'in profili İKİ VİDEONUN KARIŞIMI
+
+cam-15'in kaynak videosu 07.09.2026'da değiştirildi (CLAUDE.md'de
+kayıtlı):
+
+| | eski cam-15 (F_74) | yeni cam-15 (F_45) |
+|---|---|---|
+| kamera | elde telefon | sabit CCTV |
+| **kişi/kare** | **6.5** | **3.0** |
+
+Profilde ölçülen:
+
+```
+cam-15 · toplam_ornek 745 102 · kişi_sayısı ortalaması 4.01
+```
+
+⭐⭐ **4.01, 6.5 ile 3.0'ın arasında.** Profil iki farklı sahnenin
+karışımını "normal" olarak öğrenmiş. Yani sistem, gerçekte hiç var
+olmamış bir sahneyi normal sayıyor ve olağandışılığı ona göre ölçüyor.
+
+⚠ Ve bu kamera canlıda en çok `risk` alarmı üreten kamera (93 alarmın
+76'sı). Skorlarının dayandığı taban yanlış.
+
+---
+
+#### Yapılan
+
+cam-15 profili **sıfırlandı** (silinmedi — yedeği
+`data/profiles/_yedek_cam-15-karisik-20260910.json`). Boru hattı
+çalışırken yeniden öğreniyor: eşik `PROFIL_ASGARI_ORNEK = 2000` ve
+kamera ~2.8 örnek/sn ürettiği için **~12 dakikada** hazır oluyor.
+
+⚠ Yalnızca cam-15 etkilenmişti; diğer 19 kameranın kaynak videosu
+değişmedi (dosya tarihleri 13-26.08).
+
+---
+
+#### ⚠⚠ ASIL BULGU: BU BİR VERİ SORUNU DEĞİL, TASARIM AÇIĞI
+
+cam-15'i sıfırlamak bu vakayı çözüyor ama **mekanizma duruyor.**
+Gerçek bir kurulumda kameranın sahnesi şu durumlarda değişir:
+
+- kamera yeniden yönlendirilir / kaydırılır (bakım, darbe)
+- mevsim/aydınlatma değişir (yaz-kış, gece lambası takılır)
+- alan yeniden düzenlenir (raf, duvar, mobilya)
+- kalıcı davranış değişimi (yeni bir kapı açılır, yaya akışı değişir)
+
+Unutmayan bir profil bunların hiçbirine uyum sağlayamaz ve **sessizce
+yanlış kalır** — hata belirti vermez, yalnızca anomali skorları
+anlamsızlaşır.
+
+**Çözüm yönü (uygulanmadı, gerekçesiyle):** üstel ağırlıklı
+istatistikler (eski örneklerin ağırlığı yarılanma süresiyle azalsın)
+ya da kayan pencere. İkisi de `normalcy.py`'da yapısal değişiklik
+demek ve kalan sürede kapsam dışı.
+
+**Raporda yazılacak dürüst ifade:**
+
+> *"Katman A'nın öğrendiği kamera normali kümülatiftir ve unutma
+> mekanizması içermez. Bu, sahnenin sabit kaldığı varsayımına dayanır.
+> Kaynak videosu değiştirilen bir kamerada (cam-15) profilin iki farklı
+> sahnenin karışımını öğrendiği ölçülmüştür (kişi/kare ortalaması 4.01;
+> gerçek değerler 6.5 ve 3.0). Üretim kurulumunda kamera yönü,
+> aydınlatma veya alan düzeni değişikliklerinde aynı sorunun oluşacağı
+> ve profilin elle sıfırlanması gerekeceği raporlanmaktadır. Kalıcı
+> çözüm üstel yaşlandırmadır ve bu çalışmanın kapsamı dışında
+> bırakılmıştır."*
+
+**Öğrenilen ders:** Bir öğrenme mekanizmasının **ne öğrendiği** kadar
+**ne unuttuğu** da tasarım kararıdır. "Unutma" varsayılan olarak
+"yok"tur ve bu, açıkça seçilmemiş bir karardır — kurulumun sabit
+kalacağını varsaymak, varsaydığını bilmeden varsaymaktır.
+
+
+---
+
+### P-79 · ⭐⭐⭐ KAYNAK VİDEOLAR DÖNGÜDE — alarm oranları bu yüzden karşılaştırılamaz
+
+**Tarih:** 10.09.2026 · **Faz:** 3
+
+**Kullanıcının tespiti:**
+
+> *"Bu kameraların döngüdeki videolar olduğunu raporlarda kesinlikle
+> vurgulamamız lazım. Çünkü senin de gördüğün gibi 5 sn'de bir video
+> tekrarlanıyor ve kavga gerçekleşiyor sonra da alarm çıkıyor; sistem
+> şişer bu şekilde ve bu da normal."*
+
+Haklı, ve etkisi ölçüldü.
+
+---
+
+#### Kurulum: gerçek IP kamera yok, döngüdeki video dosyaları var
+
+MediaMTX her kamerayı `-stream_loop -1` ile **sonsuz döngüde**
+yayınlıyor (`infra/mediamtx/mediamtx.yml`). Bir olay içeren video
+bittiğinde başa sarıyor ve **aynı olay yeniden gerçekleşiyor**.
+
+**Ölçülen video süreleri ve saatlik tekrar sayısı:**
+
+| kamera | süre | saatte tekrar |
+|---|---|---|
+| **cam-16** | **5 sn** | **667** ⬅⬅ |
+| cam-08 | 42 sn | 86 |
+| cam-07 | 70 sn | 51 |
+| cam-20 | 65 sn | 55 |
+| cam-10…cam-14 | 114 sn | 32 |
+| cam-15 | 128 sn | 28 |
+| cam-01…cam-06, cam-09, cam-17 | 300 sn | 12 |
+| cam-18 / cam-19 | 328 / 345 sn | 11 / 10 |
+
+⭐⭐ **cam-16'daki tek düşme olayı saatte 667 kez yeniden oynuyor** ve
+her turda alarm üretiyor. Bu bir hata değil, kurulumun doğrudan
+sonucudur.
+
+---
+
+#### Bunun bozduğu ölçüt: K7 (alarm/kamera-saat)
+
+K7 *"yanlış alarm ≤3/kamera-saat"* diyor ve ham ölçüm
+**11.69/kamera-saat** idi. Bu sayı **kaynak videonun uzunluğuyla ters
+orantılı** olarak şişiyor:
+
+```
+aynı sistem, aynı algoritma, aynı olay
+  5 saniyelik kaynakta   → saatte 667 alarm
+300 saniyelik kaynakta   → saatte  12 alarm
+```
+
+⚠ Yani K7'nin ham değeri **sistemin davranışını değil, test
+videolarının uzunluk dağılımını** ölçüyor. İki farklı kurulumun K7
+sayıları karşılaştırılamaz.
+
+⭐ P-77'de bu doğrulandı: 19 alarm, döngüdeki konuma göre
+tekilleştirilince **12 bağımsız olaya** düştü.
+
+---
+
+#### Raporda kullanılacak ifade — zorunlu
+
+> *"Sistem gerçek IP kameralarla değil, sonsuz döngüde yayınlanan video
+> dosyalarıyla test edilmiştir. Bir kameranın kaynak videosu bittiğinde
+> başa sarmakta ve içerdiği olay yeniden gerçekleşmektedir. Kaynak
+> süreleri 5 ile 345 saniye arasında değişmekte; en kısa kaynakta
+> (cam-16) tek bir düşme olayı saatte 667 kez tekrarlanmaktadır. Bu
+> nedenle 'alarm/kamera-saat' türü ham oranlar sistemin yanlış alarm
+> davranışını değil, test videolarının uzunluk dağılımını
+> yansıtmaktadır. Alarm doğruluğu, döngüdeki konuma göre
+> tekilleştirilmiş bağımsız olaylar üzerinden raporlanmıştır (P-77:
+> 12 bağımsız olayda kesinlik 0.917)."*
+
+⚠ **Bu bir kusur itirafı değil, ölçüm koşulunun tanımıdır.** Gerçek
+kamerayla yapılmış bir çalışmada bu sorun olmaz; bizim kurulumumuzda
+vardır ve belirtilmezse okuyucu K7'yi yanlış yorumlar.
+
+---
+
+#### ⭐ Ve bu, tasarımın bir yerini DOĞRULUYOR
+
+Sistem aynı olayı tekrar tekrar gördüğünde her seferinde alarm
+üretiyor — yani **histerezis ve soğuma mekanizmaları olayı
+bastırmıyor.** İlk bakışta kusur gibi görünüyor ama doğru davranış
+budur: 5 saniye sonra *yeniden* düşen bir insan, gerçekten yeni bir
+olaydır. Sistem videonun döngüde olduğunu bilemez ve bilmemelidir.
+
+**Öğrenilen ders:** Bir ölçütün birimi (`alarm/kamera-saat`) test
+düzeneğinin bir özelliğine bağlıysa, o ölçüt **taşınabilir değildir**.
+Sayıyı raporlamak yetmez; hangi koşulda üretildiğini raporlamak
+gerekir — yoksa okuyucu onu kendi kurulumuyla kıyaslar ve yanılır.
+
