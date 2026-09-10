@@ -7871,3 +7871,53 @@ sonuç, beklenen bir sonuçtan **daha fazla** tekrar ister.
 > %0–33.4) ve makinedeki eşzamanlı yüke güçlü biçimde bağlıdır."*
 
 ⚠ K10 artık ✅ değil **🟡 sınırda** olarak işaretleniyor.
+
+---
+
+### P-84-EK · Etiketleyicinin kendi ifadesi: 0.58 sn'lik "bağlam" bile GERÇEK DEĞİL
+
+**Tarih:** 10.09.2026
+
+P-84'te ölçütün tavanı, etiket dosyasındaki kavga başlangıç
+saniyelerinden hesaplanmıştı (medyan 0.58 sn). Etiketlemeyi yapan
+kişi (projenin yürütücüsü) bu sayının **kendisinin de şişkin**
+olduğunu bildirdi:
+
+> *"O klip kayıtlarını ben elle etiketlemiştim, onlarda aslında
+> hepsi neredeyse 0. saniyede başlıyordu; tüm o izlediğim videolarda
+> kavga başlamış oluyordu. Orada 2 sn veya 5 sn öncesi yoktu, direkt
+> kavga vardı. Oradaki o sürelerde benim tuşa basma gecikmem var;
+> normalde kavga başlangıcı 0 ve 0.50 sn yerlerde başlamış oluyordu."*
+
+⭐ Yani etiketlerdeki 0.23–1.43 saniyelik değerler, **olayın gerçek
+başlangıcı değil, insan tepki süresini içeren bir üst sınırdır.**
+Gerçek kavga başlangıcı 0–0.5 saniye aralığında.
+
+**Bunun sonucu, P-84'ün bulgusunu ZAYIFLATMIYOR — GÜÇLENDİRİYOR:**
+
+```
+hesaplanan tavan (etiketten)      : medyan 0.58 sn
+gerçek tavan (etiketleyici beyanı): 0.00–0.50 sn
+K8 hedefi                          : 2.00 sn
+```
+
+Ölçütün tavanı, hesaplanandan da düşük. Yani "2 saniye önce uyar"
+hedefi bu veri setinde **hiçbir klipte** anlamlı biçimde
+ölçülemiyor.
+
+⚠ **Yeniden ölçmenin bir faydası yok ve bunu söylemek gerekiyor:**
+klipler aynı, etiketler aynı, model aynı. Değişecek tek şey
+etiketlerdeki tepki gecikmesinin düzeltilmesi olurdu ve bu, tavanı
+daha da düşürerek aynı sonuca daha güçlü biçimde çıkarırdı. Bir
+ölçümü, sonucu değiştirmeyeceğini bilerek tekrarlamak zaman
+kaybıdır — ama bunu **bilerek** atlamak ile fark etmeden atlamak
+farklı şeylerdir; bu not birincisini belgeliyor.
+
+**Raporda kullanılacak ek cümle:**
+
+> *"Kullanılan yer gerçeği etiketleri, klipleri izleyen bir
+> değerlendiricinin işaretlemesiyle üretilmiştir ve bu nedenle insan
+> tepki süresini içermektedir; değerlendiricinin beyanına göre
+> kliplerdeki şiddet olayları fiilen 0–0.5 saniye aralığında
+> başlamaktadır. Dolayısıyla ölçütün üst sınırı, etiketlerden
+> hesaplanan 0.58 saniyelik medyandan da düşüktür."*
