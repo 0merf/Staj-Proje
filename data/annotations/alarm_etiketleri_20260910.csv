@@ -1,0 +1,41 @@
+klip,kamera,tur,ciddiyet,skor,video_pts,ts,dogru,not
+risk\cam-16_02175.94_000.mp4,cam-16,risk,warning,0.395,2175.94,2026-09-10 08:30:54.627251+00:00,1,UR Fall: adam yere dusuyor
+running\cam-17_02157.89_001.mp4,cam-17,running,attention,0.721,2157.89,2026-09-10 08:30:37.077599+00:00,,motosikletli/yaya ayrimi duragan kareden yapilamadi | sahne kesikli derleme; 150 karenin 6'sindan motosikletli/yaya ayrimi yapilamadi
+crowd\cam-17_02155.65_002.mp4,cam-17,crowd,attention,0.5,2155.65,2026-09-10 08:30:34.837717+00:00,1,sokak sahnesi ~6 kisi
+fall\cam-15_02139.08_003.mp4,cam-15,fall,warning,1.0,2139.08,2026-09-10 08:30:17.872091+00:00,1,magazada yerde bir kisi
+fall\cam-16_02131.46_004.mp4,cam-16,fall,warning,0.932,2131.46,2026-09-10 08:30:10.154208+00:00,1,UR Fall: adam yere dusuyor
+risk\cam-15_02116.60_005.mp4,cam-15,risk,warning,0.396,2116.6,2026-09-10 08:29:55.396951+00:00,1,acik bogusma
+risk\cam-15_02113.08_006.mp4,cam-15,risk,warning,0.35,2113.08,2026-09-10 08:29:51.869733+00:00,1,acik bogusma
+crowd\cam-04_02077.93_007.mp4,cam-04,crowd,attention,0.616,2077.93,2026-09-10 08:29:16.635792+00:00,1,otopark ~5-6 kisi
+crowd\cam-17_02075.41_008.mp4,cam-17,crowd,attention,0.678,2075.41,2026-09-10 08:29:14.601917+00:00,1,havaalani sahnesi 8+ kisi
+fall\cam-19_02069.14_009.mp4,cam-19,fall,warning,1.0,2069.14,2026-09-10 08:29:08.211516+00:00,0,kisi EGILIP canta aliyor - dusme degil
+fall\cam-16_02067.70_010.mp4,cam-16,fall,warning,1.0,2067.7,2026-09-10 08:29:06.395552+00:00,1,UR Fall (ayni sahne)
+crowd\cam-05_02037.73_011.mp4,cam-05,crowd,attention,0.523,2037.73,2026-09-10 08:28:36.435283+00:00,1,otopark ~5-6 kisi
+crowd\cam-13_02029.89_012.mp4,cam-13,crowd,attention,0.535,2029.89,2026-09-10 08:28:28.605296+00:00,1,kampus ~6 kisi
+fall\cam-16_02001.94_013.mp4,cam-16,fall,warning,1.0,2001.94,2026-09-10 08:28:00.638854+00:00,1,UR Fall (ayni sahne)
+crowd\cam-17_02000.41_014.mp4,cam-17,crowd,attention,0.704,2000.41,2026-09-10 08:27:59.604937+00:00,1,"ofis + sokak, 6+ kisi"
+risk\cam-15_01993.84_015.mp4,cam-15,risk,warning,0.388,1993.84,2026-09-10 08:27:52.635454+00:00,1,acik bogusma
+fall\cam-16_01932.70_016.mp4,cam-16,fall,warning,1.0,1932.7,2026-09-10 08:26:51.441650+00:00,1,UR Fall (ayni sahne)
+crowd\cam-17_01929.17_017.mp4,cam-17,crowd,attention,0.834,1929.17,2026-09-10 08:26:48.368569+00:00,1,gece sokak ~5-8 kisi
+crowd\cam-13_01916.38_018.mp4,cam-13,crowd,attention,0.525,1916.38,2026-09-10 08:26:35.092726+00:00,1,kampus ~6 kisi
+fall\cam-16_01866.94_019.mp4,cam-16,fall,warning,1.0,1866.94,2026-09-10 08:25:45.643795+00:00,1,UR Fall (ayni sahne)
+risk\cam-15_01864.08_020.mp4,cam-15,risk,warning,0.353,1864.08,2026-09-10 08:25:42.879598+00:00,1,"magazada net fiziksel bogusma, kisiler yere dusuyor"
+fall\cam-17_01841.41_021.mp4,cam-17,fall,warning,1.0,1841.41,2026-09-10 08:25:20.615087+00:00,0,donut dukkani: devrilmis sandalye ve dokuntu var ama KIMSE yerde degil; one egilmis oturan kisi (P-77 ile ayni hata kalibi)
+crowd\cam-17_01831.65_022.mp4,cam-17,crowd,attention,0.584,1831.65,2026-09-10 08:25:10.856447+00:00,1,"havaalani terminali, 7-8 kisi (kameranin normali 2.26)"
+crowd\cam-13_01802.65_023.mp4,cam-13,crowd,attention,0.556,1802.65,2026-09-10 08:24:41.379027+00:00,1,"kampus yolu 4-5 kisi (normal 1.84, kural esigi 4.6)"
+fall\cam-16_01797.70_024.mp4,cam-16,fall,warning,1.0,1797.7,2026-09-10 08:24:36.451730+00:00,1,UR Fall: ayakta -> cokuyor -> YERDE
+crowd\cam-04_01777.93_025.mp4,cam-04,crowd,attention,0.562,1777.93,2026-09-10 08:24:16.647893+00:00,1,otoparkta 4-5 kisilik grup (esik 4.42)
+risk\cam-17_01774.41_026.mp4,cam-17,risk,warning,0.35,1774.41,2026-09-10 08:24:13.620143+00:00,1,"barda 5+ kisi, arka planda birinin uzerine egilmis figurler"
+crowd\cam-17_01771.41_027.mp4,cam-17,crowd,attention,0.539,1771.41,2026-09-10 08:24:10.622578+00:00,1,bar: on planda 2 + arka planda 4-6 kisi
+risk\cam-15_01769.08_028.mp4,cam-15,risk,warning,0.351,1769.08,2026-09-10 08:24:07.892186+00:00,1,"magazada bir kisi YERDE yatiyor, cevresinde gorevliler"
+fall\cam-15_01747.08_029.mp4,cam-15,fall,warning,0.995,1747.08,2026-09-10 08:23:45.892956+00:00,1,yerde yatan kisi + uzerine egilmis gorevliler
+fall\cam-16_01731.94_030.mp4,cam-16,fall,warning,1.0,1731.94,2026-09-10 08:23:30.656288+00:00,1,UR Fall dusme (cam-16 5 sn dongusu — #5 ile AYNI olay)
+risk\cam-15_01728.84_031.mp4,cam-15,risk,warning,0.372,1728.84,2026-09-10 08:23:27.653899+00:00,1,gorevli ile kirmizili kisi arasinda net bogusma
+risk\cam-15_01728.60_032.mp4,cam-15,risk,warning,0.407,1728.6,2026-09-10 08:23:27.414196+00:00,1,#12 ile ayni an (pts farki 0.24 sn)
+crowd\cam-05_01724.97_033.mp4,cam-05,crowd,attention,0.5,1724.97,2026-09-10 08:23:23.697620+00:00,1,SINIRDA: yakinlastirinca 4 kisi sayildi (ikili + arabadaki + sag kenar)
+crowd\cam-17_01700.41_034.mp4,cam-17,crowd,attention,0.707,1700.41,2026-09-10 08:22:59.624267+00:00,1,"kalabalik sokak, 8-10 kisi"
+crowd\cam-13_01688.89_035.mp4,cam-13,crowd,attention,0.533,1688.89,2026-09-10 08:22:47.627743+00:00,1,#4 ile ayni sahne — dongude ikisi de ~92.7. sn
+risk\cam-16_01673.70_036.mp4,cam-16,risk,warning,0.363,1673.7,2026-09-10 08:22:32.417417+00:00,1,UR Fall dusme goruluyor (fuzyon: en az biri)
+fall\cam-16_01656.18_037.mp4,cam-16,fall,warning,0.91,1656.18,2026-09-10 08:22:14.897528+00:00,1,UR Fall dusme
+crowd\cam-17_01628.41_038.mp4,cam-17,crowd,attention,0.5,1628.41,2026-09-10 08:21:47.631173+00:00,1,"gece sokak, 5-6 kisi"
+risk\cam-15_01610.36_039.mp4,cam-15,risk,warning,0.357,1610.36,2026-09-10 08:21:29.183728+00:00,1,magazada net bogusma ve yere indirme

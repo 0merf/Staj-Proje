@@ -1,0 +1,109 @@
+{
+ "olusturuldu": "2026-09-07T07:12:11.181984+00:00",
+ "kaynak": "RWF-2000 val/fight",
+ "yontem": "elle, tek etiketleyici, boru hattı skorları görülmeden",
+ "bilinen_sinir": "tek etiketleyici; bağımsız ikinci etiketleyici ve uyum katsayısı yok — raporda böyle yazılacak",
+ "etiketler": {
+  "fight_0067.avi": {
+   "baslangic_s": 0.233,
+   "kare": 7,
+   "kaynak_fps": 30.0
+  },
+  "fight_0188.avi": {
+   "baslangic_s": 1.267,
+   "kare": 38,
+   "kaynak_fps": 30.0
+  },
+  "fight_0102.avi": {
+   "baslangic_s": 0.233,
+   "kare": 7,
+   "kaynak_fps": 30.0
+  },
+  "fight_0194.avi": {
+   "baslangic_s": 0.267,
+   "kare": 8,
+   "kaynak_fps": 30.0
+  },
+  "fight_0112.avi": {
+   "baslangic_s": 0.267,
+   "kare": 8,
+   "kaynak_fps": 30.0
+  },
+  "fight_0122.avi": {
+   "baslangic_s": 0.3,
+   "kare": 9,
+   "kaynak_fps": 30.0
+  },
+  "fight_0014.avi": {
+   "baslangic_s": 0.333,
+   "kare": 10,
+   "kaynak_fps": 30.0
+  },
+  "fight_0003.avi": {
+   "baslangic_s": 0.267,
+   "kare": 8,
+   "kaynak_fps": 30.0
+  },
+  "fight_0065.avi": {
+   "baslangic_s": 0.233,
+   "kare": 7,
+   "kaynak_fps": 30.0
+  },
+  "fight_0045.avi": {
+   "baslangic_s": 0.267,
+   "kare": 8,
+   "kaynak_fps": 30.0
+  },
+  "fight_0137.avi": {
+   "baslangic_s": 3.067,
+   "kare": 92,
+   "kaynak_fps": 30.0
+  },
+  "fight_0171.avi": {
+   "baslangic_s": 1.433,
+   "kare": 43,
+   "kaynak_fps": 30.0
+  },
+  "fight_0129.avi": {
+   "baslangic_s": 1.167,
+   "kare": 35,
+   "kaynak_fps": 30.0
+  },
+  "fight_0077.avi": {
+   "baslangic_s": 0.233,
+   "kare": 7,
+   "kaynak_fps": 30.0
+  },
+  "fight_0159.avi": {
+   "baslangic_s": 3.033,
+   "kare": 91,
+   "kaynak_fps": 30.0
+  },
+  "fight_0168.avi": {
+   "baslangic_s": 1.1,
+   "kare": 33,
+   "kaynak_fps": 30.0
+  },
+  "fight_0046.avi": {
+   "baslangic_s": 1.033,
+   "kare": 31,
+   "kaynak_fps": 30.0
+  },
+  "fight_0131.avi": {
+   "baslangic_s": 0.9,
+   "kare": 27,
+   "kaynak_fps": 30.0
+  },
+  "fight_0031.avi": {
+   "baslangic_s": 0.9,
+   "kare": 27,
+   "kaynak_fps": 30.0
+  },
+  "fight_0004.avi": {
+   "baslangic_s": 0.833,
+   "kare": 25,
+   "kaynak_fps": 30.0
+  }
+ },
+ "atlananlar": []
+}

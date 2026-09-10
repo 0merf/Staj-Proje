@@ -1,0 +1,24 @@
+{
+  "toplam_alarm": 40,
+  "etiketli": 39,
+  "kesinlik": 0.9487,
+  "tur_bazli": {
+    "risk": {
+      "etiketli": 11,
+      "gercek": 11,
+      "yanlis": 0
+    },
+    "crowd": {
+      "etiketli": 16,
+      "gercek": 16,
+      "yanlis": 0
+    },
+    "fall": {
+      "etiketli": 12,
+      "gercek": 10,
+      "yanlis": 2
+    }
+  },
+  "yontem": "alarm anından ±3 sn klip, elle görsel doğrulama",
+  "sinir": "KESİNLİK ölçüsü; duyarlılık ölçülmedi"
+}
