@@ -7214,3 +7214,181 @@ Buradaki asıl tehlike sayının yanlış olması değil: **sayının doğru mu
 yanlış mı olduğunun artık bilinemiyor olması.** Kaydedilmiş bir JSON
 olsaydı bugün "aynı kod muydu, aynı yük müydü" sorulabilirdi;
 kaydedilmediği için soru sorulamıyor bile.
+
+---
+
+### P-83 · ⭐⭐⭐ Klip zinciri 11 GÜNDÜR HİÇ ÇALIŞMAMIŞ — ve testi bunu göremezdi, çünkü testle kod aynı yanlış varsayımı paylaşıyordu
+
+**Tarih:** 10.09.2026 · **Faz:** 3
+
+**Neden bakıldı:** Kullanıcı kalan işleri bitirmek istedi; `data/clips`
+30.08'den beri boştu ve açık iş listesinde *"klip zinciri gerçek
+kayıtla denenmedi"* diye duruyordu. Denendi.
+
+---
+
+#### 1. Kurulum yapıldı, kayıt aktı, klip ÇIKMADI
+
+`MEDIAMTX_RECORD=yes` açıldı, MediaMTX yeniden başlatıldı, 3 dakika
+beklendi:
+
+```
+kayıt segmenti      : 80 dosya  ✅ kayıt akıyor
+yazılan olay        : 965       ✅ alarm üretiliyor
+üretilen klip       : 0         ❌
+```
+
+`--no-klip` verilmemişti (yani klip kesme AÇIK), yol doğruydu,
+`warning`/`alarm` olayları vardı. Yine de her çağrı `None` dönüyordu.
+
+---
+
+#### 2. ⭐⭐⭐ KÖK SEBEP: 3 SAAT — yani tam olarak UTC farkımız
+
+Segmentler doğrudan incelendi:
+
+```
+segment adı (cam-16 en yeni) : 13:32:05
+o andaki yerel saat          : 16:32:14 (+03:00)
+                               ─────────
+fark                         : tam 3 saat
+```
+
+`_segmentleri_listele` şunu yapıyordu:
+
+```python
+baslangic=datetime(yil, ay, gun, sa, dk, sn, mikro).astimezone()
+```
+
+`datetime(...)` **naif** bir zaman üretir; `.astimezone()` onu YEREL
+sanıp `+03:00` iliştirir. Ama MediaMTX dosya adlarını **UTC** yazıyor.
+Sonuç: her segment 3 saat geçmişte görünüyor, olay penceresini hiçbir
+segment kapsamıyor, `klip_cikar` her seferinde `None` dönüyor.
+
+⚠⚠ **O satırın ÜSTÜNDEKİ YORUM şunu diyordu:**
+
+> *"⚠ MediaMTX yerel saatle yazıyor; olay zaman damgası UTC.
+> `astimezone()` olmadan karşılaştırma saat farkı kadar kayardı."*
+
+**Yazmıyor.** Doğrulaması tek komut:
+
+```
+$ docker exec sentinel-mediamtx date
+Thu Sep 10 13:32:34 UTC 2026        ⬅ konteynerde TZ ayarlı DEĞİL
+```
+
+`docker-compose.yml`'de `TZ` yalnızca **PostgreSQL**'e veriliyor
+(satır 114). MediaMTX konteyneri UTC.
+
+> ⭐⭐ **Varsayım yazılıydı, gerekçelendirilmişti ve YANLIŞTI.** Bu
+> projede tekrar tekrar çıkan kalıbın en pahalı hâli: bir yorumun
+> ikna edici olması, doğru olduğunun kanıtı değil. Yorum bir iddiadır
+> ve iddialar ölçülür.
+
+---
+
+#### 3. ⭐⭐⭐ ASIL BULGU: TESTİN HATAYI GÖRMESİ İMKÂNSIZDI
+
+`tests/unit/test_klip.py` 13 test içeriyordu ve **hepsi geçiyordu.**
+Yardımcı işlevi şuydu:
+
+```python
+def _segment_yaz(dizin: Path, an: datetime) -> Path:
+    yol = dizin / f"{an:%Y-%m-%d_%H-%M-%S}-000000.mp4"
+```
+
+Test, dosya adını `datetime(...).astimezone()` ile **üretiyor**; kod
+sonra aynı varsayımla **okuyor**. Gidiş-dönüş kendi içinde tutarlı
+olduğu için sonuç her zaman eşleşiyordu — varsayım yanlış olsa bile.
+
+> ⭐⭐⭐ **Test ile kod aynı yanlış varsayımı paylaşıyorsa, test o
+> varsayımı asla sınayamaz.** Test gerçek bir MediaMTX dosyasına hiç
+> dokunmuyordu; kendi ürettiği dosyayı kendi okuyordu.
+
+Bedeli: klip zinciri 30.08'den 10.09'a kadar **hiç çalışmadı** ve
+220 test yeşil kaldı. Panelde "kanıt klibini göster" düğmesi vardı,
+API ucu vardı, kesme kodu vardı, testleri vardı — ve tek bir klip
+üretilmemişti.
+
+⚠ Bu, P-45'in (*"klipler kesiliyordu, kimse göremiyordu"*) bir üst
+katmanı: orada zincir yarımdı, burada zincirin tamamı vardı ve
+**sessizce hiçbir şey yapmıyordu.**
+
+---
+
+#### 4. Düzeltme — üç parça
+
+**(a) Ayrıştırma UTC'ye alındı** (`tzinfo=UTC`), gerekçesi ve
+doğrulama komutu koda yazıldı.
+
+**(b) Hata dalı ARTIK SESSİZ DEĞİL.** Eski mesaj *"segment donmuş
+olabilir (recordDeleteAfter)"* diyordu — yani tamamen olağan bir
+durumu işaret ediyordu ve 11 gün boyunca her çağrıda basıldı, kimse
+bakmadı. Artık olay anı ile en yeni segment arasındaki fark ölçülüyor
+ve **tam saat katına yakınsa** saat dilimi şüphesi açıkça yazılıyor:
+
+```
+⚠ FARK TAM SAAT KATINA YAKIN — segment adlarının saat dilimi yanlış
+yorumlanıyor olabilir (P-83). Doğrula: docker exec sentinel-mediamtx date
+```
+
+> ⭐ Bir hata dalının MESAJI, o dalın gerçekten neden çalıştığını
+> söyleyemiyorsa, hata sessizdir.
+
+**(c) Test gerçek bir dosya adına bağlandı.** Yeni test, adı **elle,
+sabit bir dizge** olarak yazıyor (`2026-08-30_11-57-42-123456.mp4`) ve
+sonucu **mutlak bir ana** (UTC) karşı sınıyor — makinenin saat dilimi
+sonucu değiştiremiyor.
+
+⚠ Test, kod bilerek eski hâline döndürülüp **DÜŞTÜĞÜ görülene kadar**
+kabul edilmedi (P-61 kuralı). Düştü, sonra düzeltildi ve geçti.
+
+---
+
+#### 5. ✅ ZİNCİR UÇTAN UCA DOĞRULANDI
+
+Alarm worker'ı yeniden başlatıldı, 90 saniye beklendi:
+
+```
+üretilen klip : 3
+  data/clips/2026/09/10/cam-15/133816_risk.mp4   786 KB · 13.4 sn · 334 kare
+  data/clips/2026/09/10/cam-16/133759_fall.mp4  2184 KB · 13.9 sn · 348 kare
+  data/clips/2026/09/10/cam-17/133817_fall.mp4  1269 KB · 13.2 sn · 330 kare
+```
+
+⚠ **"Dosya var" yetmiyor** (P-77'nin dersi: 257 baytlık, açılamayan
+dosyalar "başarılı" sayılmıştı). Her klip PyAV ile açıldı, kareleri
+çözüldü ve **olay anının çevresi gözle incelendi**:
+
+`docs/report/screenshots/07-klip-zinciri-dogrulama.png` — cam-16
+düşme klibinden 8-13. saniyeler:
+
+```
+ 8. sn : kişi YERDE      (önceki döngünün düşmesi)
+ 9. sn : kapıda ayakta   (video başa sardı)
+10. sn : ayakta
+11. sn : yürüyor
+12. sn : çöküyor
+13. sn : YERDE           ⬅ düşme tamamlandı
+```
+
+⭐ Klip yalnızca açılmıyor, **olayın tamamını** içeriyor. KT4
+kilometre taşındaki *"klip yazıcı gerçek kayıtla denenmedi"* şerhi
+kalktı.
+
+---
+
+#### 6. Raporda kullanılacak ifade
+
+> *"Olay klibi zinciri (alarm → kesim → veritabanı → API ucu →
+> panelde oynatıcı) 10.09.2026'da gerçek kayıtla uçtan uca
+> doğrulanmıştır. Doğrulama sırasında, segment dosya adlarının saat
+> dilimi yorumunda bir hata bulunmuş ve düzeltilmiştir; hata nedeniyle
+> zincir kurulduğu tarihten itibaren hiç klip üretmemiş, mevcut birim
+> testleri ise kod ile aynı varsayımı paylaştıkları için hatayı
+> gösterememiştir."*
+
+⚠ Bilinen sınır: remux, kesimi ancak bir anahtar karede başlatabildiği
+için istenen başlangıç ile gerçek başlangıç arasında 1-2 saniyeye
+kadar sapma olabilir (kliplerin 13.2-13.9 sn çıkması bundandır;
+istenen pencere 15 sn).

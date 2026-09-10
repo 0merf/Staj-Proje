@@ -28,7 +28,12 @@ from sentinel.alerting import klip
 
 
 def _segment_yaz(dizin: Path, an: datetime) -> Path:
-    """Adı MediaMTX biçiminde olan boş bir segment dosyası oluşturur."""
+    """Adı MediaMTX biçiminde olan boş bir segment dosyası oluşturur.
+
+    ⚠ `an` **UTC** olmalı — MediaMTX konteynerinde TZ ayarlı değil ve
+    dosya adlarını UTC yazıyor (P-83'te ölçüldü:
+    `docker exec sentinel-mediamtx date` → UTC).
+    """
     dizin.mkdir(parents=True, exist_ok=True)
     yol = dizin / f"{an:%Y-%m-%d_%H-%M-%S}-000000.mp4"
     yol.write_bytes(b"")
@@ -36,20 +41,46 @@ def _segment_yaz(dizin: Path, an: datetime) -> Path:
 
 
 class TestSegmentListeleme:
-    def test_dosya_adindan_zaman_okunuyor(self, tmp_path: Path) -> None:
-        """⚠ `mtime` DEĞİL, dosya ADI.
+    def test_GERCEK_mediamtx_dosya_adi_UTC_olarak_okunuyor(
+        self, tmp_path: Path
+    ) -> None:
+        """⚠⚠ BU TEST P-83'ÜN NÖBETÇİSİ — ve eski hâli hatayı GÖREMEZDİ.
 
-        `mtime` dosyanın son yazıldığı andır — yani 60 saniyelik bir
-        segmentin BİTİŞİ. Ondan okusaydık her klip bir segment kayardı.
+        Eski test dosya adını `datetime(...).astimezone()` ile
+        ÜRETİYOR, sonra kod aynı varsayımla OKUYORDU. Gidiş-dönüş
+        kendi içinde tutarlı olduğu için test her zaman geçiyordu —
+        varsayım yanlış olsa bile.
+
+        ⭐ Projenin tezi burada en saf hâliyle: **test ile kod aynı
+        yanlış varsayımı paylaşıyorsa, test o varsayımı asla
+        sınayamaz.** Gerçek bedeli: klip zinciri 30.08'den 10.09'a
+        kadar hiç çalışmadı ve 229 test yeşil kaldı.
+
+        Bu sürüm dosya adını ELLE, sabit bir dizge olarak yazıyor —
+        koddan değil, gerçek bir MediaMTX çıktısından kopyalanmış
+        biçimde. Ve sonucu mutlak bir ana (UTC) karşı sınıyor.
         """
-        an = datetime(2026, 8, 30, 11, 57, 42).astimezone()
+        dizin = tmp_path / "cam-16"
+        dizin.mkdir(parents=True)
+        # MediaMTX'in gerçekten yazdığı biçim (UTC).
+        (dizin / "2026-08-30_11-57-42-123456.mp4").write_bytes(b"")
+
+        s = klip._segmentleri_listele(tmp_path, "cam-16")
+        assert len(s) == 1
+        # ⚠ Yerel saat alanlarına DEĞİL, mutlak ana bakılıyor. Testin
+        # koştuğu makinenin saat dilimi sonucu değiştirmemeli.
+        assert s[0].baslangic == datetime(
+            2026, 8, 30, 11, 57, 42, 123456, tzinfo=UTC
+        )
+
+    def test_mtime_DEGIL_dosya_adi_kullaniliyor(self, tmp_path: Path) -> None:
+        """`mtime` segmentin BİTİŞİ; ondan okusaydık her klip kayardı."""
+        an = datetime(2026, 8, 30, 11, 57, 42, tzinfo=UTC)
         _segment_yaz(tmp_path / "cam-16", an)
 
         s = klip._segmentleri_listele(tmp_path, "cam-16")
         assert len(s) == 1
-        assert s[0].baslangic.hour == 11
-        assert s[0].baslangic.minute == 57
-        assert s[0].baslangic.second == 42
+        assert s[0].baslangic == an
 
     def test_ILGISIZ_dosyalar_atlaniyor(self, tmp_path: Path) -> None:
         """Kayıt dizininde başka dosyalar olabilir; çökmemeli."""

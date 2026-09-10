@@ -95,12 +95,27 @@ def _segmentleri_listele(kok: Path, camera: str) -> list[Segment]:
         segmentler.append(
             Segment(
                 yol=yol,
-                # ⚠ MediaMTX yerel saatle yazıyor; olay zaman damgası
-                # UTC. `astimezone()` olmadan karşılaştırma saat farkı
-                # kadar kayardı.
+                # ⚠⚠ 10.09.2026 — BU SATIR ÜÇ HAFTADIR YANLIŞTI (P-83)
+                #
+                # Eskiden `.astimezone()` çağrılıyordu ve üstündeki yorum
+                # *"MediaMTX yerel saatle yazıyor"* diyordu. **Yazmıyor.**
+                # MediaMTX konteynerinde TZ ayarlı değil (docker-compose
+                # yalnızca PostgreSQL'e TZ veriyor), dolayısıyla dosya
+                # adları UTC.
+                #
+                # `datetime(...)` naif bir zaman üretir; `.astimezone()`
+                # onu YEREL sanıp +03:00 iliştiriyordu. Sonuç: her segment
+                # 3 saat geçmişte görünüyor, olay penceresini hiçbir
+                # segment kapsamıyor, `klip_cikar` her seferinde `None`
+                # dönüyordu. `data/clips` 30.08'den beri bu yüzden BOŞTU
+                # — zincir hiç çalışmadı.
+                #
+                # ⭐ Varsayım YAZILIYDI ama DOĞRULANMAMIŞTI. Doğrulaması
+                # tek komut: `docker exec sentinel-mediamtx date`.
                 baslangic=datetime(
-                    int(yil), int(ay), int(gun), int(sa), int(dk), int(sn), int(mikro)
-                ).astimezone(),
+                    int(yil), int(ay), int(gun), int(sa), int(dk), int(sn), int(mikro),
+                    tzinfo=UTC,
+                ),
             )
         )
     return sorted(segmentler, key=lambda s: s.baslangic)
@@ -161,13 +176,36 @@ def klip_cikar(
 
     kapsayan = _kapsayan_segmentler(segmentler, bas, bit)
     if not kapsayan:
-        log.info(
+        # ⚠⚠ SAAT DİLİMİ TUZAĞINI SESSİZ OLMAKTAN ÇIKAR (P-83)
+        #
+        # Bu dal üç hafta boyunca HER ÇAĞRIDA çalıştı ve kimse fark
+        # etmedi: mesajı "segment donmuş olabilir" diyordu, yani
+        # tamamen olağan bir durumu işaret ediyordu. Gerçek sebep ise
+        # segment adlarının UTC olması ve kodun yerel saat sanmasıydı.
+        #
+        # ⭐ Ders: bir hata dalının MESAJI, o dalın gerçekten neden
+        # çalıştığını söyleyemiyorsa, hata sessizdir. Artık en yeni
+        # segment ile olay anı arasındaki fark ölçülüyor ve tam saat
+        # katlarına denk geliyorsa saat dilimi şüphesi AÇIKÇA
+        # yazılıyor.
+        fark_s = (bas - segmentler[-1].baslangic).total_seconds()
+        saat_katina_yakin = abs(fark_s) > 1800 and abs(
+            abs(fark_s) % 3600 - 1800
+        ) > 1500
+        log.warning(
             "olay_ani_kayitta_yok",
             camera=camera,
             olay=bas.isoformat(),
             en_eski=segmentler[0].baslangic.isoformat(),
             en_yeni=segmentler[-1].baslangic.isoformat(),
-            sebep="segment donmus olabilir (recordDeleteAfter)",
+            fark_saat=round(fark_s / 3600, 2),
+            sebep=(
+                "⚠ FARK TAM SAAT KATINA YAKIN — segment adlarının saat "
+                "dilimi yanlış yorumlanıyor olabilir (P-83). Doğrula: "
+                "docker exec sentinel-mediamtx date"
+                if saat_katina_yakin
+                else "segment donmus olabilir (recordDeleteAfter)"
+            ),
         )
         return None
 

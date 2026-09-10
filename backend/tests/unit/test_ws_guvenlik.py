@@ -7,7 +7,9 @@ kez hataya yol açtı**:
 
   · `origin_allowed`  → P-11 ve P-21: kontrol çalışıyordu ama meşru
     istemciyi de engelliyordu. İki kez aynı sınıf hata.
-  · `_safe_name`      → G12 path traversal, kod incelemesinde bulundu.
+  · `_safe_name`      → G12 path traversal (10.09'da KALDIRILDI:
+    testin sınadığı `/debug/trace` uç noktası, panelden "iz kaydet"
+    düğmesiyle birlikte silindi — kullanılmayan bir yazma yüzeyiydi).
 
 Güvenlik kontrolü yazarken iki yönü de test etmek gerekiyor:
 **kötüyü engelliyor mu** VE **iyiyi geçiriyor mu**. P-11'in dersi tam
@@ -16,9 +18,6 @@ olarak ikincisinin unutulmasıydı.
 
 from __future__ import annotations
 
-import pytest
-
-from sentinel.api.main import _safe_name
 from sentinel.api.ws.live import MAX_SUBSCRIPTIONS, authorize_cameras, origin_allowed
 
 # ══════════════════════════════════════════════════════════════
@@ -163,54 +162,3 @@ class TestKameraYetkilendirmesi:
 
     def test_bos_liste_bos_donuyor(self) -> None:
         assert authorize_cameras([]) == []
-
-
-# ══════════════════════════════════════════════════════════════
-#  Dosya adı temizleme (G12 — path traversal)
-# ══════════════════════════════════════════════════════════════
-
-
-class TestDosyaAdiTemizleme:
-    """`/debug/trace` istemciden gelen `camera` alanını dosya adına koyuyordu.
-
-    Beyaz liste yaklaşımı kullanılıyor (kara liste değil): yalnızca
-    `[A-Za-z0-9_-]` geçer. Böylece tehlikeli karakterleri tek tek
-    saymaya gerek kalmıyor — sayılmayan bir tanesini unutmak zaten
-    bu sınıf açığın klasik sebebi.
-    """
-
-    @pytest.mark.parametrize(
-        "saldiri",
-        [
-            "../../../etc/passwd",
-            "..\\..\\Windows\\System32\\config",
-            "/mutlak/yol",
-            "C:\\Windows\\sistem",
-            "cam/../../gizli",
-            "cam\x00.json",       # null bayt enjeksiyonu
-            "cam%2e%2e%2fgizli",  # URL kodlanmış ..
-        ],
-    )
-    def test_yol_kacisi_engelleniyor(self, saldiri: str) -> None:
-        temiz = _safe_name(saldiri)
-        assert "/" not in temiz
-        assert "\\" not in temiz
-        assert ".." not in temiz
-        assert ":" not in temiz
-        assert "\x00" not in temiz
-
-    def test_mesru_kamera_adi_BOZULMUYOR(self) -> None:
-        """⚠ P-11'in dersi: güvenlik kontrolü meşru girdiyi de geçirmeli."""
-        assert _safe_name("cam-09") == "cam-09"
-        assert _safe_name("cam-21-live") == "cam-21-live"
-        assert _safe_name("cam_test_01") == "cam_test_01"
-
-    def test_bos_kalirsa_yedek_ad_donuyor(self) -> None:
-        """Aksi hâlde `trace_20260818-101500_.json` gibi adsız dosyalar birikirdi."""
-        assert _safe_name("") == "bilinmeyen"
-        assert _safe_name("///") == "bilinmeyen"
-        assert _safe_name("../..") == "bilinmeyen"
-
-    def test_uzunluk_sinirlaniyor(self) -> None:
-        """Windows MAX_PATH 260 karakter; uzun ad dosya yazımını bozardı."""
-        assert len(_safe_name("a" * 500)) == 32

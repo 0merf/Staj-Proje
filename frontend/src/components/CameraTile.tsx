@@ -17,7 +17,6 @@
 import { useEffect, useRef } from 'react'
 import { analysisFps, buffers, useStore } from '../store'
 import { frameAt } from '../lib/sync'
-import { recordTrace } from '../lib/trace'
 import { BONES, KP_CONF_MIN } from '../lib/skeleton'
 import {
   cizgiDeseni,
@@ -275,10 +274,6 @@ export function CameraTile({ camera, webrtcBase }: Props) {
 
         if (viewMode === 'full' && det.kp) drawSkeleton(ctx, det.kp, sx, sy)
       }
-
-      // Teşhis izi: kayıt açıksa çizilen kutunun konumu saklanıyor.
-      // "Takılıyor" şikâyetini gözle değil SAYIYLA incelemek için.
-      recordTrace(camera.name, now, frame)
     }
 
     handle = requestAnimationFrame(draw)

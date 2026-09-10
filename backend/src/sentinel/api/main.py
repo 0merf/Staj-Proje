@@ -21,11 +21,8 @@ Uç noktaların yetki tablosu aşağıda, `system_health` üstünde.
 
 from __future__ import annotations
 
-import json
-import re
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from datetime import datetime
 from pathlib import Path
 from typing import Annotated, Any
 
@@ -42,7 +39,7 @@ from sentinel.api.routers import olaylar as olaylar_router
 from sentinel.api.routers import oturum as oturum_router
 from sentinel.api.ws import live as ws_live
 from sentinel.api.ws.manager import broadcaster
-from sentinel.config import PROJECT_ROOT, settings
+from sentinel.config import settings
 from sentinel.logging import configure_logging, get_logger
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -155,7 +152,6 @@ async def _istek_olc(request: Any, call_next: Any) -> Any:
 #   /cameras/webcam/* OPERATOR  ⚠ YENİ bir kamera açıyor — mahremiyet
 #                               açısından okumaktan tamamen farklı
 #   /auth/denetim     admin     kimin ne zaman çalıştığını gösteriyor
-#   /debug/trace      operator  diske dosya yazıyor
 @app.get("/api/v1/system/health", tags=["system"])
 async def system_health(
     _: Annotated[Kullanici, Depends(mevcut_kullanici)],
@@ -328,64 +324,6 @@ async def metrik_ucu() -> Response:
     if not settings.metrics_enabled:
         return Response(status_code=404)
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
-
-
-# ─── Hata ayıklama: çizim izi ────────────────────────────────
-
-
-def _safe_name(value: str, *, fallback: str = "bilinmeyen", limit: int = 32) -> str:
-    """İstemciden gelen bir parçayı dosya adında kullanılabilir hâle getirir.
-
-    Beyaz liste: yalnızca `[A-Za-z0-9_-]`. Kalan her karakter atılır,
-    dolayısıyla yol ayracı (`/`, `\\`), üst dizin (`..`), sürücü harfi
-    (`C:`) ve boşluk tanım gereği geçemez.
-
-    Boş kalırsa `fallback` döner — aksi hâlde `trace_20260818-101500_.json`
-    gibi adsız dosyalar birikirdi.
-    """
-    cleaned = re.sub(r"[^A-Za-z0-9_-]", "", value)[:limit]
-    return cleaned or fallback
-
-
-@app.post("/api/v1/debug/trace", include_in_schema=False)
-async def save_trace(
-    payload: dict[str, Any],
-    _: Annotated[Kullanici, Depends(rol_gerekli(Rol.OPERATOR))],
-) -> dict[str, Any]:
-    """Panelin kaydettiği kutu yörüngesini diske yazar.
-
-    Neden var: "kutular takılıyor" gibi bir şikâyeti gözle teşhis etmek
-    zor — göz "sıçradı" der ama "kaç piksel, ne zaman, neyle korele"
-    diyemez. Panel her çizilen karede kutunun konumunu kaydediyor;
-    burada dosyaya alıp sayısal olarak inceliyoruz.
-
-    ⚠ Yalnızca geliştirme ortamında açık. Üretimde kimlik doğrulaması
-    olmayan yazma uç noktası bırakılmaz (PLAN.md §11.1).
-
-    ⚠ DOSYA ADI TEMİZLENİR (G12 — path traversal)
-    ---------------------------------------------
-    `camera` alanı istemciden geliyor ve doğrudan dosya adına giriyordu.
-    `{"camera": "../../../etc/onemli"}` gönderen biri `benchmarks/traces`
-    DIŞINA yazabilirdi. Kendi Öncelik-1 listemizde G12 tam olarak bunu
-    yasaklıyor: "yol sunucuda kurulur, istemciden gelen parça yol
-    ayracı içeremez".
-
-    Beyaz liste yaklaşımı kullanılıyor (kara liste değil): yalnızca
-    harf, rakam, tire ve alt çizgi geçer. Böylece `..`, `/`, `\\`, ':'
-    ve sürücü harfi gibi her şey tanım gereği elenir — tek tek
-    saymaya gerek kalmaz.
-    """
-    if settings.sentinel_env != "development":
-        return {"saved": False, "reason": "yalnızca geliştirme ortamında"}
-
-    traces = PROJECT_ROOT / "benchmarks" / "traces"
-    traces.mkdir(parents=True, exist_ok=True)
-    camera = _safe_name(str(payload.get("camera", "")))
-    name = f"trace_{datetime.now():%Y%m%d-%H%M%S}_{camera}.json"
-    path = traces / name
-    path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
-    log.info("cizim_izi_kaydedildi", path=str(path), samples=len(payload.get("samples", [])))
-    return {"saved": True, "path": str(path.relative_to(PROJECT_ROOT))}
 
 
 # ─── Geliştirme durum paneli ─────────────────────────────────
