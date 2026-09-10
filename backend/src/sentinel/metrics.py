@@ -262,6 +262,22 @@ aggression_model_score = Gauge(
     ["cam"],
 )
 
+# ⭐⭐ FÜZYONUN HER SİNYALİ AYRI AYRI — "hangi sinyal karara katkı
+# veriyor" sorusunun tek gözlemlenebilir cevabı (P-72).
+#
+# ⚠ NEDEN GEREKLİ: `risk_score` yalnızca BİRLEŞİK skoru gösteriyor.
+# Bir sinyal hiç ateşlemiyorsa (P-43'te ifade tam olarak buydu,
+# P-52'de kuralların %60'ı) birleşik skora bakarak anlaşılmıyor.
+#
+# Şartname üç yetenek istiyor (anomali · duygu · saldırganlık) ve
+# üçünün de KARARA katıldığını göstermenin yolu bu gauge.
+fusion_signal = Gauge(
+    "sentinel_fusion_signal",
+    "Füzyona giren ham sinyallerin kamera başına AZAMİ değeri "
+    "— hangi sinyalin gerçekten katkı verdiğini gösterir",
+    ["cam", "signal"],
+)
+
 risk_score = Gauge(
     "sentinel_risk_score",
     "Füzyon risk skoru — kameradaki azami (0-1). Eşiğin altını da gösterir",
@@ -419,6 +435,7 @@ __all__ = [
     "frames_dropped",
     "frames_published",
     "frames_received",
+    "fusion_signal",
     "gate_decisions",
     "gate_duration",
     "gpu_memory_used",

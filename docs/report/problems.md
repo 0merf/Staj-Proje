@@ -5919,3 +5919,131 @@ O gün 16 betik düzeltilmişti; `export_tensorrt.py` Ultralytics'in kendi
 birebir aynı (IoU 0.9915). Bu, "denendi ve şu sebeple alınmadı"
 demenin ölçülmüş hâli — "denenmedi"den çok farklı.
 
+
+---
+
+### P-72 · ⭐⭐⭐ "Duygu analizi neden tek kamerada" — iki aşamalı kapı ölçüldü, açıklamam YANLIŞTI
+
+**Tarih:** 10.09.2026 · **Faz:** 3
+
+**Neden bakıldı:** Kullanıcı duygu analizine detaylı girmek istedi.
+Şartname üç yetenek istiyor (anomali · **duygu** · saldırganlık) ve
+duygu tarafı bugüne kadar en az incelenen taraftı.
+
+---
+
+#### 1. Önce eksik olan aleti eklemek gerekti
+
+Canlıda "duygu analizi çalışıyor mu" sorusunun cevabı **yoktu**.
+`sentinel_risk_score` yalnızca BİRLEŞİK skoru gösteriyor; bir sinyalin
+hiç ateşlemediği oradan görünmüyor — P-43'te ifade tam olarak öyle
+sessizdi ve **17 gün fark edilmedi**.
+
+Eklendi: `sentinel_fusion_signal{cam, signal}` — füzyona giren her ham
+sinyalin kamera başına azamisi.
+
+**İlk okuma (16 aktif kamera):**
+
+| sinyal | sıfırdan farklı |
+|---|---|
+| saldırganlık | **16/16** |
+| anomali | **16/16** |
+| kural | 2/16 |
+| **ifade** | **1/16** ⬅ yalnızca cam-20 (0.291) |
+| kalabalık | 1/16 |
+
+⭐ **İyi haber:** ifade sinyali cam-20'de **0.291** — yani P-43'ün
+düzeltmesi gerçekten çalışıyor, duygu analizi karara ulaşıyor.
+⚠ **Kötü haber:** 20 kameranın yalnızca birinde.
+
+---
+
+#### 2. ⚠ "Neden tek kamerada" sorusuna verdiğim cevap YANLIŞTI
+
+Kodun docstring'i (Gün 13'ten beri) şunu diyordu ve ben de tekrarladım:
+
+> *"Gün 13 ölçümü kamera çiftliğinde yüzlerin ~15 px olduğunu gösterdi;
+> bu ölçek kaybı onun üstüne biniyor. Sonuç: sabit kameralarda bu kademe
+> neredeyse hiç aday bulamayacak."*
+
+Yani açıklama **"kişi kutusu kapısını geçemiyorlar"** idi. Ölçüldü:
+
+```
+kapı: kişi kutusu yüksekliği ≥ 180 px (çıkarım uzayı 640×640)
+
+kamera    kişi  medyan   p90  azami   kapıyı geçen
+cam-09     346      61    84    110        0 (%0)
+cam-12     157      62    71     92        0 (%0)
+cam-13      82     143   203    280       18 (%22)   ⬅ GEÇİYOR
+cam-14      95     139   246    399       25 (%26)   ⬅ GEÇİYOR
+cam-15      87     151   211    244       19 (%22)   ⬅ GEÇİYOR
+cam-16      24     234   280    290       20 (%83)   ⬅ GEÇİYOR
+cam-17      72      88   246    368       19 (%26)   ⬅ GEÇİYOR
+cam-19     150     108   140    295       10 (%7)    ⬅ GEÇİYOR
+cam-20      25     308   339    340       25 (%100)
+```
+
+⭐⭐ **8 kamera kişi kapısını geçiyor**, ama canlıda yalnızca cam-20
+ifade üretiyor. **Açıklama yanlıştı: kapı bağlayıcı kısıt değil.**
+
+---
+
+#### 3. Gerçek kısıt: YÜZ GÖRÜNMÜYOR, küçük değil
+
+Kapıyı geçen kırpıntılara YuNet uygulandı:
+
+```
+kamera    kırpıntı  yüz bulundu   oran   medyan yüz px
+cam-13          18            0     %0        —
+cam-14          25            0     %0        —
+cam-15          19            0     %0        —
+cam-15h         35            0     %0        —
+cam-16          20            0     %0        —
+cam-17          19            0     %0        —
+cam-19          10            0     %0        —
+cam-20          25           25   %100      110 px
+```
+
+⭐⭐⭐ **Yedi kamerada 146 kırpıntının HİÇBİRİNDE yüz bulunmadı.**
+cam-20'de 25/25 bulundu ve yüzler **110 piksel** — küçük bile değil.
+
+**Doğru açıklama:** sorun yüzün *boyutu* değil, **kameraya dönük
+olmaması.** Gözetim kamerası tipik olarak yüksekten ve açılı bakar;
+insanlar yandan, arkadan ya da eğik görünür. YuNet önden yüz arıyor.
+cam-20 ise tanımı gereği yakın plan, kameraya bakan yüz videosu.
+
+> ⭐ İki açıklama da "kademe çalışmıyor" sonucuna varıyordu ama
+> **farklı çözümler öneriyorlar** — ve bu yüzden hangisinin doğru
+> olduğu önemli:
+>
+> | yanlış açıklama (boyut) | doğru açıklama (açı) |
+> |---|---|
+> | çözüm: daha yüksek çözünürlük, kapıyı düşür | çözüm: **YOK** — kamera açısı veri toplama kararı |
+> | "donanım alırsak düzelir" | "bu kurulumda düzelmez" |
+>
+> Yanlış açıklamayla ilerleseydik, çözünürlük artırmaya emek harcayıp
+> hiçbir şey kazanmayacaktık.
+
+---
+
+#### 4. Raporda yazılacak dürüst ifade
+
+> *"Yüz ifadesi kademesi (KADEME 2b) 21 kameranın 8'inde kişi boyutu
+> kapısını geçmekte, ancak yalnızca 1'inde (cam-20) yüz tespiti
+> yapılabilmektedir. Kapıyı geçen diğer 7 kamerada 146 kişi
+> kırpıntısının hiçbirinde yüz bulunamamıştır. Sınırlayıcı etken yüz
+> çözünürlüğü değil (cam-20'de tespit edilen yüzlerin medyanı 110 px),
+> **kamera açısıdır**: gözetim kameraları yüksekten ve açılı baktığı
+> için özneler önden görünmemektedir. Bu, kurulumun bir özelliğidir ve
+> daha yüksek çözünürlükle giderilemez."*
+
+⚠ Ve bu, füzyon ağırlığının neden düşük tutulduğunu (0.10) **ölçümle**
+destekliyor: sinyal 20 kameranın 19'unda hiç gelmiyor. Ağırlığın
+yüksek olması, gelmediği yerde sistemi köreltirdi.
+
+**Öğrenilen ders:** Bir kademenin "çalışmadığı" gözlemi ile **neden**
+çalışmadığı ayrı sorular. İkincisini ölçmeden birincisine çözüm
+aramak, yanlış yere emek harcamaktır. Ve bu projede açıklama, iki yıl
+boyunca kodun docstring'inde **yazılı** duruyordu — yazılı olması onu
+doğru yapmadı.
+

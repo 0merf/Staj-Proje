@@ -1,0 +1,258 @@
+{
+  "olculdu": "2026-09-10T07:02:02.599088+00:00",
+  "kapi_px": 180,
+  "imgsz": 640,
+  "kare_basina_kamera": 25,
+  "kameralar": {
+    "cam-01": {
+      "kisi": 57,
+      "kare": 25,
+      "medyan_px": 45.8,
+      "p90_px": 59.0,
+      "azami_px": 76.5,
+      "kapiyi_gecen": 0,
+      "kapiyi_gecen_oran": 0.0
+    },
+    "cam-02": {
+      "kisi": 104,
+      "kare": 25,
+      "medyan_px": 45.5,
+      "p90_px": 53.0,
+      "azami_px": 61.0,
+      "kapiyi_gecen": 0,
+      "kapiyi_gecen_oran": 0.0
+    },
+    "cam-03": {
+      "kisi": 111,
+      "kare": 25,
+      "medyan_px": 43.2,
+      "p90_px": 51.5,
+      "azami_px": 62.2,
+      "kapiyi_gecen": 0,
+      "kapiyi_gecen_oran": 0.0
+    },
+    "cam-04": {
+      "kisi": 67,
+      "kare": 25,
+      "medyan_px": 26.2,
+      "p90_px": 45.5,
+      "azami_px": 59.2,
+      "kapiyi_gecen": 0,
+      "kapiyi_gecen_oran": 0.0
+    },
+    "cam-05": {
+      "kisi": 47,
+      "kare": 25,
+      "medyan_px": 32.8,
+      "p90_px": 47.2,
+      "azami_px": 48.8,
+      "kapiyi_gecen": 0,
+      "kapiyi_gecen_oran": 0.0
+    },
+    "cam-06": {
+      "kisi": 75,
+      "kare": 25,
+      "medyan_px": 43.4,
+      "p90_px": 48.5,
+      "azami_px": 69.2,
+      "kapiyi_gecen": 0,
+      "kapiyi_gecen_oran": 0.0
+    },
+    "cam-07": {
+      "kisi": 7,
+      "kare": 25,
+      "medyan_px": 27.8,
+      "p90_px": 35.5,
+      "azami_px": 35.5,
+      "kapiyi_gecen": 0,
+      "kapiyi_gecen_oran": 0.0
+    },
+    "cam-08": {
+      "kisi": 1,
+      "kare": 25,
+      "medyan_px": 23.0,
+      "p90_px": 23.0,
+      "azami_px": 23.0,
+      "kapiyi_gecen": 0,
+      "kapiyi_gecen_oran": 0.0
+    },
+    "cam-09": {
+      "kisi": 346,
+      "kare": 25,
+      "medyan_px": 60.6,
+      "p90_px": 84.5,
+      "azami_px": 109.5,
+      "kapiyi_gecen": 0,
+      "kapiyi_gecen_oran": 0.0
+    },
+    "cam-10": {
+      "kisi": 145,
+      "kare": 25,
+      "medyan_px": 67.1,
+      "p90_px": 93.5,
+      "azami_px": 123.8,
+      "kapiyi_gecen": 0,
+      "kapiyi_gecen_oran": 0.0
+    },
+    "cam-11": {
+      "kisi": 127,
+      "kare": 25,
+      "medyan_px": 53.0,
+      "p90_px": 70.5,
+      "azami_px": 89.8,
+      "kapiyi_gecen": 0,
+      "kapiyi_gecen_oran": 0.0
+    },
+    "cam-12": {
+      "kisi": 157,
+      "kare": 25,
+      "medyan_px": 61.5,
+      "p90_px": 71.2,
+      "azami_px": 92.2,
+      "kapiyi_gecen": 0,
+      "kapiyi_gecen_oran": 0.0
+    },
+    "cam-13": {
+      "kisi": 82,
+      "kare": 25,
+      "medyan_px": 142.8,
+      "p90_px": 202.8,
+      "azami_px": 280.1,
+      "kapiyi_gecen": 18,
+      "kapiyi_gecen_oran": 0.2195
+    },
+    "cam-14": {
+      "kisi": 95,
+      "kare": 25,
+      "medyan_px": 139.2,
+      "p90_px": 245.6,
+      "azami_px": 398.9,
+      "kapiyi_gecen": 25,
+      "kapiyi_gecen_oran": 0.2632
+    },
+    "cam-15": {
+      "kisi": 87,
+      "kare": 25,
+      "medyan_px": 151.0,
+      "p90_px": 211.2,
+      "azami_px": 243.5,
+      "kapiyi_gecen": 19,
+      "kapiyi_gecen_oran": 0.2184
+    },
+    "cam-15h": {
+      "kisi": 164,
+      "kare": 25,
+      "medyan_px": 133.8,
+      "p90_px": 249.6,
+      "azami_px": 358.6,
+      "kapiyi_gecen": 35,
+      "kapiyi_gecen_oran": 0.2134
+    },
+    "cam-16": {
+      "kisi": 24,
+      "kare": 25,
+      "medyan_px": 234.4,
+      "p90_px": 280.5,
+      "azami_px": 289.9,
+      "kapiyi_gecen": 20,
+      "kapiyi_gecen_oran": 0.8333
+    },
+    "cam-17": {
+      "kisi": 72,
+      "kare": 25,
+      "medyan_px": 88.2,
+      "p90_px": 246.5,
+      "azami_px": 368.2,
+      "kapiyi_gecen": 19,
+      "kapiyi_gecen_oran": 0.2639
+    },
+    "cam-18": {
+      "kisi": 144,
+      "kare": 25,
+      "medyan_px": 114.9,
+      "p90_px": 137.6,
+      "azami_px": 166.0,
+      "kapiyi_gecen": 0,
+      "kapiyi_gecen_oran": 0.0
+    },
+    "cam-19": {
+      "kisi": 150,
+      "kare": 25,
+      "medyan_px": 108.1,
+      "p90_px": 139.8,
+      "azami_px": 295.0,
+      "kapiyi_gecen": 10,
+      "kapiyi_gecen_oran": 0.0667
+    },
+    "cam-20": {
+      "kisi": 25,
+      "kare": 25,
+      "medyan_px": 308.5,
+      "p90_px": 339.1,
+      "azami_px": 339.8,
+      "kapiyi_gecen": 25,
+      "kapiyi_gecen_oran": 1.0
+    }
+  },
+  "kapiyi_gecen_kamera": [
+    "cam-13",
+    "cam-14",
+    "cam-15",
+    "cam-15h",
+    "cam-16",
+    "cam-17",
+    "cam-19",
+    "cam-20"
+  ],
+  "yuz_tespiti": {
+    "cam-13": {
+      "kirpinti": 18,
+      "yuz_bulundu": 0,
+      "oran": 0.0,
+      "medyan_yuz_px": 0.0
+    },
+    "cam-14": {
+      "kirpinti": 25,
+      "yuz_bulundu": 0,
+      "oran": 0.0,
+      "medyan_yuz_px": 0.0
+    },
+    "cam-15": {
+      "kirpinti": 19,
+      "yuz_bulundu": 0,
+      "oran": 0.0,
+      "medyan_yuz_px": 0.0
+    },
+    "cam-15h": {
+      "kirpinti": 35,
+      "yuz_bulundu": 0,
+      "oran": 0.0,
+      "medyan_yuz_px": 0.0
+    },
+    "cam-16": {
+      "kirpinti": 20,
+      "yuz_bulundu": 0,
+      "oran": 0.0,
+      "medyan_yuz_px": 0.0
+    },
+    "cam-17": {
+      "kirpinti": 19,
+      "yuz_bulundu": 0,
+      "oran": 0.0,
+      "medyan_yuz_px": 0.0
+    },
+    "cam-19": {
+      "kirpinti": 10,
+      "yuz_bulundu": 0,
+      "oran": 0.0,
+      "medyan_yuz_px": 0.0
+    },
+    "cam-20": {
+      "kirpinti": 25,
+      "yuz_bulundu": 25,
+      "oran": 1.0,
+      "medyan_yuz_px": 110.3
+    }
+  },
+  "not": "kapı KİŞİ kutusuna bakıyor; yüz o kutunun ~%10-15'i"
+}

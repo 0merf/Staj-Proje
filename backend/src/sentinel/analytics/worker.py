@@ -545,6 +545,8 @@ class AnalyticsWorker:
         )
 
         kamera_azami_risk = 0.0
+        # Sinyal adı → o kameradaki azami değer (P-72).
+        kamera_sinyal: dict[str, float] = {}
         for ozellik in ozellikler:
             iz = ozellik.track_id
             if iz < 0:
@@ -567,6 +569,15 @@ class AnalyticsWorker:
             if sonuc is None:
                 continue
             kamera_azami_risk = max(kamera_azami_risk, sonuc.risk)
+            # ⭐ Her sinyalin kamera başına AZAMİSİ ayrı yayınlanıyor (P-72).
+            # Birleşik `risk_score` bir sinyalin HİÇ ateşlemediğini
+            # gösteremiyor — P-43'te ifade tam olarak öyle sessizdi ve
+            # 17 gün fark edilmedi. Şartnamenin üç yeteneğinin de karara
+            # katıldığını ancak bu kırılım kanıtlıyor.
+            for _ad, _deger in sinyaller.to_dict().items():
+                _mevcut = kamera_sinyal.get(_ad, 0.0)
+                if _deger > _mevcut:
+                    kamera_sinyal[_ad] = _deger
             if sonuc.seviye in ("uyari", "alarm"):
                 self._risk_yayinla(camera, sonuc, ts)
 
@@ -576,6 +587,11 @@ class AnalyticsWorker:
         # "sistem sessiz ama risk yükseliyor" arasındaki fark, K8'in
         # (erken uyarı avansı) tam olarak konusu.
         metrics.risk_score.labels(cam=camera).set(kamera_azami_risk)
+        for _ad, _deger in kamera_sinyal.items():
+            # `s_` öneki metrik etiketinde gereksiz — sinyalin adı yeter.
+            metrics.fusion_signal.labels(
+                cam=camera, signal=_ad.removeprefix("s_"),
+            ).set(_deger)
 
     def _risk_yayinla(self, camera: str, sonuc: RiskSonucu, ts: float) -> None:
         """Füzyon riskini alarm akışına yazar.
