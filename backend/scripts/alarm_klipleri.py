@@ -107,7 +107,37 @@ def _kes(kamera: str, pts: float, hedef: Path) -> bool:
         yukseklik = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         if genislik <= 0 or yukseklik <= 0:
             return False
-        basla = max(0.0, pts - ONCE_S)
+
+        # ⚠⚠ 10.09.2026 — `pts` DOSYA İÇİ KONUM DEĞİL, DÖNGÜ BOYUNCA BİRİKİYOR
+        #
+        # MediaMTX kaynak videoları `-stream_loop -1 -fflags +genpts` ile
+        # SONSUZ DÖNGÜDE yayınlıyor. `genpts` her turda zaman damgasını
+        # sıfırlamıyor, **birikimli** üretiyor. Yani `pts = 2037.73` bir
+        # 300 saniyelik videoda "2037. saniye" demek değil, "yayın
+        # başlayalı 2037 saniye oldu" demek.
+        #
+        # İlk sürüm bunu doğrudan konum olarak kullanıyordu:
+        #   cap.set(POS_MSEC, 2037_730)  →  dosyanın SONUNUN ötesi
+        #   → okuma başarısız → 257 baytlık BOŞ klip
+        #
+        # ⚠ Ve betik bunu BAŞARILI sanıyordu: kontrolü `dosya var ve
+        # boyut > 0` idi. 257 bayt "var ve >0". "12/12 klip kesildi"
+        # diye rapor edildi ve klipler açılmıyordu.
+        #
+        # ⭐ Doğrusu videonun süresine göre MOD almak. Bu, döngüdeki
+        # konumu doğru veriyor — ve yalnızca kaynak sonsuz döngüde
+        # olduğu için geçerli bir varsayım (kurulumumuzun özelliği).
+        toplam_kare = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+        sure = toplam_kare / fps if (toplam_kare > 0 and fps > 0) else 0.0
+        if sure <= 0:
+            return False
+        konum = pts % sure
+
+        basla = max(0.0, konum - ONCE_S)
+        # Klip videonun sonunu taşarsa başa sar: döngüde zaten oraya
+        # devam ediyor.
+        if basla + TOPLAM_S > sure:
+            basla = max(0.0, sure - TOPLAM_S)
         cap.set(cv2.CAP_PROP_POS_MSEC, basla * 1000.0)
 
         hedef.parent.mkdir(parents=True, exist_ok=True)
@@ -118,16 +148,35 @@ def _kes(kamera: str, pts: float, hedef: Path) -> bool:
             return False
         try:
             hedef_kare = int(TOPLAM_S * fps)
+            yazilan = 0
             for _ in range(hedef_kare):
                 ok, kare = cap.read()
                 if not ok:
                     break
                 yazici.write(kare)
+                yazilan += 1
         finally:
             yazici.release()
     finally:
         cap.release()
-    return hedef.exists() and hedef.stat().st_size > 0
+
+    # ⚠⚠ BAŞARI KONTROLÜ ZAYIFTI VE YALAN SÖYLÜYORDU
+    #
+    # Eski kontrol: `hedef.exists() and st_size > 0`.
+    # 257 baytlık, hiç kare içermeyen, açılamayan bir dosya bu testi
+    # GEÇİYORDU — ve betik "12/12 klip kesildi" diye raporluyordu.
+    #
+    # ⭐ Bir çıktının var olması, kullanılabilir olması demek değil.
+    # Şimdi dosya GERÇEKTEN AÇILIP ilk karesi okunuyor: kontrol, dosyanın
+    # yapacağı işi yapıyor.
+    if yazilan == 0 or not hedef.exists():
+        return False
+    dogrula = cv2.VideoCapture(str(hedef))
+    try:
+        ok, _ = dogrula.read()
+    finally:
+        dogrula.release()
+    return bool(ok)
 
 
 def _uret(args: argparse.Namespace) -> int:

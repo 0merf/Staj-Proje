@@ -6520,3 +6520,156 @@ Dördü de E2E testiyle doğrulanıyor (`e2e/g18-tls.spec.ts`, 4/4 geçti).
 ağ kısıtı bir **erişim sınırı**dır, kimlik doğrulaması değildir. İkisi
 farklı sorulara cevap verir: "kim ulaşabilir" ile "kim yetkilidir".
 
+
+---
+
+### P-77 · ⭐⭐⭐ İLK GERÇEK YANLIŞ ALARM ÖLÇÜMÜ — ve alarm sayısı DÖNGÜYLE ŞİŞİYOR
+
+**Tarih:** 10.09.2026 · **Faz:** 3
+
+**Bağlam:** P-68'de yer gerçeği altyapısı kurulmuştu (`video_pts` olay
+kaydına taşındı). Bu kayıt onu **kullanıyor** ve K7'nin 20 gündür açık
+duran sorusunu ilk kez cevaplıyor: *"bu alarmların kaçı gerçek?"*
+
+---
+
+#### 0. ⚠ ÖNCE ARACIN KENDİSİ BOZUKTU — ve "başarılı" diyordu
+
+Klipler kesildi, hepsi **257 bayt** çıktı. Açılmıyorlardı. Ama betik
+**"12/12 klip kesildi"** diye raporlamıştı (P-68, dün).
+
+**İki hata üst üste:**
+
+**(a) `pts` dosya içi konum DEĞİL.** MediaMTX kaynak videoları
+`-stream_loop -1 -fflags +genpts` ile sonsuz döngüde yayınlıyor;
+`genpts` zaman damgasını her turda sıfırlamıyor, **birikimli** üretiyor.
+`pts = 2037.73`, 300 saniyelik bir videoda "2037. saniye" demek değil,
+"yayın başlayalı 2037 saniye oldu" demek. Betik bunu doğrudan konum
+sanıp dosyanın sonunun ötesine atlıyordu.
+→ Düzeltme: `konum = pts % video_suresi`
+
+**(b) Başarı kontrolü yalan söylüyordu.** Kontrol `dosya var ve
+boyut > 0` idi; 257 baytlık, hiç kare içermeyen, açılamayan bir dosya
+bu testi **geçiyordu**.
+→ Düzeltme: dosya gerçekten açılıp ilk karesi okunuyor.
+
+> ⭐ Bir çıktının **var olması**, kullanılabilir olması demek değil.
+> Kontrol, dosyanın yapacağı işi yapmalı. Bu, P-61'deki
+> "test etmediği şeyi test ettiğini söyleyen test" ile aynı sınıf.
+
+---
+
+#### 1. Etiketleme ölçütü — klipler İZLENMEDEN ÖNCE yazıldı
+
+`docs/report/alarm-etiketleme-kurali.md`. Her tür için ölçüt, kuralın
+**kodda ne iddia ettiğinden** türetildi ("bana anormal göründü" bir
+ölçüt değil). Üç seçenek: 1 (haklı) / 0 (yanlış) / boş (karar
+veremedim → analiz dışı).
+
+⚠ Sebep P-49: ölçütü gördükten sonra yazmak, gördüğünü haklı
+çıkaracak tanımı seçmektir.
+
+**Seçim yanlılığı olmasın diye ilk 20 alarm SIRAYLA** etiketlendi —
+"ilginç olanları seçmek" değil.
+
+---
+
+#### 2. Ham sonuç
+
+```
+tür        etiketli  gerçek  yanlış  kesinlik
+crowd             8       8       0     1.00
+fall              7       6       1     0.86
+risk              4       4       0     1.00
+─────────────────────────────────────────────
+GENEL                                  0.947
+```
+
+**Tek yanlış alarm:** cam-19 `fall` — bir kişi **eğilip çanta alıyor**,
+düşme yok. Kuralın "eğim değişim hızı >40°/sn" koruması bu hareketi
+elemeye yetmemiş.
+
+---
+
+#### 3. ⭐⭐⭐ AMA BU SAYI OLDUĞU GİBİ RAPORLANAMAZ: BAĞIMSIZLIK SORUNU
+
+Alarmların kaynak dağılımına bakılınca aynı olayların tekrarladığı
+görüldü. `pts % video_süresi` ile döngüdeki konum hesaplandı:
+
+```
+video süreleri: cam-16 = 5 sn (!) · cam-13 = 114 · cam-15 = 128
+                cam-04/05/17 = 300 · cam-19 = 345
+
+cam-16 fall  konumlar [3.9, 3.9, 3.9, 4.9, 4.9]  → 1 AYRI olay
+cam-15 risk  konumlar [63.8, 67.3, 72.6]         → 1 AYRI olay
+cam-13 crowd konumlar [99.4, 99.4]               → 1 AYRI olay
+cam-17 crowd konumlar [55, 129, 200, 275]        → 4 AYRI olay
+```
+
+⭐ **cam-16 videosu 5 SANİYE.** Düşme her 5 saniyede bir yeniden
+oynuyor ve her turda alarm üretiyor. Beş "düşme alarmı" tek bir
+düşmedir.
+
+```
+19 etiketli alarm  →  12 BAĞIMSIZ olay
+düzeltilmiş kesinlik: 11/12 = 0.917
+```
+
+---
+
+#### 4. ⚠⚠ BU, K7'NİN YORUMUNU DEĞİŞTİRİYOR
+
+K7 "yanlış alarm ≤3/kamera-saat" diyor ve ölçülen **11.69/kamera-saat**
+idi. Şimdi biliniyor ki bu sayı **döngüyle şişmiş**: aynı olay, video
+her başa sardığında yeniden alarm üretiyor. cam-16'da bu **saatte 720
+kez** demek (3600 ÷ 5).
+
+⚠ **Gerçek bir kamerada böyle bir tekrar olmaz.** Bu, kurulumun
+(kaynak olarak döngüdeki video dosyası kullanmanın) bir yan etkisidir,
+sistemin davranışı değil.
+
+**Raporda yazılacak dürüst ifade:**
+
+> *"Alarm oranı ölçümleri, kaynak videoların sonsuz döngüde
+> yayınlanmasından etkilenmektedir: kısa bir kaynak videoda (cam-16,
+> 5 saniye) aynı olay saatte yüzlerce kez yeniden alarm üretmektedir.
+> Bu nedenle ham alarm/kamera-saat oranı sistemin gerçek yanlış alarm
+> davranışını temsil etmez. Döngüdeki konuma göre tekilleştirildiğinde
+> 19 alarm 12 bağımsız olaya karşılık gelmekte ve kesinlik 0.917
+> ölçülmektedir."*
+
+---
+
+#### 5. ⚠ Bu ölçümün sınırları — önceden yazıldı, sonradan değil
+
+1. **Kesinlik ölçüldü, DUYARLILIK ölçülmedi.** Yalnızca sistemin
+   ürettiği alarmlara bakıldı; "kaçırdığı olay var mı" sorusu için
+   videoların tamamı etiketlenmeliydi.
+2. **n = 12 bağımsız olay.** Küçük. Güven aralığı geniş olurdu.
+3. **Tek değerlendirici**, ikinci gözle uyum ölçülmedi.
+4. **`loitering` hiç ölçülemedi** — 45 saniyelik bir kuralı 6 saniyelik
+   klip doğrulayamaz. "0 örnek" olarak raporlanacak, "%100" değil.
+5. **Klipler sahne kesiği içeriyor:** kaynak videolar derleme
+   (cam-17'nin bir klibi ofis → sokak → havaalanı geçiyor). Bu, Katman
+   A'nın "kamera normali" varsayımını da zorluyor (aşağıya bakınız).
+
+---
+
+#### 6. ⭐ Yan bulgu: "her kameranın normali ayrı öğrenilir" varsayımı zorlanıyor
+
+Mimari kural 7: *"Her kameranın normali ayrı öğrenilir."* Ama kliplerde
+görüldü ki bazı kaynak videolar **birden çok sahnenin derlemesi**
+(cam-17: ofis, gece sokak, havaalanı, restoran). Bir kameranın
+"normali" böyle bir derlemede **alakasız sahnelerin ortalamasıdır** ve
+olağandışılık skoru buna göre üretiliyor.
+
+⚠ Bu bir kod hatası değil, **veri seti kurgusunun** bir sonucu —
+gerçek bir sabit kamerada sahne değişmez. Raporda kapsam sınırı olarak
+yazılacak.
+
+**Öğrenilen ders:** Bir sistemin doğruluğunu ölçmek yetmiyor;
+**ölçümün kendi bağımsızlık varsayımını** da kontrol etmek gerekiyor.
+19 alarm 19 kanıt gibi görünüyordu; döngüdeki konum hesaplanınca 12
+çıktı. Aynı olayı beş kez saymak, örneklem büyüklüğünü beş kat
+abartmaktır.
+
