@@ -1,0 +1,21 @@
+{
+  "olculdu": "2026-09-10T10:07:45.513778+00:00",
+  "pencere_s": 120,
+  "parti": 863.0,
+  "asamalar_ms_kare": {
+    "shm_read": 0.003,
+    "detect": 7.456,
+    "pose": 10.962,
+    "track": 1.562,
+    "emotion": 0.458,
+    "serialize": 0.562,
+    "publish": 1.242,
+    "slot_release": 0.37
+  },
+  "olculen_toplam_ms": 22.616,
+  "parti_toplam_ms": 22.654,
+  "aciklanamayan_ms": 0.039,
+  "kapanis_kontrolu": true,
+  "bekleme_ms": 1.688,
+  "not": "Her gözlem kare başına bir değerdir (observe(sure/len(batch))). bekleme_IS_DEGIL toplama KATILMAZ — CPU değil, bekleme."
+}

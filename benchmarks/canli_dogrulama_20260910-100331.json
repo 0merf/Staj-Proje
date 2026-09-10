@@ -1,0 +1,105 @@
+{
+  "olculdu": "2026-09-10T10:03:31.683533+00:00",
+  "sure_s": 202.7,
+  "ornek": 13,
+  "isinma_s": 90,
+  "gpu": {
+    "ad": "NVIDIA GeForce RTX 3070 Laptop GPU",
+    "toplam_vram_mb": 8192.0
+  },
+  "referans": {
+    "gecikme_p50_ms": 205.0,
+    "gecikme_p95_ms": 463.0,
+    "analiz_fps": 2.75,
+    "ornekleme_fps": 3.64
+  },
+  "model": {
+    "skor_ureten_kamera": 18,
+    "medyan": 0.1654,
+    "azami": 0.9146
+  },
+  "alarm_turleri": {
+    "fall": 30.0,
+    "risk": 43.0,
+    "loitering": 6.0,
+    "crowd": 62.0,
+    "aggression": 11.0,
+    "running": 5.0
+  },
+  "gecikme": {
+    "p50_ms": 378.5,
+    "p95_ms": 651.5,
+    "pencere_ornek": 9484,
+    "yontem": "pencere FARKI üzerinden histogram kova ara değerlemesi — kesin değer değil, ama worker uptime'ından bağımsız"
+  },
+  "verim": {
+    "analiz_fps": 2.339,
+    "ornekleme_fps": 2.837,
+    "yayinlanan": 11501,
+    "analiz_edilen": 9484,
+    "izlenmeyen_kayip": 2017
+  },
+  "kuyruk_xlen": {
+    "frames.ready": {
+      "medyan": 93.0,
+      "azami": 93.0
+    },
+    "inference.results": {
+      "medyan": 5000.0,
+      "azami": 5001.0
+    }
+  },
+  "tuketici_lag": {
+    "frames.ready/inference": {
+      "medyan": 26.0,
+      "azami": 27.0
+    }
+  },
+  "kaynak": {
+    "surecler": [
+      {
+        "rol": "api",
+        "pid": 1324,
+        "ram_mb": 74.1,
+        "cpu_yuzde": 2.0,
+        "thread": 3
+      },
+      {
+        "rol": "alarm",
+        "pid": 23480,
+        "ram_mb": 57.9,
+        "cpu_yuzde": 0.0,
+        "thread": 2
+      },
+      {
+        "rol": "cikarim",
+        "pid": 7692,
+        "ram_mb": 1061.9,
+        "cpu_yuzde": 91.2,
+        "thread": 6
+      },
+      {
+        "rol": "analitik",
+        "pid": 12792,
+        "ram_mb": 133.5,
+        "cpu_yuzde": 94.9,
+        "thread": 2
+      },
+      {
+        "rol": "alim",
+        "pid": 15408,
+        "ram_mb": 1291.1,
+        "cpu_yuzde": 239.5,
+        "thread": 389
+      }
+    ],
+    "toplam_ram_mb": 2618.6,
+    "toplam_cpu": 427.6,
+    "kopya_uyarisi": {},
+    "sistem_ram_yuzde": 80.7
+  },
+  "atilan_kare": {
+    "no_slot": 180.0,
+    "gate_idle": 7.0
+  }
+}

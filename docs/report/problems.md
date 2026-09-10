@@ -7064,3 +7064,153 @@ aralığın genişliğini %54 değiştirebiliyor. Yanlış birim seçmek,
 aralığı hiç hesaplamamaktan daha yanıltıcıdır: sayı bilimsel görünür
 ama yanlıştır.
 
+
+---
+
+### P-82 · ⭐⭐⭐ Kaydedilmemiş bir ölçüm, ölçüm değil ANIDIR — K3 geriledi ve eski sayı doğrulanamadı
+
+**Tarih:** 10.09.2026 · **Faz:** 3
+
+**Neden bakıldı:** Makale için mimari diyagram çiziliyordu. Diyagramın
+iddiası *"her kutunun üstünde ÖLÇÜLMÜŞ bir sayı var"* olduğu için her
+sayının kaynağı tek tek doğrulanmak istendi. Doğrulama sırasında iki
+kaynak birbiriyle çelişti:
+
+```
+P-69  (09.09 akşamı) : p50 147 ms · p95 240 ms · 55.7 kare/sn
+CLAUDE.md K3 satırı  : p50 172-178 ms · p95 322-396 ms  (3 kontrollü koşu)
+```
+
+İkisi de "mevcut mimari" diye sunuluyordu.
+
+---
+
+#### 1. ⚠ P-69'un sayıları hiçbir dosyada YOK
+
+`ad7f060` commit'i **iki dosya** değiştirmiş: `.env.example` ve
+`problems.md`. **Hiçbir benchmark JSON'u kaydedilmemiş.**
+
+Dört yapılandırmalı karşılaştırma tablosu (1/2 parça × 48/96 slot) —
+projenin "en büyük tek kazanç" diye anlattığı ölçüm — yalnızca
+`problems.md` içindeki bir markdown tablosu olarak var. Sayılar canlı
+Prometheus'tan okunup elle yazılmış.
+
+> ⭐⭐⭐ **Kaydedilmemiş bir ölçüm tekrar edilemez; tekrar edilemeyen
+> bir ölçüm kanıt değil ANIDIR.** Proje kuralı zaten bunu söylüyordu
+> (*"benchmarks/ → git'e girer, tekrar üretilebilir"*) ve tam da en
+> önemli ölçümde uygulanmadı.
+
+---
+
+#### 2. Bugün ölçüldü — ve eski sayı çıkmadı
+
+Aynı yapılandırma (96 slot, tek çıkarım worker'ı, `TARGET_FPS=4`),
+panel kapalı, 300 sn pencere:
+
+```
+koşu                        p50      p95   analiz FPS   örnekleme
+10.09 · 1. koşu           377.2    671.2       2.23        2.79
+10.09 · 2. koşu           378.5    651.5       2.34        2.84
+─────────────────────────────────────────────────────────────────
+09.09 · P-69 (kayıtsız)     147      240       2.78          —
+09.09 · 3 kontrollü koşu  172-178  322-396     2.78        2.78
+```
+
+⚠ **İlk koşuyu kendim kirletmiştim:** ölçüm sürerken Playwright ile
+diyagram render ettim — P-36'nın *"ölçüm sırasında sisteme dokunma"*
+kuralının ihlali. Bu yüzden ikinci koşu hiçbir şey çalıştırılmadan
+tekrarlandı. **Sonuç değişmedi** (377 ⟷ 378), yani kirlenme hipotezim
+yanlıştı ve gerileme gerçek.
+
+⭐ Hipotezi çürütmek için tekrarlamak, hipotezi doğrulamak için
+tekrarlamak kadar gerekliydi.
+
+---
+
+#### 3. ⭐⭐ Suçlu ÇIKARIM DEĞİL — çünkü ölçüldü
+
+"Yavaşladıysa çıkarım yavaşlamıştır" en olası tahmindi. Kırılım
+yeniden alındı (120 sn · 863 parti):
+
+```
+aşama          10.09     09.09 (P-66)
+pose           10.96        11.64
+detect          7.46         7.43
+track           1.56         1.56
+publish         1.24         1.19
+serialize       0.56         0.59
+emotion         0.46         0.47
+slot_release    0.37         0.33
+shm_read        0.00         0.00
+──────────────────────────────────────
+ölçülen         22.62       23.22
+PARTİ TOPLAMI   22.65       23.26
+açıklanamayan    0.04        0.04   ✅ ikisinde de hesap KAPANIYOR
+```
+
+⭐ **Çıkarım döngüsü değişmemiş, hatta %2.5 UCUZLAMIŞ.** Ve
+`bekleme_IS_DEGIL` yalnızca 1.69 ms/kare: worker aç değil, **%93
+meşgul**. Yani darboğaz yerinde duruyor ve maliyeti aynı.
+
+⚠ Bu, gerilemenin sebebini **açıklamıyor** — sadece nerede
+OLMADIĞINI kesinleştiriyor. Dürüst ifade: *fark açıklanamadı.*
+
+---
+
+#### 4. Bu ölçüm sırasında elenen üç hipotez
+
+| hipotez | nasıl elendi |
+|---|---|
+| Ölçümü kirlettim (P-36) | temiz tekrar: 377 ⟷ 378, fark yok |
+| Kopya süreç var (her rol 2 python.exe) | `ParentProcessId` bakıldı: her çift ebeveyn→çocuk, belgelenmiş normal durum |
+| Slot havuzu yine tükeniyor | `no_slot` kümülatif **180** — havuz sorunsuz |
+
+⭐ Üçü de ölçülerek elendi, hiçbiri "herhalde değildir" diye
+geçilmedi. Ama geriye kalan da bir açıklama değil, bir **boşluk**.
+
+---
+
+#### 5. Ne yapıldı
+
+1. `scripts/asama_kirilimi.py` **yazıldı** — P-66'nın tablosunu
+   üreten araç yoktu, artık var ve JSON kaydediyor. Kümülatif
+   histogramdan pencere farkı alıyor (P-60), tek birim kullanıyor
+   (P-66) ve **kapanış kontrolü** yapıyor.
+2. Mimari diyagram bugünün ölçülen sayılarıyla çizildi; 147 ms
+   kullanılmadı.
+3. CLAUDE.md'nin K2/K3 satırları güncellendi.
+
+⚠ **K3 hâlâ TUTUYOR** (378 ms ≪ 1500 ms hedefi). Gerileme kriteri
+düşürmüyor; düşürdüğü şey **eski sayıya duyulan güven**.
+K2 ise 2.78 → 2.34'e geriledi.
+
+---
+
+#### 6. Raporda kullanılacak ifade
+
+> *"Uçtan uca gecikme 10.09.2026'da p50 378 ms, p95 652 ms ölçülmüştür
+> (iki bağımsız koşu). Bir gün önceki ölçümlerde 147–178 ms
+> bildirilmişti; bu değer aynı yapılandırmayla tekrar üretilememiş ve
+> aradaki fark açıklanamamıştır. Çıkarım döngüsünün aşama kırılımı iki
+> tarihte de bağımsız olarak ölçülmüş ve değişmediği görülmüştür
+> (22.65 ⟷ 23.26 ms/kare, her ikisinde de kapanış kontrolü sağlanmış).
+> Raporda, tekrar üretilebilen ve yapıtı kaydedilmiş olan ölçüm esas
+> alınmıştır."*
+
+---
+
+#### ⭐⭐⭐ Öğrenilen ders — bu projenin dördüncü tezi
+
+P-60/P-62 *"düzeltme taşınmazsa yapılmamıştır"* diyordu. P-82 bunun
+ölçüm tarafındaki eşi:
+
+> ⭐⭐ **Bir ölçüm, yapıtı kaydedilmediyse yapılmamıştır.** Sayıyı
+> `problems.md`'ye yazmak onu belgelemektir, **tekrar üretilebilir
+> yapmaz.** Ve tekrar üretilemeyen bir sayı, üzerine mimari karar
+> kurulacak kadar sağlam değildir — nitekim "en büyük tek kazanç"
+> diye anlatılan sonuç ertesi gün doğrulanamadı.
+
+Buradaki asıl tehlike sayının yanlış olması değil: **sayının doğru mu
+yanlış mı olduğunun artık bilinemiyor olması.** Kaydedilmiş bir JSON
+olsaydı bugün "aynı kod muydu, aynı yük müydü" sorulabilirdi;
+kaydedilmediği için soru sorulamıyor bile.
