@@ -45,13 +45,13 @@
   <text x="36" y="144" class="kural">⚠ Bu kademe olmadan 20 kamera dönmez (mimari kural 4) — GPU'ya giden kare sayısını o belirliyor.</text>
 
   <line x1="304" y1="150" x2="304" y2="168" class="ok"/>
-  <text x="314" y="164" class="etiket">yayınlanan: kamera başına 2.84 kare/sn (çıkarım 2.34 yetişiyor — fark kuyrukta kalıyor)</text>
+  <text x="314" y="164" class="etiket">yayınlanan: kamera başına 2.84 kare/sn</text>
 
   <!-- KADEME 1 -->
   <rect x="24" y="172" width="560" height="62" class="gpu"/>
   <text x="36" y="193" class="baslik">KADEME 1 — YOLO26-s tespit  <tspan class="etiket">(GPU · parti 6.5 kare)</tspan></text>
   <text x="36" y="211" class="alt">Yalnızca <tspan font-weight="600">insan</tspan> sınıfı. Her yayınlanan kareye uygulanır — eleme yok.</text>
-  <text x="36" y="228" class="olcum">7.46 ms/kare · döngünün %33'ü</text>
+  <text x="36" y="228" class="olcum">7.46 ms/kare · %33 · ⚠ çıkarım 2.34'e yetişiyor, alım 2.84 yayınlıyor</text>
 
   <line x1="304" y1="234" x2="304" y2="250" class="ok"/>
 

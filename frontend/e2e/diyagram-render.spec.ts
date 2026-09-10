@@ -43,17 +43,55 @@ for (const dosya of dosyalar) {
       { waitUntil: 'load' },
     )
 
-    // ─── Taşma kontrolü: her <text> viewBox içinde mi ───
+    // ─── İKİ AYRI KONTROL ───
+    //
+    // ⚠ İlk sürüm yalnızca (1)'i yapıyordu ve GERÇEK bir hatayı
+    // kaçırdı: 02-kademeli-isleme'de bir etiket sağ panelin ALTINDA
+    // kalıyordu. viewBox'ın içindeydi, yani (1) temiz diyordu — ama
+    // görüntüde metin yarıda kesiliyordu.
+    //
+    // Test geçiyordu ve hiçbir şey doğrulamıyordu. P-61'in aynısı:
+    // "testin kendisi, test etmediği şeyi test ettiğini söylüyordu."
+    // Hatayı ancak PNG'ye gözle bakınca gördüm — bir testin varlığı
+    // gözle bakmanın yerini tutmadı.
     const tasanlar = await page.evaluate((genislik) => {
       const kotu: string[] = []
-      document.querySelectorAll('svg text').forEach((t) => {
+      const metinler = Array.from(document.querySelectorAll('svg text'))
+      const kutular = Array.from(document.querySelectorAll('svg rect'))
+      const hepsi = Array.from(document.querySelectorAll('svg *'))
+      const sira = new Map(hepsi.map((el, i) => [el, i]))
+
+      const kesisiyor = (a: DOMRect | SVGRect, b: DOMRect | SVGRect) =>
+        a.x < b.x + b.width &&
+        a.x + a.width > b.x &&
+        a.y < b.y + b.height &&
+        a.y + a.height > b.y
+
+      for (const t of metinler) {
         const kutu = (t as SVGGraphicsElement).getBBox()
+        const metin = (t.textContent ?? '').slice(0, 55)
+
+        // (1) viewBox dışına taşma
         if (kutu.x + kutu.width > genislik - 8) {
-          kotu.push(
-            `${Math.round(kutu.x + kutu.width)}px: "${(t.textContent ?? '').slice(0, 60)}"`,
-          )
+          kotu.push(`sağa taştı (${Math.round(kutu.x + kutu.width)}px): "${metin}"`)
+          continue
         }
-      })
+
+        // (2) SONRADAN çizilen dolu bir dikdörtgen metni örtüyor mu?
+        //     SVG'de boyama sırası belge sırasıdır: metinden SONRA
+        //     gelen opak bir <rect> onu gizler. (Metinden ÖNCE gelen
+        //     kutu normaldir — kutunun içine yazıyoruz.)
+        const benimSiram = sira.get(t) ?? 0
+        for (const r of kutular) {
+          if ((sira.get(r) ?? 0) < benimSiram) continue
+          const dolgu = getComputedStyle(r).fill
+          if (dolgu === 'none' || dolgu === 'transparent') continue
+          if (kesisiyor(kutu, (r as SVGGraphicsElement).getBBox())) {
+            kotu.push(`üstü örtüldü: "${metin}"`)
+            break
+          }
+        }
+      }
       return kotu
     }, g)
 
