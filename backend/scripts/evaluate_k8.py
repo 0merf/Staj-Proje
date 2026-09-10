@@ -91,6 +91,38 @@ ESIKLER = (0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.50)
 TOHUM = 42  # `etiketle_k8.py` ve `evaluate_rwf.py` ile AYNI
 
 
+def _bootstrap_medyan(
+    degerler: list[float], *, tekrar: int = 5000, tohum: int = 20260910,
+) -> list[float] | None:
+    """Medyanın %95 güven aralığı (yerine koyarak yeniden örnekleme).
+
+    ⚠ Klipler bağımsız birim: her klip bir olay. Kare seviyesinde
+    bir bağımlılık yok, bu yüzden basit bootstrap doğru (K6'daki küme
+    bootstrap'ı orada gerekiyordu çünkü orada birim KARE değil KLİPTİ).
+
+    `None` = örneklem yok ya da tek gözlem; aralık hesaplanamaz.
+    ⚠ `None` "aralık sıfır" demek DEĞİL, "ölçemedim" demek.
+    """
+    import random
+
+    if len(degerler) < 2:
+        return None
+    # ⚠ S311: istatistik örneklemesi, kriptografi değil.
+    rng = random.Random(tohum)  # noqa: S311
+    n = len(degerler)
+    medyanlar = sorted(
+        statistics.median([degerler[rng.randrange(n)] for _ in range(n)])
+        for _ in range(tekrar)
+    )
+
+    def _y(oran: float) -> float:
+        i = (len(medyanlar) - 1) * oran
+        alt, ust = int(i), min(int(i) + 1, len(medyanlar) - 1)
+        return medyanlar[alt] + (medyanlar[ust] - medyanlar[alt]) * (i - alt)
+
+    return [round(_y(0.025), 3), round(_y(0.975), 3)]
+
+
 def _skor_serisi(
     yol: Path, *, dedektor: Any, poz: Any, ornek_fps: float, imgsz: int
 ) -> list[tuple[float, float]]:
@@ -283,6 +315,18 @@ def main() -> int:
             "yanlis_alarm_orani": (
                 round(yanlis_alarm / len(normal_serileri), 3) if normal_serileri else None
             ),
+            # ⭐⭐ MEDYAN AVANSIN GÜVEN ARALIĞI
+            #
+            # ⚠ NEDEN GEREKLİ: K8 "❌ tutmuyor" diye raporlanıyor. Ama
+            # bu sonucun KESİN mi yoksa örneklem gürültüsü mü olduğu
+            # bilinmiyordu. Az sayıda klip üzerinden hesaplanmış bir
+            # medyan, birkaç klip değişseydi başka çıkabilirdi.
+            #
+            # Bir kriterin TUTMADIĞINI iddia etmek de bir iddiadır ve
+            # belirsizliği raporlanmalıdır — "tutuyor" iddiası kadar.
+            # Aralık 2.0'ı içeriyorsa "tutmuyor" değil "kararsız"
+            # demek gerekir.
+            "avans_medyan_ga": _bootstrap_medyan(avanslar),
         })
 
     sure = time.time() - t0
@@ -292,13 +336,17 @@ def main() -> int:
     print("\n⚠ AVANS TEK BAŞINA OKUNAMAZ — yanlış alarmla birlikte bakılmalı.")
     print("  Eşiği düşürmek avansı büyütür VE yanlış alarmı artırır.\n")
     print(f"{'eşik':>6} {'yakala':>7} {'kaçır':>6} {'geç':>5} "
-          f"{'medyan avans':>13} {'p25':>7} {'y.alarm':>9}")
+          f"{'medyan avans':>13} {'%95 GA':>18} {'y.alarm':>9}")
     for s in sonuclar:
         med = f"{s['avans_medyan_s']:+.2f} sn" if s["avans_medyan_s"] is not None else "—"
-        p25 = f"{s['avans_p25_s']:+.2f}" if s["avans_p25_s"] is not None else "—"
+        # ⭐ p25 yerine GÜVEN ARALIĞI gösteriliyor: p25 dağılımın bir
+        # noktası, GA ise MEDYANIN ne kadar güvenilir olduğunu söylüyor.
+        # "Tutmuyor" kararı medyana dayandığı için asıl gereken bu.
+        ga = s.get("avans_medyan_ga")
+        ga_str = f"[{ga[0]:+.2f}, {ga[1]:+.2f}]" if ga else "—"
         print(
             f"{s['esik']:>6.2f} {s['yakalanan']:>7} {s['kacirilan']:>6} "
-            f"{s['gec_kalan']:>5} {med:>13} {p25:>7} "
+            f"{s['gec_kalan']:>5} {med:>13} {ga_str:>18} "
             f"{s['yanlis_alarm_orani']:>8.0%}"
         )
 

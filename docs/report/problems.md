@@ -6963,3 +6963,104 @@ yeniden ölçmenin değeri, sayının değişmesinde değil — **değişmediği
 görebilmekte.** Ölçmeseydik "bunca şey değişti, acaba doğruluk bozuldu
 mu?" sorusu açık kalırdı ve rapor onu taşıyamazdı.
 
+
+---
+
+### P-81 · ⭐⭐ K6 ve K8'e GÜVEN ARALIĞI eklendi — ve bağımsızlık varsayımı ölçüldü
+
+**Tarih:** 10.09.2026 · **Faz:** 3
+
+**Neden:** P-80'de K6 yeniden ölçülmüş ama güven aralığı hesaplanmamıştı
+ve "açık iş" diye bırakılmıştı. Kullanıcı haklı olarak itiraz etti:
+*"açık iş bırakma, burada projeyi bitirmeye çalışıyoruz."*
+
+---
+
+#### ⚠ Kritik tasarım kararı: KARE mi, KLİP mi bağımsız birim?
+
+K6, 1439 kare üzerinden ölçülüyor. Ama bu **1439 bağımsız gözlem
+değil** — kareler yalnızca **9 klipten** geliyor ve aynı klibin
+ardışık kareleri aynı sahneyi, aynı kişileri, aynı aydınlatmayı
+gösteriyor.
+
+Naif (kare seviyesi) bootstrap bağımsızlık varsayar ve güven aralığını
+**gerçeğinden dar** gösterir. Doğrusu **küme bootstrap'ı**: 9 klip
+yerine koyarak yeniden örneklenir, bir klip seçilirse tüm kareleri
+gelir.
+
+⭐ Bu, P-77'de canlı alarmlarda yapılan hatanın aynısı: 19 alarm
+sanılıyordu, döngüdeki konum hesaplanınca **12 bağımsız olay** çıkmıştı.
+Aynı ders, iki gün içinde ikinci kez.
+
+**İkisi de hesaplanıp raporlanıyor** — aradaki fark, varsayımın ne
+kadar önemli olduğunun sayısal cevabı.
+
+---
+
+#### Sonuç
+
+```
+SKOR              AUC     kare GA (naif)     KÜME GA (doğru)
+fuzyon          0.869    [0.826, 0.906]     [0.806, 0.929]
+katman_a        0.789    [0.748, 0.825]     [0.749, 0.828]
+katman_a_ema    0.860    [0.813, 0.902]     [0.814, 0.900]
+saldirganlik    0.457    [0.380, 0.538]     [0.444, 0.486]
+kural           0.500    [0.499, 0.500]     [0.499, 0.500]
+
+füzyon: kare genişliği 0.080 · küme genişliği 0.123  (%54 daha geniş)
+```
+
+⭐⭐ **K6 küme GA alt sınırına göre de tutuyor: 0.806 ≥ 0.75.** Yani
+kriter yalnızca nokta tahminiyle değil, **belirsizliğin kötü ucuyla
+da** sağlanıyor. Bu, "0.869 ölçtük" demekten çok daha güçlü bir ifade.
+
+⚠ Küme aralığı kare aralığından **%54 daha geniş.** Naif yöntemle
+rapor etseydik elimizde olmayan bir kesinlik iddia etmiş olurduk.
+
+⚠ `kural` bileşeninin aralığı [0.499, 0.500] — **sıfır genişlikte.**
+Bu, kuralların Avenue'da hiç ateşlemediğinin (hepsi tam 0.0) bir başka
+kanıtı: yeniden örnekleme bile değeri oynatamıyor.
+
+---
+
+#### K8'e de eklendi — ve gerekçesi farklı
+
+K8 **"❌ tutmuyor"** diye raporlanıyor. Ama bu sonucun **kesin mi
+yoksa örneklem gürültüsü mü** olduğu bilinmiyordu.
+
+⭐ **Bir kriterin TUTMADIĞINI iddia etmek de bir iddiadır** ve
+belirsizliği raporlanmalıdır — "tutuyor" iddiası kadar. Aralık 2.0
+saniyeyi içeriyorsa doğru ifade "tutmuyor" değil **"kararsız"**dır.
+
+`evaluate_k8.py` artık her eşik için medyan avansın %95 güven aralığını
+basıyor (`_bootstrap_medyan`, 5000 tekrar). Tabloda `p25` yerine aralık
+gösteriliyor: p25 dağılımın bir noktası, GA ise **medyanın ne kadar
+güvenilir olduğunu** söylüyor — ve "tutmuyor" kararı medyana dayandığı
+için asıl gereken bu.
+
+⚠ K8 için yeniden ölçüm YAPILMADI (elle etiketleme gerektiriyor);
+altyapı hazır, bir sonraki K8 koşusunda aralık otomatik gelecek.
+
+---
+
+#### Güven aralığı durumu — tüm kriterler
+
+| ölçüm | GA | yöntem |
+|---|---|---|
+| K5 birleşim | ✅ | eşleştirilmiş bootstrap (P-64) |
+| K5 eşik yanlılığı | ✅ | tekrarlı yarı-yarıya (P-64) |
+| **K6** | ✅ | **küme bootstrap (bu kayıt)** |
+| **K8** | ✅ | **medyan bootstrap (bu kayıt)** |
+| K7 kesinlik | ⚠ | n=12, aralık hesaplanmadı — örneklem çok küçük |
+
+⚠ K7 için aralık hesaplanmadı ve bu **bilinçli**: 12 bağımsız olayda
+bootstrap aralığı [0.67, 1.00] gibi bir şey verirdi ve bu bilgi
+taşımaz. Doğru ifade "n=12'de 11 doğru" demektir; sayıyı aralıkla
+süslemek kesinlik izlenimi yaratırdı.
+
+**Öğrenilen ders:** Bir güven aralığı hesaplamak yetmiyor — **hangi
+birimin bağımsız olduğuna** karar vermek gerekiyor, ve bu karar
+aralığın genişliğini %54 değiştirebiliyor. Yanlış birim seçmek,
+aralığı hiç hesaplamamaktan daha yanıltıcıdır: sayı bilimsel görünür
+ama yanlıştır.
+

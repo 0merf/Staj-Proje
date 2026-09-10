@@ -114,6 +114,95 @@ AVENUE = PROJECT_ROOT / "data" / "archive" / "Avenue_Dataset" / "Avenue Dataset"
 TRUTH = PROJECT_ROOT / "data" / "annotations" / "cam-19.truth.json"
 
 
+def _bootstrap_auc(
+    kayit: list[tuple[str, str, int, float]],
+    *,
+    tekrar: int = 2000,
+    tohum: int = 20260910,
+) -> dict[str, Any]:
+    """⭐⭐ AUC güven aralığı — İKİ SEVİYELİ, çünkü kareler bağımsız DEĞİL.
+
+    ⚠ NEDEN İKİ YÖNTEM BİRDEN
+    -------------------------
+    K6 1439 kare üzerinden ölçülüyor ama bu 1439 **bağımsız gözlem
+    değil**: kareler yalnızca 9 klipten geliyor ve aynı klibin ardışık
+    kareleri aynı sahneyi, aynı kişileri, aynı aydınlatmayı gösteriyor.
+
+    · **kare seviyesi** (naif): 1439 kareyi yerine koyarak yeniden
+      örnekler. Bağımsızlık varsayar → güven aralığını **gerçeğinden
+      DAR** gösterir.
+    · **küme (klip) seviyesi** (doğru): 9 klibi yerine koyarak yeniden
+      örnekler; bir klip seçilirse TÜM kareleri geliyor. Bağımsız birim
+      klip olduğu için istatistiksel olarak doğru olan budur.
+
+    İkisi de raporlanıyor. Aradaki fark, "bağımsızlık varsayımı ne kadar
+    önemli" sorusunun sayısal cevabı — ve bu projede aynı hata canlı
+    alarmlarda bir kez yapılmıştı (P-77: 19 alarm sanılıyordu, 12
+    bağımsız olay çıktı).
+
+    ⚠ 9 klip AZ. Küme aralığının geniş çıkması bir kusur değil,
+    örneklemin küçüklüğünün dürüst ifadesidir. Dar bir aralık
+    bildirmek, elimizde olmayan bir kesinliği iddia etmek olurdu.
+    """
+    import random
+
+    # ⚠ S311: istatistik örneklemesi, kriptografi değil. Tekrarlanabilirlik
+    # için tohum sabit.
+    rng = random.Random(tohum)  # noqa: S311
+
+    skorlar = sorted({ad for _k, ad, _h, _d in kayit})
+    klipler = sorted({k for k, _ad, _h, _d in kayit})
+
+    # skor → klip → (poz listesi, neg listesi)
+    gruplu: dict[str, dict[str, tuple[list[float], list[float]]]] = {
+        ad: {k: ([], []) for k in klipler} for ad in skorlar
+    }
+    for klip, ad, hedef, deger in kayit:
+        gruplu[ad][klip][hedef].append(deger)
+
+    def _yuzdelik(dizi: list[float], oran: float) -> float:
+        d = sorted(dizi)
+        if not d:
+            return 0.0
+        i = (len(d) - 1) * oran
+        alt, ust = int(i), min(int(i) + 1, len(d) - 1)
+        return d[alt] + (d[ust] - d[alt]) * (i - alt)
+
+    cikti: dict[str, Any] = {"tekrar": tekrar, "klip_sayisi": len(klipler)}
+
+    for ad in skorlar:
+        tum_poz = [v for k in klipler for v in gruplu[ad][k][0]]
+        tum_neg = [v for k in klipler for v in gruplu[ad][k][1]]
+        gozlenen = _roc_auc(tum_poz, tum_neg)
+
+        # ─── (a) kare seviyesi — naif ───
+        kare_auc: list[float] = []
+        for _ in range(tekrar):
+            p = [tum_poz[rng.randrange(len(tum_poz))] for _ in range(len(tum_poz))]
+            n = [tum_neg[rng.randrange(len(tum_neg))] for _ in range(len(tum_neg))]
+            kare_auc.append(_roc_auc(p, n))
+
+        # ─── (b) küme (klip) seviyesi — doğru ───
+        kume_auc: list[float] = []
+        for _ in range(tekrar):
+            secilen = [klipler[rng.randrange(len(klipler))] for _ in range(len(klipler))]
+            p = [v for k in secilen for v in gruplu[ad][k][0]]
+            n = [v for k in secilen for v in gruplu[ad][k][1]]
+            # ⚠ Tek sınıflı örneklem AUC'yi tanımsız yapar — atlanıyor.
+            if p and n:
+                kume_auc.append(_roc_auc(p, n))
+
+        cikti[ad] = {
+            "gozlenen": round(gozlenen, 4),
+            "kare_ga": [round(_yuzdelik(kare_auc, 0.025), 4),
+                        round(_yuzdelik(kare_auc, 0.975), 4)],
+            "kume_ga": [round(_yuzdelik(kume_auc, 0.025), 4),
+                        round(_yuzdelik(kume_auc, 0.975), 4)],
+            "kume_gecerli_tekrar": len(kume_auc),
+        }
+    return cikti
+
+
 def _roc_auc(pozitif: list[float], negatif: list[float]) -> float:
     """Mann-Whitney U ile ROC eğrisi altındaki alan.
 
@@ -490,6 +579,9 @@ _PROFIL: dict[str, Any] = {}
 def main() -> int:
     ap = argparse.ArgumentParser(description="K6 — anomali ROC-AUC")
     ap.add_argument("--klip", type=int, default=99, help="kaç test klibi (yer gerçeği olanlardan)")
+    ap.add_argument("--bootstrap", type=int, default=2000,
+                    help="bootstrap tekrar sayısı (0 = atla). Kare VE küme "
+                         "seviyesinde iki aralık üretir")
     ap.add_argument("--fps", type=float, default=4.0)
     ap.add_argument("--imgsz", type=int, default=640)
     ap.add_argument(
@@ -626,6 +718,20 @@ def main() -> int:
         ad: ([], [])
         for ad in ("fuzyon", "katman_a", "katman_a_ema", "saldirganlik", "kural")
     }
+    # ⭐ KLİP KİMLİĞİ DE SAKLANIYOR — küme bootstrap'ı için ZORUNLU.
+    #
+    # ⚠ Aynı klibin kareleri BAĞIMSIZ DEĞİL: ardışık kareler aynı
+    # sahneyi, aynı kişileri, aynı aydınlatmayı gösteriyor. Kare
+    # seviyesinde yeniden örnekleme, 1439 bağımsız gözlem varmış gibi
+    # davranır ve güven aralığını GERÇEĞİNDEN DAR gösterir.
+    #
+    # Bağımsız birim KLİP'tir (9 tane). P-77'de aynı hatanın canlı
+    # alarmlarda yapıldığı görülmüştü: 19 alarm, döngüdeki konuma göre
+    # tekilleştirilince 12 bağımsız olaya düşmüştü.
+    #
+    # Her iki yöntem de hesaplanıp raporlanıyor: farkın büyüklüğü,
+    # bağımsızlık varsayımının ne kadar önemli olduğunu gösteriyor.
+    klip_kayit: list[tuple[str, str, int, float]] = []  # (klip, skor_adı, etiket, değer)
     t0 = time.time()
     kapsanan = 0
     for i, yol in enumerate(klipler, 1):
@@ -642,6 +748,7 @@ def main() -> int:
                 ("saldirganlik", s), ("kural", k),
             ):
                 seriler[ad][hedef].append(deger)
+                klip_kayit.append((yol.name, ad, hedef, deger))
         print(
             f"\r  {i}/{len(klipler)} {yol.name} · {len(kareler)} kare · "
             f"{len(araliklar)} anomali segmenti",
@@ -682,6 +789,32 @@ def main() -> int:
             ),
         }
         print(f"{ad:<14} {auc:>7.3f} {p_med:>12.3f} {n_med:>11.3f} {p90:>12.3f}")
+
+    # ─── ⭐⭐ BOOTSTRAP — güven aralıkları ───
+    bs = _bootstrap_auc(klip_kayit, tekrar=args.bootstrap) if args.bootstrap > 0 else {}
+    if bs:
+        print(f"\n═══ ⭐ BOOTSTRAP · {bs['tekrar']} tekrar · %95 GA ═══")
+        print(f"{'SKOR':<14}{'AUC':>7}{'kare GA (naif)':>22}{'KÜME GA (doğru)':>22}")
+        for ad in ("fuzyon", "katman_a", "katman_a_ema", "saldirganlik", "kural"):
+            b_ = bs.get(ad)
+            if not b_:
+                continue
+            kg, ug = b_["kare_ga"], b_["kume_ga"]
+            print(f"{ad:<14}{b_['gozlenen']:>7.3f}"
+                  f"{f'[{kg[0]:.3f}, {kg[1]:.3f}]':>22}"
+                  f"{f'[{ug[0]:.3f}, {ug[1]:.3f}]':>22}")
+        f_ = bs["fuzyon"]
+        print("\n  ⚠ İKİ ARALIK ARASINDAKİ FARK BİR BULGUDUR:")
+        print("    kare seviyesi kareleri BAĞIMSIZ sayıyor → aralık DAR")
+        print(f"    küme seviyesi {bs['klip_sayisi']} klibi bağımsız birim sayıyor → GERÇEK belirsizlik")
+        print(f"    füzyon: kare genişliği {f_['kare_ga'][1] - f_['kare_ga'][0]:.3f}"
+              f" · küme genişliği {f_['kume_ga'][1] - f_['kume_ga'][0]:.3f}")
+        alt = f_["kume_ga"][0]
+        karar = (
+            "✅ ALT SINIR DA GEÇİYOR" if alt >= 0.75
+            else f"⚠ ALT SINIR HEDEFİN ALTINDA ({alt:.3f})"
+        )
+        print(f"\n  K6 (≥0.75) küme GA alt sınırına göre: {karar}")
 
     fuzyon_auc = ozet["fuzyon"]["auc"]
     # ⚠ EMA'lı seri "tek bileşen" yarışmasına GİRMİYOR: o bir bileşen
@@ -740,6 +873,7 @@ def main() -> int:
         "kare_normal": neg_n,
         "sure_s": round(sure, 1),
         "sonuc": ozet,
+        "bootstrap": bs,
         "k6_tutuyor": bool(fuzyon_auc >= 0.75),
         # ⚠ FÜZYONUN KENDİ SINAVI (P-41) — sayı JSON'a da giriyor ki
         # rapor bu karşılaştırmayı yeniden koşmadan alıntılayabilsin.

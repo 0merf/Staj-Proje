@@ -1,0 +1,127 @@
+{
+ "olculdu": "2026-09-10T09:23:10.998781+00:00",
+ "kriter": "K6",
+ "hedef_auc": 0.75,
+ "veri_seti": "CUHK Avenue (testing)",
+ "klip_sayisi": 9,
+ "ornekleme_fps": 4.0,
+ "isinma_fps": 25.0,
+ "isinma_klip": 16,
+ "profil_gozlem": 125130,
+ "kare_toplam": 1439,
+ "kare_anomali": 69,
+ "kare_normal": 1370,
+ "sure_s": 89.8,
+ "sonuc": {
+  "fuzyon": {
+   "auc": 0.8691,
+   "anomali_p50": 0.2169,
+   "normal_p50": 0.0527,
+   "anomali_p90": 0.2433,
+   "sifir_olmayan_oran": 0.9812
+  },
+  "katman_a": {
+   "auc": 0.7891,
+   "anomali_p50": 0.863,
+   "normal_p50": 0.1572,
+   "anomali_p90": 1.0,
+   "sifir_olmayan_oran": 0.5803
+  },
+  "katman_a_ema": {
+   "auc": 0.8602,
+   "anomali_p50": 0.8643,
+   "normal_p50": 0.3192,
+   "anomali_p90": 0.9542,
+   "sifir_olmayan_oran": 0.9903
+  },
+  "saldirganlik": {
+   "auc": 0.4573,
+   "anomali_p50": 0.0851,
+   "normal_p50": 0.0882,
+   "anomali_p90": 0.1759,
+   "sifir_olmayan_oran": 0.9812
+  },
+  "kural": {
+   "auc": 0.4996,
+   "anomali_p50": 0.0,
+   "normal_p50": 0.0,
+   "anomali_p90": 0.0,
+   "sifir_olmayan_oran": 0.0007
+  }
+ },
+ "bootstrap": {
+  "tekrar": 2000,
+  "klip_sayisi": 9,
+  "fuzyon": {
+   "gozlenen": 0.8691,
+   "kare_ga": [
+    0.8257,
+    0.906
+   ],
+   "kume_ga": [
+    0.8057,
+    0.9286
+   ],
+   "kume_gecerli_tekrar": 1295
+  },
+  "katman_a": {
+   "gozlenen": 0.7891,
+   "kare_ga": [
+    0.7476,
+    0.825
+   ],
+   "kume_ga": [
+    0.7494,
+    0.8275
+   ],
+   "kume_gecerli_tekrar": 1296
+  },
+  "katman_a_ema": {
+   "gozlenen": 0.8602,
+   "kare_ga": [
+    0.8128,
+    0.9019
+   ],
+   "kume_ga": [
+    0.8142,
+    0.9004
+   ],
+   "kume_gecerli_tekrar": 1300
+  },
+  "kural": {
+   "gozlenen": 0.4996,
+   "kare_ga": [
+    0.4989,
+    0.5
+   ],
+   "kume_ga": [
+    0.499,
+    0.5
+   ],
+   "kume_gecerli_tekrar": 1297
+  },
+  "saldirganlik": {
+   "gozlenen": 0.4573,
+   "kare_ga": [
+    0.3801,
+    0.5385
+   ],
+   "kume_ga": [
+    0.444,
+    0.4856
+   ],
+   "kume_gecerli_tekrar": 1337
+  }
+ },
+ "k6_tutuyor": true,
+ "fuzyon_sinavi": {
+  "soru": "kazandıran sinyal birleştirme mi, zamansal yumuşatma mı",
+  "katman_a_ham": 0.7891,
+  "katman_a_ema_kontrol": 0.8602,
+  "fuzyon": 0.8691,
+  "fark": 0.0089,
+  "anlamlilik_esigi": 0.02,
+  "esik_gerekcesi": "9 klip / 69 anomali karesinde AUC belirsizliği bu mertebede; daha küçük farkı kazanç saymak gürültüyü bulgu ilan etmek olur",
+  "sonuc": "kazandiran_yumusatma"
+ }
+}
