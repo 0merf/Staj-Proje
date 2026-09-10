@@ -1,0 +1,20 @@
+{
+  "olculdu": "2026-09-10T14:50:21.633Z",
+  "kriter": "K10 — UI akıcılığı",
+  "hedef_fps": 30,
+  "olcum_sn": 30,
+  "isinma_sn": 10,
+  "paintFps": 30.020624602252457,
+  "videoKareToplam": 9005,
+  "videoKareDusen": 3005,
+  "videoFpsToplam": 300.0396498815576,
+  "acikKamera": 20,
+  "gorunenKamera": 20,
+  "kontrol_fps_kamerasiz": 59.99,
+  "yukun_getirdigi_dusus": 0.4995,
+  "video_fps_kamera_basina": 15,
+  "dusen_kare_orani": 0.3337,
+  "tutuyor": true,
+  "yontem": "requestAnimationFrame sayımı (çizim) + getVideoPlaybackQuality (video kare/düşen). Üç büyüklük AYRI raporlanıyor.",
+  "not": "Tarayıcı 20 H.264 akışını CPU’da çözüyor; bu donanım/tarayıcı sınırıdır, kod hatası değil (P-24)."
+}

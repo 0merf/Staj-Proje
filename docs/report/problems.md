@@ -7772,3 +7772,102 @@ kimlik doğrulamalı bir API ucundan geçiyor.
 
 Ve envanteri çıkaran aracın kendisi de sınanmalı: ilk sürümü uçların
 yarısını görmüyordu ve bunu söylemiyordu.
+
+---
+
+### P-87 · ⭐⭐⭐ K10'un eşiği bir KUANTALAMA BASAMAĞININ ÜSTÜNDE — ve "düşen kare sıfır" iddiam tekrarla çürüdü
+
+**Tarih:** 10.09.2026 · **Faz:** 3
+
+**Neden bakıldı:** Son denetimde tam E2E paketi koşturuldu ve K10
+testi bu kez **❌ TUTMUYOR** yazdı. Sabah aynı test **✅ 30.0 FPS**
+demişti. Aynı gün, aynı kod, iki farklı sonuç.
+
+---
+
+#### 1. Yedi koşu — ve iki büyüklüğün TAMAMEN farklı davranışı
+
+```
+ölçüldü               çizim  kontrol  video/sn   düşen%
+08:05:25              29.96      —      275.0     1.8%
+08:06:50              30.00      —      275.0     2.3%
+08:09:29              30.02    60.19    275.0     0.0%   ⬅ P-75 bunu raporladı
+14:46:24              29.43    59.68    225.0    16.1%
+14:48:59              30.00    59.92    225.0    11.4%
+14:50:21              30.02    59.99    300.0    33.4%
+14:51:19              29.90    60.05    200.0     1.6%
+
+çizim FPS  : medyan 30.00 · aralık 29.43–30.02   (genişlik 0.59)
+düşen kare : medyan  2.3% · aralık  0.0%–33.4%   (genişlik 33 puan)
+```
+
+---
+
+#### 2. ⭐⭐⭐ ÇİZİM FPS'İ ÖLÇÜLEBİLİR BİR SÜREKLİ BÜYÜKLÜK DEĞİL
+
+`requestAnimationFrame` tarayıcının **dikey senkronizasyonuna**
+(vsync) bağlı. 60 Hz bir ekranda alabileceği değerler pratikte
+60, 30, 20, 15 — yani **kuantalı**. Yük altında tarayıcı 60'tan 30'a
+düşüyor ve orada kilitleniyor; kontrol serisi bunu doğruluyor
+(kamerasız her koşuda 59.7–60.2).
+
+**K10'un eşiği tam olarak 30.** Yani ölçüt, sistemin oturduğu
+kuantalama basamağının **üstünde** duruyor. Ölçülen değerin 29.96 mı
+30.02 mi çıkacağını sistemin başarısı değil, sayım penceresinin
+kenar etkileri belirliyor.
+
+> ⭐⭐ **Bir eşik, ölçülen büyüklüğün kuantalama basamağına
+> oturuyorsa, "geçti/kaldı" kararını gürültü verir.** 30.02 için ✅,
+> 29.43 için ❌ demek, aynı sistemi iki farklı sonuçla raporlamaktır.
+
+Bu, P-84'ün kardeşi: orada ölçütün **tavanı** hedefin altındaydı
+(ölçülemez), burada ölçütün **eşiği** ölçüm çözünürlüğünün üstünde
+(ayırt edilemez). İkisi de "hedef tutmadı" demeden önce sorulması
+gereken soruyu gösteriyor: **bu ölçüt bu araçla ölçülebilir mi?**
+
+---
+
+#### 3. ⚠ VE KENDİ İDDİAMI ÇÜRÜTTÜM: "düşen kare SIFIR"
+
+P-75'te şöyle yazmıştım:
+
+> *"⭐⭐ Düşen kare SIFIR. Tarayıcı 20 H.264 akışını CPU'da çözüyor ve
+> tek bir kare bile düşürmüyor. Bu, beklediğimizden çok daha iyi."*
+
+**Tek bir koşuya dayanıyordu.** Yedi koşuda düşen kare oranı
+**%0.0 ile %33.4** arasında değişiyor. Sıfır, dağılımın en iyi ucuydu
+— tipik değeri değil.
+
+⚠ Üstelik o cümle bir "beklentimi aştı" vurgusu taşıyordu, yani
+şaşırtıcı bir sonucu **tek gözlemle** kabul etmiştim. Beklenmedik bir
+sonuç, beklenen bir sonuçtan **daha fazla** tekrar ister.
+
+> ⭐ Bu projede aynı hatanın üçüncü biçimi: P-64'te *"0.968 tek başına
+> bir kanıt değil"*, P-84'te *"nokta tahmin geç kalmayı söyleyemez"*,
+> burada *"tek koşu bir dağılımı temsil edemez"*. Ortak kural:
+> **tek sayı bir sonuç değildir.**
+
+---
+
+#### 4. K10'un dürüst durumu
+
+| büyüklük | değer | yorum |
+|---|---|---|
+| çizim (paint) FPS | medyan **30.00** (29.43–30.02) | vsync yarı hızına kilitli; eşik tam bu basamakta |
+| kontrol (0 kamera) | **59.7–60.2** | tavan 60, yani 30 bir artefakt değil gerçek yük etkisi |
+| video çözme | **200–300 kare/sn** toplam (10–15/kamera) | 20 akış CPU'da çözülüyor |
+| düşen kare | medyan **%2.3** (0–33.4) | yüke göre çok değişken |
+
+**Raporda kullanılacak ifade:**
+
+> *"Arayüz akıcılığı yedi bağımsız koşuda ölçülmüştür. Çizim hızı
+> medyan 30.00 FPS'tir (aralık 29.43–30.02) ve kamera açılmadığında
+> ölçülen 60 FPS'lik tavanın tam yarısına karşılık gelmektedir. Bu
+> değer `requestAnimationFrame`'in vsync kuantalaması nedeniyle
+> sürekli değil basamaklıdır; ölçütün 30 FPS eşiği tam bu basamağın
+> üzerine düştüğünden, kriterin 'sağlandı/sağlanmadı' kararı ölçüm
+> gürültüsüyle değişmektedir ve bu haliyle ayırt edici değildir.
+> Daha bilgilendirici olan düşen kare oranı medyan %2.3'tür (aralık
+> %0–33.4) ve makinedeki eşzamanlı yüke güçlü biçimde bağlıdır."*
+
+⚠ K10 artık ✅ değil **🟡 sınırda** olarak işaretleniyor.
