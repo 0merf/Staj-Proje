@@ -1,0 +1,162 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 770" width="1180" height="770" font-family="Segoe UI, Arial, sans-serif">
+  <!--
+    SENTINEL — KADEMELİ İŞLEME ve ÖLÇÜLEN MALİYET DAĞILIMI
+    Üretildi: 10.09.2026 · docs/report/diagrams/
+
+    Kaynaklar (hepsi ölçüm):
+      P-66  · aşama kırılımı (150 sn · 6941 kare · 1040 parti)
+      P-72  · ifade kapısı  · benchmarks/ifade_kapi_20260910-070202.json
+      P-61  · çözme/BGR CPU zamanı
+      fusion.py · füzyon ağırlıkları (koddan)
+  -->
+  <defs>
+    <marker id="ok2" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <polygon points="0 0, 10 4, 0 8" fill="#5c7cfa"/>
+    </marker>
+    <style>
+      .kutu   { fill:#f8f9fa; stroke:#343a40; stroke-width:1.6; rx:6; }
+      .gpu    { fill:#e7f5ff; stroke:#1971c2; stroke-width:2; rx:6; }
+      .cpu    { fill:#fff9db; stroke:#e67700; stroke-width:1.8; rx:6; }
+      .yok    { fill:#f1f3f5; stroke:#adb5bd; stroke-width:1.6; stroke-dasharray:6 4; rx:6; }
+      .baslik { font-size:13px; font-weight:600; fill:#212529; }
+      .alt    { font-size:10.5px; fill:#495057; }
+      .olcum  { font-size:10.5px; font-weight:600; fill:#1971c2; }
+      .etiket { font-size:10px; fill:#868e96; }
+      .kural  { font-size:10px; font-style:italic; fill:#c92a2a; }
+      .ok     { stroke:#5c7cfa; stroke-width:2; fill:none; marker-end:url(#ok2); }
+      .bar    { fill:#4dabf7; }
+      .barbuyuk { fill:#1971c2; }
+      .barkucuk { fill:#adb5bd; }
+      .barmetin { font-size:10.5px; fill:#212529; }
+      .barad   { font-size:11px; font-weight:600; fill:#212529; }
+    </style>
+  </defs>
+
+  <text x="24" y="30" font-size="17" font-weight="700" fill="#212529">SENTINEL — Kademeli İşleme ve Ölçülen Maliyet Dağılımı</text>
+  <text x="24" y="49" class="etiket">Sol: kademeler ve her kademenin ELEME oranı · Sağ: çıkarım döngüsünün ölçülen maliyeti (10.09 · P-66 ile bağımsız olarak tekrarlandı)</text>
+
+  <!-- ══════════ SOL: KADEME HUNİSİ ══════════ -->
+
+  <!-- KADEME 0 -->
+  <rect x="24" y="72" width="560" height="78" class="cpu"/>
+  <text x="36" y="93" class="baslik">KADEME 0 — Hareket kapısı  <tspan class="etiket">(alım worker'ı · CPU)</tspan></text>
+  <text x="36" y="111" class="alt">Kare farkı + uyarlanabilir FPS. Hareketsiz kamerada örnekleme 4 → 1 FPS'e iner.</text>
+  <text x="36" y="128" class="olcum">çözme 1.58 ms + BGR 1.61 ms CPU/kare · alım worker&#39;ı toplam 2.42 çekirdek</text>
+  <text x="36" y="144" class="kural">⚠ Bu kademe olmadan 20 kamera dönmez (mimari kural 4) — GPU'ya giden kare sayısını o belirliyor.</text>
+
+  <line x1="304" y1="150" x2="304" y2="168" class="ok"/>
+  <text x="314" y="164" class="etiket">yayınlanan: kamera başına 2.84 kare/sn (çıkarım 2.34 yetişiyor — fark kuyrukta kalıyor)</text>
+
+  <!-- KADEME 1 -->
+  <rect x="24" y="172" width="560" height="62" class="gpu"/>
+  <text x="36" y="193" class="baslik">KADEME 1 — YOLO26-s tespit  <tspan class="etiket">(GPU · parti 6.5 kare)</tspan></text>
+  <text x="36" y="211" class="alt">Yalnızca <tspan font-weight="600">insan</tspan> sınıfı. Her yayınlanan kareye uygulanır — eleme yok.</text>
+  <text x="36" y="228" class="olcum">7.46 ms/kare · döngünün %33'ü</text>
+
+  <line x1="304" y1="234" x2="304" y2="250" class="ok"/>
+
+  <!-- KADEME 1b -->
+  <rect x="24" y="254" width="560" height="58" class="gpu"/>
+  <text x="36" y="275" class="baslik">KADEME 1b — BoT-SORT takip  <tspan class="etiket">(kamera başına ayrı örnek)</tspan></text>
+  <text x="36" y="293" class="alt">Kimlik atar. CMC ve ReID kapalı (sabit kamera + GPU bütçesi · ADR).</text>
+  <text x="36" y="308" class="olcum">1.56 ms/kare · %7</text>
+
+  <line x1="304" y1="312" x2="304" y2="328" class="ok"/>
+
+  <!-- KADEME 2a -->
+  <rect x="24" y="332" width="560" height="62" class="gpu"/>
+  <text x="36" y="353" class="baslik">KADEME 2a — YOLO26-pose  <tspan class="etiket">(top-down: kutu → %15 dolgu → 192 px)</tspan></text>
+  <text x="36" y="371" class="alt">Tespit edilen her kişi kutusuna uygulanır. İskelet, düşme ve saldırganlığın girdisi.</text>
+  <text x="36" y="388" class="olcum">10.96 ms/kare · %48  ⬅ EN BÜYÜK KALEM</text>
+
+  <line x1="304" y1="394" x2="304" y2="410" class="ok"/>
+
+  <!-- KADEME 2b -->
+  <rect x="24" y="414" width="560" height="88" class="gpu"/>
+  <text x="36" y="435" class="baslik">KADEME 2b — YuNet yüz + EmotiEffLib ifade  <tspan class="etiket">(iki basamaklı kapı)</tspan></text>
+  <text x="36" y="453" class="alt">1. basamak — kişi kutusu ≥180 px:  <tspan class="olcum">2087 kişiden 171'i geçti (%8.2)</tspan></text>
+  <text x="36" y="470" class="alt">2. basamak — YuNet yüz buluyor mu:  <tspan class="olcum">8 kameranın 7'sinde 0 yüz; yalnız cam-20 (25/25)</tspan></text>
+  <text x="36" y="488" class="kural">⚠ Sonuç: ifade sinyali pratikte TEK kamerada üretiliyor. Ucuz olmasının sebebi bu (0.46 ms/kare · %2).</text>
+
+  <line x1="304" y1="502" x2="304" y2="518" class="ok"/>
+
+  <!-- KADEME 3 - YOK -->
+  <rect x="24" y="522" width="560" height="58" class="yok"/>
+  <text x="36" y="543" class="baslik" fill="#868e96">KADEME 3 — video aksiyon doğrulayıcı</text>
+  <text x="36" y="561" class="kural">⛔ PLAN'da var, KODDA YOK. Kapsam dışı bırakıldı — raporda gerekçesiyle yazılıyor (mimari kural 0).</text>
+  <text x="36" y="575" class="etiket">Sessizce atlanmadı: belgede duran bir kademe kodda yoksa, belge yanlış beyandır.</text>
+
+  <!-- ══════════ SAĞ ÜST: MALİYET ÇUBUKLARI ══════════ -->
+  <rect x="612" y="72" width="544" height="300" fill="#ffffff" stroke="#dee2e6" stroke-width="1.4" rx="6"/>
+  <text x="628" y="94" font-size="13" font-weight="700" fill="#212529">Çıkarım döngüsü — ms/kare (tek birim, tek pencere)</text>
+  <text x="628" y="111" class="etiket">10.09 · 120 sn · 863 parti · 6.5 kare/parti · 46.8 kare/sn</text>
+
+  <!-- pose -->
+  <text x="628" y="139" class="barad">pose</text>
+  <rect x="712" y="129" width="357" height="14" class="barbuyuk"/>
+  <text x="1075" y="140" class="barmetin">10.96 · %48</text>
+  <!-- detect -->
+  <text x="628" y="164" class="barad">detect</text>
+  <rect x="712" y="154" width="243" height="14" class="barbuyuk"/>
+  <text x="961" y="165" class="barmetin">7.46 · %33</text>
+  <!-- track -->
+  <text x="628" y="189" class="barad">track</text>
+  <rect x="712" y="179" width="51" height="14" class="bar"/>
+  <text x="769" y="190" class="barmetin">1.56 · %7</text>
+  <!-- publish -->
+  <text x="628" y="214" class="barad">publish</text>
+  <rect x="712" y="204" width="40" height="14" class="bar"/>
+  <text x="758" y="215" class="barmetin">1.24 · %5</text>
+  <!-- serialize -->
+  <text x="628" y="239" class="barad">serialize</text>
+  <rect x="712" y="229" width="18" height="14" class="bar"/>
+  <text x="736" y="240" class="barmetin">0.56 · %2</text>
+  <!-- emotion -->
+  <text x="628" y="264" class="barad">emotion</text>
+  <rect x="712" y="254" width="15" height="14" class="bar"/>
+  <text x="733" y="265" class="barmetin">0.46 · %2</text>
+  <!-- slot_release -->
+  <text x="628" y="289" class="barad">slot_release</text>
+  <rect x="712" y="279" width="12" height="14" class="barkucuk"/>
+  <text x="730" y="290" class="barmetin">0.37 · %2</text>
+  <!-- shm_read -->
+  <text x="628" y="314" class="barad">shm_read</text>
+  <rect x="712" y="304" width="2" height="14" class="barkucuk"/>
+  <text x="722" y="315" class="barmetin">0.00 · %0  (paylaşımlı bellek bedava sayılabilir)</text>
+
+  <line x1="712" y1="326" x2="1140" y2="326" stroke="#adb5bd" stroke-width="1"/>
+  <text x="628" y="345" class="barad">GPU işi (pose+detect)</text>
+  <text x="880" y="345" font-size="11" font-weight="700" fill="#1971c2">bütçenin %82'si</text>
+  <text x="628" y="363" class="alt">→ TensorRT'nin tam alanı; 1.61× ölçüldü ama üretimde parti boyutunda kırıldı (P-70)</text>
+
+  <!-- ══════════ SAĞ ORTA: KAPANIŞ KONTROLÜ ══════════ -->
+  <rect x="612" y="386" width="544" height="134" fill="#ebfbee" stroke="#2f9e44" stroke-width="1.6" rx="6"/>
+  <text x="628" y="408" font-size="12.5" font-weight="700" fill="#2f9e44">✅ KAPANIŞ KONTROLÜ — bu tablonun asıl değeri</text>
+  <text x="628" y="428" class="alt">ölçülen aşamaların toplamı ........ 22.62 ms/kare</text>
+  <text x="628" y="445" class="alt">bağımsız ölçülen PARTİ TOPLAMI ... 22.65 ms/kare</text>
+  <text x="628" y="462" class="alt">açıklanamayan ........................ <tspan font-weight="700" fill="#2f9e44">0.04 ms (%0)</tspan></text>
+  <text x="628" y="483" class="kural">⚠ Önceki tabloda bu kontrol YOKTU ve "ölçülmeyen %70 tutkal var" diye yanlış bir</text>
+  <text x="628" y="497" class="kural">bulgu üretmişti. Parçaları ölçüp toplamı ölçmemek, "kalan sıfırdır" demektir (P-66).</text>
+  <text x="628" y="511" class="alt">⭐ Bu tablo ertesi gün, AYRI bir araçla bağımsız olarak tekrarlandı (09.09: 23.22 / 23.26).</text>
+
+  <!-- ══════════ SAĞ ALT: FÜZYON ══════════ -->
+  <rect x="612" y="530" width="544" height="140" class="kutu"/>
+  <text x="628" y="552" font-size="12.5" font-weight="700" fill="#212529">FÜZYON — 5 sinyal → tek risk skoru  (analytics/fusion.py)</text>
+  <text x="628" y="574" class="alt">saldırganlık 0.40 · anomali (Katman A) 0.25 · kural (Katman B) 0.20</text>
+  <text x="628" y="591" class="alt">ifade 0.10 · kalabalık 0.05   —   ardından EMA (α = 0.4) + histerezis</text>
+  <text x="628" y="613" class="kural">⚠ ÖLÇÜLDÜ: K6'daki kazancın neredeyse tamamı EMA YUMUŞATMASINDAN geliyor,</text>
+  <text x="628" y="628" class="kural">sinyal birleştirmeden değil (katman_a+EMA 0.860 ⟷ füzyon 0.869).</text>
+  <text x="628" y="649" class="alt">Füzyonun ölçülen gerçek kazancı K6'da değil K7'de: <tspan font-weight="600">gürültü bastırma</tspan>.</text>
+  <text x="628" y="664" class="etiket">Avenue'da 5 sinyalin 2'si ölü (kural tam 0.500, saldırganlık 0.457 — şans altı).</text>
+
+  <!-- ══════════ ALT ŞERİT ══════════ -->
+  <rect x="24" y="600" width="560" height="66" fill="#fff5f5" stroke="#c92a2a" stroke-width="1.4" rx="6"/>
+  <text x="36" y="621" font-size="12" font-weight="700" fill="#c92a2a">⚠ Kademelendirmenin bedeli: sinyal kapsamı eşit değil</text>
+  <text x="36" y="639" class="alt">Bir kademe kapıyla seyreltilince ürettiği sinyal de seyrekleşir. İfade sinyali</text>
+  <text x="36" y="655" class="alt">20 kameranın 1'inde üretiliyor; füzyon eksik sinyali 0.0 sayıyor (None değil).</text>
+
+  <rect x="24" y="680" width="1132" height="74" fill="#f8f9fa" stroke="#343a40" stroke-width="1.4" rx="6"/>
+  <text x="40" y="702" font-size="12" font-weight="700" fill="#212529">Bu diyagramın yöntemsel iddiası</text>
+  <text x="40" y="722" class="alt">Kademeli mimarinin savunması "daha az iş yapıyoruz" değil, <tspan font-weight="600">"hangi kademenin ne kadar iş yaptığını ve neyi elediğini ölçtük"</tspan> olmalıdır.</text>
+  <text x="40" y="740" class="alt">Yukarıdaki her kutunun maliyeti tek tek ölçülmüş, toplamı bağımsız olarak doğrulanmış ve eleme oranları ayrıca sayılmıştır.</text>
+</svg>
