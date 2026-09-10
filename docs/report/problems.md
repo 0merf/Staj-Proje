@@ -6169,3 +6169,135 @@ sorarken önce **girdisine bakmak** gerekiyor — kırpıntılar kusursuzdu,
 suçlu eşikti. Ve dağılım istatistiğine bakıp model hakkında hüküm
 vermek, veriye bakmamanın kestirme yoluydu.
 
+
+---
+
+### P-74 · ⭐⭐⭐ cam-15 SİYAH KALIYORDU — sebep B-KARELERİ, ve ilk iki teşhisim yanlıştı
+
+**Tarih:** 10.09.2026 · **Faz:** 3
+
+**Kullanıcının tespiti:** *"paneli açtım, kamera 15'in videosu ekrana
+gelmedi, donuk kaldı öyle siyah ekranda."*
+
+⚠ **Ve sunucu tarafındaki HİÇBİR metrik bunu göstermiyordu:**
+
+```
+sentinel_camera_up{cam="cam-15"}  1.0
+sentinel_camera_fps{cam="cam-15"} 4.15
+MediaMTX: hazir=True · H264 · okuyucu=1
+```
+
+Alım worker'ı kamerayı sorunsuz okuyor, analiz ediyor, alarm üretiyor.
+Bozuk olan tek şey **operatörün gördüğü şey** — ve sistemin hiçbir
+sağlık göstergesi oraya bakmıyordu.
+
+---
+
+#### Önce ölçülebilir hâle getirmek gerekti
+
+Bir kutucuğun çizilmesi videonun geldiğini göstermez. Tek gözlemlenebilir
+kanıt tarayıcıda: `video.videoWidth > 0` ve `readyState >= 2`.
+
+Playwright tanısı yazıldı (`e2e/panel-tani.spec.ts`) ve **hatayı
+yeniden üretti**:
+
+```
+20 hazır kameradan 19'unda video geldi · cam-15 SİYAH
+```
+
+⭐ Bu, "kullanıcı öyle gördü" ile "ölçüldü" arasındaki fark. Artık
+düzeltmenin işe yarayıp yaramadığı da ölçülebilirdi.
+
+---
+
+#### ⚠ Teşhis 1 — YANLIŞ: "çözünürlük/kare hızı farklı"
+
+```
+cam-14: 900x720 @25fps    cam-16: 960x720 @25fps
+cam-15: 640x360 @30fps    ⬅ tek farklı
+```
+
+Makul görünüyordu ama bir mekanizma önermiyordu: 640×360 H264'ü hiçbir
+tarayıcı reddetmez.
+
+#### ⚠ Teşhis 2 — YANLIŞ (ve düzeltmesi işe yaramadı): "GOP çok uzun"
+
+Anahtar kare aralıkları ölçüldü:
+
+```
+cam-01/14/16 : 2.00 sn      ⬅ prepare_videos.py normalizasyonu
+cam-15       : 8.33 sn      ⬅ 4 KAT uzun
+```
+
+cam-15 07.09'da arşivden değiştirilmiş ve normalizasyondan geçmemişti.
+WebRTC izleyicisi çözmeye başlamak için anahtar kare bekler — sebep
+buymuş gibi göründü.
+
+**Yeniden kodlandı, GOP 2.00 sn'ye indirildi, RTSP akışında doğrulandı
+— ve cam-15 YİNE SİYAH kaldı.** Teşhis çürüdü.
+
+> ⚠ Bu iki teşhisin ortak kusuru aynı: **farklı olan bir şey bulup onu
+> sebep saymak.** Fark, sebep değildir. İkisi de "şu değişken farklı"
+> diyordu, hiçbiri "şu mekanizma bozuluyor" demiyordu.
+
+---
+
+#### ⭐⭐⭐ Gerçek sebep: MediaMTX'in kendi günlüğü söyledi
+
+Henüz bakılmamış tek yer sunucunun günlüğüydü. WHEP oturumu sırasında
+günlük yakalandı:
+
+```
+INF [WebRTC] [session daec9b0f] closed:
+    WebRTC doesn't support H264 streams with B-frames
+```
+
+**Kare türleri sayıldı (ilk 300 kare):**
+
+```
+cam-15 (eski) : I=2   P=76   B=222   ⬅ %74 B-KARE
+cam-15 (yeni) : I=6   P=294  B=0
+```
+
+WebRTC belirtimi H264'te B-kare desteklemiyor. Kaynak video B-kare
+içeriyordu ve MediaMTX `-c copy` ile yayınladığı için (yeniden kodlama
+YAPMAMASI mimari bir karar) B-kareler tarayıcıya kadar gidiyordu.
+
+⚠ **İlk yeniden kodlamam sorunu ÇÖZMEDİ çünkü `libx264` varsayılan
+olarak B-kare üretiyor.** GOP'u düzeltirken B-kareleri yeniden
+ürettim — yani düzeltme, hatayı koruyarak uygulanmıştı.
+
+**Doğru komut:** `-bf 0 -profile:v baseline`
+
+```
+[1sn] {"w":640,"h":360,"hazir":4}   ⬅ 1 SANİYEDE geldi
+tam tarama: 20/20 kamerada video ✅
+```
+
+---
+
+#### Neden bu hata 3 gün görünmedi
+
+cam-15 07.09'da değiştirildi. O günden beri:
+- alım worker'ı okudu ✅
+- analiz etti, alarm üretti ✅
+- K8/K6 ölçümleri kullandı ✅
+- **paneli kimse dikkatle izlemedi** ❌
+
+> ⭐⭐ Sistemin gözlemlenebilirliği **sunucuda** güçlü, **istemcide**
+> sıfırdı. 30'dan fazla Prometheus metriği var ve hiçbiri "operatör
+> gerçekten görüntü görüyor mu" sorusuna cevap vermiyor. Bu, P-43/44/45
+> ile aynı sınıf: zincirin son halkası ölçülmüyordu.
+
+**Yapılan:** `panel-tani.spec.ts` artık her koşuda 20 kameranın
+hepsini açıp videonun geldiğini doğruluyor. Bu hata bir daha sessizce
+oluşamaz.
+
+⚠ Orijinal dosya **silinmedi**: `data/videos/cam-15.gop833.mp4`
+(B-kareli, 8.33 sn GOP). Ölçüm zinciri gerekirse ona dönebilir.
+
+**Öğrenilen ders:** İki teşhisim de "farklı olanı bul" yöntemiyle
+üretilmişti ve ikisi de yanlıştı. Doğru cevap, **sistemin kendi
+söylediği yerdeydi** — sunucu günlüğü hatayı açık açık yazıyordu ve
+oraya en son bakıldı. Ölçmeden önce **okumak** gerekiyor.
+
