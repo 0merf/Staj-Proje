@@ -75,7 +75,18 @@ toplam 23.22, parti toplamı 23.26, açık 0.04 (P-66). Bağımsız tekrar.
 | API | 74.1 | 0.02 | 3 |
 | **toplam** | **2633.9** | **4.27** | |
 
-GPU %41 · VRAM 571 MB / 8 GB (%7) · sistem RAM %81
+**GPU (11.09.2026, 60 örnek × 1 sn, panel kapalı)** — `benchmarks/gpu_kullanim_20260911.json`
+
+| ölçüt | değer |
+|---|---|
+| VRAM | **571 MB / 8192 MB (%7)** — medyan = azami, sabit |
+| GPU kullanımı | **medyan %28.5** · ortalama %26.7 · aralık %0–85 |
+
+⚠ Daha önce "%41" yazılmıştı (P-65, 09.09). Bugün tekrar ölçüldü ve
+medyan %28.5 çıktı. Makalede bugünkü değer kullanılmaktadır; eski
+değer envantere alınmamıştır. VRAM değeri iki ölçümde de aynıdır.
+
+sistem RAM %81
 
 **Arz–talep açığı:** alım 56.8 kare/sn yayınlıyor, çıkarım 46.8
 işliyor → 2017 / 11501 kare (%17.5) analiz edilmeden kuyrukta kalıyor.

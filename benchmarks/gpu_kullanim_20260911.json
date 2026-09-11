@@ -1,0 +1,18 @@
+{
+  "olculdu": "2026-09-11T11:57:12.596041+00:00",
+  "ornek": 60,
+  "aralik_s": 1,
+  "vram_mb": {
+    "medyan": 571.0,
+    "azami": 571.0,
+    "toplam": 8192,
+    "oran": 0.0697
+  },
+  "gpu_kullanim_yuzde": {
+    "medyan": 28.5,
+    "ortalama": 26.7,
+    "asgari": 0.0,
+    "azami": 85.0
+  },
+  "not": "20 kamera, kararli durum, panel KAPALI. Anlik degil 60 ornegin ozeti."
+}
