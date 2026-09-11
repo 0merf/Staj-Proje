@@ -571,7 +571,7 @@ Gelecek çalışma için üç yön öne çıkmaktadır. Birincisi, erken uyarı 
 
 **Yapay zekâ araçlarının kullanımı.** Bu çalışmanın yürütülmesinde ve makalenin hazırlanmasında büyük dil modeli tabanlı bir yapay zekâ aracı (Anthropic Claude) kullanılmıştır. Araç; yazılım geliştirme, ölçüm betiklerinin yazılması, ölçüm sonuçlarının çözümlenmesi ve makale metninin taslaklandırılması aşamalarında kullanılmıştır. Makalede sunulan tüm ölçümleri kendi donanımım üzerinde fiilen çalıştırdım, elde edilen çıktı dosyalarını sakladım ve metindeki her sayısal değeri bu çıktılarla karşılaştırarak doğruladım. Metnin son hâli, bilimsel içeriği ve sonuçları benim sorumluluğumdadır.
 
-**Kod erişilebilirliği.** Çalışmada geliştirilen kaynak kod, ölçüm betikleri ve ölçüm çıktıları genel erişime açık bir depoda yayımlanmıştır: `[DEPO BAĞLANTISI]`
+**Kod erişilebilirliği.** Çalışmada geliştirilen kaynak kod, ölçüm betikleri ve ölçüm çıktıları bir kod deposunda toplanmıştır: https://github.com/0merf/Staj-Proje
 
 ---
 
