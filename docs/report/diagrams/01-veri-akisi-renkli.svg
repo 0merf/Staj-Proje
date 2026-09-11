@@ -3,33 +3,33 @@
     SENTINEL — VERİ AKIŞI (ölçülmüş değerlerle)
     Üretildi: 10.09.2026 · docs/report/diagrams/
 
-    ! Diyagramdaki HER SAYI ölçülmüştür, tahmin değildir.
+    ⚠ Diyagramdaki HER SAYI ölçülmüştür, tahmin değildir.
     Kaynaklar: benchmarks/canli_dogrulama_*.json · P-66 (aşama kırılımı)
     P-69 (slot havuzu) · P-75 (K10) · P-77 (kesinlik) · P-81 (K6 GA)
   -->
   <defs>
     <marker id="ok" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
-      <polygon points="0 0, 9 3.5, 0 7" fill="#000000"/>
+      <polygon points="0 0, 9 3.5, 0 7" fill="#5c7cfa"/>
     </marker>
     <marker id="okgri" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
-      <polygon points="0 0, 9 3.5, 0 7" fill="#000000"/>
+      <polygon points="0 0, 9 3.5, 0 7" fill="#e67700"/>
     </marker>
     <style>
-      .kutu   { fill:#ffffff; stroke:#000000; stroke-width:1.6; rx:6; }
-      .vurgu  { fill:#ececec; stroke:#000000; stroke-width:2; rx:6; }
-      .depo   { fill:#f5f5f5; stroke:#000000; stroke-width:1.6; rx:6; }
-      .baslik { font-size:13.5px; font-weight:600; fill:#000000; }
-      .alt    { font-size:10.5px; fill:#222222; }
-      .olcum  { font-size:10.5px; font-weight:600; fill:#000000; }
-      .etiket { font-size:10px; fill:#555555; }
-      .ok     { stroke:#000000; stroke-width:1.8; fill:none; marker-end:url(#ok); }
-      .okshm  { stroke:#000000; stroke-width:1.8; fill:none; marker-end:url(#okgri); stroke-dasharray:6 4; }
-      .kural  { font-size:10px; font-style:italic; fill:#000000; }
+      .kutu   { fill:#f8f9fa; stroke:#343a40; stroke-width:1.6; rx:6; }
+      .vurgu  { fill:#e7f5ff; stroke:#1971c2; stroke-width:2; rx:6; }
+      .depo   { fill:#fff9db; stroke:#e67700; stroke-width:1.6; rx:6; }
+      .baslik { font-size:13.5px; font-weight:600; fill:#212529; }
+      .alt    { font-size:10.5px; fill:#495057; }
+      .olcum  { font-size:10.5px; font-weight:600; fill:#1971c2; }
+      .etiket { font-size:10px; fill:#868e96; }
+      .ok     { stroke:#5c7cfa; stroke-width:1.8; fill:none; marker-end:url(#ok); }
+      .okshm  { stroke:#e67700; stroke-width:1.8; fill:none; marker-end:url(#okgri); stroke-dasharray:6 4; }
+      .kural  { font-size:10px; font-style:italic; fill:#c92a2a; }
     </style>
   </defs>
 
-  <text x="24" y="30" font-size="17" font-weight="700" fill="#000000">SENTINEL — Veri Akışı ve Ölçülen Maliyetler</text>
-  <text x="24" y="49" class="etiket">Tüm sayılar ölçümdür (20 kamera, RTX 3070 Laptop GPU, 10-11.09.2026). Kaynak: benchmarks/*.json · docs/report/problems.md</text>
+  <text x="24" y="30" font-size="17" font-weight="700" fill="#212529">SENTINEL — Veri Akışı ve Ölçülen Maliyetler</text>
+  <text x="24" y="49" class="etiket">Tüm sayılar ölçümdür (20 kamera, RTX 3070 Laptop GPU, 10.09.2026). Kaynak: benchmarks/*.json · docs/report/problems.md</text>
 
   <!-- ═══ SATIR 1 ═══ -->
 
@@ -40,7 +40,7 @@
   <text x="36" y="130" class="alt">gerçek IP kamera YOK</text>
   <text x="36" y="150" class="olcum">süre 5–345 sn</text>
   <text x="36" y="167" class="olcum">SONSUZ DÖNGÜ</text>
-  <text x="36" y="185" class="kural">! aynı olay tekrar eder</text>
+  <text x="36" y="185" class="kural">⚠ aynı olay tekrar eder</text>
 
   <!-- 2. Alim -->
   <rect x="262" y="72" width="216" height="120" class="vurgu"/>
@@ -58,7 +58,7 @@
   <text x="532" y="130" class="alt">KADEME 2: poz + yüz/ifade</text>
   <text x="532" y="150" class="olcum">analiz 2.34 FPS/kam · 22.65 ms/kare</text>
   <text x="532" y="167" class="olcum">CPU 0.89 çekirdek · %93 meşgul</text>
-  <text x="532" y="185" class="kural">! SERİ döngü → tavan 1 çekirdek</text>
+  <text x="532" y="185" class="kural">⚠ SERİ döngü → tavan 1 çekirdek</text>
 
   <!-- 4. Analitik -->
   <rect x="800" y="72" width="240" height="120" class="vurgu"/>
@@ -128,7 +128,7 @@
   <text x="532" y="382" class="baslik">FastAPI + React panel</text>
   <text x="532" y="400" class="alt">REST + WebSocket (kutular)</text>
   <text x="532" y="418" class="alt">video WHEP ile AYRI gelir</text>
-  <text x="532" y="437" class="olcum">K10: çizim 30.0 · düşen %2.3</text>
+  <text x="532" y="437" class="olcum">K10: 30.0 FPS · düşen kare 0</text>
   <text x="532" y="454" class="kural">sunucu videoya kutu ÇİZMEZ</text>
 
   <!-- Alarm -->
@@ -136,8 +136,8 @@
   <text x="812" y="382" class="baslik">Alarm Motoru</text>
   <text x="812" y="400" class="alt">TimescaleDB · klip kesimi</text>
   <text x="812" y="418" class="alt">crowd · fall · risk · aggression</text>
-  <text x="812" y="437" class="olcum">kesinlik 0.895 (17/19 olay)</text>
-  <text x="812" y="454" class="kural">! duyarlılık ÖLÇÜLMEDİ</text>
+  <text x="812" y="437" class="olcum">kesinlik 0.917 (11/12 olay)</text>
+  <text x="812" y="454" class="kural">⚠ duyarlılık ÖLÇÜLMEDİ</text>
 
   <line x1="796" y1="412" x2="764" y2="412" class="ok"/>
   <text x="766" y="405" class="etiket">alarm</text>
@@ -145,16 +145,16 @@
   <text x="470" y="405" class="etiket">HTTPS</text>
 
   <!-- ═══ ALT: DARBOGAZ ═══ -->
-  <rect x="24" y="490" width="1132" height="92" fill="#f2f2f2" stroke="#000000" stroke-width="1.4" rx="6"/>
-  <text x="40" y="512" font-size="12.5" font-weight="700" fill="#000000">! ÖLÇÜLEN DARBOĞAZ — arz ile talep arasında %17.5'lik açık var, ve donanım boşta</text>
+  <rect x="24" y="490" width="1132" height="92" fill="#fff5f5" stroke="#c92a2a" stroke-width="1.4" rx="6"/>
+  <text x="40" y="512" font-size="12.5" font-weight="700" fill="#c92a2a">⚠ ÖLÇÜLEN DARBOĞAZ — arz ile talep arasında %17.5'lik açık var, ve donanım boşta</text>
   <text x="40" y="532" class="alt">Alım 20 kamerada saniyede <tspan font-weight="600">56.8 kare yayınlıyor</tspan>, çıkarım <tspan font-weight="600">46.8 kare işleyebiliyor</tspan>. Fark analiz EDİLMEDEN kuyrukta kalıyor (2017 / 11501 kare).</text>
   <text x="40" y="549" class="alt">Çıkarım aç değil DOLU: döngü 22.65 ms/kare ve zamanının %93'ünü iş yaparak geçiriyor (bekleme yalnızca 1.69 ms/kare — ayrı ölçüldü).</text>
-  <text x="40" y="566" class="alt">Buna rağmen GPU %28.5, VRAM %7 (571 MB / 8 GB) ve 20 mantıksal çekirdeğin 19'u boşta. Sınır GPU değil, ana döngünün SERİ olmasıdır (P-65).</text>
+  <text x="40" y="566" class="alt">Buna rağmen GPU %41, VRAM %7 (571 MB / 8 GB) ve 20 mantıksal çekirdeğin 19'u boşta. Sınır GPU değil, ana döngünün SERİ olmasıdır (P-65).</text>
 
   <!-- ═══ ALT: GECIKME ═══ -->
-  <rect x="24" y="594" width="1132" height="86" fill="#f2f2f2" stroke="#000000" stroke-width="1.4" rx="6"/>
-  <text x="40" y="616" font-size="12.5" font-weight="700" fill="#000000">UÇTAN UCA GECİKME (K3) — p50 378 ms · p95 652 ms · hedef ≤1500 ms  (10.09, iki bağımsız koşuda tekrarlandı)</text>
-  <text x="40" y="636" class="alt">! KAPSAM: bu süre kare yakalanmasından ÇIKARIM SONUCUNUN YAZILMASINA kadardır (inference/worker.py:738). Analitik ve alarm aşamaları</text>
+  <rect x="24" y="594" width="1132" height="86" fill="#ebfbee" stroke="#2f9e44" stroke-width="1.4" rx="6"/>
+  <text x="40" y="616" font-size="12.5" font-weight="700" fill="#2f9e44">✅ UÇTAN UCA GECİKME (K3) — p50 378 ms · p95 652 ms · hedef ≤1500 ms  (10.09, iki bağımsız koşuda tekrarlandı)</text>
+  <text x="40" y="636" class="alt">⚠ KAPSAM: bu süre kare yakalanmasından ÇIKARIM SONUCUNUN YAZILMASINA kadardır (inference/worker.py:738). Analitik ve alarm aşamaları</text>
   <text x="40" y="653" class="alt">kriterin DIŞINDADIR — kriterin adı kapsamından büyüktür. Bu, ölçümün kendisinden çok, ölçütün sınırının raporlanmasıyla ilgilidir.</text>
-  <text x="40" y="670" class="alt">! 09.09'da 147–178 ms ölçülmüştü; bugün üretilemedi. Çıkarım döngüsü değişmemişti (22.65 ⟷ 23.22 ms/kare) — fark açıklanamadı (P-82).</text>
+  <text x="40" y="670" class="alt">⚠ 09.09'da 147–178 ms ölçülmüştü; bugün üretilemedi. Çıkarım döngüsü değişmemişti (22.65 ⟷ 23.22 ms/kare) — fark açıklanamadı (P-82).</text>
 </svg>
