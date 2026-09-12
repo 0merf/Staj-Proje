@@ -187,3 +187,35 @@ frontend/.env.e2e
 # Playwright cikti dizinleri
 frontend/test-results/
 frontend/playwright-report/
+
+# ─── ÖZEL BELGELER — GitHub'a GİTMEZ ────────────────────────
+# Kural (kullanıcı, 12.09.2026): depoya YALNIZCA kod ve kodun
+# bulgularını içeren raporlar girer. Teslim edilecek belgeler,
+# kurum şablonları, kişisel formlar ve sunum notları girmez.
+#
+# GİRMEYE DEVAM EDENLER (bilerek dışarıda bırakılmadı):
+#   docs/decisions/            mimari karar kayıtları
+#   docs/report/problems.md    mühendislik günlüğü (87 kayıt)
+#   docs/report/denetim-hakem.md
+#   docs/report/mimari-hizlandirma.md
+#   docs/report/alarm-etiketleme-kurali.md
+#   docs/report/diagrams/  ·  docs/report/screenshots/
+#   benchmarks/                ölçüm çıktıları
+
+# Dergi makalesi: taslaklar, nihai metin, üretilen .docx, CDEJ şablonu,
+# telif devir formu
+docs/report/makale/
+
+# Staj raporu: metin, üretilen .docx, AN02 anketi (kişisel veri içerir)
+docs/report/staj/
+
+# Kurum şablonu (Düzce Üniversitesi staj raporu kılavuzu)
+docs/report/Staj raporu.docx
+docs/report/assets/
+
+# Sunum notları — ders içi çalışma notları
+docs/report/sunum-notlari*.md
+
+# Başka bir projenin (TEKNOFEST / HepsiJET) nihai raporu; buraya
+# yalnızca yazım dili örneği olsun diye konmuştu
+docs/README.md

@@ -17,14 +17,28 @@ YENİDEN üretir.
   · Kapakta italik ve altı çizili kullanılmaz
   · Kod, raporun gövdesinde değil YALNIZCA eklerde bulunur
 
+⚠ GİRDİLERİ BU DEPODA DEĞİL (12.09.2026)
+Bu betik depoda duruyor ama beslendiği dosyalar durmuyor:
+`docs/report/staj/*.md`, `docs/report/assets/duzce-logo.png` ve
+`docs/report/staj/AN02.docx` `.gitignore` içinde. Sebep, teslim
+edilecek belgelerin ve kişisel form verisinin genel bir depoya
+girmemesi. Depoyu klonlayan biri bu betiği OLDUĞU GİBİ çalıştıramaz;
+betik burada yöntemi belgelemek için duruyor. Eksik dosyada sessizce
+bozulmak yerine adını söyleyerek uyarıyor.
+
 Kullanım:
     uv run --with python-docx python scripts/staj_raporu_docx.py
     uv run --with python-docx python scripts/staj_raporu_docx.py --dil en
+
+İki geçişli üretim (içindekilerin sayfa numaraları için):
+    1. geçiş  → .docx üret, Word ile PDF'e render et
+    2. geçiş  → --pdf <render.pdf> ile tekrar üret
 """
 
 from __future__ import annotations
 
 import argparse
+import copy
 import re
 import sys
 from pathlib import Path
@@ -40,12 +54,16 @@ from docx.enum.text import (
 )
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
-from docx.shared import Cm, Pt
+from docx.shared import Cm, Pt, Twips
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
 
 KOK = Path(__file__).resolve().parents[2]
 GORSEL_KOK = KOK / "docs" / "report"
+# Şablonun kapağındaki logo, `Staj raporu.docx` içinden çıkarıldı
+LOGO = GORSEL_KOK / "assets" / "duzce-logo.png"
+# Öğrencinin doldurduğu AN02 anketi — raporun SONUNA eklenir (şablon m.31)
+AN02 = GORSEL_KOK / "staj" / "AN02.docx"
 
 KAYNAKLAR = {
     "tr": (GORSEL_KOK / "staj" / "01-staj-raporu-tr.md",
@@ -145,6 +163,214 @@ def _numaralandirmayi_sifirla(bolum) -> None:
         pg = OxmlElement("w:pgNumType")
         sp.append(pg)
     pg.set(qn("w:start"), "1")
+
+
+def _sayfa_duzeni(bolum) -> None:
+    """Şablonun sayfa ölçülerini uygular (A4, kenar boşlukları, çerçeve).
+
+    Değerler `Staj raporu.docx` içindeki `w:sectPr`'den birebir alındı:
+    üst 815, sağ/sol/alt 1134 twip; üstbilgi/altbilgi 709 twip.
+    """
+    bolum.page_width = Cm(21.0)
+    bolum.page_height = Cm(29.7)
+    bolum.top_margin = Twips(815)
+    bolum.bottom_margin = Twips(1134)
+    bolum.left_margin = Twips(1134)
+    bolum.right_margin = Twips(1134)
+    bolum.header_distance = Twips(709)
+    bolum.footer_distance = Twips(709)
+    _sayfa_cercevesi(bolum)
+
+
+def _sayfa_cercevesi(bolum) -> None:
+    """Şablondaki çift çizgili sayfa çerçevesi.
+
+    ⚠ Kenarlara göre FARKLI stil: üst ve sol `thinThickMediumGap`, alt ve
+    sağ `thickThinMediumGap`. Şablonda böyle olduğu için aynen kopyalandı;
+    dördünü de aynı yapmak görünür bir fark yaratıyor.
+    """
+    sp = bolum._sectPr
+    for eski in sp.findall(qn("w:pgBorders")):
+        sp.remove(eski)
+    kenarlik = OxmlElement("w:pgBorders")
+    kenarlik.set(qn("w:offsetFrom"), "page")
+    for kenar, stil in (("top", "thinThickMediumGap"),
+                        ("left", "thinThickMediumGap"),
+                        ("bottom", "thickThinMediumGap"),
+                        ("right", "thickThinMediumGap")):
+        e = OxmlElement(f"w:{kenar}")
+        e.set(qn("w:val"), stil)
+        e.set(qn("w:sz"), "24")
+        e.set(qn("w:space"), "30")
+        e.set(qn("w:color"), "auto")
+        kenarlik.append(e)
+    # w:pgBorders, sectPr içinde w:cols'tan ÖNCE gelmeli; şemaya
+    # uymayan sıralamada Word dosyayı bozuk sayıyor.
+    ref = sp.find(qn("w:cols"))
+    if ref is not None:
+        ref.addprevious(kenarlik)
+    else:
+        sp.append(kenarlik)
+
+
+def _hucre_kenarliklari(tablo, dis_ust: str, dis_alt: str) -> None:
+    """Kaşe tablosunun şablondaki kenarlık stilini uygular."""
+    tblPr = tablo._tbl.tblPr
+    for eski in tblPr.findall(qn("w:tblBorders")):
+        tblPr.remove(eski)
+    k = OxmlElement("w:tblBorders")
+    for kenar, stil, kalinlik in (("top", dis_ust, "24"), ("left", dis_ust, "24"),
+                                  ("bottom", dis_alt, "24"), ("right", dis_alt, "24"),
+                                  ("insideH", "single", "4"),
+                                  ("insideV", "single", "4")):
+        e = OxmlElement(f"w:{kenar}")
+        e.set(qn("w:val"), stil)
+        e.set(qn("w:sz"), kalinlik)
+        e.set(qn("w:space"), "0")
+        e.set(qn("w:color"), "auto")
+        k.append(e)
+    tblPr.append(k)
+
+
+def _kase_ustbilgisi(bolum, dil: str) -> None:
+    """Şablondaki 'Firma Adı / Sorumlu Mühendis' kaşe kutusunu kurar.
+
+    Staj kurallarının 'her sayfada firma kaşe imzası olmalı' maddesini
+    karşılayan yer burası. Alt satır boş bırakılıyor: kaşe oraya basılacak.
+    """
+    ustbilgi = bolum.header
+    ustbilgi.is_linked_to_previous = False
+    for p in list(ustbilgi.paragraphs):
+        p._element.getparent().remove(p._element)
+    t = ustbilgi.add_table(rows=2, cols=2, width=Twips(10207))
+    t.autofit = False
+    _hucre_kenarliklari(t, "thinThickLargeGap", "thickThinLargeGap")
+    for satir in t.rows:
+        satir.cells[0].width = Twips(5921)
+        satir.cells[1].width = Twips(4286)
+    sol, sag = (("Firma Adı", "Sorumlu Mühendis\nUnvan, İsim, İmza, Kaşe")
+                if dil == "tr" else
+                ("Company Name", "Responsible Engineer\nTitle, Name, Signature, Stamp"))
+    for hucre, metin, punto, kalin in ((t.rows[0].cells[0], sol, 11.0, False),
+                                       (t.rows[0].cells[1], sag, 9.0, True)):
+        hucre.text = ""
+        for sira, parca in enumerate(metin.split("\n")):
+            par = hucre.paragraphs[0] if sira == 0 else hucre.add_paragraph()
+            par.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            par.paragraph_format.line_spacing = ARALIK_TEK
+            par.paragraph_format.space_after = Pt(0)
+            c = par.add_run(parca)
+            _tipi_ayarla(c, punto, kalin=kalin)
+    # İkinci satır kaşe için boş ve yüksek bırakılıyor (şablon: 874 twip)
+    _satir_yuksekligi(t.rows[1], 874)
+    # Üstbilgiden sonra gövdeye yapışmasın
+    son = ustbilgi.add_paragraph()
+    son.paragraph_format.space_after = Pt(0)
+    son.paragraph_format.line_spacing = ARALIK_TEK
+    _tipi_ayarla(son.add_run(""), 2.0)
+
+
+def _satir_yuksekligi(satir, twip: int) -> None:
+    trPr = satir._tr.get_or_add_trPr()
+    e = OxmlElement("w:trHeight")
+    e.set(qn("w:val"), str(twip))
+    trPr.append(e)
+
+
+def _kapak_sayfasi(belge, ham: list[str], dil: str) -> None:
+    """Şablonun kapak düzenini birebir kurar: logo, kurum, başlık.
+
+    Ölçüler `Staj raporu.docx` kapağından alındı: logo 5,93 × 3,86 cm,
+    kurum satırları 16 punto, "Staj Raporu" başlığı 28 punto kalın.
+    """
+    # ⚠ Boşluklar boş paragraf SAYARAK değil, punto cinsinden AÇIKÇA
+    # veriliyor. Boş paragraf saymak yazı tipi ölçüsüne bağlı; şablonun
+    # kapağıyla hizalamak için ölçülebilir bir değer gerekiyor.
+    if LOGO.is_file():
+        par = belge.add_paragraph()
+        par.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        par.paragraph_format.line_spacing = ARALIK_TEK
+        par.paragraph_format.space_before = Pt(78)   # logo üstü ~2,75 cm
+        par.paragraph_format.space_after = Pt(0)
+        par.add_run().add_picture(str(LOGO), width=Cm(5.93), height=Cm(3.86))
+    else:
+        print(f"  ⚠ logo bulunamadı: {LOGO}")
+
+    kurum = (("T.C. DÜZCE ÜNİVERSİTESİ", "MÜHENDİSLİK FAKÜLTESİ",
+              "BİLGİSAYAR MÜHENDİSLİĞİ BÖLÜMÜ")
+             if dil == "tr" else
+             ("DUZCE UNIVERSITY", "FACULTY OF ENGINEERING",
+              "COMPUTER ENGINEERING DEPARTMENT"))
+    for sira, satir in enumerate(kurum):
+        _paragraf(belge, satir, punto=16.0, hiza=WD_ALIGN_PARAGRAPH.CENTER,
+                  aralik=ARALIK_TEK, once=150 if sira == 0 else 0)
+
+    _paragraf(belge, "Staj Raporu" if dil == "tr" else "Internship Report",
+              punto=28.0, kalin=True, hiza=WD_ALIGN_PARAGRAPH.CENTER,
+              aralik=ARALIK_TEK, once=112)
+
+    # Kapaktaki künye satırları kaynak dosyadan geliyor
+    for sira, satir in enumerate(_kapak_kunyesi(ham)):
+        _paragraf(belge, satir, punto=13.0, hiza=WD_ALIGN_PARAGRAPH.CENTER,
+                  aralik=ARALIK_TEK, once=30 if sira == 0 else 0, sonra=6)
+
+
+def _kapak_kunyesi(ham: list[str]) -> list[str]:
+    """Kaynaktaki kapak bloğundan yalnızca künye satırlarını ayıklar.
+
+    Kurum adı ve "Staj Raporu" başlığı `_kapak_sayfasi` içinde
+    şablondaki puntolarla yazıldığı için burada ATLANIYOR; yoksa
+    iki kez basılırlardı.
+    """
+    icinde, kunye = False, []
+    atla = ("T.C. DÜZCE", "MÜHENDİSLİK FAKÜLTESİ", "BİLGİSAYAR MÜHENDİSLİĞİ",
+            "STAJ RAPORU", "REPUBLIC OF TURKEY", "DUZCE UNIVERSITY",
+            "FACULTY OF ENGINEERING", "COMPUTER ENGINEERING DEPARTMENT",
+            "INTERNSHIP REPORT")
+    for satir in ham:
+        kirp = satir.strip()
+        if kirp in BASLIK_KAPAK:
+            icinde = True
+            continue
+        if icinde and kirp.startswith("## "):
+            break
+        if not icinde or not kirp or kirp == "---":
+            continue
+        if any(kirp.strip("*").upper().startswith(a) for a in atla):
+            continue
+        kunye.append(kirp)
+    return kunye
+
+
+def _an02_ekle(belge, dil: str) -> bool:
+    """AN02 (Öğrenci Staj Değerlendirme Anketi) formunu raporun SONUNA ekler.
+
+    Şablon kuralı 31: *"AN02 form must be uploaded at the end of the
+    internship report."*
+
+    ⚠ Form yeniden YAZILMIYOR, kaynak belgeden XML olarak kopyalanıyor.
+    Yeniden yazmak, öğrencinin doldurduğu alanları ve anketin işaretleme
+    kutularını bozma riski taşıyor; kopyalama birebir aynısını veriyor.
+    `w:sectPr` atlanıyor, yoksa AN02'nin sayfa düzeni raporunkini ezer.
+    """
+    if not AN02.is_file():
+        print(f"  ⚠ AN02 bulunamadı, eklenmedi: {AN02}")
+        return False
+    if belge.paragraphs:
+        belge.paragraphs[-1].add_run().add_break(WD_BREAK.PAGE)
+    _paragraf(belge,
+              "EK F — AN02 ÖĞRENCİ STAJ DEĞERLENDİRME ANKETİ" if dil == "tr"
+              else "APPENDIX F — AN02 STUDENT INTERNSHIP EVALUATION SURVEY",
+              kalin=True, hiza=WD_ALIGN_PARAGRAPH.LEFT, sonra=10)
+    kaynak = Document(AN02)
+    kopyalanan = 0
+    for oge in kaynak.element.body:
+        if oge.tag == qn("w:sectPr"):
+            continue
+        belge.element.body.append(copy.deepcopy(oge))
+        kopyalanan += 1
+    print(f"  AN02 eklendi ({kopyalanan} öğe)")
+    return True
 
 
 def _basligi_tekrarla(satir) -> None:
@@ -283,11 +509,11 @@ def uret(kaynak: Path, cikti: Path, dil: str,
     sayfalar = sayfalar or {}
 
     belge = Document()
-    for bolum in belge.sections:
-        bolum.top_margin = Cm(2.5)
-        bolum.bottom_margin = Cm(2.5)
-        bolum.left_margin = Cm(3.0)     # ciltleme payı
-        bolum.right_margin = Cm(2.5)
+    ilk_bolum = belge.sections[0]
+    _sayfa_duzeni(ilk_bolum)
+    # ⚠ Kapakta kaşe kutusu YOK (şablon da böyle), içindekilerde VAR.
+    ilk_bolum.different_first_page_header_footer = True
+    _kase_ustbilgisi(ilk_bolum, dil)
 
     normal = belge.styles["Normal"]
     normal.font.name = YAZI
@@ -296,9 +522,12 @@ def uret(kaynak: Path, cikti: Path, dil: str,
 
     # ⚠ Kapak + içindekiler sayfa numarası ALMAZ. Bu yüzden belge iki
     # Word bölümüne ayrılıyor ve numaralandırma ikincide 1'den başlıyor.
+    # Kapak sayfası şablondaki düzenle kuruluyor (logo, 16/28 punto)
+    _kapak_sayfasi(belge, ham, dil)
+
     numara_bolumu_acildi = False
     ekler_basladi = False
-    kapakta = False
+    kapakta = False       # kapak bloğunun gövde satırlarını atlamak için
     icindekilerde = False
 
     i, n = 0, len(ham)
@@ -354,11 +583,10 @@ def uret(kaynak: Path, cikti: Path, dil: str,
         if kirp.startswith("## "):
             baslik = kirp[3:]
             if kirp in BASLIK_KAPAK:
-                # ⚠ Kapak METNİ gövde satırları olarak geliyor; başlığın
-                # kendisi yazdırılmıyor. Kapak ortalanır, italik ve altı
-                # çizili kullanılmaz (şablon §3.1).
+                # ⚠ Kapak zaten `_kapak_sayfasi` ile kuruldu. Buradaki
+                # satırlar aynı içeriğin kaynaktaki hâli; ATLANIYOR,
+                # yoksa kapak iki kez basılır.
                 kapakta = True
-                _paragraf(belge, "", aralik=ARALIK_GOVDE, sonra=60)
                 i += 1
                 continue
             kapakta = False
@@ -367,10 +595,9 @@ def uret(kaynak: Path, cikti: Path, dil: str,
             if (not numara_bolumu_acildi
                     and re.match(r"^\d+\.", baslik)):
                 yeni = belge.add_section(WD_SECTION.NEW_PAGE)
-                yeni.top_margin = Cm(2.5)
-                yeni.bottom_margin = Cm(2.5)
-                yeni.left_margin = Cm(3.0)
-                yeni.right_margin = Cm(2.5)
+                _sayfa_duzeni(yeni)
+                yeni.different_first_page_header_footer = False
+                _kase_ustbilgisi(yeni, dil)
                 _numaralandirmayi_sifirla(yeni)
                 _sayfa_numarasi(yeni)
                 numara_bolumu_acildi = True
@@ -425,10 +652,8 @@ def uret(kaynak: Path, cikti: Path, dil: str,
             i += 1
             continue
 
-        # ─── Kapak satırı: ortalı, geniş aralıklı ───
+        # ─── Kapak satırı: `_kapak_sayfasi` yazdı, burada atlanıyor ───
         if kapakta:
-            _paragraf(belge, kirp, hiza=WD_ALIGN_PARAGRAPH.CENTER,
-                      aralik=ARALIK_GOVDE, sonra=8)
             i += 1
             continue
 
@@ -438,9 +663,20 @@ def uret(kaynak: Path, cikti: Path, dil: str,
         _paragraf(belge, kirp, aralik=aralik)
         i += 1
 
+    _an02_ekle(belge, dil)
+
     cikti.parent.mkdir(parents=True, exist_ok=True)
-    belge.save(cikti)
-    print(f"yazıldı: {cikti.relative_to(KOK)}")
+    try:
+        belge.save(cikti)
+    except PermissionError:
+        # ⚠ En sık sebep: dosya Word'de AÇIK. Ham traceback bunu
+        # söylemediği için burada açıkça yazılıyor.
+        print(f"YAZILAMADI: {cikti.name} başka bir program tarafından "
+              f"kilitli.\n  Büyük ihtimalle Word'de açık; kapatıp "
+              f"betiği yeniden çalıştırın.")
+        return 1
+    yol = cikti.relative_to(KOK) if cikti.is_relative_to(KOK) else cikti
+    print(f"yazıldı: {yol}")
     print(f"  paragraf: {len(belge.paragraphs)} · tablo: {len(belge.tables)} "
           f"· bölüm: {len(belge.sections)}")
     return 0
