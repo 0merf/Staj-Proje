@@ -171,6 +171,14 @@ def denetle(dil: str, pdf: Path | None) -> int:
         # o çizim çerçevedir.
         d.kontrol("kapakta çerçeve çizimi var", cizimler[0] > 0,
                   "kapakta hiç vektör çizim yok")
+        # AN02 TEK SAYFA olmalı: anketin ilk ve son sorusu aynı sayfada
+        an02 = [i for i, m in enumerate(sayfalar)
+                if "Staj Yapan Öğrencinin" in m]
+        son_soru = [i for i, m in enumerate(sayfalar)
+                    if "tavsiye ederim" in m]
+        d.kontrol("AN02 tek sayfada",
+                  bool(an02) and bool(son_soru) and an02[0] == son_soru[0],
+                  f"anket sayfası {an02}, son soru {son_soru}")
     else:
         for ad in ("kapak tek sayfa", "içindekiler sayfa numarası",
                    "gövde numarası 1'den", "asgari sayfa", "kapak çerçevesi"):

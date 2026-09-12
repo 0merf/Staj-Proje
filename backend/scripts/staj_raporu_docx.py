@@ -64,6 +64,10 @@ GORSEL_KOK = KOK / "docs" / "report"
 LOGO = GORSEL_KOK / "assets" / "duzce-logo.png"
 # Öğrencinin doldurduğu AN02 anketi — raporun SONUNA eklenir (şablon m.31)
 AN02 = GORSEL_KOK / "staj" / "AN02.docx"
+# AN02 tek sayfaya sığsın diye uygulanan küçültme oranı.
+# ⚠ Göz kararı değil: her değişiklikten sonra belge render edilip
+# anketin kaç sayfa tuttuğu sayılıyor (bkz. staj_raporu_dogrula.py).
+AN02_OLCEK = 0.78
 
 KAYNAKLAR = {
     "tr": (GORSEL_KOK / "staj" / "01-staj-raporu-tr.md",
@@ -333,6 +337,60 @@ def _kapak_kunyesi(ham: list[str]) -> list[tuple[str, str]]:
     return kunye
 
 
+def _an02_sikistir(oge, olcek: float) -> None:
+    """AN02 formunu TEK SAYFAYA sığacak şekilde küçültür.
+
+    ⚠ Anket iki sayfaya taşıyordu. Küçültme üç ayrı yerden yapılıyor,
+    çünkü yalnızca punto düşürmek yetmiyor:
+      1. Punto (`w:sz`, `w:szCs`) `olcek` ile çarpılıyor. Açık puntosu
+         olmayan çalışmalara da açık punto YAZILIYOR, yoksa belgenin
+         12 puntoluk varsayılanını miras alıp büyük kalıyorlar.
+      2. Sabit satır yükseklikleri (`w:trHeight`) siliniyor; satırlar
+         içeriğe göre daralsın. Formun ilk satırı 158,7 punto sabitti.
+      3. Paragraf boşlukları sıfırlanıp satır aralığı tek yapılıyor.
+
+    `olcek` göz kararı seçilmiyor: üretim sonrası belge PDF'e render
+    edilip anketin kaç sayfa tuttuğu SAYILIYOR (`staj_raporu_dogrula`).
+    """
+    yarim_punto = max(2, int(round(11 * olcek * 2)))
+    for rpr in oge.iter(qn("w:rPr")):
+        for etiket in ("w:sz", "w:szCs"):
+            mevcut = rpr.find(qn(etiket))
+            if mevcut is None:
+                mevcut = OxmlElement(etiket)
+                rpr.append(mevcut)
+                mevcut.set(qn("w:val"), str(yarim_punto))
+                continue
+            eski = int(mevcut.get(qn("w:val")) or yarim_punto)
+            mevcut.set(qn("w:val"), str(max(2, int(round(eski * olcek)))))
+
+    for tr_pr in oge.iter(qn("w:trPr")):
+        for yukseklik in tr_pr.findall(qn("w:trHeight")):
+            tr_pr.remove(yukseklik)
+
+    for ppr in oge.iter(qn("w:pPr")):
+        for eski in ppr.findall(qn("w:spacing")):
+            ppr.remove(eski)
+        bosluk = OxmlElement("w:spacing")
+        for anahtar, deger in (("w:before", "0"), ("w:after", "0"),
+                               ("w:line", "200"), ("w:lineRule", "atLeast")):
+            bosluk.set(qn(anahtar), deger)
+        ppr.insert(0, bosluk)
+
+    # Hücre iç boşlukları: varsayılan 108 twip (0,19 cm) sağ/sol
+    for tc_pr in oge.iter(qn("w:tcPr")):
+        for eski in tc_pr.findall(qn("w:tcMar")):
+            tc_pr.remove(eski)
+        kenar = OxmlElement("w:tcMar")
+        for yon, deger in (("top", "0"), ("left", "40"),
+                           ("bottom", "0"), ("right", "40")):
+            e = OxmlElement(f"w:{yon}")
+            e.set(qn("w:w"), deger)
+            e.set(qn("w:type"), "dxa")
+            kenar.append(e)
+        tc_pr.append(kenar)
+
+
 def _an02_ekle(belge, dil: str) -> bool:
     """AN02 (Öğrenci Staj Değerlendirme Anketi) formunu raporun SONUNA ekler.
 
@@ -352,13 +410,16 @@ def _an02_ekle(belge, dil: str) -> bool:
     _paragraf(belge,
               "EK F — AN02 ÖĞRENCİ STAJ DEĞERLENDİRME ANKETİ" if dil == "tr"
               else "APPENDIX F — AN02 STUDENT INTERNSHIP EVALUATION SURVEY",
-              kalin=True, hiza=WD_ALIGN_PARAGRAPH.LEFT, sonra=10)
+              punto=11.0, kalin=True, hiza=WD_ALIGN_PARAGRAPH.CENTER,
+              aralik=ARALIK_TEK, sonra=6)
     kaynak = Document(AN02)
     kopyalanan = 0
     for oge in kaynak.element.body:
         if oge.tag == qn("w:sectPr"):
             continue
-        belge.element.body.append(copy.deepcopy(oge))
+        kopya = copy.deepcopy(oge)
+        _an02_sikistir(kopya, AN02_OLCEK)
+        belge.element.body.append(kopya)
         kopyalanan += 1
     print(f"  AN02 eklendi ({kopyalanan} öğe)")
     return True
