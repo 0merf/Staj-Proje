@@ -269,7 +269,12 @@ def main() -> int:
     print(f"şablon gövdesinden silinen öge: {son - baslangic}")
 
     # ── Kendi gövdemizi ekle ──
-    _govde_yaz(belge, ham)
+    # ⚠ Türkçe makalede gövde "ABSTRACT" ile başlıyor. Şablon kuralı:
+    # "Türkçe yazılan makaleler Türkçe öz (en fazla 250 kelime) VE
+    # İngilizce abstract içermelidir." Türkçe öz sayfa 1'deki kutuda,
+    # İngilizce abstract ise gövdenin başında yer alıyor.
+    # İngilizce makalede abstract zaten kutuda; gövde I. bölümle başlar.
+    _govde_yaz(belge, ham, "## ABSTRACT" if dil == "tr" else None)
 
     CIKTI_DIZIN.mkdir(parents=True, exist_ok=True)
     belge.save(str(CIKTILAR[dil]))
@@ -278,12 +283,18 @@ def main() -> int:
     return 0
 
 
-def _govde_yaz(belge, ham: str) -> None:
-    """Markdown gövdesini (I. bölümden itibaren) belgeye ekler."""
+def _govde_yaz(belge, ham: str, ilk_baslik: str | None = None) -> None:
+    """Markdown gövdesini belgeye ekler.
+
+    `ilk_baslik` verilirse gövde o başlıktan, verilmezse "## I." ile
+    başlar. Türkçe makalede İngilizce abstract gövdenin ilk ögesidir.
+    """
     satirlar = ham.splitlines()
-    # Öz ve anahtar kelimeler üstbilgide; gövde ilk "## I." ile başlıyor.
-    bas = next(i for i, s in enumerate(satirlar)
-               if re.match(r"^## (I\.|I\s)", s.strip()))
+    if ilk_baslik:
+        bas = next(i for i, s in enumerate(satirlar) if s.strip() == ilk_baslik)
+    else:
+        bas = next(i for i, s in enumerate(satirlar)
+                   if re.match(r"^## (I\.|I\s)", s.strip()))
     i, n = bas, len(satirlar)
 
     def par(metin="", punto=10.0, kalin=False, italik=False,

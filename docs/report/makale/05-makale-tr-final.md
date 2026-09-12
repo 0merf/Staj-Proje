@@ -19,7 +19,7 @@ Bilgisayarlı görü bileşenlerinin tek tek ölçülen başarım değerlerinin,
 
 ## ABSTRACT
 
-`[Türkçe öz kesinleştikten sonra çevrilecek]`
+This study examines whether performance values measured for individual computer vision components remain valid when they share a single hardware platform. The system presented here processes twenty concurrent camera streams on one mid-range laptop graphics processor (RTX 3070 Laptop, 8 GB), combining object detection, tracking, pose estimation, facial expression classification, anomaly detection and aggression estimation in a single pipeline. End-to-end latency was 378 ms (p50) and 652 ms (p95); the analysed frame rate remained at 2.34 frames per second per camera. For violence detection, averaging a skeleton-based gradient boosting model with a raw-pixel three-dimensional convolutional model gave an F1 of 0.937 (0.917 after correcting threshold selection bias); the gain is attributable to the two models' error sets overlapping by only 10%. For anomaly detection, fusion gave an area under the curve of 0.869 (95% cluster bootstrap interval 0.806 to 0.929), while a control series applying the same temporal smoothing to a single signal gave 0.860, showing that the gain comes from smoothing rather than from signal combination. The second contribution is methodological: in 43 of 87 development-log entries, a performance or accuracy claim was refuted by a later measurement. These refutations fall into three classes: a criterion whose attainable upper bound lies below its target, a threshold below the measuring instrument's resolution, and an observation unit violating the independence assumption. In security, although a single entry point was established, the endpoints passing through it were never enumerated; the observability interface was consequently reachable without authentication, and this was corrected.
 
 **Keywords:** Multi-camera surveillance, Real-time video analytics, Violence detection, Resource-constrained inference, Measurement validity
 
@@ -334,7 +334,7 @@ Her iki çıkarım sürecinin de 0,89 çekirdekte doyması, Bölüm III.A.1'deki
 
 **Buna karşılık seçenek üretimde etkinleştirilmemiştir.** Gerekçe sistem belleğidir: iki süreçle kullanım %98 düzeyine çıkmaktadır ve on altı gigabaytlık bir makinede bu sınır, uzun süreli çalışmada güvenli değildir. Ayrıca paylaşımlı bellek havuzu büyütüldükten sonra tek süreçli yapılandırmanın verimi, iki süreçli yapılandırmayı yakalamıştır; yani bölüştürmenin çözmeye çalıştığı darboğazın bir bölümü daha ucuz bir düzeltmeyle ortadan kalkmıştır.
 
-⚠ **Bu alt bölümdeki ölçümlerin bilinen sınırı.** Bölüştürme karşılaştırmasının ve havuz boyutu karşılaştırmasının çıktı dosyaları saklanmamış, değerler yalnızca geliştirme günlüğüne yazılmıştır. Sonraki günlerde aynı yapılandırmayla yapılan ölçümler bu değerleri birebir tekrar üretmemiştir. Değerler, yönü ve büyüklük mertebesi bakımından raporlanmakta; makalenin diğer bölümlerinde kullanılan sayılar ise çıktısı saklanmış ölçümlerden alınmaktadır. Bu ayrım Bölüm III.E'de ele alınan kayıt tutma sorununun bu çalışmadaki somut örneğidir.
+**Bu alt bölümdeki ölçümlerin bilinen sınırı.** Bölüştürme karşılaştırmasının ve havuz boyutu karşılaştırmasının çıktı dosyaları saklanmamış, değerler yalnızca geliştirme günlüğüne yazılmıştır. Sonraki günlerde aynı yapılandırmayla yapılan ölçümler bu değerleri birebir tekrar üretmemiştir. Değerler, yönü ve büyüklük mertebesi bakımından raporlanmakta; makalenin diğer bölümlerinde kullanılan sayılar ise çıktısı saklanmış ölçümlerden alınmaktadır. Bu ayrım Bölüm III.E'de ele alınan kayıt tutma sorununun bu çalışmadaki somut örneğidir.
 
 #### A.7. Paylaşımlı bellek havuzunun boyutu bir kuyruk kararıdır
 
@@ -360,7 +360,7 @@ Kural tabanlı yaklaşımın neden sınırlı kaldığı ayrıca incelenmiştir.
 
 İkinci ve üçüncü yaklaşımın sonuçları ile bunların birleşimleri Tablo 11'de verilmiştir.
 
-⚠ Tablo 11'de kural tabanlı yaklaşım yer almamaktadır. Bunun nedeni, söz konusu yaklaşımın farklı bir alt küme (yüz yirmi klip) üzerinde değerlendirilmiş olmasıdır. Farklı değerlendirme kümelerinde elde edilmiş değerleri aynı tabloda karşılaştırmak, bu çalışmanın Bölüm II.C'de eleştirdiği hata türlerinden biridir; bu nedenle kural tabanlı sonuç metin içinde ve kendi küme büyüklüğüyle birlikte verilmiştir.
+Tablo 11'de kural tabanlı yaklaşım yer almamaktadır. Bunun nedeni, söz konusu yaklaşımın farklı bir alt küme (yüz yirmi klip) üzerinde değerlendirilmiş olmasıdır. Farklı değerlendirme kümelerinde elde edilmiş değerleri aynı tabloda karşılaştırmak, bu çalışmanın Bölüm II.C'de eleştirdiği hata türlerinden biridir; bu nedenle kural tabanlı sonuç metin içinde ve kendi küme büyüklüğüyle birlikte verilmiştir.
 
 *Tablo 11. Şiddet tespiti sonuçları (RWF-2000 doğrulama, 96 klip).*
 

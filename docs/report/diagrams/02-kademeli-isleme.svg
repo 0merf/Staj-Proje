@@ -67,7 +67,7 @@
   <rect x="24" y="332" width="560" height="62" class="gpu"/>
   <text x="36" y="353" class="baslik">KADEME 2a — YOLO26-pose  <tspan class="etiket">(top-down: kutu → %15 dolgu → 192 px)</tspan></text>
   <text x="36" y="371" class="alt">Tespit edilen her kişi kutusuna uygulanır. İskelet, düşme ve saldırganlığın girdisi.</text>
-  <text x="36" y="388" class="olcum">10.96 ms/kare · %48  ⬅ EN BÜYÜK KALEM</text>
+  <text x="36" y="388" class="olcum">10.96 ms/kare · %48  (en büyük kalem)</text>
 
   <line x1="304" y1="394" x2="304" y2="410" class="ok"/>
 
