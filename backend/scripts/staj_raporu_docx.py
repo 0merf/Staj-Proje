@@ -352,7 +352,7 @@ def _an02_sikistir(oge, olcek: float) -> None:
     `olcek` göz kararı seçilmiyor: üretim sonrası belge PDF'e render
     edilip anketin kaç sayfa tuttuğu SAYILIYOR (`staj_raporu_dogrula`).
     """
-    yarim_punto = max(2, int(round(11 * olcek * 2)))
+    yarim_punto = max(2, round(11 * olcek * 2))
     for rpr in oge.iter(qn("w:rPr")):
         for etiket in ("w:sz", "w:szCs"):
             mevcut = rpr.find(qn(etiket))
@@ -362,7 +362,7 @@ def _an02_sikistir(oge, olcek: float) -> None:
                 mevcut.set(qn("w:val"), str(yarim_punto))
                 continue
             eski = int(mevcut.get(qn("w:val")) or yarim_punto)
-            mevcut.set(qn("w:val"), str(max(2, int(round(eski * olcek)))))
+            mevcut.set(qn("w:val"), str(max(2, round(eski * olcek))))
 
     for tr_pr in oge.iter(qn("w:trPr")):
         for yukseklik in tr_pr.findall(qn("w:trHeight")):
