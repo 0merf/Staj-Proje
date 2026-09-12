@@ -81,6 +81,15 @@ class Denetim:
         print(f"  [atlandi] {ad} — {neden}")
 
 
+def _kase_var(bolum) -> bool:
+    """Bölümün üstbilgisinde kaşe kutusu var mı (TR ve EN başlıkları)."""
+    tablolar = bolum.header.tables
+    if not tablolar:
+        return False
+    ilk_hucre = tablolar[0].rows[0].cells[0].text
+    return "Firma" in ilk_hucre or "Company" in ilk_hucre
+
+
 def _belge_metni(belge) -> str:
     parcalar = [p.text for p in belge.paragraphs]
     for t in belge.tables:
@@ -154,9 +163,7 @@ def denetle(dil: str, pdf: Path | None) -> int:
               f"çerçevesiz bölümler: {cercevesiz}")
 
     # ─── 5: kaşe kutusu ───
-    kase = [b for b in belge.sections
-            if b.header.tables and "Firma" in b.header.tables[0].rows[0].cells[0].text
-            or b.header.tables and "Company" in b.header.tables[0].rows[0].cells[0].text]
+    kase = [b for b in belge.sections if _kase_var(b)]
     d.kontrol("kaşe kutusu tüm bölümlerde", len(kase) == len(belge.sections),
               f"{len(kase)}/{len(belge.sections)} bölümde var")
     d.kontrol("kapakta kaşe kutusu YOK",

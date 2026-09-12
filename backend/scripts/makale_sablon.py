@@ -26,6 +26,13 @@ sürümüne göre farklı içerik göstermesine yol açar.
 Gövde ise normal paragraflarda; şablonun örnek metni silinip yerine
 Markdown'dan üretilen içerik konuyor.
 
+⚠ GİRDİLERİ BU DEPODA DEĞİL (12.09.2026)
+Bu betik depoda duruyor ama beslendiği dosyalar durmuyor:
+`docs/report/makale/` `.gitignore` içinde. Sebep, dergiye sunulacak
+metnin ve kurum şablonunun genel bir depoya girmemesi. Depoyu
+klonlayan biri bu betiği olduğu gibi çalıştıramaz; betik burada
+yöntemi belgelemek için duruyor.
+
 Kullanım:
     uv run --with python-docx python scripts/makale_sablon.py --dil tr
     uv run --with python-docx python scripts/makale_sablon.py --dil en
@@ -44,7 +51,6 @@ from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.shared import Cm, Pt
-from docx.table import Table
 from docx.text.paragraph import Paragraph
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
@@ -201,33 +207,33 @@ def main() -> int:
     oz_etiket = "Öz: " if dil == "tr" else "Abstract: "
     anahtar_etiket = "Anahtar Kelimeler: " if dil == "tr" else "Keywords: "
 
-    KURUM = ("1 Düzce Üniversitesi, Mühendislik Fakültesi, Bilgisayar Mühendisliği "
+    kurum = ("1 Düzce Üniversitesi, Mühendislik Fakültesi, Bilgisayar Mühendisliği "
              "Bölümü, Düzce, Türkiye.")
-    ROR = "ror.org/04175wc52"
-    YAZISMA = "*Yazışma yazarı:" if dil == "tr" else "*Corresponding author:"
-    ADSOYAD = "Ömer Faruk Kanat"
-    EPOSTA = "omerfk0121@gmail.com"
-    ORCID = "ORCID: 0009-0006-9229-6217"
+    ror = "ror.org/04175wc52"
+    yazisma = "*Yazışma yazarı:" if dil == "tr" else "*Corresponding author:"
+    adsoyad = "Ömer Faruk Kanat"
+    eposta = "omerfk0121@gmail.com"
+    orcid = "orcid: 0009-0006-9229-6217"
 
-    CITE = (f"Cite as: Kanat, Ö. F. (202x). {baslik} "
+    cite = (f"Cite as: Kanat, Ö. F. (202x). {baslik} "
             f"Cyber Security and Digital Economy Journal, vol(issue), xx-xx.")
-    LISANS = ("This is an open access paper distributed under the terms and conditions "
+    lisans = ("This is an open access paper distributed under the terms and conditions "
               "of the Creative Commons Attribution-NonCommercial 4.0 International License.")
 
     # ── Metin kutularını doldur (her biri İKİ KEZ geçiyor) ──
     kutular = list(_kutular(belge))
     print(f"metin kutusu: {len(kutular)}")
     icerik = {
-        6: [[(CITE, False)], [(LISANS, False)]],
-        7: [[(CITE, False)], [(LISANS, False)]],
+        6: [[(cite, False)], [(lisans, False)]],
+        7: [[(cite, False)], [(lisans, False)]],
         10: [[(oz_etiket, True), (oz_metin, False)], [("", False)],
              [(anahtar_etiket, True), (anahtar, False)]],
         11: [[(oz_etiket, True), (oz_metin, False)], [("", False)],
              [(anahtar_etiket, True), (anahtar, False)]],
-        12: [[(KURUM, False)], [(ROR, False)], [("", False)],
-             [(YAZISMA, False)], [(ADSOYAD, False)], [(EPOSTA, False)], [(ORCID, False)]],
-        13: [[(KURUM, False)], [(ROR, False)], [("", False)],
-             [(YAZISMA, False)], [(ADSOYAD, False)], [(EPOSTA, False)], [(ORCID, False)]],
+        12: [[(kurum, False)], [(ror, False)], [("", False)],
+             [(yazisma, False)], [(adsoyad, False)], [(eposta, False)], [(orcid, False)]],
+        13: [[(kurum, False)], [(ror, False)], [("", False)],
+             [(yazisma, False)], [(adsoyad, False)], [(eposta, False)], [(orcid, False)]],
     }
     for indeks, paragraflar in icerik.items():
         if indeks < len(kutular):
@@ -236,8 +242,8 @@ def main() -> int:
     # ⚠ "Cite as" kutusunun içinde bir TABLO var ve metin onun içinde.
     # Doğrudan çocuklara bakan `_kutu_yaz` bu kutuyu boş geçiyordu;
     # metin derinlemesine aranıp değiştiriliyor.
-    _derin_degistir(belge, "Cite as: Surname", CITE)
-    _derin_degistir(belge, "This is an open access paper", LISANS)
+    _derin_degistir(belge, "Cite as: Surname", cite)
+    _derin_degistir(belge, "This is an open access paper", lisans)
 
     # ── Başlık ve yazar ──
     for p in belge.paragraphs:
@@ -248,7 +254,7 @@ def main() -> int:
         if p.text.strip().startswith("Beytullah Çıtır"):
             for r in list(p.runs):
                 r._element.getparent().remove(r._element)
-            _tipi(p.add_run(f"{ADSOYAD}¹*"), 11, kalin=False)
+            _tipi(p.add_run(f"{adsoyad}¹*"), 11, kalin=False)
 
     # ── Şablonun örnek gövdesini sil ──
     govde = belge.element.body

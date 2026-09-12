@@ -14,6 +14,13 @@ Markdown tek doğru kaynaktır (single source of truth).
   · Sayfa numarası, üstbilgi ve altbilgi KULLANILMAZ
   · Kaynaklar APA
 
+⚠ GİRDİLERİ BU DEPODA DEĞİL (12.09.2026)
+Bu betik depoda duruyor ama beslendiği dosyalar durmuyor:
+`docs/report/makale/` `.gitignore` içinde. Sebep, dergiye sunulacak
+metnin ve kurum şablonunun genel bir depoya girmemesi. Depoyu
+klonlayan biri bu betiği olduğu gibi çalıştıramaz; betik burada
+yöntemi belgelemek için duruyor.
+
 Kullanım:
     uv run --with python-docx python scripts/makale_docx.py
 """
@@ -25,12 +32,10 @@ import sys
 from pathlib import Path
 
 from docx import Document
-from docx.enum.section import WD_SECTION
 from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
-from docx.shared import Cm, Pt, RGBColor
+from docx.shared import Cm, Pt
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
 

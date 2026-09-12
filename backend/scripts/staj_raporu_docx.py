@@ -215,9 +215,9 @@ def _sayfa_cercevesi(bolum) -> None:
 
 def _hucre_kenarliklari(tablo, dis_ust: str, dis_alt: str) -> None:
     """Kaşe tablosunun şablondaki kenarlık stilini uygular."""
-    tblPr = tablo._tbl.tblPr
-    for eski in tblPr.findall(qn("w:tblBorders")):
-        tblPr.remove(eski)
+    tbl_pr = tablo._tbl.tblPr
+    for eski in tbl_pr.findall(qn("w:tblBorders")):
+        tbl_pr.remove(eski)
     k = OxmlElement("w:tblBorders")
     for kenar, stil, kalinlik in (("top", dis_ust, "24"), ("left", dis_ust, "24"),
                                   ("bottom", dis_alt, "24"), ("right", dis_alt, "24"),
@@ -229,7 +229,7 @@ def _hucre_kenarliklari(tablo, dis_ust: str, dis_alt: str) -> None:
         e.set(qn("w:space"), "0")
         e.set(qn("w:color"), "auto")
         k.append(e)
-    tblPr.append(k)
+    tbl_pr.append(k)
 
 
 def _kase_ustbilgisi(bolum, dil: str) -> None:
@@ -271,10 +271,10 @@ def _kase_ustbilgisi(bolum, dil: str) -> None:
 
 
 def _satir_yuksekligi(satir, twip: int) -> None:
-    trPr = satir._tr.get_or_add_trPr()
+    tr_pr = satir._tr.get_or_add_trPr()
     e = OxmlElement("w:trHeight")
     e.set(qn("w:val"), str(twip))
-    trPr.append(e)
+    tr_pr.append(e)
 
 
 def _kapak_sayfasi(belge, ham: list[str], dil: str) -> None:
@@ -375,10 +375,10 @@ def _an02_ekle(belge, dil: str) -> bool:
 
 def _basligi_tekrarla(satir) -> None:
     """Tablo sayfaya sığmayıp bölündüğünde başlık satırı tekrar yazılsın."""
-    trPr = satir._tr.get_or_add_trPr()
+    tr_pr = satir._tr.get_or_add_trPr()
     e = OxmlElement("w:tblHeader")
     e.set(qn("w:val"), "true")
-    trPr.append(e)
+    tr_pr.append(e)
 
 
 def _icindekiler_satiri(belge, metin: str, sayfa: int | None) -> None:
