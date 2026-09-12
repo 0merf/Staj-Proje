@@ -136,13 +136,37 @@ def _zengin_metin(par, metin: str, punto: float, kalin=False, italik=False,
         _tipi_ayarla(c, punto, k, i, kod=m)
 
 
-def _sayfa_numarasi(bolum) -> None:
-    """Altbilgiye ortalanmış PAGE alanı koyar."""
+def _altbilgi_kur(bolum, dil: str, sayfa_no: bool) -> None:
+    """Altbilgiyi kurar: sağda kaşe alanı, altında ortalı sayfa numarası.
+
+    ⚠ KAŞE ALANI ÜSTBİLGİDE DEĞİL ALTBİLGİDE (12.09.2026).
+    Önce üstbilgiye "Firma Adı / Sorumlu Mühendis" tablosu konmuştu;
+    teslim edilmiş örnek bir staj raporunda alanın SAYFA ALTINDA ve
+    tablosuz olduğu görüldü. Kural ("her sayfada firma kaşe imzası")
+    iki biçimde de sağlanıyor, ama bölümün alışılmış düzeni bu.
+    """
     altbilgi = bolum.footer
     altbilgi.is_linked_to_previous = False
-    par = altbilgi.paragraphs[0]
+    for p in list(altbilgi.paragraphs)[1:]:
+        p._element.getparent().remove(p._element)
+    for t in list(altbilgi.tables):
+        t._tbl.getparent().remove(t._tbl)
+
+    satirlar = (("Sorumlu Mühendis", "Unvan, İsim, İmza, Kaşe") if dil == "tr"
+                else ("Responsible Engineer", "Signature, Stamp"))
+    for sira, metin in enumerate(satirlar):
+        par = altbilgi.paragraphs[0] if sira == 0 else altbilgi.add_paragraph()
+        par.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        par.paragraph_format.line_spacing = ARALIK_TEK
+        par.paragraph_format.space_after = Pt(0)
+        _tipi_ayarla(par.add_run(metin), 11.0, kalin=True)
+
+    if not sayfa_no:
+        return
+    par = altbilgi.add_paragraph()
     par.alignment = WD_ALIGN_PARAGRAPH.CENTER
     par.paragraph_format.line_spacing = ARALIK_TEK
+    par.paragraph_format.space_after = Pt(0)
     for eleman, oznitelik in (("w:fldChar", ("w:fldCharType", "begin")),
                               ("w:instrText", ("xml:space", "preserve")),
                               ("w:fldChar", ("w:fldCharType", "end"))):
@@ -213,70 +237,6 @@ def _sayfa_cercevesi(bolum) -> None:
         sp.append(kenarlik)
 
 
-def _hucre_kenarliklari(tablo, dis_ust: str, dis_alt: str) -> None:
-    """Kaşe tablosunun şablondaki kenarlık stilini uygular."""
-    tbl_pr = tablo._tbl.tblPr
-    for eski in tbl_pr.findall(qn("w:tblBorders")):
-        tbl_pr.remove(eski)
-    k = OxmlElement("w:tblBorders")
-    for kenar, stil, kalinlik in (("top", dis_ust, "24"), ("left", dis_ust, "24"),
-                                  ("bottom", dis_alt, "24"), ("right", dis_alt, "24"),
-                                  ("insideH", "single", "4"),
-                                  ("insideV", "single", "4")):
-        e = OxmlElement(f"w:{kenar}")
-        e.set(qn("w:val"), stil)
-        e.set(qn("w:sz"), kalinlik)
-        e.set(qn("w:space"), "0")
-        e.set(qn("w:color"), "auto")
-        k.append(e)
-    tbl_pr.append(k)
-
-
-def _kase_ustbilgisi(bolum, dil: str) -> None:
-    """Şablondaki 'Firma Adı / Sorumlu Mühendis' kaşe kutusunu kurar.
-
-    Staj kurallarının 'her sayfada firma kaşe imzası olmalı' maddesini
-    karşılayan yer burası. Alt satır boş bırakılıyor: kaşe oraya basılacak.
-    """
-    ustbilgi = bolum.header
-    ustbilgi.is_linked_to_previous = False
-    for p in list(ustbilgi.paragraphs):
-        p._element.getparent().remove(p._element)
-    t = ustbilgi.add_table(rows=2, cols=2, width=Twips(10207))
-    t.autofit = False
-    _hucre_kenarliklari(t, "thinThickLargeGap", "thickThinLargeGap")
-    for satir in t.rows:
-        satir.cells[0].width = Twips(5921)
-        satir.cells[1].width = Twips(4286)
-    sol, sag = (("Firma Adı", "Sorumlu Mühendis\nUnvan, İsim, İmza, Kaşe")
-                if dil == "tr" else
-                ("Company Name", "Responsible Engineer\nTitle, Name, Signature, Stamp"))
-    for hucre, metin, punto, kalin in ((t.rows[0].cells[0], sol, 11.0, False),
-                                       (t.rows[0].cells[1], sag, 9.0, True)):
-        hucre.text = ""
-        for sira, parca in enumerate(metin.split("\n")):
-            par = hucre.paragraphs[0] if sira == 0 else hucre.add_paragraph()
-            par.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            par.paragraph_format.line_spacing = ARALIK_TEK
-            par.paragraph_format.space_after = Pt(0)
-            c = par.add_run(parca)
-            _tipi_ayarla(c, punto, kalin=kalin)
-    # İkinci satır kaşe için boş ve yüksek bırakılıyor (şablon: 874 twip)
-    _satir_yuksekligi(t.rows[1], 874)
-    # Üstbilgiden sonra gövdeye yapışmasın
-    son = ustbilgi.add_paragraph()
-    son.paragraph_format.space_after = Pt(0)
-    son.paragraph_format.line_spacing = ARALIK_TEK
-    _tipi_ayarla(son.add_run(""), 2.0)
-
-
-def _satir_yuksekligi(satir, twip: int) -> None:
-    tr_pr = satir._tr.get_or_add_trPr()
-    e = OxmlElement("w:trHeight")
-    e.set(qn("w:val"), str(twip))
-    tr_pr.append(e)
-
-
 def _kapak_sayfasi(belge, ham: list[str], dil: str) -> None:
     """Şablonun kapak düzenini birebir kurar: logo, kurum, başlık.
 
@@ -309,24 +269,53 @@ def _kapak_sayfasi(belge, ham: list[str], dil: str) -> None:
               punto=28.0, kalin=True, hiza=WD_ALIGN_PARAGRAPH.CENTER,
               aralik=ARALIK_TEK, once=112)
 
-    # Kapaktaki künye satırları kaynak dosyadan geliyor
-    for sira, satir in enumerate(_kapak_kunyesi(ham)):
-        _paragraf(belge, satir, punto=13.0, hiza=WD_ALIGN_PARAGRAPH.CENTER,
-                  aralik=ARALIK_TEK, once=30 if sira == 0 else 0, sonra=6)
+    # ⚠ Künye, şablondaki gibi KENARLIKSIZ 5x2 TABLO: etiketler sağa,
+    # değerler sola dayalı. Ortalanmış düz paragraflar şablondaki
+    # hizalamayı vermiyordu. Ölçüler şablonun `w:tblGrid`'inden:
+    # girinti 1101, sütunlar 2835 ve 4252 twip.
+    kunye = _kapak_kunyesi(ham)
+    if not kunye:
+        return
+    _paragraf(belge, "", aralik=ARALIK_TEK, sonra=30)
+    t = belge.add_table(rows=len(kunye), cols=2)
+    t._tbl.tblPr.append(_ogeyle("w:tblInd", {"w:w": "1101", "w:type": "dxa"}))
+    for satir, (etiket, deger) in zip(t.rows, kunye, strict=False):
+        satir.cells[0].width = Twips(2835)
+        satir.cells[1].width = Twips(4252)
+        for hucre, metin, hiza in ((satir.cells[0], etiket,
+                                    WD_ALIGN_PARAGRAPH.RIGHT),
+                                   (satir.cells[1], deger,
+                                    WD_ALIGN_PARAGRAPH.LEFT)):
+            hucre.text = ""
+            par = hucre.paragraphs[0]
+            par.alignment = hiza
+            par.paragraph_format.line_spacing = ARALIK_TEK
+            par.paragraph_format.space_after = Pt(4)
+            _tipi_ayarla(par.add_run(metin), PUNTO)
+
+    # ⚠ Tablodan SONRA boş bir paragraf şart. İçindekilerden önceki sayfa
+    # sonu `belge.paragraphs[-1]` üzerine konuyor; tablo eklendikten sonra
+    # "son paragraf" tablonun ÜSTÜNDEKİ paragraf oluyor ve sayfa sonu
+    # oraya düşüp künyeyi ikinci sayfaya atıyordu.
+    _paragraf(belge, "", aralik=ARALIK_TEK)
 
 
-def _kapak_kunyesi(ham: list[str]) -> list[str]:
-    """Kaynaktaki kapak bloğundan yalnızca künye satırlarını ayıklar.
+def _ogeyle(ad: str, oznitelikler: dict[str, str]):
+    e = OxmlElement(ad)
+    for anahtar, deger in oznitelikler.items():
+        e.set(qn(anahtar), deger)
+    return e
 
-    Kurum adı ve "Staj Raporu" başlığı `_kapak_sayfasi` içinde
-    şablondaki puntolarla yazıldığı için burada ATLANIYOR; yoksa
-    iki kez basılırlardı.
+
+def _kapak_kunyesi(ham: list[str]) -> list[tuple[str, str]]:
+    """Kapak bloğundaki `Etiket: Değer` satırlarını ayrıştırır.
+
+    Alanlar şablonun kapağındaki beş alanın AYNISI (Student ID, Name
+    Surname, Department, Lecture Code, Internship Dates). Kurum adı ve
+    "Staj Raporu" başlığı `_kapak_sayfasi` içinde şablondaki puntolarla
+    yazıldığı için burada yer almaz.
     """
     icinde, kunye = False, []
-    atla = ("T.C. DÜZCE", "MÜHENDİSLİK FAKÜLTESİ", "BİLGİSAYAR MÜHENDİSLİĞİ",
-            "STAJ RAPORU", "REPUBLIC OF TURKEY", "DUZCE UNIVERSITY",
-            "FACULTY OF ENGINEERING", "COMPUTER ENGINEERING DEPARTMENT",
-            "INTERNSHIP REPORT")
     for satir in ham:
         kirp = satir.strip()
         if kirp in BASLIK_KAPAK:
@@ -336,9 +325,11 @@ def _kapak_kunyesi(ham: list[str]) -> list[str]:
             break
         if not icinde or not kirp or kirp == "---":
             continue
-        if any(kirp.strip("*").upper().startswith(a) for a in atla):
+        if ":" not in kirp:
+            print(f"  ⚠ kapakta 'Etiket: Değer' olmayan satır atlandı: {kirp}")
             continue
-        kunye.append(kirp)
+        etiket, deger = kirp.split(":", 1)
+        kunye.append((etiket.strip() + ":", deger.strip()))
     return kunye
 
 
@@ -512,8 +503,10 @@ def uret(kaynak: Path, cikti: Path, dil: str,
     ilk_bolum = belge.sections[0]
     _sayfa_duzeni(ilk_bolum)
     # ⚠ Kapakta kaşe kutusu YOK (şablon da böyle), içindekilerde VAR.
+    # Kapakta altbilgi de YOK; içindekiler sayfasında kaşe var ama
+    # sayfa numarası yok (numaralandırma gövdede 1'den başlıyor).
     ilk_bolum.different_first_page_header_footer = True
-    _kase_ustbilgisi(ilk_bolum, dil)
+    _altbilgi_kur(ilk_bolum, dil, sayfa_no=False)
 
     normal = belge.styles["Normal"]
     normal.font.name = YAZI
@@ -597,17 +590,21 @@ def uret(kaynak: Path, cikti: Path, dil: str,
                 yeni = belge.add_section(WD_SECTION.NEW_PAGE)
                 _sayfa_duzeni(yeni)
                 yeni.different_first_page_header_footer = False
-                _kase_ustbilgisi(yeni, dil)
                 _numaralandirmayi_sifirla(yeni)
-                _sayfa_numarasi(yeni)
+                _altbilgi_kur(yeni, dil, sayfa_no=True)
                 numara_bolumu_acildi = True
-            elif belge.paragraphs:
+            elif kirp in BASLIK_ICINDEKILER and belge.paragraphs:
+                # ⚠ Sayfa sonu YALNIZCA içindekilerden önce. Her bölüm
+                # başlığından önce sayfa sonu koymak, kısa bölümlerin
+                # ardından sayfanın yarısını boş bırakıyordu; şablon
+                # bölümlerin yeni sayfada başlamasını İSTEMİYOR.
                 belge.paragraphs[-1].add_run().add_break(WD_BREAK.PAGE)
             if re.match(r"^\d+\.\s*(EK|APPENDIX)", _buyuk(baslik, dil)):
                 ekler_basladi = True
             _paragraf(belge, _buyuk(baslik, dil), kalin=True,
-                      hiza=WD_ALIGN_PARAGRAPH.LEFT, aralik=ARALIK_GOVDE,
-                      sonra=10)
+                      hiza=WD_ALIGN_PARAGRAPH.CENTER, aralik=ARALIK_GOVDE,
+                      once=0 if icindekilerde or not numara_bolumu_acildi
+                      else 16, sonra=10)
             i += 1
             continue
 
@@ -638,16 +635,16 @@ def uret(kaynak: Path, cikti: Path, dil: str,
 
         # ─── Şekil açıklaması (şeklin ALTINDA) — tek satır aralığı ───
         if re.match(r"^\*\*(Şekil|Figure) ", kirp):
-            _paragraf(belge, kirp, punto=KUCUK,
-                      hiza=WD_ALIGN_PARAGRAPH.JUSTIFY, aralik=ARALIK_TEK,
+            _paragraf(belge, kirp, punto=11.0,
+                      hiza=WD_ALIGN_PARAGRAPH.CENTER, aralik=ARALIK_TEK,
                       sonra=10)
             i += 1
             continue
 
         # ─── Tablo açıklaması (tablonun ÜSTÜNDE) — tek satır aralığı ───
         if re.match(r"^\*\*(Tablo|Table) ", kirp):
-            _paragraf(belge, kirp, punto=KUCUK,
-                      hiza=WD_ALIGN_PARAGRAPH.JUSTIFY, aralik=ARALIK_TEK,
+            _paragraf(belge, kirp, punto=11.0,
+                      hiza=WD_ALIGN_PARAGRAPH.CENTER, aralik=ARALIK_TEK,
                       once=8, sonra=3)
             i += 1
             continue

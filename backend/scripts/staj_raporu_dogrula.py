@@ -60,6 +60,8 @@ YER_TUTUCU = ("TODO", "TBD", "XXX", "yer tutucu", "placeholder",
               "(devam ediyor)", "— devam ediyor)", "doldurulacak")
 # AN02 anketi rapora olduğu gibi ekleniyor ve kendi 2 tablosunu getiriyor
 AN02_TABLO = 2
+# Kapak künyesi de bir tablo (şablondaki kenarlıksız 5x2 blok)
+KAPAK_TABLO = 1
 
 
 class Denetim:
@@ -82,12 +84,22 @@ class Denetim:
 
 
 def _kase_var(bolum) -> bool:
-    """Bölümün üstbilgisinde kaşe kutusu var mı (TR ve EN başlıkları)."""
-    tablolar = bolum.header.tables
-    if not tablolar:
-        return False
-    ilk_hucre = tablolar[0].rows[0].cells[0].text
-    return "Firma" in ilk_hucre or "Company" in ilk_hucre
+    """Bölümün ALTBİLGİSİNDE kaşe alanı var mı (TR ve EN metinleri).
+
+    ⚠ Önce üstbilgide aranıyordu; alan 12.09.2026'da sayfa altına
+    taşındı (teslim edilmiş örnek raporun düzeni).
+    """
+    metin = "\n".join(p.text for p in bolum.footer.paragraphs)
+    return "Sorumlu Mühendis" in metin or "Responsible Engineer" in metin
+
+
+def _kapak_alanlari(ham: str) -> list[str]:
+    """Kaynaktaki kapak bloğunun etiketlerini döndürür (`Etiket:`)."""
+    blok = ham.split("## KAPAK")[-1] if "## KAPAK" in ham \
+        else ham.split("## COVER PAGE")[-1]
+    blok = blok.split("\n## ")[0]
+    return [s.split(":", 1)[0].strip() for s in blok.splitlines()
+            if ":" in s and not s.startswith("#")]
 
 
 def _belge_metni(belge) -> str:
@@ -134,6 +146,14 @@ def denetle(dil: str, pdf: Path | None) -> int:
         d.kontrol("kapak tek sayfa (künye taşmamış)",
                   icindekiler in sayfalar[1],
                   f"2. sayfada '{icindekiler}' yok, kapak taşmış olabilir")
+        # ⚠ Bu kontrol SONRADAN eklendi: künye tablosu bir süre ikinci
+        # sayfaya düşüyordu ve yukarıdaki kontrol bunu GÖRMÜYORDU, çünkü
+        # içindekiler yine 2. sayfadaydı. "Kapak taşmadı" demek, künyenin
+        # kapakta OLDUĞU anlamına gelmiyor; ayrıca aranması gerekiyor.
+        kunye_alanlari = _kapak_alanlari(ham)
+        kapakta_olmayan = [a for a in kunye_alanlari if a not in sayfalar[0]]
+        d.kontrol(f"künye alanları kapakta ({len(kunye_alanlari)} alan)",
+                  not kapakta_olmayan, f"kapakta değil: {kapakta_olmayan}")
         d.kontrol("içindekilerde sayfa numarası var",
                   bool(re.search(r"\.{5,}\s*\d+", sayfalar[1])),
                   "nokta dolgulu sayfa numarası bulunamadı")
@@ -164,10 +184,13 @@ def denetle(dil: str, pdf: Path | None) -> int:
 
     # ─── 5: kaşe kutusu ───
     kase = [b for b in belge.sections if _kase_var(b)]
-    d.kontrol("kaşe kutusu tüm bölümlerde", len(kase) == len(belge.sections),
+    d.kontrol("kaşe alanı (altbilgi) tüm bölümlerde",
+              len(kase) == len(belge.sections),
               f"{len(kase)}/{len(belge.sections)} bölümde var")
-    d.kontrol("kapakta kaşe kutusu YOK",
+    d.kontrol("kapakta kaşe alanı YOK",
               belge.sections[0].different_first_page_header_footer)
+    d.kontrol("üstbilgi boş (kaşe üstte DEĞİL)",
+              not any(b.header.tables for b in belge.sections))
 
     # ─── 6: temizlik ───
     emojiler = sorted({c for c in metin if EMOJI.match(c)})
@@ -187,9 +210,9 @@ def denetle(dil: str, pdf: Path | None) -> int:
                   not atifsiz, f"atıfsız: {atifsiz}")
     # Word'de gerçekten o kadar tablo/görsel var mı
     md_tablo = len(re.findall(r"^\*\*" + tablo_sz + r" \d", ham, re.M))
-    d.kontrol(f"tablo sayısı kaynakla aynı (+ AN02'nin {AN02_TABLO} tablosu)",
-              len(belge.tables) == md_tablo + AN02_TABLO,
-              f"docx={len(belge.tables)} beklenen={md_tablo + AN02_TABLO}")
+    d.kontrol(f"tablo sayısı kaynakla aynı (+ AN02 {AN02_TABLO} + kapak {KAPAK_TABLO})",
+              len(belge.tables) == md_tablo + AN02_TABLO + KAPAK_TABLO,
+              f"docx={len(belge.tables)} beklenen={md_tablo + AN02_TABLO + KAPAK_TABLO}")
     d.kontrol("AN02 anketi raporun sonunda",
               "Staj Yapan Öğrencinin" in metin
               and "KATILIYORUM" in metin.upper())
