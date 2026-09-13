@@ -60,13 +60,34 @@ SABLON = Path.home() / "Downloads" / "templateCDEJ_ENG.docx"
 SEKIL = KOK / "docs" / "report" / "diagrams"
 CIKTI_DIZIN = KOK / "docs" / "report" / "makale"
 
-KAYNAKLAR = {
-    "tr": CIKTI_DIZIN / "05-makale-tr-final.md",
-    "en": CIKTI_DIZIN / "06-makale-en-final.md",
-}
-CIKTILAR = {
-    "tr": CIKTI_DIZIN / "SENTINEL-CDEJ-sablon-TR.docx",
-    "en": CIKTI_DIZIN / "SENTINEL-CDEJ-sablon-ENG.docx",
+# ⚠ SÜRÜMLER (13.09.2026) — eski sürümün dosyalarının ÜSTÜNE YAZILMAZ.
+# v1: danışmana 12.09'da gönderilen hâl. v2: danışman geri bildirimi —
+# başlık "Yirmi Kameralı" → "Çoklu Kamera ile" ve şekiller Elsevier
+# tarzında yeniden çizildi (scripts/sekiller_elsevier.py). v2'de şekiller
+# DİLE GÖRE ayrı: İngilizce makale İngilizce şekil kullanır; v1'de iki
+# dil de aynı Türkçe şekilleri kullanıyordu.
+SURUMLER = {
+    "v1": {
+        "kaynak": {"tr": CIKTI_DIZIN / "05-makale-tr-final.md",
+                   "en": CIKTI_DIZIN / "06-makale-en-final.md"},
+        "cikti": {"tr": CIKTI_DIZIN / "SENTINEL-CDEJ-sablon-TR.docx",
+                  "en": CIKTI_DIZIN / "SENTINEL-CDEJ-sablon-ENG.docx"},
+        "sekil": lambda dil, no: SEKIL / {"1": "01-veri-akisi.png",
+                                          "2": "02-kademeli-isleme.png",
+                                          "3": "03-kimlik-dogrulama.png"}.get(no, ""),
+        "sekil_cm": 15.5,
+    },
+    "v2": {
+        "kaynak": {"tr": CIKTI_DIZIN / "07-makale-tr-v2.md",
+                   "en": CIKTI_DIZIN / "08-makale-en-v2.md"},
+        "cikti": {"tr": CIKTI_DIZIN / "SENTINEL-CDEJ-sablon-TR-v2.docx",
+                  "en": CIKTI_DIZIN / "SENTINEL-CDEJ-sablon-ENG-v2.docx"},
+        "sekil": lambda dil, no: SEKIL / "elsevier" / dil / {
+            "1": "sekil-1-veri-akisi.png", "2": "sekil-2-kademeli-isleme.png",
+            "3": "sekil-3-kimlik-dogrulama.png"}.get(no, ""),
+        # Şablonun metin genişliği 17,99 cm; şekil tam metin genişliğinde.
+        "sekil_cm": 17.8,
+    },
 }
 YAZI = "Cambria"
 
@@ -183,13 +204,15 @@ def _zengin(par, metin, punto, kalin=False, italik=False):
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dil", choices=("tr", "en"), default="tr")
+    ap.add_argument("--surum", choices=tuple(SURUMLER), default="v1")
     args = ap.parse_args()
     dil = args.dil
+    surum = SURUMLER[args.surum]
 
     if not SABLON.is_file():
         print(f"❌ Şablon bulunamadı: {SABLON}")
         return 1
-    kaynak = KAYNAKLAR[dil]
+    kaynak = surum["kaynak"][dil]
     if not kaynak.is_file():
         print(f"❌ Kaynak metin yok: {kaynak}")
         return 1
@@ -213,7 +236,11 @@ def main() -> int:
     yazisma = "*Yazışma yazarı:" if dil == "tr" else "*Corresponding author:"
     adsoyad = "Ömer Faruk Kanat"
     eposta = "omerfk0121@gmail.com"
-    orcid = "orcid: 0009-0006-9229-6217"
+    # ⚠ "ORCID" BÜYÜK HARF yazılır. 12.09 lint düzeltmesinde büyük harfli
+    # değişken adları küçültülürken regex string'in İÇİNDEKİ "ORCID" yazısını
+    # da küçültmüştü; belgeye "orcid:" olarak girdi. v1/v2 metin karşılaştırması
+    # (yalnızca başlık farkı beklenirken) bunu 13.09'da yakaladı.
+    orcid = "ORCID: 0009-0006-9229-6217"
 
     cite = (f"Cite as: Kanat, Ö. F. (202x). {baslik} "
             f"Cyber Security and Digital Economy Journal, vol(issue), xx-xx.")
@@ -280,16 +307,20 @@ def main() -> int:
     # İngilizce abstract içermelidir." Türkçe öz sayfa 1'deki kutuda,
     # İngilizce abstract ise gövdenin başında yer alıyor.
     # İngilizce makalede abstract zaten kutuda; gövde I. bölümle başlar.
-    _govde_yaz(belge, ham, "## ABSTRACT" if dil == "tr" else None)
+    _govde_yaz(belge, ham, "## ABSTRACT" if dil == "tr" else None,
+               sekil_yolu=lambda no: surum["sekil"](dil, no),
+               sekil_cm=surum["sekil_cm"])
 
     CIKTI_DIZIN.mkdir(parents=True, exist_ok=True)
-    belge.save(str(CIKTILAR[dil]))
-    print(f"yazıldı: {CIKTILAR[dil].relative_to(KOK)}")
+    cikti = surum["cikti"][dil]
+    belge.save(str(cikti))
+    print(f"yazıldı: {cikti.relative_to(KOK)}")
     print(f"paragraf: {len(belge.paragraphs)} · tablo: {len(belge.tables)}")
     return 0
 
 
-def _govde_yaz(belge, ham: str, ilk_baslik: str | None = None) -> None:
+def _govde_yaz(belge, ham: str, ilk_baslik: str | None = None,
+               sekil_yolu=None, sekil_cm: float = 15.5) -> None:
     """Markdown gövdesini belgeye ekler.
 
     `ilk_baslik` verilirse gövde o başlıktan, verilmezse "## I." ile
@@ -361,14 +392,13 @@ def _govde_yaz(belge, ham: str, ilk_baslik: str | None = None) -> None:
                 once=6, sonra=4)
         elif k.startswith("**[ŞEKİL") or k.startswith("**[FIGURE"):
             no = re.search(r"(?:ŞEKİL|FIGURE) (\d+)", k)
-            dosya = {"1": "01-veri-akisi.png", "2": "02-kademeli-isleme.png",
-                     "3": "03-kimlik-dogrulama.png"}.get(no.group(1) if no else "", "")
-            yol = SEKIL / dosya if dosya else None
+            yol = sekil_yolu(no.group(1)) if (no and sekil_yolu) else None
             p = belge.add_paragraph()
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
             if yol and yol.is_file():
-                p.add_run().add_picture(str(yol), width=Cm(15.5))
+                p.add_run().add_picture(str(yol), width=Cm(sekil_cm))
             else:
+                print(f"  ⚠ şekil bulunamadı: {k} → {yol}")
                 _tipi(p.add_run(k.strip("*[]")), 9, italik=True)
         elif k.startswith("*Şekil ") or k.startswith("*Figure "):
             par(k.strip("*"), punto=9, italik=True,

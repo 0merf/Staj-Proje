@@ -69,6 +69,22 @@ AN02 = GORSEL_KOK / "staj" / "AN02.docx"
 # anketin kaç sayfa tuttuğu sayılıyor (bkz. staj_raporu_dogrula.py).
 AN02_OLCEK = 0.78
 
+# ⚠ SÜRÜMLER (13.09.2026) — eski sürümün dosyalarının ÜSTÜNE YAZILMAZ.
+# v2: danışman geri bildirimiyle diyagramlar Elsevier tarzında yeniden
+# çizildi; metin v1 ile aynı. Kaynak dosya ayrı (03/04-...-v2.md).
+SURUM_KAYNAKLARI = {
+    "v2": {
+        "tr": (GORSEL_KOK / "staj" / "03-staj-raporu-tr-v2.md",
+               GORSEL_KOK / "staj" / "SENTINEL-staj-raporu-TR-v2.docx"),
+        "en": (GORSEL_KOK / "staj" / "04-staj-raporu-en-v2.md",
+               GORSEL_KOK / "staj" / "SENTINEL-internship-report-EN-v2.docx"),
+    },
+}
+# Elsevier diyagramları metin genişliğinde (17 cm) yerleştirilir; en küçük
+# yazı bu genişlikte 7,16 pt olacak şekilde çizildi (sekiller_elsevier.py).
+# Ekran görüntüleri eski genişlikte kalır.
+ELSEVIER_SEKIL_CM = 17.0
+
 KAYNAKLAR = {
     "tr": (GORSEL_KOK / "staj" / "01-staj-raporu-tr.md",
            GORSEL_KOK / "staj" / "SENTINEL-staj-raporu-TR.docx"),
@@ -686,7 +702,9 @@ def uret(kaynak: Path, cikti: Path, dil: str,
             par.paragraph_format.space_before = Pt(8)
             par.paragraph_format.space_after = Pt(3)
             if yol.is_file():
-                par.add_run().add_picture(str(yol), width=Cm(15.5))
+                genislik = (ELSEVIER_SEKIL_CM if "elsevier" in yol.parts
+                            else 15.5)
+                par.add_run().add_picture(str(yol), width=Cm(genislik))
             else:
                 print(f"  ⚠ görsel bulunamadı: {yol}")
                 c = par.add_run(f"[görsel: {eslesme.group(1)}]")
@@ -746,11 +764,13 @@ def main() -> int:
     ap.add_argument("--pdf", type=Path,
                     help="Birinci geçişin PDF çıktısı. Verilirse içindekiler "
                          "sayfa numaralarıyla üretilir (ikinci geçiş).")
+    ap.add_argument("--surum", choices=("v1", *SURUM_KAYNAKLARI), default="v1")
     arg = ap.parse_args()
+    kaynaklar = KAYNAKLAR if arg.surum == "v1" else SURUM_KAYNAKLARI[arg.surum]
     diller = ("tr", "en") if arg.dil == "hepsi" else (arg.dil,)
     hata = 0
     for dil in diller:
-        kaynak, cikti = KAYNAKLAR[dil]
+        kaynak, cikti = kaynaklar[dil]
         if not kaynak.is_file():
             if arg.dil == "hepsi":
                 print(f"atlandı ({dil}): {kaynak.name} henüz yok")

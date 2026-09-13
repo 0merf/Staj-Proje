@@ -49,6 +49,16 @@ DOSYALAR = {
            "CONTENTS", "Table", "Figure", "RESOURCES"),
 }
 
+SURUM_DOSYALARI = {
+    "v2": {
+        "tr": (STAJ / "03-staj-raporu-tr-v2.md", STAJ / "SENTINEL-staj-raporu-TR-v2.docx",
+               "İÇİNDEKİLER", "Tablo", "Şekil", "KAYNAKLAR"),
+        "en": (STAJ / "04-staj-raporu-en-v2.md",
+               STAJ / "SENTINEL-internship-report-EN-v2.docx",
+               "CONTENTS", "Table", "Figure", "RESOURCES"),
+    },
+}
+
 ASGARI_SAYFA = 15
 EMOJI = re.compile("[\U0001F000-\U0001FAFF☀-➿⬀-⯿"
                    "️←-⇿]")
@@ -122,8 +132,9 @@ def _kaynak_soyadlari(ham: str, kaynak_basligi: str) -> list[str]:
     return adlar
 
 
-def denetle(dil: str, pdf: Path | None) -> int:
-    md_yolu, docx_yolu, icindekiler, tablo_sz, sekil_sz, kaynak_sz = DOSYALAR[dil]
+def denetle(dil: str, pdf: Path | None, dosyalar: dict | None = None) -> int:
+    dosyalar = dosyalar or DOSYALAR
+    md_yolu, docx_yolu, icindekiler, tablo_sz, sekil_sz, kaynak_sz = dosyalar[dil]
     print(f"\n=== {docx_yolu.name} ===")
     d = Denetim()
 
@@ -250,11 +261,13 @@ def main() -> int:
     ap.add_argument("--dil", choices=("tr", "en", "hepsi"), default="hepsi")
     ap.add_argument("--pdf-tr", type=Path)
     ap.add_argument("--pdf-en", type=Path)
+    ap.add_argument("--surum", choices=("v1", *SURUM_DOSYALARI), default="v1")
     arg = ap.parse_args()
+    dosyalar = DOSYALAR if arg.surum == "v1" else SURUM_DOSYALARI[arg.surum]
     diller = ("tr", "en") if arg.dil == "hepsi" else (arg.dil,)
     hata = 0
     for dil in diller:
-        hata |= denetle(dil, arg.pdf_tr if dil == "tr" else arg.pdf_en)
+        hata |= denetle(dil, arg.pdf_tr if dil == "tr" else arg.pdf_en, dosyalar)
     print("\nSONUC:", "HATA VAR" if hata else "hepsi temiz")
     return hata
 

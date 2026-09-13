@@ -219,3 +219,8 @@ docs/report/sunum-notlari*.md
 # Başka bir projenin (TEKNOFEST / HepsiJET) nihai raporu; buraya
 # yalnızca yazım dili örneği olsun diye konmuştu
 docs/README.md
+
+# Elsevier şekillerinin 600 dpi TIFF kopyaları (~4,6 MB): dergi gönderimi
+# için üretiliyor, scripts/sekiller_elsevier.py ile her an yeniden
+# üretilebilir. Depoya vektör PDF ve PNG girer.
+docs/report/diagrams/elsevier/**/*.tiff
