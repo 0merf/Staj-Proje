@@ -102,6 +102,17 @@ SURUMLER["v3-kor"] = {**SURUMLER["v2"],
                       "cikti": {"en": CIKTI_DIZIN
                                 / "SENTINEL-CDEJ-sablon-ENG-v3-kor-hakem.docx"},
                       "kor": True}
+# v4 (14.09): yapay zekâ beyanına model sürümü eklendi (Claude Opus 5) —
+# derginin YZ politikası "tam ad ve sürüm numarası" istiyor. Başka değişiklik yok.
+SURUMLER["v4"] = {**SURUMLER["v2"],
+                  "kaynak": {"tr": CIKTI_DIZIN / "11-makale-tr-v4.md",
+                             "en": CIKTI_DIZIN / "12-makale-en-v4.md"},
+                  "cikti": {"tr": CIKTI_DIZIN / "SENTINEL-CDEJ-sablon-TR-v4.docx",
+                            "en": CIKTI_DIZIN / "SENTINEL-CDEJ-sablon-ENG-v4.docx"}}
+SURUMLER["v4-kor"] = {**SURUMLER["v3-kor"],
+                      "kaynak": {"en": CIKTI_DIZIN / "12-makale-en-v4-kor-hakem.md"},
+                      "cikti": {"en": CIKTI_DIZIN
+                                / "SENTINEL-CDEJ-sablon-ENG-v4-kor-hakem.docx"}}
 KOR = "[Removed for blind review]"
 YAZI = "Cambria"
 

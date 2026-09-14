@@ -224,3 +224,6 @@ docs/README.md
 # için üretiliyor, scripts/sekiller_elsevier.py ile her an yeniden
 # üretilebilir. Depoya vektör PDF ve PNG girer.
 docs/report/diagrams/elsevier/**/*.tiff
+
+# kurulum.ps1 tarafından üretilen yönetici parolası — ASLA commitlenmez
+GIRIS-BILGILERI.txt

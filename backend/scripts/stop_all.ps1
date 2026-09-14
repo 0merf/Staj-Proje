@@ -10,7 +10,9 @@
 #
 # Kullanım:  pwsh backend/scripts/stop_all.ps1
 
-$venv = "D:\Staj Proje\backend\.venv"
+# ⚠ Sabit "D:\Staj Proje\..." yolu vardı; proje başka klasöre/bilgisayara
+# kopyalanınca venv eşleşmesi boşa düşüyordu. Betiğin kendi konumundan çözülüyor.
+$venv = Join-Path (Split-Path $PSScriptRoot -Parent) ".venv"
 $killed = 0
 
 Get-CimInstance Win32_Process -Filter "Name='python.exe'" -ErrorAction SilentlyContinue |
