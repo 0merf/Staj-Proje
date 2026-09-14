@@ -89,6 +89,20 @@ SURUMLER = {
         "sekil_cm": 17.8,
     },
 }
+# v3 (14.09): beyanlardaki intihal cümlesi çıkarıldı — tarama yapılmadan
+# şablonun koşullu örnek cümlesi yazılmıştı; taramayı dergi yapıyor.
+# v3-kor: çift kör hakemlik için yazar kimliği çıkarılmış kopya (yalnız EN).
+SURUMLER["v3"] = {**SURUMLER["v2"],
+                  "kaynak": {"tr": CIKTI_DIZIN / "09-makale-tr-v3.md",
+                             "en": CIKTI_DIZIN / "10-makale-en-v3.md"},
+                  "cikti": {"tr": CIKTI_DIZIN / "SENTINEL-CDEJ-sablon-TR-v3.docx",
+                            "en": CIKTI_DIZIN / "SENTINEL-CDEJ-sablon-ENG-v3.docx"}}
+SURUMLER["v3-kor"] = {**SURUMLER["v2"],
+                      "kaynak": {"en": CIKTI_DIZIN / "10-makale-en-v3-kor-hakem.md"},
+                      "cikti": {"en": CIKTI_DIZIN
+                                / "SENTINEL-CDEJ-sablon-ENG-v3-kor-hakem.docx"},
+                      "kor": True}
+KOR = "[Removed for blind review]"
 YAZI = "Cambria"
 
 
@@ -212,6 +226,9 @@ def main() -> int:
     if not SABLON.is_file():
         print(f"❌ Şablon bulunamadı: {SABLON}")
         return 1
+    if dil not in surum["kaynak"]:
+        print(f"❌ {args.surum} sürümünde '{dil}' dili yok")
+        return 1
     kaynak = surum["kaynak"][dil]
     if not kaynak.is_file():
         print(f"❌ Kaynak metin yok: {kaynak}")
@@ -242,7 +259,14 @@ def main() -> int:
     # (yalnızca başlık farkı beklenirken) bunu 13.09'da yakaladı.
     orcid = "ORCID: 0009-0006-9229-6217"
 
-    cite = (f"Cite as: Kanat, Ö. F. (202x). {baslik} "
+    kor = surum.get("kor", False)
+    if kor:
+        # ⚠ Çift kör hakemlik: kimlik açan HER alan boşaltılıyor. Kutu
+        # yapısı korunuyor ki şablon düzeni bozulmasın.
+        kurum, ror, yazisma, eposta, orcid = KOR, "", "", "", ""
+        adsoyad = "[Author name removed for blind review]"
+
+    cite = (f"Cite as: {'[Removed for blind review]' if kor else 'Kanat, Ö. F.'} (202x). {baslik} "
             f"Cyber Security and Digital Economy Journal, vol(issue), xx-xx.")
     lisans = ("This is an open access paper distributed under the terms and conditions "
               "of the Creative Commons Attribution-NonCommercial 4.0 International License.")
@@ -281,7 +305,7 @@ def main() -> int:
         if p.text.strip().startswith("Beytullah Çıtır"):
             for r in list(p.runs):
                 r._element.getparent().remove(r._element)
-            _tipi(p.add_run(f"{adsoyad}¹*"), 11, kalin=False)
+            _tipi(p.add_run(adsoyad if kor else f"{adsoyad}¹*"), 11, kalin=False)
 
     # ── Şablonun örnek gövdesini sil ──
     govde = belge.element.body
@@ -310,6 +334,12 @@ def main() -> int:
     _govde_yaz(belge, ham, "## ABSTRACT" if dil == "tr" else None,
                sekil_yolu=lambda no: surum["sekil"](dil, no),
                sekil_cm=surum["sekil_cm"])
+
+    if kor:
+        # Word dosya özellikleri de yazarı ele verebilir (Dosya > Bilgi)
+        cp = belge.core_properties
+        cp.author = cp.last_modified_by = ""
+        cp.title = cp.subject = cp.keywords = cp.comments = ""
 
     CIKTI_DIZIN.mkdir(parents=True, exist_ok=True)
     cikti = surum["cikti"][dil]
