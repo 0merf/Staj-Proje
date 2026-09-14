@@ -346,11 +346,16 @@ def main() -> int:
                sekil_yolu=lambda no: surum["sekil"](dil, no),
                sekil_cm=surum["sekil_cm"])
 
+    cp = belge.core_properties
     if kor:
         # Word dosya özellikleri de yazarı ele verebilir (Dosya > Bilgi)
-        cp = belge.core_properties
         cp.author = cp.last_modified_by = ""
         cp.title = cp.subject = cp.keywords = cp.comments = ""
+    else:
+        # ⚠ Şablonun kendi özellikleri geliyordu: başlık "1-Sunday Akpan",
+        # yazar "Gokhan RASGELE" (başka kişiler). 14.09'da fark edildi.
+        cp.title = baslik
+        cp.author = cp.last_modified_by = adsoyad
 
     CIKTI_DIZIN.mkdir(parents=True, exist_ok=True)
     cikti = surum["cikti"][dil]

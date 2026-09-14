@@ -152,6 +152,13 @@ if (-not $SkipDocker) {
 }
 
 # ─── 2. Alım worker'ı (havuz sahibi) ─────────────────────────
+# ⚠ 14.09.2026 — açılmayan bileşen olsa da betik ÇIKIŞ KODU 0 döndürüyordu.
+# Temiz kopyada kurulum testinde çıkarım süreci çöktü (eksik paket) ama
+# betik başarıyla bitti ve kurulum "SENTINEL çalışıyor" dedi. Devam etme
+# davranışı korunuyor (hata ayıklarken diğer günlükler de oluşsun) ama sonda
+# açılmayan varsa özet basılıp 1 ile çıkılıyor.
+$acilmayan = @()
+
 Write-Host "`n[2/7] Alım worker'ı — paylaşımlı bellek havuzunu O oluşturur"
 $ingest = @("run", "python", "-m", "sentinel.ingest.worker", "--owner",
             "--metrics-port", "9101", "--stats-interval", "300")
@@ -174,7 +181,9 @@ Start-Component -Name "inference" -Exe "uv" -ArgList @(
     "--batch-size", "$BatchSize", "--stats-interval", "300"
 ) -Cwd $backend
 # Model yükleme + ısınma: soğuk başlangıçta 40 sn'yi bulabiliyor.
-Wait-Url -Url "http://127.0.0.1:9110/metrics" -Label "çıkarım worker'ı" -LogName "inference" -TimeoutSec 120 | Out-Null
+if (-not (Wait-Url -Url "http://127.0.0.1:9110/metrics" -Label "çıkarım worker'ı" -LogName "inference" -TimeoutSec 120)) {
+    $acilmayan += "cikarim"
+}
 
 # ─── 4. Analitik worker'ı ────────────────────────────────────
 # Çıkarım sonuçlarını okur, özellik pencerelerini besler, Katman A/B
@@ -187,6 +196,7 @@ Start-Component -Name "analytics" -Exe "uv" -ArgList @(
 ) -Cwd $backend
 if (-not (Wait-Url -Url "http://127.0.0.1:9120/metrics" -Label "analitik worker'i" -LogName "analytics" -TimeoutSec 60)) {
     Write-Host "  ! analitik worker'i acilmadi — HIC ANOMALI URETILMEYECEK" -ForegroundColor Yellow
+    $acilmayan += "analitik"
 }
 
 # ─── 5. Alarm worker'ı ───────────────────────────────────────
@@ -198,6 +208,7 @@ Start-Component -Name "alerting" -Exe "uv" -ArgList @(
 ) -Cwd $backend
 if (-not (Wait-Url -Url "http://127.0.0.1:9130/metrics" -Label "alarm worker'i" -LogName "alerting" -TimeoutSec 60)) {
     Write-Host "  ! alarm worker'i acilmadi — olaylar KALICI OLMAYACAK" -ForegroundColor Yellow
+    $acilmayan += "alarm"
 }
 
 # ─── 6. API ───────────────────────────────────────────────────
@@ -205,7 +216,9 @@ Write-Host "`n[6/7] API + panel"
 Start-Component -Name "api" -Exe "uv" -ArgList @(
     "run", "uvicorn", "sentinel.api.main:app", "--host", "127.0.0.1", "--port", "8001"
 ) -Cwd $backend
-Wait-Url -Url "http://127.0.0.1:8001/api/v1/system/live" -Label "API" -LogName "api" -TimeoutSec 60 | Out-Null
+if (-not (Wait-Url -Url "http://127.0.0.1:8001/api/v1/system/live" -Label "API" -LogName "api" -TimeoutSec 60)) {
+    $acilmayan += "api"
+}
 
 # ─── 5. React geliştirme sunucusu (opsiyonel) ────────────────
 if ($Dev) {
@@ -232,3 +245,25 @@ Write-Host "  Loglar       : $logs"
 Write-Host "  Durdur       : pwsh backend/scripts/stop_all.ps1"
 Write-Host "─────────────────────────────────────────────" -ForegroundColor Cyan
 Write-Host ""
+
+# ─── SON YOKLAMA ─────────────────────────────────────────────
+# ⚠ 14.09.2026 — "hazır" kontrolü süreç ölçüm portunu açınca geçiyordu.
+# Analitik süreci portu açıp 1 sn sonra model dosyasını okurken ÇÖKTÜ;
+# betik "hazır" demişti. Bu yüzden her şey açıldıktan sonra bekleyip
+# hepsi YENİDEN yoklanıyor: hâlâ cevap vermeyen, açılmamış sayılır.
+Write-Host "`nSon yoklama (15 sn sonra, çöken süreç var mı)..."
+Start-Sleep -Seconds 15
+$yoklama = [ordered]@{ "alim" = 9101; "cikarim" = 9110; "analitik" = 9120; "alarm" = 9130 }
+foreach ($ad in $yoklama.Keys) {
+    try { $null = Invoke-WebRequest -Uri ("http://127.0.0.1:{0}/metrics" -f $yoklama[$ad]) -TimeoutSec 3 -UseBasicParsing }
+    catch { if ($acilmayan -notcontains $ad) { $acilmayan += $ad }; Write-Host ("  ✗ {0} başladıktan sonra DÜŞTÜ" -f $ad) -ForegroundColor Red }
+}
+try { $null = Invoke-WebRequest -Uri "http://127.0.0.1:8001/api/v1/system/live" -TimeoutSec 3 -UseBasicParsing }
+catch { if ($acilmayan -notcontains "api") { $acilmayan += "api" }; Write-Host "  ✗ API başladıktan sonra DÜŞTÜ" -ForegroundColor Red }
+if ($acilmayan.Count -eq 0) { Write-Host "  ✓ tüm süreçler hâlâ ayakta" -ForegroundColor Green }
+
+if ($acilmayan.Count -gt 0) {
+    Write-Host ("  ✗ ACILMAYAN BILESEN: {0}  (loglar: {1})" -f ($acilmayan -join ", "), $logs) -ForegroundColor Red
+    exit 1
+}
+exit 0

@@ -109,11 +109,24 @@ if ((Test-Path $emoKaynak) -and -not (Test-Path $emoHedef)) {
 # ─── 4. Python bağımlılıkları ───────────────────────────────────────────
 Adim "4/6 Python bagimliliklari (ilk seferde birkac dakika surer)"
 Push-Location (Join-Path $kok "backend")
-uv sync
+# ⚠ `--extra gpu` ŞART: torch, ultralytics, onnxruntime-gpu, emotiefflib ve
+# lightgbm bu ek grupta. İlk sürümde düz `uv sync` vardı; temiz kopyada
+# yapılan kurulum testinde yalnız 95 temel paket kuruldu ve çıkarım süreci
+# başlayamadı.
+uv sync --extra gpu
 $kod = $LASTEXITCODE
 Pop-Location
 if ($kod -ne 0) { Dur "uv sync basarisiz" }
 Tamam "bagimliliklar kuruldu"
+# "Kuruldu" demek GPU'yu gördüğü anlamına gelmiyor: yanlış torch yapısı
+# (CPU-only) sessizce kurulabilir ve sistem çok yavaş çalışır.
+Push-Location (Join-Path $kok "backend")
+$cuda = (uv run python -c "import torch, ultralytics, onnxruntime, lightgbm, emotiefflib; print(torch.cuda.is_available())" 2>$null | Select-Object -Last 1)
+$kod = $LASTEXITCODE
+Pop-Location
+if ($kod -ne 0) { Dur "yapay zeka kutuphaneleri yuklenemedi (torch/ultralytics/onnxruntime/lightgbm/emotiefflib)" }
+if ("$cuda".Trim() -eq "True") { Tamam "torch CUDA ile GPU'yu goruyor" }
+else { Uyari "torch GPU'yu gormuyor — NVIDIA surucusunu kontrol edin; sistem CPU'da cok yavas calisir" }
 
 # ─── 5. Altyapı + yönetici kullanıcısı ──────────────────────────────────
 Adim "5/6 Altyapi (Docker) ve yonetici kullanicisi"

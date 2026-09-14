@@ -1,0 +1,5 @@
+# ⚠ Model dosyaları BYTE BYTE korunur — satır sonu dönüşümü YOK.
+# 14.09.2026: Windows autocrlf=true iken git archive/checkout LightGBM
+# modelinin (metin biçimli) her satırına CR ekledi; model "Model format error"
+# ile açılamadı ve analitik süreci çöktü. Temiz kopya kurulum testinde bulundu.
+models/** -text
