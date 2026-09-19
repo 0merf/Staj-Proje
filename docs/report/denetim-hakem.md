@@ -101,10 +101,10 @@ işlevsel değil.**
 | K4 | 2 sa çökmesiz | ✅ | Gün 18 düzeltmelerinin çoğunu içermiyor |
 | K5 | F1 ≥0.85 | ✅ 0.889 | **Üretimde değil** (§1.1) |
 | K6 | AUC ≥0.75 | ✅ 0.867 | Kazancın %91'i EMA'dan (P-41) |
-| K7 | ≤3 yanlış alarm | | **Yanlış alarm oranı değil** — yer gerçeği yok |
+| K7 | ≤3 yanlış alarm | kısmen | **Yanlış alarm oranı değil** — yer gerçeği yok |
 | K8 | ≥2 sn avans | ❌ | Tespit olaydan **+2.2 sn sonra**; n=1 video |
 | K9 | Güvenlik %100 | 17/19 | TLS yok, kamera bazlı yetki yok |
-| K10 | ≥30 FPS UI | | **Hiç ölçülmedi** |
+| K10 | ≥30 FPS UI | ölçülmedi | **Hiç ölçülmedi** |
 
 **Hakem yorumu:** 10 kriterin **3'ü tam geçiyor** (K1 kısmen, K3, K4).
 K5 ve K6 kâğıt üstünde geçiyor ama şartlı. K8 açıkça başarısız. K10

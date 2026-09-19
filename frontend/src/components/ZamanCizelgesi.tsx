@@ -36,6 +36,7 @@
  * sayı ise adedi gösteriyor.
  */
 import { useEffect, useMemo, useState } from 'react'
+import { kanitDegeri, kanitEtiketi } from '../lib/kanit'
 import { useStore } from '../store'
 import { ANOMALI_TR, type HistoryEvent } from '../types'
 import { KlipOynatici } from './AlertPanel'
@@ -549,7 +550,7 @@ export function ZamanCizelgesi() {
                               .slice(0, 2)
                               .map(
                                 ([k, d]) =>
-                                  `${k} ${typeof d === 'number' ? d.toFixed(2) : String(d)}`,
+                                  `${kanitEtiketi(k)[0]} ${kanitDegeri(d)}${kanitEtiketi(k)[1]}`,
                               )
                               .join(' · ') || '—'}
                             {kanitlar.length > 2 && ` +${kanitlar.length - 2}`}
@@ -560,9 +561,10 @@ export function ZamanCizelgesi() {
                             {kanitlar.length === 0 && <span>kanıt kaydedilmemiş</span>}
                             {kanitlar.map(([k, d]) => (
                               <div key={k} className="flex justify-between gap-4">
-                                <span>{k}</span>
+                                <span>{kanitEtiketi(k)[0]}</span>
                                 <span className="font-mono text-ink">
-                                  {typeof d === 'number' ? d.toFixed(2) : String(d)}
+                                  {kanitDegeri(d)}
+                                  {kanitEtiketi(k)[1]}
                                 </span>
                               </div>
                             ))}

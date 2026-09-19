@@ -18,6 +18,7 @@
  */
 import { useEffect, useState } from 'react'
 import { useStore } from '../store'
+import { kanitDegeri, kanitEtiketi } from '../lib/kanit'
 import { ANOMALI_TR } from '../types'
 
 /** Ciddiyete göre renk. Proje planındaki seviyelerle aynı sözlük. */
@@ -25,75 +26,6 @@ const RENK: Record<string, string> = {
   alarm: 'border-bad/60 bg-bad/15 text-bad',
   warning: 'border-warn/60 bg-warn/15 text-warn',
   attention: 'border-line bg-panel text-ink',
-}
-
-/** Kanıt alanlarının okunabilir adları ve birimleri.
- *
- * Birim zorunlu — ilk sürümde yoktu ve kafa karıştırdı.
- * "kişi 7 normal 2.1 eşik 5.24" satırı, kullanıcı tarafından
- * "kişilerin numarası mı?" diye okundu. Birimsiz bir sayı, okuyanın
- * onu ne sandığına bağlı olarak anlam kazanıyor.
- *
- * Ham anahtarları (`govde_egimi_derece`) ekrana basmak da bir şey
- * anlatmaz; panel ve rapor aynı dili konuşmalı. */
-const KANIT_TR: Record<string, [etiket: string, birim: string]> = {
-  en_boy_orani: ['en/boy oranı', ''],
-  govde_egimi_derece: ['gövde eğimi', '°'],
-  egim_degisim_hizi: ['eğim değişimi', '°/sn'],
-  govde_hizi_govde_sn: ['hız', ' gövde/sn'],
-  olculen_p99: ['ölçülen p99', ' gövde/sn'],
-  oyalanma_saniye: ['aynı yerde', ' sn'],
-  kisi: ['kişi sayısı', ''],
-  taban: ['bu kameranın normali', ' kişi'],
-  esik: ['eşik', ''],
-
-  // ─── Katman A kanıtları (anomaly/normalcy.py) ───
-  // Bunlar kuraldan değil öğrenilen profilden geliyor; etiketleri de
-  // "eşik aşıldı" değil "bu kameranın normaline uymuyor" dilinde.
-  nadir_bolge: ['buraya nadiren gidilir', ''],
-  bolge_ziyaret: ['bu bölgede toplam gözlem', ' kez'],
-  hiz_sapmasi_sigma: ['bölge normalinden sapma', 'σ'],
-  bolge_normal_hiz: ['bu bölgenin normal hızı', ' gövde/sn'],
-  yon_orani: ['bu yöne gidenlerin oranı', ''],
-  kisi_sapmasi_sigma: ['kişi sayısı sapması', 'σ'],
-  kamera_normal_kisi: ['bu kameranın normali', ' kişi'],
-
-  // ─── Saldırganlık kanıtları (analytics/aggression.py) ───
-  //
-  // Bunlar 26.08.2026'ya kadar çevrilmemişti: panelde ham anahtar
-  // adları (`b_yakinlik`, `b_bilek`) görünüyordu. Modülün en önemli
-  // özelliği açıklanabilir olması — "skor 0.72 çünkü şu, şu, şu" —
-  // ama operatör okuyamıyorsa açıklanabilirlik kâğıt üstünde kalır.
-  //
-  // `b_` öneki "bileşen" demek: her biri 0-1 arası, ağırlıklı toplama
-  // giriyor. Etiketler ağırlık sırasına göre yazıldı.
-  tirmanma_skoru: ['tırmanma skoru', ''],
-  // Eğim, projenin özgün katkısının ta kendisi: yüksek ama sabit
-  // skor süregelen bir durumdur, yükselen skor tırmanmadır.
-  tirmanma_egimi: ['skorun yükselme hızı', '/sn'],
-  b_yakinlik: ['yakınlık + karşılıklı duruş', ''],
-  b_bilek: ['bilek hızı ve sarsıntısı', ''],
-  b_yaklasma: ['birbirine yaklaşma', ''],
-  b_enerji: ['hareket enerjisi', ''],
-  b_durus: ['duruş (kol, eğim, açıklık)', ''],
-  // Çarpımsal kapı: yalnız bir kişinin hızlı hareketi saldırganlık
-  // değildir. Sıfırsa skor da bastırılıyor.
-  b_etkilesim: ['etkileşim kapısı', ''],
-
-  // ─── Füzyon kanıtları (analytics/fusion.py) ───
-  //
-  // `katkida_bulunan_sinyal` süs değil, güven ölçüsü.
-  // Tek sinyalli bir 0.4 ile üç sinyalli bir 0.4 aynı şey değil:
-  // ikincisi çok daha ikna edici. Füzyon alarmı zaten iki sinyalin
-  // altında hiç yayınlanmıyor, ama operatör kaç sinyalin birleştiğini
-  // görmeli.
-  risk_skoru: ['birleşik risk', ''],
-  katkida_bulunan_sinyal: ['birleşen sinyal sayısı', ' adet'],
-  s_saldirganlik: ['· saldırganlık', ''],
-  s_anomali: ['· kamera normalinden sapma', ''],
-  s_kural: ['· kural ihlali', ''],
-  s_ifade: ['· yüz ifadesi', ''],
-  s_kalabalik: ['· kalabalık', ''],
 }
 
 function saat(rx: number): string {
@@ -255,12 +187,12 @@ export function AlertPanel() {
                     karışıyordu. */}
                 <div className="mt-1 space-y-0.5 text-[10px] text-muted">
                   {Object.entries(a.evidence).map(([k, v]) => {
-                    const [etiket, birim] = KANIT_TR[k] ?? [k, '']
+                    const [etiket, birim] = kanitEtiketi(k)
                     return (
                       <div key={k} className="flex justify-between gap-2">
                         <span>{etiket}</span>
                         <span className="font-mono text-ink">
-                          {v}
+                          {kanitDegeri(v)}
                           {birim}
                         </span>
                       </div>

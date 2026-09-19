@@ -18,6 +18,7 @@
  */
 import { useEffect, useState } from 'react'
 import { CameraTile } from './CameraTile'
+import { kanitDegeri, kanitEtiketi } from '../lib/kanit'
 import { useStore } from '../store'
 import { ANOMALI_TR, type HistoryEvent } from '../types'
 
@@ -172,9 +173,10 @@ export function KameraDetay({ webrtcBase }: Props) {
                       .slice(0, 4)
                       .map(([k, v]) => (
                         <div key={k} className="flex justify-between gap-2">
-                          <span>{k}</span>
+                          <span>{kanitEtiketi(k)[0]}</span>
                           <span className="font-mono text-ink">
-                            {typeof v === 'number' ? v.toFixed(2) : String(v)}
+                            {kanitDegeri(v)}
+                            {kanitEtiketi(k)[1]}
                           </span>
                         </div>
                       ))}

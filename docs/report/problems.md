@@ -4307,10 +4307,10 @@ YZ modelleri, analitik ve API için hiç çekirdek kalmıyor.
 2. Başarısız olursa: kaynak videoların GOP'unu kısaltıp anahtar-kare
    atlama (`skip_frame`), ya da kamera başına çözünürlüğü düşürme.
 3. Her iki durumda da **gerçek sayı ölçülüp raporlanacak** — hedef
-   tutmazsa "X kamerada Y FPS" olarak açıkça yazılacak (R2).
+   tutmazsa "X kamerada Y FPS" olarak açıkça yazılacak.
 
 **Öğrenilen ders:** Planlama aşamasında GPU bütçesini titizlikle hesaplamış
- ama **decode bütçesini varsaymıştım.** Sistemin darboğazı
+ama **decode bütçesini varsaymıştım.** Sistemin darboğazı
 tahmin ettiğim yerde değildi. Bu tam olarak "önce ölç" ilkesinin neden
 var olduğunun kanıtı — ve raporun en güçlü bölümlerinden biri olacak.
 
@@ -5513,7 +5513,7 @@ Doğrulandı: `baska_worker = 0`, kayıp yolu kapandı.
 | toplam CPU | 4.13 çekirdek | 5.37 | +%30 |
 | VRAM | 571 MB | 1134 MB | ×2 |
 | GPU kullanımı | %41 | %38 | ~aynı |
-| **sistem RAM** | %84 | **%98** | |
+| **sistem RAM** | %84 | **%98** | güvenli sınırın üstünde |
 | model skoru medyan | 0.184 | 0.209 | +%14 |
 
 **Asıl kazanç verimde değil gecikmede: p50 yarıya indi.** Sebep
@@ -7035,7 +7035,7 @@ altyapı hazır, bir sonraki K8 koşusunda aralık otomatik gelecek.
 | K5 eşik yanlılığı | ✅ | tekrarlı yarı-yarıya (P-64) |
 | **K6** | ✅ | **küme bootstrap (bu kayıt)** |
 | **K8** | ✅ | **medyan bootstrap (bu kayıt)** |
-| K7 kesinlik | | n=12, aralık hesaplanmadı — örneklem çok küçük |
+| K7 kesinlik | yok | n=12, aralık hesaplanmadı — örneklem çok küçük |
 
 K7 için aralık hesaplanmadı ve bu **bilinçli**: 12 bağımsız olayda
 bootstrap aralığı [0.67, 1.00] gibi bir şey verirdi ve bu bilgi
