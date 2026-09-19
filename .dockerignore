@@ -51,4 +51,3 @@ backend/src/sentinel/api/static/app/
 .idea/
 *.md
 !backend/README.md
-.claude/
