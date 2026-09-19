@@ -9,7 +9,7 @@ demektir; hiçbir mesaj kuyruğu bu iş için tasarlanmamıştır.
 Çözüm: kareler **paylaşımlı bellekte** durur, Valkey'den yalnızca
 "şu slotta, şu boyutta bir kare var" referansı geçer (~200 bayt).
 Süreçler arası kopyalama sıfırdır — aynı fiziksel belleğe bakarlar.
-(PLAN.md §4.2)
+
 
 Slot yönetimi
 -------------
@@ -21,7 +21,7 @@ veri yapısını kullanmak hem daha basit hem daha sağlam.
 Bu tasarımın bedava getirdiği şey **geri basınç**: tüketici yavaşlarsa
 boş slot kalmaz, üretici slot bulamaz ve kareyi *atar*. Sınırsız kuyruk
 yerine kontrollü kare kaybı — gerçek zamanlı sistemde doğru davranış
-(PLAN.md §4.3).
+.
 """
 
 from __future__ import annotations

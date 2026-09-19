@@ -1,17 +1,17 @@
-"""K8 — erken uyarı avansı (PLAN §1.4, hedef ≥ 2 saniye).
+"""K8 — erken uyarı avansı (hedef ≥ 2 saniye).
 
-⭐ PROJENİN ÖZGÜN KATKISI
+Projenin özgün katkısı
 ------------------------
 Şiddet tespiti literatürü neredeyse tümüyle tek bir soruyu soruyor:
 *"bu klipte şiddet var mı?"* ve doğruluk/F1 raporluyor. RWF-2000'in
 kendi etiketi de klip seviyesinde ve bu soruya göre tasarlanmış.
 
-Bu proje ikinci bir soru soruyor: **"kaç saniye ÖNCE söyleyebildik?"**
+Bu proje ikinci bir soru soruyor: **"kaç saniye önce söyleyebildik?"**
 
 Fark bir gözetim sisteminde belirleyici:
 
-    olaydan SONRA doğru sınıflandırma  → adli kayıt
-    olaydan ÖNCE  uyarı                 → müdahale imkânı
+    olaydan sonra doğru sınıflandırma  → adli kayıt
+    olaydan önce  uyarı                 → müdahale imkânı
 
 Sistemin saldırganlık modülü bunun için tasarlandı: eşiği geçen bir
 skor değil, **yükselen** bir skor arıyor (`aggression.py ·
@@ -22,20 +22,20 @@ Nasıl ölçülüyor
 ---------------
 Her etiketli kavga klibi için:
 
-    avans = (olayın başladığı an) − (skorun eşiği İLK geçtiği an)
+    avans = (olayın başladığı an) − (skorun eşiği ilk geçtiği an)
 
-    avans > 0  → sistem olaydan ÖNCE uyardı  ✅
+    avans > 0 → sistem olaydan önce uyardı
     avans = 0  → tam olay anında
-    avans < 0  → GEÇ kaldı (olay başladıktan sonra fark etti)
+    avans < 0  → geç kaldı (olay başladıktan sonra fark etti)
     avans yok  → hiç eşiği geçmedi (kaçırma)
 
-⚠ AZAMİ SKOR DEĞİL, SKOR GEÇMİŞİ
+Azami skor değil, skor geçmişi
 `evaluate_rwf.py` (K5) her klipten yalnızca **azami** skoru alıyor —
 "bu klipte en yüksek ne kadar riskliydi". K8 için bu yetmez: azami
 skorun ne zaman oluştuğu kaybolmuş oluyor. Bu betik skorun **tüm
-zaman serisini** tutuyor ve eşiği ilk geçtiği ANI arıyor.
+zaman serisini** tutuyor ve eşiği ilk geçtiği anı arıyor.
 
-⚠ EŞİK SEÇİMİ K8'İN EN KRİTİK YERİ — ve tek başına raporlanamaz
+Eşik seçimi K8'in en kritik yeri — ve tek başına raporlanamaz
 Eşiği düşürmek avansı büyütür: sistem daha erken bağırır. Ama aynı
 eşik normal kliplerde de bağırır, yani **yanlış alarm artar.** Bu
 yüzden betik tek bir avans sayısı değil, birden çok eşik için
@@ -44,7 +44,7 @@ yüzden betik tek bir avans sayısı değil, birden çok eşik için
 Bir gözetim sisteminde bu takas gizlenemez: "3 saniye önceden haber
 veriyoruz" cümlesi, yanında yanlış alarm oranı olmadan anlamsızdır.
 
-⚠ NORMAL KLİPLER DE SKORLANIYOR — yanlış alarm payı için
+Normal klipler de skorlanıyor — yanlış alarm payı için
 `nonfight` bölümünden aynı sayıda klip skorlanıp her eşikte kaçının
 alarm verdiği sayılıyor. Bu, K7 ile aynı ruhta ama klip bazlı.
 
@@ -55,7 +55,7 @@ alarm verdiği sayılıyor. Bu, K7 ile aynı ruhta ama klip bazlı.
 doğrudur**: yer gerçeği olmadan "avans" diye bir sayı üretmek,
 ölçmediğimiz bir şeyi ölçtük demek olurdu.
 
-⚠ ÖLÇÜM KOŞULU: boru hattı KAPALI olmalı — GPU paylaşılmamalı (P-36).
+Ölçüm koşulu: boru hattı kapalı olmalı — GPU paylaşılmamalı (P-36).
 
 Kullanım
 --------
@@ -88,7 +88,7 @@ ETIKET = PROJECT_ROOT / "data" / "annotations" / "rwf_k8.json"
 # şanslı ya da şanssız olduğunu gizlerdi.
 ESIKLER = (0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.50)
 
-TOHUM = 42  # `etiketle_k8.py` ve `evaluate_rwf.py` ile AYNI
+TOHUM = 42  # `etiketle_k8.py` ve `evaluate_rwf.py` ile aynı
 
 
 def _bootstrap_medyan(
@@ -96,18 +96,18 @@ def _bootstrap_medyan(
 ) -> list[float] | None:
     """Medyanın %95 güven aralığı (yerine koyarak yeniden örnekleme).
 
-    ⚠ Klipler bağımsız birim: her klip bir olay. Kare seviyesinde
+    Klipler bağımsız birim: her klip bir olay. Kare seviyesinde
     bir bağımlılık yok, bu yüzden basit bootstrap doğru (K6'daki küme
-    bootstrap'ı orada gerekiyordu çünkü orada birim KARE değil KLİPTİ).
+    bootstrap'ı orada gerekiyordu çünkü orada birim kare değil klipti).
 
     `None` = örneklem yok ya da tek gözlem; aralık hesaplanamaz.
-    ⚠ `None` "aralık sıfır" demek DEĞİL, "ölçemedim" demek.
+    `None` "aralık sıfır" demek değil, "ölçemedim" demek.
     """
     import random
 
     if len(degerler) < 2:
         return None
-    # ⚠ S311: istatistik örneklemesi, kriptografi değil.
+    # S311: istatistik örneklemesi, kriptografi değil.
     rng = random.Random(tohum)  # noqa: S311
     n = len(degerler)
     medyanlar = sorted(
@@ -128,12 +128,12 @@ def _skor_serisi(
 ) -> list[tuple[float, float]]:
     """Klibi boru hattından geçirir, `(zaman, tırmanma_skoru)` serisi döndürür.
 
-    ⚠ `evaluate_rwf.py · _klip_skorla` ile AYNI boru hattı, tek fark:
-    orası azamiyi tutuyor, burası SERİYİ. İki betiğin aynı sonucu
+    `evaluate_rwf.py · _klip_skorla` ile aynı boru hattı, tek fark:
+    orası azamiyi tutuyor, burası seriyi. İki betiğin aynı sonucu
     üretmesi gerekiyor (K5 ile K8 aynı modülü ölçüyor); ön işleme ya
     da örnekleme farkı ikisini kıyaslanamaz kılardı.
 
-    ⚠ Kare başına AZAMİ iz skoru alınıyor: kavga iki kişilik bir olay
+    Kare başına azami iz skoru alınıyor: kavga iki kişilik bir olay
     ve bir karede birinin skoru yüksekse o kare risklidir.
     """
     import cv2
@@ -195,9 +195,9 @@ def _skor_serisi(
 
 
 def _ilk_gecis(seri: list[tuple[float, float]], esik: float) -> float | None:
-    """Skorun eşiği İLK geçtiği an. Hiç geçmezse None.
+    """Skorun eşiği ilk geçtiği an. Hiç geçmezse None.
 
-    ⚠ İLK geçiş, azami değil. Bir sistemin "ne zaman fark ettiği"
+    İlk geçiş, azami değil. Bir sistemin "ne zaman fark ettiği"
     sorusunun cevabı, en yüksek skoru aldığı an değil, eşiği aştığı
     andır — alarm o an çalar.
     """
@@ -285,11 +285,11 @@ def main() -> int:
             olay_ani = float(etiketler[ad]["baslangic_s"])
             gecis = _ilk_gecis(seri, esik)
             if gecis is None:
-                # ⚠ KAÇIRMA AVANSA DÂHİL EDİLMİYOR ama SAYILIYOR.
+                # Kaçırma avansa dâhil edilmiyor ama sayılıyor.
                 # Kaçırılan klipleri hesaptan atıp yalnızca yakalananların
                 # avansını raporlamak, sayıyı sistematik olarak
                 # güzelleştirir: sistem zor klipleri kaçırır, kolayları
-                # erken yakalar. Kaçırma oranı avansın YANINDA
+                # erken yakalar. Kaçırma oranı avansın yanında
                 # raporlanmadan avans okunamaz.
                 kacirilan += 1
                 continue
@@ -315,14 +315,14 @@ def main() -> int:
             "yanlis_alarm_orani": (
                 round(yanlis_alarm / len(normal_serileri), 3) if normal_serileri else None
             ),
-            # ⭐⭐ MEDYAN AVANSIN GÜVEN ARALIĞI
+            # Medyan avansın güven aralığı
             #
-            # ⚠ NEDEN GEREKLİ: K8 "❌ tutmuyor" diye raporlanıyor. Ama
-            # bu sonucun KESİN mi yoksa örneklem gürültüsü mü olduğu
+            # Neden gerekli: K8 "tutmuyor" diye raporlanıyor. Ama
+            # bu sonucun kesin mi yoksa örneklem gürültüsü mü olduğu
             # bilinmiyordu. Az sayıda klip üzerinden hesaplanmış bir
             # medyan, birkaç klip değişseydi başka çıkabilirdi.
             #
-            # Bir kriterin TUTMADIĞINI iddia etmek de bir iddiadır ve
+            # Bir kriterin tutmadığını iddia etmek de bir iddiadır ve
             # belirsizliği raporlanmalıdır — "tutuyor" iddiası kadar.
             # Aralık 2.0'ı içeriyorsa "tutmuyor" değil "kararsız"
             # demek gerekir.
@@ -339,8 +339,8 @@ def main() -> int:
           f"{'medyan avans':>13} {'%95 GA':>18} {'y.alarm':>9}")
     for s in sonuclar:
         med = f"{s['avans_medyan_s']:+.2f} sn" if s["avans_medyan_s"] is not None else "—"
-        # ⭐ p25 yerine GÜVEN ARALIĞI gösteriliyor: p25 dağılımın bir
-        # noktası, GA ise MEDYANIN ne kadar güvenilir olduğunu söylüyor.
+        # p25 yerine güven aralığı gösteriliyor: p25 dağılımın bir
+        # noktası, GA ise medyanın ne kadar güvenilir olduğunu söylüyor.
         # "Tutmuyor" kararı medyana dayandığı için asıl gereken bu.
         ga = s.get("avans_medyan_ga")
         ga_str = f"[{ga[0]:+.2f}, {ga[1]:+.2f}]" if ga else "—"
@@ -350,9 +350,9 @@ def main() -> int:
             f"{s['yanlis_alarm_orani']:>8.0%}"
         )
 
-    # ⚠ "K8 TUTUYOR" demek için TEK BİR eşikte ≥2 sn yetmiyor: o eşikte
+    # "K8 tutuyor" demek için tek bir eşikte ≥2 sn yetmiyor: o eşikte
     # yanlış alarm oranı da kabul edilebilir olmalı. Kabul sınırı
-    # burada %30 seçildi ve KEYFİ olduğu yazılıyor — K7'nin
+    # burada %30 seçildi ve keyfi olduğu yazılıyor — K7'nin
     # kamera-saat tabanlı ölçütü klip tabanlı bir sete doğrudan
     # çevrilemiyor. Rapor bu sınırı açıkça tartışacak.
     yanlis_alarm_siniri = 0.30
@@ -393,7 +393,7 @@ def main() -> int:
         "ornekleme_fps": args.fps,
         "sure_s": round(sure, 1),
         "esik_tablosu": sonuclar,
-        # ⚠ HAM SERİLER DE YAZILIYOR: avans hesabı bir yorum, seri veri.
+        # Ham seriler de yazılıyor: avans hesabı bir yorum, seri veri.
         # Eşik değiştiğinde yeniden koşmaya gerek kalmıyor ve rapor için
         # skor-zaman grafiği buradan çizilebiliyor.
         "seriler": {

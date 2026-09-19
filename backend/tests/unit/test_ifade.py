@@ -1,6 +1,6 @@
 """İfade → risk sinyali eşlemesinin testleri (analytics/ifade.py).
 
-⚠ NEDEN BU TESTLER ÖZELLİKLE GEREKLİ
+Neden bu testler özellikle gerekli
 Bu modül 03.09.2026'da, **iki yerde yazılı bir iddianın yanlış
 çıkması** üzerine yazıldı. `fusion.py` ve `analytics/worker.py`
 şunu söylüyordu:
@@ -34,7 +34,7 @@ class TestHamSkor:
     def test_bicimi_bozuk_girdi_patlamiyor(self) -> None:
         """Sözlük olmayan girdi sessizce 0.0.
 
-        ⚠ Bu alan bir AĞ MESAJINDAN geliyor (`inference.results`).
+        Bu alan bir AĞ mesajından geliyor (`inference.results`).
         Analitik worker'ın tek bozuk mesajla düşmemesi gerekiyor —
         aynı ders P-29'da dışarıdan ulaşılabilir bir çökme yolu
         olarak çıkmıştı.
@@ -56,9 +56,9 @@ class TestHamSkor:
         assert ofke > korku > uzuntu > 0.0
 
     def test_dusuk_kalite_tamamen_eleniyor(self) -> None:
-        """Kalite eşiğinin altındaki sınıflandırma HİÇ sayılmıyor.
+        """Kalite eşiğinin altındaki sınıflandırma hiç sayılmıyor.
 
-        ⚠ Çarpımla söndürmek yetmiyordu: kalite 0.15 olan bir "öfke"
+        Çarpımla söndürmek yetmiyordu: kalite 0.15 olan bir "öfke"
         çarpımdan 0.15 çıkar ve füzyonun katkı eşiği de tam 0.15.
         Yani gürültü, "katkıda bulunan sinyal" sayılabilirdi ve
         füzyonun "en az iki sinyal" kuralı gürültüyle doldurulabilirdi.
@@ -75,7 +75,7 @@ class TestHamSkor:
     def test_bilinmeyen_etiket_sifir(self) -> None:
         """Model yeni bir etiket üretirse sessizce 0 — patlamıyor.
 
-        ⚠ Ama bu sessizlik bir risk: `IFADE_RISK` anahtarları
+        Ama bu sessizlik bir risk: `IFADE_RISK` anahtarları
         `emotion/base.py · EXPRESSION_TR` ile birebir aynı olmak
         zorunda ve bir yazım hatası tüm sinyali sessizce sıfırlar.
         Aşağıdaki test tam bunu koruyor.
@@ -84,7 +84,7 @@ class TestHamSkor:
         assert ham_skor({"label": "", "conf": 1.0, "q": 1.0}) == 0.0
 
     def test_etiket_kumesi_modelinkiyle_ayni(self) -> None:
-        """⚠ EN DEĞERLİ TEST: iki sözlük ayrışırsa sinyal sessizce ölür.
+        """en değerli test: iki sözlük ayrışırsa sinyal sessizce ölür.
 
         `IFADE_RISK` model çıktısının etiketleriyle eşleşmezse hiçbir
         hata oluşmaz — yalnızca her skor 0 çıkar ve "yüzler küçük"
@@ -108,7 +108,7 @@ class TestIfadeSinyali:
         assert s.guncelle("cam-01", [self._tespit(1)], 0.0) == {}
 
     def test_sinyal_gercekten_akiyor(self) -> None:
-        """⭐ Modülün varlık sebebi: skor iz kimliğine ULAŞIYOR mu."""
+        """Modülün varlık sebebi: skor iz kimliğine ulaşıyor mu."""
         s = IfadeSinyali()
         cikti = s.guncelle(
             "cam-01",
@@ -118,20 +118,20 @@ class TestIfadeSinyali:
         assert cikti == {7: 1.0}
 
     def test_son_deger_sonraki_karelerde_korunuyor(self) -> None:
-        """KADEME 2b seyrek çalışıyor; aradaki karelerde sinyal düşmemeli.
+        """Kademe 2b seyrek çalışıyor; aradaki karelerde sinyal düşmemeli.
 
-        ⚠ Durum tutulmasaydı sinyal karelerin %95'inde 0 olurdu ve
+        Durum tutulmasaydı sinyal karelerin %95'inde 0 olurdu ve
         füzyonun "iki sinyal aynı anda" kuralı neredeyse hiç
         sağlanmazdı — ifade ağırlığı kâğıt üstünde kalırdı.
         """
         s = IfadeSinyali()
         s.guncelle("cam-01", [self._tespit(7, {"label": "Anger", "conf": 1.0, "q": 1.0})], 0.0)
-        # Sonraki iki karede `expr` YOK (2b çalışmadı)
+        # Sonraki iki karede `expr` yok (2b çalışmadı)
         for t in (0.25, 0.50):
             assert s.guncelle("cam-01", [self._tespit(7)], t) == {7: 1.0}
 
     def test_pencere_ortalamasi_alinıyor(self) -> None:
-        """Ardışık iki sınıflandırmanın ortalaması (PLAN §6.3)."""
+        """Ardışık iki sınıflandırmanın ortalaması."""
         s = IfadeSinyali()
         s.guncelle("cam-01", [self._tespit(3, {"label": "Anger", "conf": 1.0, "q": 1.0})], 0.0)
         cikti = s.guncelle(
@@ -140,9 +140,9 @@ class TestIfadeSinyali:
         assert abs(cikti[3] - 0.5) < 1e-9
 
     def test_kameralar_birbirine_karismiyor(self) -> None:
-        """Aynı iz numarası farklı kameralarda AYRI kişilerdir.
+        """Aynı iz numarası farklı kameralarda ayrı kişilerdir.
 
-        ⚠ Takip kimlikleri kamera başına üretiliyor; `cam-01`'deki 5
+        Takip kimlikleri kamera başına üretiliyor; `cam-01`'deki 5
         ile `cam-02`'deki 5 aynı kişi değil. Anahtarı yalnızca iz
         numarası yapmak, iki kameranın sinyalini birbirine karıştırırdı.
         """
@@ -161,7 +161,7 @@ class TestIfadeSinyali:
         assert cikti == {}
 
     def test_budama_eski_izleri_atiyor(self) -> None:
-        """⚠ Mimari kural 5: sınırsız büyüyen hiçbir yapı olmayacak.
+        """Mimari kural 5: sınırsız büyüyen hiçbir yapı olmayacak.
 
         Füzyon katmanında bu tam olarak atlanmıştı: `RiskFuzyonu.buda()`
         yazılmış ama hiç çağrılmamıştı (03.09.2026'da düzeltildi).

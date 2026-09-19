@@ -1,8 +1,8 @@
-"""KADEME 2b ölçümü — yüz tespiti + ifade sınıflandırma.
+"""Kademe 2b ölçümü — yüz tespiti + ifade sınıflandırma.
 
 Neden bu betik var
 ------------------
-Gün 13'te KADEME 2b ölçülmüş ve `benchmarks/expression_20260817-gun13.json`
+Gün 13'te kademe 2b ölçülmüş ve `benchmarks/expression_20260817-gun13.json`
 yazılmıştı — ama **ölçümü üreten betik commit edilmemişti.** Diğer dört
 kademede (`benchmark_decode`, `motion_gate`, `pose`, `tracker`) betik
 var, bunda yoktu. Yani sayı vardı, tekrar üretilemiyordu.
@@ -18,9 +18,9 @@ Cevaplanan üç soru
 2. **Kamera çiftliği bu kademeyi besliyor mu?** Gerçek karelerden kişi
    boyu dağılımı ve yüz tespiti isabet oranı.
 
-3. ⭐ **Gün 8'in 640 küçültmesi 2b'ye ne kadar zarar veriyor?**
+3. **Gün 8'in 640 küçültmesi 2b'ye ne kadar zarar veriyor?**
    Boru hattı artık ham 1280×720 saklamıyor; kırpıntılar 640×640
-   letterbox'tan alınıyor, yani yüzler kaynağa göre YARI boyutta.
+   letterbox'tan alınıyor, yani yüzler kaynağa göre yarı boyutta.
    Aynı kareler her iki uzayda da ölçülüp karşılaştırılıyor. Bu soru
    şimdiye kadar hiç sayıya bağlanmamıştı.
 
@@ -48,8 +48,8 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT / "backend" / "src"))
 
-# ⚠ Windows konsolu Türkçe yerelde cp1254 kullanıyor ve "→", "⭐" gibi
-# karakterleri basamıyor — `UnicodeEncodeError` ile betiği ÖLDÜRÜYOR.
+# Windows konsolu Türkçe yerelde cp1254 kullanıyor ve "→", "" gibi
+# karakterleri basamıyor — `UnicodeEncodeError` ile betiği öldürüyor.
 # Ölçüm bittikten sonra sırf yazdırma yüzünden sonuç kaybetmek anlamsız.
 # `errors="replace"`: kodlanamayan karakter betiği düşürmek yerine "?"
 # olarak basılır. JSON çıktısı zaten ayrıca UTF-8 yazılıyor.
@@ -72,14 +72,14 @@ FACE_RATIO = 8.0
 
 
 # ══════════════════════════════════════════════════════════════
-#  1. MODEL MALİYETİ
+#  1. Model maliyeti
 # ══════════════════════════════════════════════════════════════
 
 
 def olc_model(tekrar: int = 15) -> dict[str, object]:
     """İfade modelinin cihaz ve batch'e göre maliyeti.
 
-    ⚠ ISINMA AYRI TUTULUYOR (P-28)
+    Isınma ayrı tutuluyor (P-28)
     Isınma karesi sayılmazsa ilk çağrının CUDA bağlam kurulumu ve
     çekirdek derlemesi ortalamayı kalıcı olarak yukarı çeker. Gün 13'ün
     "58 ms" rakamının muhtemel sebebi tam olarak bu.
@@ -98,7 +98,7 @@ def olc_model(tekrar: int = 15) -> dict[str, object]:
             sonuc[cihaz] = {"hata": f"{type(exc).__name__}: {exc}"}
             continue
 
-        # Isınma — ÖLÇÜME DAHİL DEĞİL
+        # Isınma — ölçüme dahil değil
         t_isinma = time.perf_counter()
         sinif.classify(goruntuler[:1])
         sinif.classify(goruntuler)
@@ -119,7 +119,7 @@ def olc_model(tekrar: int = 15) -> dict[str, object]:
             "isinma_ms": round(isinma_ms, 1),
             "toplam_ms": olcumler,
             "yuz_basina_ms_batch8": round(yuz_basina, 2),
-            # Toplu çağrı gerçekten yapılıyor mu? Doğrusalsa YAPILMIYOR.
+            # Toplu çağrı gerçekten yapılıyor mu? Doğrusalsa yapılmıyor.
             "olcek_dogrusal_mi": round(olcumler["batch_8"] / olcumler["batch_1"], 2),
         }
 
@@ -145,7 +145,7 @@ def olc_yuz_tespiti(kirpintilar: list[np.ndarray], tekrar: int = 5) -> dict[str,
 
 
 # ══════════════════════════════════════════════════════════════
-#  2. GİRDİ ANALİZİ — kamera çiftliği bu kademeyi besliyor mu?
+#  2. Girdi analizi — kamera çiftliği bu kademeyi besliyor mu?
 # ══════════════════════════════════════════════════════════════
 
 
@@ -210,9 +210,9 @@ def analiz_et(
     kare_sayisi: int,
     dedektor: object,
 ) -> tuple[UzayIstatistigi, UzayIstatistigi, list[np.ndarray]]:
-    """Aynı kareleri İKİ uzayda birden analiz eder.
+    """Aynı kareleri iki uzayda birden analiz eder.
 
-    ⭐ Betiğin asıl katkısı burası. Boru hattı 640×640 letterbox
+    Betiğin asıl katkısı burası. Boru hattı 640×640 letterbox
     kullanıyor; kaynak 1280×720. Aynı kişi, aynı an, iki farklı
     çözünürlük — tek değişen ölçek. Kontrollü karşılaştırma (P-27
     deseni).

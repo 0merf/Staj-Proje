@@ -6,22 +6,22 @@
 # kopya worker'lar birikiyor ve ölçümleri bozuyor (aynı tüketici grubunda
 # yarışıyorlar).
 #
-# Bu betik proje venv'inden çalışan HER python sürecini durdurur.
+# Bu betik proje venv'inden çalışan her python sürecini durdurur.
 #
 # Kullanım:  pwsh backend/scripts/stop_all.ps1
 
-# ⚠ Sabit "D:\Staj Proje\..." yolu vardı; proje başka klasöre/bilgisayara
+# Sabit "D:\Staj Proje\..." yolu vardı; proje başka klasöre/bilgisayara
 # kopyalanınca venv eşleşmesi boşa düşüyordu. Betiğin kendi konumundan çözülüyor.
 $venv = Join-Path (Split-Path $PSScriptRoot -Parent) ".venv"
 $killed = 0
 
 Get-CimInstance Win32_Process -Filter "Name='python.exe'" -ErrorAction SilentlyContinue |
     Where-Object {
-        # ⚠ Birinci koşul (venv yolu) pratikte hepsini yakalıyor;
-        # ikincisi bir GÜVENLİK AĞI, çünkü bir worker venv dışından
+        # Birinci koşul (venv yolu) pratikte hepsini yakalıyor;
+        # ikincisi bir güvenlik ağı, çünkü bir worker venv dışından
         # (ör. elle `python -m ...`) başlatılmış olabilir.
         #
-        # ⚠ Liste TAM olmalı. 30.08.2026'ya kadar yalnızca
+        # Liste tam olmalı. 30.08.2026'ya kadar yalnızca
         # ingest|inference|api yazıyordu; analytics ve alerting
         # eksikti ve yalnızca venv koşulu sayesinde kapanıyorlardı.
         # Eksik bir listeyi "zaten çalışıyor" diye bırakmak, ilk
@@ -48,25 +48,25 @@ if ($killed -eq 0) { Write-Host "  çalışan SENTINEL süreci yok" }
 else { Write-Host "`n  toplam $killed süreç durduruldu" }
 
 
-# ─── HAM KAYITLARI TEMİZLE ────────────────────────────────────────
+# ─── Ham kayıtları temizle ────────────────────────────────────────
 #
-# NEDEN GEREKLİ
-# Kaynak videolar `-stream_loop -1` ile SONSUZ döngüde yayınlanıyor,
+# Neden gerekli
+# Kaynak videolar `-stream_loop -1` ile sonsuz döngüde yayınlanıyor,
 # yani kayıt açıkken disk durmadan yazılır (ölçülen: ~14 GB/saat,
 # 20 kamera). MediaMTX'in kendi `recordDeleteAfter: 1h` temizliği bunu
-# çalışırken sınırlıyor — ama YALNIZCA MediaMTX çalışırken.
+# çalışırken sınırlıyor — ama yalnızca MediaMTX çalışırken.
 #
 # Açık tam olarak burası: geliştirme oturumunu bitirip konteynerleri
 # durdurunca son bir saatin kayıtları (~14 GB) diskte öylece kalıyor
 # ve bir dahaki açılışa kadar kimse silmiyor. Haftalarca dokunulmazsa
 # öylece durur.
 #
-# Ham kayıt zaten GEÇİCİ bir aratabandır: değeri, alarm anında ondan
-# kesilen klipte. Klipler Garage'a yükleniyor ve KVKK saklama süresi
+# Ham kayıt zaten geçici bir aratabandır: değeri, alarm anında ondan
+# kesilen klipte. Klipler data/clips altına yazılıyor ve KVKK saklama süresi
 # (30 gün) onlara işliyor. Oturum bitince ham kaydı tutmanın hiçbir
 # faydası yok.
 #
-# ⚠ `data/clips/` SİLİNMEZ — orası kesilmiş olay klipleri, yani
+# `data/clips/` silinmez — orası kesilmiş olay klipleri, yani
 # ürünün çıktısı. Yalnızca `data/recordings/` (ham aratabant) siliniyor.
 $recordings = Join-Path $PSScriptRoot "..\..\data\recordings"
 if (Test-Path $recordings) {

@@ -3,11 +3,11 @@
 Neden PyAV, neden `subprocess` ile ffmpeg değil
 -----------------------------------------------
 PyAV, FFmpeg'in C kütüphanelerine doğrudan bağlanır. Kabuğa (shell)
-hiç çıkmadığımız için kamera URL'sinden komut enjeksiyonu riski YOKTUR
-(PLAN.md §11.1 / G09). Ayrıca kareyi bellekten alırız — boru üzerinden
+hiç çıkmadığımız için kamera URL'sinden komut enjeksiyonu riski yoktur
+(G09). Ayrıca kareyi bellekten alırız — boru üzerinden
 ham bayt kopyalamaya gerek kalmaz.
 
-Kare örnekleme hakkında dürüst bir not
+Kare örnekleme hakkında bir not
 --------------------------------------
 H.264 kareler arası kodlamalıdır: 4. kareyi çözmek için önceki kareleri
 de çözmek gerekir. Yani "25 FPS'ten 4 FPS'e düşürmek" decode maliyetini
@@ -39,13 +39,13 @@ class DecodedFrame:
 
     camera_id: str
     sequence: int
-    # ⚠ DUVAR SAATİ (time.time), monotonik DEĞİL — bilinçli.
-    # Bu damga Valkey üzerinden BAŞKA BİR SÜRECE (çıkarım worker'ı)
+    # Duvar saati (time.time), monotonik değil — bilinçli.
+    # Bu damga Valkey üzerinden başka bir sürece (çıkarım worker'ı)
     # geçiyor ve orada `now - captured_at` diye kullanılıyor. Python
     # dokümanı `time.monotonic()` için açıkça şunu diyor: "The reference
     # point of the returned value is undefined, so that only the
     # difference between the results of two calls is valid." Yani iki
-    # AYRI SÜREÇTEN alınmış monotonik değerleri çıkarmak tanımsızdır.
+    # ayrı süreçten alınmış monotonik değerleri çıkarmak tanımsızdır.
     # Pratikte Windows/Linux'ta ikisi de açılıştan itibaren saydığı için
     # çalışıyordu, ama garanti yok.
     #
@@ -117,7 +117,7 @@ class RtspDecoder:
         self.close()
 
     def open(self) -> None:
-        # ⚠ CANLI AKIŞ SEÇENEKLERİ YALNIZCA AĞ KAYNAKLARINA UYGULANIR
+        # Canlı akış seçenekleri yalnızca AĞ kaynaklarına uygulanır
         #
         # `fflags=nobuffer` ve `flags=low_delay` gecikmeyi kırpmak için
         # var: demuxer'a "tampon biriktirme, hemen ver" diyor. Canlı
@@ -130,8 +130,8 @@ class RtspDecoder:
         # seçenekleri; mp4 demuxer'ına verilmeleri en iyi ihtimalle
         # anlamsız.
         #
-        # ⚠ Üretimde yalnızca `rtsp://` kullanılıyor, yani bu üretim
-        # davranışını DEĞİŞTİRMİYOR. Dosya yolunu açılabilir kılmak,
+        # Üretimde yalnızca `rtsp://` kullanılıyor, yani bu üretim
+        # davranışını değiştirmiyor. Dosya yolunu açılabilir kılmak,
         # dekoderin gerçek bir videoyla test edilebilmesi için gerekti —
         # ve test edilemeyen bir ölçüm aracı bu projede tam olarak
         # sorunun kaynağı.
@@ -149,7 +149,7 @@ class RtspDecoder:
         )
         self._container = av.open(self._url, options=options, timeout=None)
         stream = self._container.streams.video[0]
-        # Kare atlamak yerine ÇÖZÜP atıyoruz; thread'li çözme CPU'yu daha iyi kullanır.
+        # Kare atlamak yerine çözüp atıyoruz; thread'li çözme CPU'yu daha iyi kullanır.
         stream.thread_type = "AUTO"
         log.info(
             "akis_acildi",
@@ -182,21 +182,21 @@ class RtspDecoder:
         next_emit = 0.0
         emitted = 0
 
-        # ⭐⭐ ÇÖZME MALİYETİ CPU ZAMANIYLA ÖLÇÜLÜYOR (P-60)
+        # Çözme maliyeti CPU zamanıyla ölçülüyor (P-60)
         #
         # Eski `decode_duration` metriği çözmeyi değil kareler arası
-        # BEKLEMEYİ ölçüyordu. Doğrusunu duvar saatiyle yapmak da mümkün
+        # beklemeyi ölçüyordu. Doğrusunu duvar saatiyle yapmak da mümkün
         # değil: `container.decode()` ağdan veri beklerken bloke oluyor,
         # yani `perf_counter` farkı yine beklemeyi içerirdi — hata bir
         # kat aşağıda tekrarlanmış olurdu.
         #
-        # `time.thread_time()` yalnızca BU iş parçacığının CPU'sunu
+        # `time.thread_time()` yalnızca bu iş parçacığının CPU'sunu
         # sayar; bloke geçen süre girmez. Kamera başına bir iş parçacığı
         # olduğu için ölçtüğümüz şey tam olarak "bu kameranın çözme işi".
         #
-        # ⚠ Sayaç Prometheus'ta Counter: Windows'ta iş parçacığı CPU
+        # Sayaç Prometheus'ta Counter: Windows'ta iş parçacığı CPU
         # çözünürlüğü ~15.6 ms olduğu için kare başına fark çoğu zaman 0
-        # çıkar, ama farklar teleskoplanıp TOPLAMI doğru verir.
+        # çıkar, ama farklar teleskoplanıp toplamı doğru verir.
         cozme_cpu = metrics.decode_cpu_seconds.labels(cam=self._camera_id)
         bgr_cpu = metrics.bgr_cpu_seconds.labels(cam=self._camera_id)
         cpu_isareti = time.thread_time()
@@ -218,16 +218,16 @@ class RtspDecoder:
                 if self._interval > 0 and pts_s < next_emit:
                     continue
 
-                # ⚠ SABİT TAKVİM — kayma birikmesin
+                # Sabit takvim — kayma birikmesin
                 # İlk sürüm `next_emit = pts_s + interval` yazıyordu, yani
-                # takvimi her seferinde GERÇEKLEŞEN kareye sıfırlıyordu.
+                # takvimi her seferinde gerçekleşen kareye sıfırlıyordu.
                 # Gerçekleşen kare hedeften hep biraz sonradır (kaynak
                 # ayrık: 25 FPS'te kareler 0.04 sn aralıklı), bu aşma her
                 # turda birikiyordu:
                 #   hedef 4 FPS (0.25 sn) → 0.24 < 0.25 olduğu için ancak
                 #   her 7. kare alınabiliyor → 25/7 = 3.57 FPS
                 # Takvimi sabit tutunca aralıklar 0.28/0.24/0.24/0.24 diye
-                # değişiyor ama ORTALAMASI tam 0.25 sn = 4.0 FPS oluyor.
+                # değişiyor ama ortalaması tam 0.25 sn = 4.0 FPS oluyor.
                 next_emit += self._interval
                 if next_emit <= pts_s:
                     # Çok geri kaldık (kare atlandı, yeniden bağlanıldı) —
@@ -238,8 +238,8 @@ class RtspDecoder:
                 self._sequence += 1
                 emitted += 1
 
-                # ⭐ BGR dönüşümü ayrı ölçülüyor: çözmeden bağımsız bir
-                # maliyet ve yalnızca ÖRNEKLENEN karelerde ödeniyor.
+                # BGR dönüşümü ayrı ölçülüyor: çözmeden bağımsız bir
+                # maliyet ve yalnızca örneklenen karelerde ödeniyor.
                 # Ayrı tutmak, örnekleme hızını düşürmenin neyi
                 # kazandırdığını (ve neyi kazandırmadığını) gösteriyor:
                 # decode bedeli düşmez, BGR bedeli düşer.
@@ -257,11 +257,11 @@ class RtspDecoder:
                     image=goruntu,
                 )
 
-                # ⚠ `yield` tüketici işini bitirene kadar bloke eder;
-                # o süre BU iş parçacığının CPU'suna yazılır ve çözmenin
-                # hanesine geçmemeli. İşareti dönüşten SONRA tazeliyoruz.
+                # `yield` tüketici işini bitirene kadar bloke eder;
+                # o süre bu iş parçacığının CPU'suna yazılır ve çözmenin
+                # hanesine geçmemeli. İşareti dönüşten sonra tazeliyoruz.
                 #
-                # ⭐ Bu satır kaldırılınca `test_yield_ICINDE_yakilan_cpu...`
+                # Bu satır kaldırılınca `test_yield_ICINDE_yakilan_cpu...`
                 # düşüyor: çözme CPU'su 328 ms okunuyor, tüketicinin
                 # yaktığı 300 ms'in tamamı çözmeye atfediliyor. Testin
                 # gerçekten bir şey doğruladığı böyle sınandı.
@@ -277,7 +277,7 @@ class RtspDecoder:
     def set_target_fps(self, fps: float) -> None:
         """Örnekleme hızını çalışma anında değiştirir (uyarlanabilir FPS).
 
-        PLAN.md §5.2: sistem her kameraya eşit davranmaz. Hareketsiz bir
+        Proje planı: sistem her kameraya eşit davranmaz. Hareketsiz bir
         kamerayı 4 FPS örneklemek boşa iş — kareler zaten Kademe 0'da
         eleniyor, ama YUV→BGR dönüşümü (sürenin %77'si) çoktan ödenmiş
         oluyor. Onu 1 FPS'e düşürmek o CPU'yu kalabalık kameralara

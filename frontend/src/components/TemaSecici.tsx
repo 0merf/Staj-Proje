@@ -1,18 +1,18 @@
 /** Açık / koyu tema anahtarı.
  *
- * ⚠ TEMA `<html>` ÜZERİNDE, REACT DURUMUNDA DEĞİL
+ * Tema `<html>` üzerinde, REACT durumunda değil
  * Renkler CSS değişkeni (`index.css`). React'e bir "tema" prop'u
  * geçirip her bileşende dallanmak, her yeni bileşende unutulabilecek
  * bir adım eklerdi. `data-tema` niteliği tek noktada değişiyor ve
  * tüm ağaç CSS üzerinden takip ediyor.
  *
- * ⚠ İLK DEĞER `index.html` İÇİNDE OKUNUYOR, BURADA DEĞİL
- * Burada `useEffect` ile uygulasaydık sayfa bir kare KOYU açılır,
+ * İlk değer `index.html` içinde okunuyor, burada değil
+ * Burada `useEffect` ile uygulasaydık sayfa bir kare koyu açılır,
  * sonra açığa atlardı (flash). Seçim `localStorage`'dan React
  * yüklenmeden önce, `index.html` içindeki küçük betikle uygulanıyor.
- * Bu bileşen yalnızca sonradan DEĞİŞTİRİYOR.
+ * Bu bileşen yalnızca sonradan değiştiriyor.
  *
- * ⚠ VARSAYILAN: işletim sisteminin tercihi
+ * Varsayılan: işletim sisteminin tercihi
  * "Koyu" varsayılan seçmek bir tasarım tercihini kullanıcıya dayatmak
  * olurdu. `prefers-color-scheme` zaten kullanıcının cevabı.
  */
@@ -25,7 +25,7 @@ function mevcutTema(): Tema {
   return document.documentElement.dataset.tema === 'acik' ? 'acik' : 'koyu'
 }
 
-/** ⚠ Dışa AÇILMIYOR: yalnızca bu bileşen çağırıyor ve bir bileşen
+/** Dışa açılmıyor: yalnızca bu bileşen çağırıyor ve bir bileşen
  *  dosyasından işlev ihraç etmek React'in hızlı yenilemesini bozuyor. */
 function temaUygula(tema: Tema): void {
   // Koyu varsayılan olduğu için nitelik yalnızca açık temada yazılıyor.

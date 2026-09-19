@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { defineConfig, devices } from '@playwright/test'
 
 /**
- * ⚠ Test kullanıcısının bilgileri `.env.e2e`'den okunuyor — o dosya
+ * Test kullanıcısının bilgileri `.env.e2e`'den okunuyor — o dosya
  * `.gitignore`'da. Parolayı yapılandırmaya gömmek, onu git geçmişine
  * kalıcı olarak yazmak olurdu.
  *
@@ -23,29 +23,29 @@ try {
 }
 
 /**
- * Playwright E2E — PLAN §14.1'de vardı, hiç kurulmamıştı.
+ * Playwright E2E — proje planında vardı, hiç kurulmamıştı.
  *
- * ⭐ NEDEN E2E GEREKLİ — projenin İKİNCİ TEZİ
+ * Neden E2E gerekli — projenin ikinci tezi
  * -------------------------------------------
- * CLAUDE.md: *"Her parçası tek tek çalışan bir sistem uçtan uca
+ * Proje notlarım: *"Her parçası tek tek çalışan bir sistem uçtan uca
  * çalışmayabilir, ve parça testleri bunu asla göstermez."*
  *
  * P-43 (ifade karara girmiyordu), P-44 (`buda()` çağrılmıyordu),
- * P-45 (klipler erişilemiyordu) — üçü de birim testlerinden GEÇERDİ.
+ * P-45 (klipler erişilemiyordu) — üçü de birim testlerinden geçerdi.
  * Bu dosyanın varlık sebebi o üç kayıt.
  *
- * ⚠ SUNUCUYU BU YAPILANDIRMA BAŞLATMIYOR
+ * Sunucuyu bu yapılandırma başlatmıyor
  * `webServer` bilinçli olarak tanımlanmadı. Sebep: sistem 20 kamera +
  * GPU worker'ı + Valkey + TimescaleDB demek; Playwright'ın onu ayağa
  * kaldırması dakikalar sürer ve ölçüm ortamını kirletir (P-36: koşarken
- * sisteme dokunma). Testler ZATEN AYAKTA olan sisteme bağlanıyor.
+ * sisteme dokunma). Testler zaten ayakta olan sisteme bağlanıyor.
  *
  * Önce: pwsh backend/scripts/start_all.ps1
  * Sonra: npm run e2e
  */
 export default defineConfig({
   testDir: './e2e',
-  // ⚠ Tam sıralı: testler CANLI sisteme bağlanıyor ve paralel oturumlar
+  // Tam sıralı: testler canlı sisteme bağlanıyor ve paralel oturumlar
   // WS bağlantı limitini (G14) tetikleyebilir.
   fullyParallel: false,
   workers: 1,
@@ -58,7 +58,7 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'off',
-    // ⚠ Kendi imzalı sertifika yok (G18 Caddy kurulmadı) — HTTP.
+    // Kendi imzalı sertifika yok (G18 Caddy kurulmadı) — HTTP.
     ignoreHTTPSErrors: true,
   },
   projects: [

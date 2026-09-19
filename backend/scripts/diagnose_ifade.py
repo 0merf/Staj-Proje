@@ -1,24 +1,24 @@
-"""KADEME 2b tanısı — duygu analizi neden yalnızca bir kamerada çalışıyor?
+"""Kademe 2b tanısı — duygu analizi neden yalnızca bir kamerada çalışıyor?
 
-⭐ NEDEN BU BETİK
+Neden bu betik
 ----------------
 Canlı ölçüm (09-10.09) şunu gösterdi:
 
     sinyal          sıfırdan farklı
     saldırganlık    16/16 kamera
     anomali         16/16 kamera
-    ifade            1/16 kamera   ⬅ yalnızca cam-20
+    ifade            1/16 kamera   ← yalnızca cam-20
 
 "Duygu analizi" şartnamedeki ÜÇ yetenekten biri. Bu tabloyu raporda
 savunabilmek için "neden bir kamerada" sorusunun **sayısal** cevabı
 gerekiyor — "yüzler küçük" bir tahmin, dağılım bir ölçüm.
 
-⚠ Kapı `expression_min_person_px = 180`: kişi kutusu ÇIKARIM UZAYINDA
+Kapı `expression_min_person_px = 180`: kişi kutusu çıkarım uzayında
 (640×640 letterbox) bu yükseklikten küçükse yüz hiç aranmıyor. Bu betik
 her kameradaki kişi kutusu yüksekliklerinin dağılımını çıkarıyor ve
 kaçının kapıyı geçtiğini sayıyor.
 
-⚠ NE ÖLÇÜLMÜYOR: yüzün kendi piksel boyutu. Kapı kişi kutusuna bakıyor;
+NE ölçülmüyor: yüzün kendi piksel boyutu. Kapı kişi kutusuna bakıyor;
 yüz o kutunun ~%10-15'i. Buradaki sayılar "yüz aranmaya değer mi"
 kapısını ölçüyor, "yüz tanınabilir mi" sorusunu değil.
 
@@ -118,12 +118,12 @@ def main() -> int:
             "kapiyi_gecen_oran": round(oran, 4),
         }
 
-    # ─── ⭐ İKİNCİ AŞAMA: kapıyı geçen kırpıntılarda YÜZ BULUNUYOR MU ───
+    # ─── İkinci aşama: kapıyı geçen kırpıntılarda yüz bulunuyor MU ───
     #
-    # ⚠ İlk ölçüm bir varsayımı çürüttü. Kodun docstring'i "yüzler ~15 px,
+    # İlk ölçüm bir varsayımı çürüttü. Kodun docstring'i "yüzler ~15 px,
     # kademe aday bulamayacak" diyordu; ölçüm 8 kameranın kişi kapısını
-    # GEÇTİĞİNİ gösterdi. Ama canlıda yalnızca cam-20 ifade üretiyor.
-    # Demek ki bağlayıcı kısıt kişi boyutu değil, bir SONRAKİ aşama.
+    # geçtiğini gösterdi. Ama canlıda yalnızca cam-20 ifade üretiyor.
+    # Demek ki bağlayıcı kısıt kişi boyutu değil, bir sonraki aşama.
     #
     # Bu bölüm onu ölçüyor: kapıyı geçen kırpıntılara YuNet uygulanıp
     # kaçında yüz bulunduğu sayılıyor.
@@ -163,8 +163,8 @@ def main() -> int:
                     if kirp.size == 0:
                         continue
                     kirpinti += 1
-                    # ⚠ `detect` tek bir `FaceBox | None` döndürüyor —
-                    # kırpıntının üst %45'indeki EN BELİRGİN yüz.
+                    # `detect` tek bir `FaceBox | None` döndürüyor —
+                    # kırpıntının üst %45'indeki en belirgin yüz.
                     yuz = yuz_dedektor.detect(kirp)
                     if yuz is not None:
                         bulunan += 1

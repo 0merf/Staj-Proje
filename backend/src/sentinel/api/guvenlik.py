@@ -1,22 +1,22 @@
-"""Kimlik doğrulama ve yetkilendirme — PLAN.md §11.1 (G01-G05).
+"""Kimlik doğrulama ve yetkilendirme (G01-G05).
 
-⚠ NEDEN BUGÜNE KADAR YOKTU VE NEDEN ARTIK VAR
+Neden bugüne kadar yoktu ve neden artık var
 ---------------------------------------------
-`PLAN.md` güvenliği **Öncelik-1** ilan ediyor ve `config.py` JWT
+Proje planı güvenliği **Öncelik-1** ilan ediyor ve `config.py` JWT
 ayarlarını Gün 1'den beri taşıyordu — ama tek satır kod yoktu. API
 tamamen açıktı: kamera listesi, olay geçmişi, webcam açma/kapatma,
 hepsi kimlik doğrulamasız.
 
 Tek hafifletici koşul her şeyin `127.0.0.1`'e bağlı olması. Bu bir
 savunma değil bir **tesadüf**: Caddy ters vekili devreye girdiği an
-(PLAN §10) API dış ağa açılıyor ve o gün "sonra ekleriz" demiş olmak
+ API dış ağa açılıyor ve o gün "sonra ekleriz" demiş olmak
 üç kat pahalıya patlıyor (çalışma ilkesi 3).
 
 Kararlar
 --------
-**Parola hash'i: Argon2id** (G01). MD5/SHA-256 değil — onlar HIZLI
+**Parola hash'i: Argon2id** (G01). MD5/SHA-256 değil — onlar hızlı
 olmak için tasarlandı ve parola hash'inde hız saldırganın işine yarar.
-Argon2id hem CPU hem BELLEK maliyeti dayatıyor, yani GPU'yla paralel
+Argon2id hem CPU hem bellek maliyeti dayatıyor, yani GPU'yla paralel
 kırma avantajını da siliyor. 2015 Password Hashing Competition
 kazananı ve OWASP'ın birinci önerisi.
 
@@ -24,7 +24,7 @@ kazananı ve OWASP'ın birinci önerisi.
   · erişim  15 dakika — çalınırsa zarar penceresi dar
   · yenileme 7 gün   — kullanıcı her 15 dakikada giriş yapmasın
 
-⚠ JWT İPTAL EDİLEMEZ — bilinen kısıt, dürüstçe raporlanacak
+JWT iptal edilemez — bilinen kısıt, raporda açıkça belirtiliyor
 Kendi kendini doğrulayan bir token, süresi dolana kadar geçerlidir;
 "çıkış yap" gerçek bir iptal değildir. Doğru çözüm bir iptal listesi
 (Valkey'de `jti` kara listesi) ve bu, erişim tokenının 15 dakikalık
@@ -38,10 +38,10 @@ geçersizleşiyor.
 ve rol başına ayrı izin listesi tutmak bu küçük sistemde
 kazandırdığından fazla makine getirirdi.
 
-⚠ SALT OKUNUR ile YAZAN uçlar AYRILIYOR
+Salt okunur ile yazan uçlar ayrılıyor
 Kamera listesi ve olay geçmişi `viewer`'a açık; webcam açmak
 `operator` istiyor. Mahremiyet açısından fark büyük: biri geçmişe
-bakmak, diğeri YENİ bir kamera açmak.
+bakmak, diğeri yeni bir kamera açmak.
 """
 
 from __future__ import annotations
@@ -64,7 +64,7 @@ from sentinel.logging import get_logger
 
 log = get_logger(__name__)
 
-# ⚠ Varsayılan parametreler OWASP'ın önerdiği taban değerlerin üstünde
+# Varsayılan parametreler OWASP'ın önerdiği taban değerlerin üstünde
 # tutuluyor (argon2-cffi varsayılanı: 64 MiB, 3 tur). Bu makinede
 # ölçülen doğrulama süresi ~50 ms — kullanıcı için görünmez, saldırgan
 # için kaba kuvvet denemesi başına 50 ms.
@@ -102,7 +102,7 @@ def parola_hashle(parola: str) -> str:
 def parola_dogru_mu(hash_degeri: str, parola: str) -> bool:
     """Parolayı doğrular.
 
-    ⚠ İSTİSNA SIZDIRMIYOR. `VerifyMismatchError` ile `InvalidHashError`
+    İstisna sızdırmıyor. `VerifyMismatchError` ile `InvalidHashError`
     farklı sebeplerdir (yanlış parola vs bozuk kayıt) ama çağırana
     ikisi de `False` dönüyor: hata türünü dışarı vermek, saldırgana
     "bu kullanıcı var ama hash'i bozuk" gibi bilgiler sızdırır.
@@ -114,9 +114,9 @@ def parola_dogru_mu(hash_degeri: str, parola: str) -> bool:
 
 
 def _anahtar() -> str:
-    """JWT imza anahtarı — YOKSA HATA.
+    """JWT imza anahtarı — yoksa hata.
 
-    ⚠ Varsayılan bir anahtar ÜRETİLMİYOR. "Ayarlanmamışsa rastgele
+    Varsayılan bir anahtar üretilmiyor. "Ayarlanmamışsa rastgele
     üret" davranışı cazip görünür ama iki felakete yol açar: her
     yeniden başlatmada tüm oturumlar düşer, ve daha kötüsü, kimse
     anahtarı ayarlamayı hatırlamaz. Açıkça patlamak, sessizce güvensiz
@@ -136,7 +136,7 @@ def token_uret(
 ) -> str:
     """Erişim ya da yenileme tokenı üretir.
 
-    ⚠ `tip` alanı ZORUNLU. Olmasaydı bir yenileme tokenı erişim tokenı
+    `tip` alanı zorunlu. Olmasaydı bir yenileme tokenı erişim tokenı
     gibi kullanılabilirdi — yani 15 dakikalık pencere 7 güne çıkardı.
     Doğrulama tarafında tip açıkça karşılaştırılıyor.
     """
@@ -153,7 +153,7 @@ def token_uret(
         "tip": "yenileme" if yenileme else "erisim",
         "iat": simdi,
         "exp": simdi + omur,
-        # ⚠ `jti`: ileride iptal listesi kurulacaksa gereken benzersiz
+        # `jti`: ileride iptal listesi kurulacaksa gereken benzersiz
         # kimlik. Şimdi kullanılmıyor ama token biçimini sonradan
         # değiştirmek, dolaşımdaki tüm tokenları geçersiz kılmak demek.
         "jti": uuid.uuid4().hex,
@@ -169,7 +169,7 @@ def token_uret(
 def token_coz(token: str, *, yenileme: bool = False) -> dict[str, Any]:
     """Tokenı doğrular ve gövdesini döndürür. Geçersizse 401.
 
-    ⚠ `algorithms` AÇIKÇA veriliyor. Verilmezse kütüphane tokenın kendi
+    `algorithms` açıkça veriliyor. Verilmezse kütüphane tokenın kendi
     başlığındaki algoritmaya güvenir ve saldırgan `alg: none` yazarak
     imzasız token kabul ettirebilir — JWT'nin en bilinen açığı.
     """
@@ -185,7 +185,7 @@ def token_coz(token: str, *, yenileme: bool = False) -> dict[str, Any]:
             headers={"WWW-Authenticate": "Bearer"},
         ) from None
     except jwt.InvalidTokenError:
-        # ⚠ Sebep ayrıntısı VERİLMİYOR: "imza geçersiz" ile "gövde
+        # Sebep ayrıntısı verilmiyor: "imza geçersiz" ile "gövde
         # bozuk" arasındaki fark saldırgana yol gösterir.
         raise HTTPException(
             status.HTTP_401_UNAUTHORIZED,
@@ -205,7 +205,7 @@ async def mevcut_kullanici(
 ) -> Kullanici:
     """İsteği doğrular ve kullanıcıyı döndürür.
 
-    ⚠ Token iki yerden okunuyor: `Authorization: Bearer` başlığı ve
+    Token iki yerden okunuyor: `Authorization: Bearer` başlığı ve
     `sentinel_token` çerezi. Çerez desteği tarayıcı paneli için —
     `<video>` ve WebSocket bağlantılarına özel başlık eklemek
     tarayıcıda mümkün değil.
@@ -232,7 +232,7 @@ def rol_gerekli(en_az: Rol) -> Any:
         @router.post("/webcam/start")
         async def baslat(u: Kullanici = Depends(rol_gerekli(Rol.OPERATOR))): ...
 
-    ⚠ 403, 401 DEĞİL. İkisi farklı şey söyler: 401 "kim olduğunu
+    403, 401 değil. İkisi farklı şey söyler: 401 "kim olduğunu
     bilmiyorum", 403 "kim olduğunu biliyorum ama bunu yapamazsın".
     Karıştırmak istemciyi sonsuz yeniden giriş döngüsüne sokar.
     """

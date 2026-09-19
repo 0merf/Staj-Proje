@@ -1,14 +1,12 @@
-# ─── YEREL ÇALIŞMA DOKÜMANLARI — GitHub'a GİTMEZ ─────────────
-# Kullanıcı isteği (13.08.2026): plan ve notlar yerelde kalır.
-# ⚠ Bunlar git'te olmadığı için YEDEKLENMİYOR — disk giderse kaybolur.
-#   Ayrı bir yere (OneDrive/USB) kopyasını al.
+# ─── Yerel çalışma notları ──────────────────────────────────────────
+# Plan ve çalışma notlarımı yerelde tutuyorum, depoya koymuyorum.
 PLAN.md
 CLAUDE.md
 LITERATUR.md
 CALISMA.md
 YOL-HARITASI.md
 
-# ─── SIRLAR — ASLA COMMIT EDİLMEZ ────────────────────────────
+# ─── Sırlar ─────────────────────────────────────────────────────────
 .env
 .env.*
 !.env.example
@@ -18,47 +16,30 @@ YOL-HARITASI.md
 secrets/
 **/credentials*.json
 
-# ─── VERİ VE MODELLER (büyük dosyalar) ──────────────────────
-# İçerik yok sayılır ama dizin yapısı .gitkeep ile korunur
+# ─── Veri ve modeller ───────────────────────────────────────────────
+# İçerik depoya girmiyor, klasör yapısı .gitkeep ile korunuyor.
 data/videos/*
 data/datasets/*
 data/clips/*
-# ⚠⚠ 07.09.2026 — YER GERÇEĞİ DOSYALARI İSTİSNA (P-50/P-51)
-#
-# Bu dizin baştan tamamen eleniyordu. Ama içindeki `*.gorsel.json` ve
-# `*.truth.json` dosyaları BÜYÜK VERİ DEĞİL, ÖLÇÜMÜN TANIMI:
-# hangi saniyede olayın başladığını, hangi aralığın doğrulanmış
-# normal olduğunu, hangi aralığın ölçüm dışı bırakıldığını yazıyorlar.
-#
-# ⭐ K8'in tüm sayıları bu dosyalara bağlı. Onlar olmadan
-# `benchmarks/k8_video_*.json` yeniden üretilemez — ve P-50 tam da
-# yer gerçeğinin tanımının sonucu değiştirdiğini gösteren kayıt.
-# Ölçümü saklayıp tanımını atmak, ölçümü saklamamaktır.
-#
-# Birkaç KB; görüntü içermiyorlar.
+# Yer gerçeği dosyaları istisna: *.gorsel.json ve *.truth.json dosyaları
+# birkaç KB, görüntü içermiyor ve K8 ölçümlerinin tanımı bunlarda. Bunlar
+# olmadan benchmarks/k8_video_*.json yeniden üretilemez (P-50).
 data/annotations/*
 !data/annotations/*.gorsel.json
 !data/annotations/*.truth.json
-# MediaMTX sürekli kaydı — olay klibinin kaynağı (~4.5 GB/saat).
-# ⚠ Bunlar gerçek görüntü içerir (webcam dahil); asla commit edilmez.
+# MediaMTX sürekli kaydı. Gerçek görüntü içeriyor (webcam dahil).
 data/recordings/*
 
-# KATMAN A'nın öğrendiği kamera normal profilleri (analytics/anomaly/normalcy.py).
-# Git'e GİRMEZ: makineye ve o makinedeki kamera çiftliğine özel, çalışırken
-# yeniden üretiliyor ve sürekli değişiyor — her koşuda diff üretirdi.
-# ⚠ Ama YEDEKLENMESİ gereken bir şey: profil kaybı sistemin saatlerce
-# kör kalması demek. Üretimde yedekleme politikasına dâhil edilmeli.
+# Kamera normal profilleri (Katman A). Makineye özel, çalışırken sürekli
+# değişiyor. Depoya girmiyor ama yedeklenmesi gerekiyor: profil kaybolursa
+# anomali katmanı yeniden ısınana kadar kör kalıyor.
 data/profiles/*
-# ham indirilen veri setleri (VIRAT, Oxford, PETS…)
+# Ham veri setleri: boyut ve lisans nedeniyle depoya girmiyor.
+# Kaynak ve lisans bilgisi SOURCE.md dosyalarında.
 data/_sources/*
-# Ham veri setleri — git'e ASLA girmez (boyut + lisans).
-# Kaynak/lisans bilgisi data/SOURCE.md dosyalarinda tutulur.
 data/archive/*
-# UBI-Fights (socia-lab.di.ubi.pt/EventDetection) — 1000 video, 7.8 GB.
-# Videolar zaten `*.mp4` ile eleniyor; ama `annotation/` altındaki 1000
-# CSV elenmiyordu ve commit'e girecekti. Üçüncü taraf etiketleri git'e
-# GİRMEZ (boyut değil, LİSANS): veri seti akademik kullanım şartıyla
-# dağıtılıyor, yeniden dağıtım hakkı bizde değil.
+# UBI-Fights: etiket CSV'leri de dahil hiçbiri girmiyor. Veri seti
+# akademik kullanım şartıyla dağıtılıyor, yeniden dağıtım hakkım yok.
 data/UBI_FIGHTS/*
 !data/UBI_FIGHTS/SOURCE.md
 data/fall-01-cam0-rgb/*
@@ -66,50 +47,25 @@ data/fall-01-cam0-rgb/*
 # ffmpeg concat listeleri gibi geçici dosyalar
 data/_tmp/*
 models/*
-# ⚠ 09.09.2026 — MODEL KÜNYELERİ İSTİSNA (P-63)
-#
-# Ağırlık dosyaları git'e girmez (büyük, yeniden üretilebilir) ama
-# KÜNYELER girer: hangi kare hızıyla, hangi özellik dosyasıyla, kaç
-# klip ile eğitildiği. Birkaç KB.
-#
-# Neden: bir FPS taraması üretim modelinin üzerine beş kez yazdı ve
-# üretimde 24.75 FPS'te eğitilmiş bir model bir gün boyunca oturdu.
-# Kimse fark etmedi çünkü model dosyası KENDİSİNİN NE OLDUĞUNU
-# söylemiyordu. Künyeyi yoksaymak, tam da düzeltmeye çalıştığımız
-# körlüğü geri getirirdi.
+# Model künyeleri istisna: hangi kare hızıyla, hangi özellik dosyasıyla,
+# kaç klip ile eğitildiği yazıyor (P-63). Birkaç KB.
 !models/*.kunye.json
-# ⚠⚠ 08.09.2026 — İKİ MODEL DİZİNİ VARDI VE BU SESSİZ BİR HATAYDI.
-#
-# Üretim `config.py · resolve_path()` ile `<kök>/models/` okuyor;
-# ölçüm betikleri ise `backend/models/` yazıyordu. Eğitilen model
-# üretimin BAKMADIĞI yere kaydediliyordu — `SaldirganlikModeli`
-# "model yok" deyip sessizce devre dışı kalıyordu.
-#
-# ⚠ Ayrıca YOLO ağırlıkları İKİ YERDE birden duruyordu (~100 MB kopya).
-# 16 betik `<kök>/models/` okuyacak şekilde düzeltildi.
+# Tüm betikler <kök>/models/ okuyor; backend/models/ eski konumdu (P-63).
 backend/models/*
-# ⭐ İSTİSNA: eğittiğimiz saldırganlık modeli (138 KB). Üçüncü taraf
-# ağırlık değil, BİZİM çıktımız ve K5/K8 sayılarının kaynağı.
-# Git'e girmezse makalenin hiçbir sayısı yeniden üretilemez.
+# İstisna: kendi eğittiğim saldırganlık modeli (138 KB). K5/K8 sayıları
+# bu modelden geliyor, depoda olmazsa yeniden üretilemez.
 !models/saldirganlik_lgbm.txt
 !**/.gitkeep
 
-# ⚠ SOURCE.md dosyalari git'e GİRER — PLAN.md §7.2:
-#   "Her veri seti için indirme adresi, lisans ve alıntı bilgisi."
-# Veri girmez, KAYNAĞIN BELGESİ girer. Bu dosyalar olmadan hangi verinin
-# nereden geldiği ve hangi lisansla kullanıldığı kayboluyor — rapor ve
-# tekrarlanabilirlik açısından veri kadar değerliler.
-#
-# Not: `data/datasets/*` alt DİZİNLERİ de elediği için git içlerine
-# hiç bakmıyordu. Önce dizinleri geri alıyoruz, sonra içeriklerini
-# eliyoruz, en son SOURCE.md'yi kurtarıyoruz — sıra önemli.
+# SOURCE.md dosyaları depoya girer: her veri setinin indirme adresi,
+# lisansı ve alıntı bilgisi. Önce alt klasörleri geri alıp içeriklerini
+# eliyorum, en son SOURCE.md'yi geri ekliyorum (sıra önemli).
 !data/datasets/*/
 data/datasets/*/*
 !data/_sources/*/
 data/_sources/*/*
 !**/SOURCE.md
-# Ağırlıkların SHA256 kaydı git'te DURMALI — tekrarlanabilirlik ve
-# bütünlük doğrulaması için (G26). Dosyaların kendisi değil, sadece kayıt.
+# Ağırlıkların SHA256 kaydı (bütünlük doğrulaması, G26)
 !models/checksums.json
 *.pt
 *.onnx
@@ -122,7 +78,7 @@ data/_sources/*/*
 *.mkv
 *.mov
 
-# ─── PYTHON ──────────────────────────────────────────────────
+# ─── Python ─────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
@@ -141,7 +97,7 @@ env/
 htmlcov/
 .ipynb_checkpoints/
 
-# ─── NODE / FRONTEND ────────────────────────────────────────
+# ─── Node / ön yüz ──────────────────────────────────────────────────
 node_modules/
 frontend/dist/
 frontend/.vite/
@@ -149,15 +105,14 @@ frontend/.vite/
 npm-debug.log*
 yarn-error.log*
 
-# ─── DOCKER / VOLUMES ───────────────────────────────────────
+# ─── Docker birimleri ───────────────────────────────────────────────
 docker-volumes/
 postgres-data/
 valkey-data/
-garage-data/
 grafana-data/
 prometheus-data/
 
-# ─── IDE / OS ───────────────────────────────────────────────
+# ─── IDE / işletim sistemi ──────────────────────────────────────────
 .vscode/*
 !.vscode/settings.json.example
 .idea/
@@ -166,64 +121,50 @@ Thumbs.db
 Desktop.ini
 $RECYCLE.BIN/
 
-# ─── LOG VE GEÇİCİ ──────────────────────────────────────────
+# ─── Log ve geçici dosyalar ─────────────────────────────────────────
 logs/
 *.log
 tmp/
 temp/
 *.tmp
 
-# ─── ÖLÇÜM ÇIKTILARI ────────────────────────────────────────
-# benchmarks/ KLASÖRÜ COMMIT EDİLİR — rapor malzemesi
+# ─── Ölçüm çıktıları ────────────────────────────────────────────────
+# benchmarks/ klasörü depoya girer; ham ve büyük ara dosyalar girmez.
 benchmarks/**/*.raw
 benchmarks/**/*.pkl
 backend/src/sentinel/api/static/app/
 *.tsbuildinfo
 benchmarks/traces/
 
-# E2E test kullanicisi parolasi (P-71) - ASLA commitlenmez
+# E2E test kullanıcısının parolası (P-71)
 frontend/.env.e2e
 
-# Playwright cikti dizinleri
+# Playwright çıktı klasörleri
 frontend/test-results/
 frontend/playwright-report/
 
-# ─── ÖZEL BELGELER — GitHub'a GİTMEZ ────────────────────────
-# Kural (kullanıcı, 12.09.2026): depoya YALNIZCA kod ve kodun
-# bulgularını içeren raporlar girer. Teslim edilecek belgeler,
-# kurum şablonları, kişisel formlar ve sunum notları girmez.
-#
-# GİRMEYE DEVAM EDENLER (bilerek dışarıda bırakılmadı):
-#   docs/decisions/            mimari karar kayıtları
-#   docs/report/problems.md    mühendislik günlüğü (87 kayıt)
-#   docs/report/denetim-hakem.md
-#   docs/report/mimari-hizlandirma.md
-#   docs/report/alarm-etiketleme-kurali.md
-#   docs/report/diagrams/  ·  docs/report/screenshots/
-#   benchmarks/                ölçüm çıktıları
+# ─── Özel belgeler ──────────────────────────────────────────────────
+# Depoya yalnızca kod ve kodun bulgularını içeren belgeler giriyor.
+# Teslim edilecek raporlar, kurum şablonları, kişisel formlar ve sunum
+# notları girmiyor.
 
-# Dergi makalesi: taslaklar, nihai metin, üretilen .docx, CDEJ şablonu,
-# telif devir formu
+# Dergi makalesi (taslaklar, .docx çıktıları, şablon, telif formu)
 docs/report/makale/
-
-# Staj raporu: metin, üretilen .docx, AN02 anketi (kişisel veri içerir)
+# Staj raporu (metin, .docx çıktıları, AN02 anketi)
 docs/report/staj/
-
-# Kurum şablonu (Düzce Üniversitesi staj raporu kılavuzu)
+# Staj raporu kurum şablonu
 docs/report/Staj raporu.docx
 docs/report/assets/
-
-# Sunum notları — ders içi çalışma notları
+# Sunum notları
 docs/report/sunum-notlari*.md
-
-# Başka bir projenin (TEKNOFEST / HepsiJET) nihai raporu; buraya
-# yalnızca yazım dili örneği olsun diye konmuştu
+# Yazım dili örneği olarak koyduğum başka bir projenin raporu
 docs/README.md
+# Makale ve staj raporunu .docx'e çeviren betikler (kişisel bilgi içeriyor)
+backend/scripts/makale_docx.py
+backend/scripts/makale_sablon.py
+backend/scripts/staj_raporu_docx.py
+backend/scripts/staj_raporu_dogrula.py
 
-# Elsevier şekillerinin 600 dpi TIFF kopyaları (~4,6 MB): dergi gönderimi
-# için üretiliyor, scripts/sekiller_elsevier.py ile her an yeniden
-# üretilebilir. Depoya vektör PDF ve PNG girer.
+# Şekillerin 600 dpi TIFF kopyaları: dergi gönderimi için üretiliyor,
+# scripts/sekiller_elsevier.py ile yeniden üretilebilir.
 docs/report/diagrams/elsevier/**/*.tiff
-
-# kurulum.ps1 tarafından üretilen yönetici parolası — ASLA commitlenmez
-GIRIS-BILGILERI.txt

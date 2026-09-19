@@ -3,23 +3,23 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 /**
- * DİYAGRAMLARI PNG'YE ÇEVİR — ve çevirirken DOĞRULA.
+ * Diyagramları PNG'ye çevir — ve çevirirken doğrula.
  *
- * ⭐ NEDEN BİR TEST DOSYASI
+ * Neden bir test dosyası
  * ------------------------
  * İki iş birden yapıyor:
  *   1. Makale/rapor için 2× ölçekli PNG üretiyor (SVG'yi her dergi
  *      kabul etmiyor).
- *   2. ⚠ ASIL SEBEP: SVG'de metin taşması KODDA GÖRÜNMEZ. Bir <text>
+ *   2. Asıl sebep: SVG'de metin taşması kodda görünmez. Bir <text>
  *      kutusundan taşarsa dosya yine geçerli SVG'dir. Burada gerçek
- *      tarayıcıda ölçülüp taşma varsa test DÜŞÜYOR.
+ *      tarayıcıda ölçülüp taşma varsa test düşüyor.
  *
- * Bu, P-77'nin dersinin uygulanması: bir çıktının VAR OLMASI,
+ * Bu, P-77'nin dersinin uygulanması: bir çıktının var olması,
  * kullanılabilir olması demek değil. Kontrol, dosyanın yapacağı işi
  * yapmalı — burada "tarayıcıda düzgün görünmek".
  */
 
-// ⚠ ESM: `__dirname` yok. Playwright'ı proje kökünden koşturuyoruz,
+// ESM: `__dirname` yok. Playwright'ı proje kökünden koşturuyoruz,
 // bu yüzden yol `frontend/` göreli veriliyor.
 const KAYNAK = resolve(process.cwd(), '../docs/report/diagrams')
 
@@ -43,10 +43,10 @@ for (const dosya of dosyalar) {
       { waitUntil: 'load' },
     )
 
-    // ─── İKİ AYRI KONTROL ───
+    // ─── İki ayrı kontrol ───
     //
-    // ⚠ İlk sürüm yalnızca (1)'i yapıyordu ve GERÇEK bir hatayı
-    // kaçırdı: 02-kademeli-isleme'de bir etiket sağ panelin ALTINDA
+    // İlk sürüm yalnızca (1)'i yapıyordu ve gerçek bir hatayı
+    // kaçırdı: 02-kademeli-isleme'de bir etiket sağ panelin altında
     // kalıyordu. viewBox'ın içindeydi, yani (1) temiz diyordu — ama
     // görüntüde metin yarıda kesiliyordu.
     //
@@ -77,9 +77,9 @@ for (const dosya of dosyalar) {
           continue
         }
 
-        // (2) SONRADAN çizilen dolu bir dikdörtgen metni örtüyor mu?
-        //     SVG'de boyama sırası belge sırasıdır: metinden SONRA
-        //     gelen opak bir <rect> onu gizler. (Metinden ÖNCE gelen
+        // (2) sonradan çizilen dolu bir dikdörtgen metni örtüyor mu?
+        //     SVG'de boyama sırası belge sırasıdır: metinden sonra
+        //     gelen opak bir <rect> onu gizler. (Metinden önce gelen
         //     kutu normaldir — kutunun içine yazıyoruz.)
         const benimSiram = sira.get(t) ?? 0
         for (const r of kutular) {
@@ -99,15 +99,15 @@ for (const dosya of dosyalar) {
       console.log(`\n⚠ ${dosya} — SAGA TASAN METINLER:\n  ${tasanlar.join('\n  ')}`)
     }
 
-    // ─── PNG: her koşuda DEĞİL, istenince ───
+    // ─── PNG: her koşuda değil, istenince ───
     //
-    // Kullanıcı isteği: her koşuda yeni görsel üretmek git geçmişini
+    // Her koşuda yeni görsel üretmek git geçmişini
     // şişiriyor. Ama PNG'yi hiç yenilememek de bir tuzak: 10.09'da
     // SVG düzenlendi, PNG yenilenmedi ve commit'lenen görüntü koddan
-    // BİR DÜZENLEME GERİDEYDİ. Gözle bakmasam fark etmeyecekti.
+    // bir düzenleme gerideydi. Gözle bakmasam fark etmeyecekti.
     //
-    // Çözüm: doğrulama HER koşuda çalışıyor (ucuz ve değerli), PNG
-    // yalnızca istenince yazılıyor — ama PNG'nin BAYAT olup olmadığı
+    // Çözüm: doğrulama her koşuda çalışıyor (ucuz ve değerli), PNG
+    // yalnızca istenince yazılıyor — ama PNG'nin bayat olup olmadığı
     // her koşuda denetleniyor. Böylece ne çöp üretiliyor ne de sessiz
     // bir tutarsızlık kalıyor.
     const pngYolu = resolve(KAYNAK, dosya.replace('.svg', '.png'))

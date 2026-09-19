@@ -28,7 +28,7 @@ export function Header({ kullanici }: HeaderProps) {
           <span className="text-xs text-muted">{connection}</span>
         </div>
 
-        {/* ⚠ `tabular-nums` + sabit genişlik: sayaç saniyede bir
+        {/* `tabular-nums` + sabit genişlik: sayaç saniyede bir
             değişiyor ve orantılı rakamlarla her değişimde metnin
             genişliği oynuyordu — yanındaki gezinme düğmelerini
             kaydırarak. */}
@@ -36,8 +36,8 @@ export function Header({ kullanici }: HeaderProps) {
           {ready}/{cameras.length} kamera yayında · {playing} açık
         </span>
 
-        {/* ─── Sayfa gezinmesi (PLAN §10.1) ───
-            ⚠ Router yok, durum değişkeni var. Gerekçe types.ts · Sayfa:
+        {/* ─── Sayfa gezinmesi ───
+            Router yok, durum değişkeni var. Gerekçe types.ts · Sayfa:
             üç görünüm için deep-link gereksinimi olmayan bir panelde
             router bir bağımlılık ve bir URL sözleşmesi getiriyordu. */}
         <nav className="flex gap-1">
@@ -80,7 +80,7 @@ export function Header({ kullanici }: HeaderProps) {
 
           <TemaSecici />
 
-          {/* ⚠ ROL GÖSTERİLİYOR — süs değil.
+          {/* rol gösteriliyor — süs değil.
               Operatör hangi yetkiyle bağlı olduğunu bilmeli: `viewer`
               iken webcam düğmesinin neden 403 döndüğü, rol görünmüyorsa
               anlaşılmaz bir hataya dönüşür. */}
@@ -92,7 +92,7 @@ export function Header({ kullanici }: HeaderProps) {
           </span>
           <button
             onClick={() => {
-              // ⚠ Çıkış sunucu çerezini siliyor; sayfa yenilenerek
+              // Çıkış sunucu çerezini siliyor; sayfa yenilenerek
               // tüm istemci durumu (kamera listesi, alarmlar, açık
               // WebSocket) da temizleniyor. Elle sıfırlamak, ileride
               // eklenecek her yeni durum alanını unutma riski taşırdı.

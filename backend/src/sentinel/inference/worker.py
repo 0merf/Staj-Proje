@@ -1,4 +1,4 @@
-﻿"""GPU çıkarım worker'ı — KADEME 1.
+﻿"""GPU çıkarım worker'ı — kademe 1.
 
 Mimarideki yeri
 ---------------
@@ -6,24 +6,24 @@ Alım worker'larının paylaşımlı belleğe yazdığı kareleri okur, **kamera
 arası toplu (batch)** olarak modele verir, sonuçları JSON olarak
 `inference.results` akışına yazar ve slotu havuza geri verir.
 
-⚠ "TEK KOPYA" KURALI — dayandığı sayı 09.09.2026'da ÇÜRÜDÜ (P-67)
+"Tek kopya" kuralı — dayandığı sayı 09.09.2026'da çürüdü (P-67)
 ------------------------------------------------------------------
 Kural şöyleydi: *"Sistemde yalnızca bir çıkarım süreci çalışır. Sebep
 VRAM: her süreç model ağırlıklarının kendi kopyasını yükler.
-4 süreç × ~4.6 GB = 18 GB, elimizde 8 GB var (PLAN.md §2.2)."*
+4 süreç × ~4.6 GB = 18 GB, elimizde 8 GB var."*
 
 **Ölçüldü: süreç başına 571 MB** (PyTorch'un ayırdığı 415 MB). 4.6 GB
 varsayımı **8 kat** fazlaydı ve hiç ölçülmemişti. Üç süreç ≈ 1.7 GB —
 8 GB'lık kartta rahat.
 
-Ve tek süreç olmanın bedeli ölçüldü: ana döngü SERİ, tavanı **bir
+Ve tek süreç olmanın bedeli ölçüldü: ana döngü seri, tavanı **bir
 çekirdek** (0.89 çekirdek / 20). Sistem 20 kamerada 2.78 FPS'te
 sıkışırken GPU %25-44, VRAM %7, 19 çekirdek boştaydı (P-65/P-66).
 
-⚠⚠ ÇOK WORKER'IN ZORUNLU KOŞULU: KAMERA BÖLÜŞTÜRME
-BoT-SORT takipçisinin durumu worker'ın İÇİNDE, kamera başına tutuluyor.
+Çok worker'ın zorunlu koşulu: kamera bölüştürme
+BoT-SORT takipçisinin durumu worker'ın içinde, kamera başına tutuluyor.
 Tüketici grubu kareleri gelişigüzel dağıtır; aynı kameranın kareleri
-ikiye bölünürse izler kopar ve arıza SESSİZ olur. Her kamera tam olarak
+ikiye bölünürse izler kopar ve arıza sessiz olur. Her kamera tam olarak
 bir worker'a ait olmalı → `--cameras` (bkz. `_kendi_kameram`).
 
 Toplu işlemenin önemi değişmedi: tek süreç, 20 kameradan gelen kareleri
@@ -115,11 +115,11 @@ def build_detector(
 
 
 def build_expression_stage() -> ExpressionStage:
-    """KADEME 2b yüz + ifade kademesini kurar.
+    """Kademe 2b yüz + ifade kademesini kurar.
 
-    ⚠ ÇÖZÜNÜRLÜK UYARISI — bu kademe kısıtlı bir girdiyle çalışıyor
+    Çözünürlük uyarısı — bu kademe kısıtlı bir girdiyle çalışıyor
     -------------------------------------------------------------
-    Kırpıntılar boru hattındaki TEK kareden alınıyor ve o kare artık
+    Kırpıntılar boru hattındaki tek kareden alınıyor ve o kare artık
     ham 1280×720 değil, model uzayındaki 640×640 letterbox (Gün 8
     optimizasyonu · P-18). Yani yüzler kaynağa göre **yarı boyutta.**
 
@@ -148,7 +148,7 @@ def build_expression_stage() -> ExpressionStage:
 
 
 def build_pose_estimator(model_path: str, *, device: str, half: bool) -> PoseEstimator:
-    """KADEME 2a poz tahmincisini kurar.
+    """Kademe 2a poz tahmincisini kurar.
 
     Neden dedektörden ayrı bir model: poz ağırlığı tek başına
     kullanıldığında tespit modelinin bulduğu kişilerin yalnızca %43'ünü
@@ -171,13 +171,13 @@ def build_pose_estimator(model_path: str, *, device: str, half: bool) -> PoseEst
 def _to_source_space(data: dict[str, object], box: Letterbox) -> dict[str, object]:
     """Bir tespitin koordinatlarını model uzayından kaynak kareye taşır.
 
-    ⚠ Bu adım atlanırsa kutular tarayıcıda YANLIŞ YERE çizilir ve hata
+    Bu adım atlanırsa kutular tarayıcıda yanlış yere çizilir ve hata
     sessizdir: koordinatlar geçerli sayılardır, sadece 640×640 uzayına
     aittir. Kaynak kare 1280×720 olduğu için kutular sol üst köşeye
     toplanmış ve küçülmüş görünür.
 
     Taşınması gereken üç şey var: kutu köşeleri, iskelet noktaları ve
-    hız vektörü. Hız bir FARK olduğu için dolgu payı eklenmez, yalnızca
+    hız vektörü. Hız bir fark olduğu için dolgu payı eklenmez, yalnızca
     ölçek uygulanır (bkz. Letterbox.to_source_length).
     """
     bbox = data.get("bbox")
@@ -226,7 +226,7 @@ def _serialize(
     Her iz kimliği (`id`) ve hız vektörü (`v`) taşır — tarayıcı iki
     tespit arasında kutunun konumunu bunlarla tahmin eder.
 
-    ⚠ Kareler alım tarafında model uzayına (640×640 letterbox)
+    Kareler alım tarafında model uzayına (640×640 letterbox)
     taşındığı için tespitler de o uzayda çıkar. Tarayıcıya gitmeden
     önce kaynak piksel uzayına geri çevriliyorlar.
     """
@@ -241,31 +241,31 @@ def _serialize(
             "motion": round(motion, 5),
             "gate": gate,
             "count": len(tracks),
-            # Bu karenin ANALİZ YOLUNDA harcadığı süre (ms). Tarayıcı
+            # Bu karenin analiz yolunda harcadığı süre (ms). Tarayıcı
             # bunu videonun kendi gecikmesiyle karşılaştırıp kutuları
-            # ne kadar geriden çizmesi gerektiğini HESAPLAYABİLİYOR —
+            # ne kadar geriden çizmesi gerektiğini hesaplayabiliyor —
             # kullanıcının gözüyle tahmin etmesine gerek kalmıyor.
             "lat": round(latency_ms),
-            # ⭐⭐ KAYNAK VİDEODAKİ ZAMAN (saniye) — YER GERÇEĞİNİN ANAHTARI
+            # Kaynak videodaki zaman (saniye) — yer gerçeğinin anahtarı
             #
-            # ⚠ Bu alan olmadan bir alarmın DOĞRU olup olmadığı
+            # Bu alan olmadan bir alarmın doğru olup olmadığı
             # doğrulanamıyordu. Olay kaydında yalnızca duvar saati (`ts`)
             # vardı; kameralarımız sonsuz döngüdeki video dosyaları
             # olduğu için duvar saati videodaki ana çevrilemiyordu.
             #
             # Sonuç: sistem alarm üretiyordu ve **hiç kimse o alarmın
             # gerçek olup olmadığını söyleyemiyordu.** K7'nin
-            # "11.69 alarm/kamera-saat" sayısı bu yüzden bir ALARM
+            # "11.69 alarm/kamera-saat" sayısı bu yüzden bir alarm
             # oranıdır, yanlış alarm oranı değil.
             #
             # `pts` ile her alarm kaynak videoda tam olarak bulunabiliyor:
             #     ffmpeg -ss <pts-3> -t 6 -i data/videos/<cam>.mp4 klip.mp4
-            # İzle, "gerçek / yanlış" etiketle → K7 ilk kez GERÇEK bir
+            # İzle, "gerçek / yanlış" etiketle → K7 ilk kez gerçek bir
             # yanlış alarm oranı olur.
             #
-            # ⭐ Bilgi boru hattında zaten VARDI (`FrameMessage.pts`);
+            # Bilgi boru hattında zaten vardı (`FrameMessage.pts`);
             # yalnızca sonuç yükünde düşürülüyordu. Eksik olan ölçüm
-            # değil, ölçümün TAŞINMASIYDI.
+            # değil, ölçümün taşınmasıydı.
             "pts": round(pts, 3),
             "detections": detections,
         },
@@ -276,7 +276,7 @@ def _serialize(
 class InferenceWorker:
     """Kare akışını tüketip tespit sonucu üreten worker."""
 
-    # GPU kullanım metriği okunamadığında yalnızca BİR kez uyarılsın
+    # GPU kullanım metriği okunamadığında yalnızca bir kez uyarılsın
     # diye (bkz. `_gpu_olc`). Sınıf değişkeni: worker tek kopya.
     _gpu_util_uyarildi = False
 
@@ -301,18 +301,18 @@ class InferenceWorker:
         self._batch_size = batch_size
         self._block_ms = block_ms
         self._max_age_s = max_age_ms / 1000.0 if max_age_ms > 0 else 0.0
-        # ⚠ Parti doldurma — varsayılan KAPALI, gerekçesi aşağıda
+        # Parti doldurma — varsayılan kapalı, gerekçesi aşağıda
         self._batch_fill_s = batch_fill_ms / 1000.0 if batch_fill_ms > 0 else 0.0
-        # ⭐ Bu worker'a ait kamera kümesi (boş = hepsi). Çok worker'lı
-        # bölüştürmede AYRIK olmalı — gerekçesi `_kendi_kameram`.
+        # Bu worker'a ait kamera kümesi (boş = hepsi). Çok worker'lı
+        # bölüştürmede ayrık olmalı — gerekçesi `_kendi_kameram`.
         self._kameralar: frozenset[str] = frozenset(kameralar or ())
         # Kamera başına ayrı takipçi durumu (bkz. tracker/botsort.py)
         self._tracker = BotSortTracker(frame_rate=int(settings.target_fps))
 
         self._client = connect()
-        # ⭐ PARÇA AKIŞI (P-67): `--parca N` verilirse yalnızca
+        # Parça akışı (P-67): `--parca N` verilirse yalnızca
         # `frames.ready.N` okunur. Alım katmanı kameraları oraya
-        # yönlendiriyor, yani bu worker'a YALNIZCA kendi kameraları
+        # yönlendiriyor, yani bu worker'a yalnızca kendi kameraları
         # geliyor — filtreleyip atmaya gerek yok, kayıp da yok.
         self._frames = FrameStream(
             self._client,
@@ -322,7 +322,7 @@ class InferenceWorker:
         self._results = ResultStream(self._client)
         self._allocator = SlotAllocator(self._client, settings.shm_slot_count)
         self._frames.ensure_group(GROUP)
-        # ⚠ Önceki koşudan kalan asılı mesajların slotlarını kurtar.
+        # Önceki koşudan kalan asılı mesajların slotlarını kurtar.
         # Bunsuz her sert kapanma havuzu kalıcı olarak küçültüyor
         # (bkz. `_sahipsizleri_kurtar`).
         self._sahipsiz_son_tarama = 0.0
@@ -346,7 +346,7 @@ class InferenceWorker:
         self.track_ms: deque[float] = deque(maxlen=500)
         self.expr_ms: deque[float] = deque(maxlen=500)
         self.e2e_ms: deque[float] = deque(maxlen=500)
-        # KADEME 2b durum sözlüğü zamanla şişer; periyodik temizlenmeli.
+        # Kademe 2b durum sözlüğü zamanla şişer; periyodik temizlenmeli.
         self._last_expr_prune = 0.0
         # Boru hattı muhasebesi: batch başına toplam süre nereye gidiyor?
         self.wait_ms: deque[float] = deque(maxlen=500)
@@ -357,7 +357,7 @@ class InferenceWorker:
         self._window_started = 0.0
         self._window_processed = 0
         # Kapasite bildirimi için ayrı pencere — rapor aralığından
-        # BAĞIMSIZ olmalı: alım katmanı kapasiteyi sık öğrenmeli
+        # bağımsız olmalı: alım katmanı kapasiteyi sık öğrenmeli
         # (birkaç saniye), istatistik ise seyrek basılır.
         self._capacity_window_started = 0.0
         self._capacity_window_processed = 0
@@ -390,9 +390,9 @@ class InferenceWorker:
         self._capacity_window_processed = 0
         deadline = started + duration if duration else None
 
-        # ⚠ AÇILIŞTA İKİ AŞAMALI KURTARMA
+        # Açılışta iki aşamalı kurtarma
         #
-        # 1. Asılı mesajları sahiplen ve slotlarını bırak. Bu, AKIŞTA
+        # 1. Asılı mesajları sahiplen ve slotlarını bırak. Bu, akışta
         #    hâlâ duran mesajları kurtarıyor.
         # 2. Muhasebe: akış sınırlı olduğu için asılı bir mesaj o sırada
         #    akıştan düşmüş olabilir ve slot numarası artık bilinmiyor.
@@ -403,7 +403,7 @@ class InferenceWorker:
         self._sizan_slotlari_kurtar()
 
         while not _stop:
-            # ⚠ Düzenli tarama: bu worker koşarken BAŞKA bir tüketici
+            # Düzenli tarama: bu worker koşarken başka bir tüketici
             # ölmüş olabilir (ölçüm betikleri worker'ı yeniden
             # başlatıyor). 60 saniyede bir bakmak, sızıntının havuzu
             # tüketmesine izin vermeyecek kadar sık.
@@ -412,7 +412,7 @@ class InferenceWorker:
                 self._sahipsizleri_kurtar()
                 self._sahipsiz_son_tarama = simdi_mono
 
-            # ⚠ BEKLEME SÜRESİ AYRI ÖLÇÜLÜYOR
+            # Bekleme süresi ayrı ölçülüyor
             # "Kare başına 16 ms harcıyoruz ama 62 değil 25 FPS alıyoruz"
             # açığını kapatmak için: döngünün ne kadarı iş, ne kadarı
             # kare beklemek? İkisi karışırsa hangi tarafı iyileştireceğimizi
@@ -427,8 +427,8 @@ class InferenceWorker:
                 batch = self._partiyi_doldur(batch)
             _bekleme = (time.perf_counter() - t_wait) * 1000.0
             self.wait_ms.append(_bekleme)
-            # ⚠ `bekleme_IS_DEGIL` adı bilinçli: bu süre CPU harcamıyor,
-            # kare gelmesini bekliyor. Diğer aşamalarla TOPLANMAMALI.
+            # `bekleme_IS_DEGIL` adı bilinçli: bu süre CPU harcamıyor,
+            # kare gelmesini bekliyor. Diğer aşamalarla toplanmamalı.
             # Adı uyarmazsa toplanır — P-61'de `decode_duration` tam olarak
             # böyle "çözme süresi" sanılmıştı.
             metrics.inference_duration.labels(stage="bekleme_IS_DEGIL").observe(
@@ -460,7 +460,7 @@ class InferenceWorker:
     def _sahipsizleri_kurtar(self, *, ilk: bool = False) -> int:
         """Ölmüş bir tüketicide asılı kalan slotları havuza döndürür.
 
-        ⚠ NEDEN BU FONKSİYON VAR — 30.08.2026'da ölçülen arıza
+        Neden bu fonksiyon var — 30.08.2026'da ölçülen arıza
         Çıkarım worker'ı sert kapatıldığında elindeki mesajlar tüketici
         grubunda asılı kalıyor ve **paylaşımlı bellek slotları havuza
         geri dönmüyordu.** Yeni worker `>` ile yalnızca yeni mesajları
@@ -468,19 +468,19 @@ class InferenceWorker:
 
             48 slotun 48'i sızmış · boş slot 0/48 · üretim durmuş
 
-        Arıza SESSİZ: tüm süreçler ayakta, panel bağlı, alım worker'ı
+        Arıza sessiz: tüm süreçler ayakta, panel bağlı, alım worker'ı
         slot bulamadığı için kareleri atıyor — ve sistem hiçbir şey
         işlemiyor.
 
-        ⚠ KARE İŞLENMİYOR, YALNIZCA SLOT KURTARILIYOR
-        Kurtarılan mesajlar saniyelerce beklemiş, yani ZATEN BAYAT
+        Kare işlenmiyor, yalnızca slot kurtarılıyor
+        Kurtarılan mesajlar saniyelerce beklemiş, yani zaten bayat
         (`max_frame_age_ms` = 400 ms). "Eski kare değersizdir" ilkesi
         gereği işlenmeden atılıyor; kurtarılan şey slotun kendisi.
 
-        ⚠ Açılışta `bosta_ms` KÜÇÜK (1 sn), sonra BÜYÜK (30 sn).
+        Açılışta `bosta_ms` küçük (1 sn), sonra büyük (30 sn).
         Açılışta gruptaki her asılı mesaj tanımı gereği ölü bir
         tüketiciye ait — bu worker henüz hiçbir şey okumadı. Koşu
-        sırasında ise kısa eşik, yavaş ama SAĞ bir tüketicinin
+        sırasında ise kısa eşik, yavaş ama sağ bir tüketicinin
         mesajlarını elinden alıp aynı kareyi iki kez işletirdi.
         """
         toplam = 0
@@ -509,19 +509,19 @@ class InferenceWorker:
         return toplam
 
     def _sizan_slotlari_kurtar(self) -> int:
-        """Muhasebeyle kayıp slotları havuza döndürür — YALNIZCA açılışta.
+        """Muhasebeyle kayıp slotları havuza döndürür — yalnızca açılışta.
 
         Bir slot üç yerden birinde olmak zorunda: boş listede, akıştaki
         bir mesajın referansında, ya da bir tüketicinin elinde. Üçünde
         de yoksa sızmıştır.
 
-        ⚠ NEDEN YALNIZCA AÇILIŞTA
+        Neden yalnızca açılışta
         Üçüncü kalem ("bir tüketicinin elinde") ancak bu worker'ın
         kendi elindekiler bilindiğinde hesaplanabiliyor. Açılışta o
-        küme BOŞ — henüz hiçbir şey okumadık. Koşu sırasında çağırmak,
+        küme boş — henüz hiçbir şey okumadık. Koşu sırasında çağırmak,
         işlemekte olduğumuz karelerin slotlarını havuza atmak olurdu.
 
-        ⚠ TEK ÇIKARIM WORKER'I varsayımına dayanıyor ve o varsayım
+        Tek çıkarım worker'ı varsayımına dayanıyor ve o varsayım
         mimari kural 3'ün kendisi ("modeller tek süreçte tek kopya").
         İkinci bir worker varsa zaten mimari ihlal edilmiş demektir.
         """
@@ -542,7 +542,7 @@ class InferenceWorker:
     def _partiyi_doldur(self, batch: list) -> list:  # type: ignore[type-arg]
         """Parti hedefe ulaşana ya da süre dolana kadar kare toplar.
 
-        ⚠ NEDEN GEREKLİ
+        Neden gerekli
         `XREADGROUP ... BLOCK` **eldeki ilk kareyle** dönüyor, `COUNT`
         kadar birikmesini beklemiyor. Çıkarım worker'ı üretimden hızlı
         olduğu için sürekli yarım parti alıyordu.
@@ -554,17 +554,17 @@ class InferenceWorker:
         Bu iki şeye mal oluyor:
           · Python/CUDA çağrı başına sabit maliyet daha az kareye
             bölünüyor
-          · TensorRT motoru SABİT parti istiyor (dinamik şekil YOLO26'nın
+          · TensorRT motoru sabit parti istiyor (dinamik şekil YOLO26'nın
             dikkat bloğunda kırılıyor). Yarım partiyi doldurup vermek,
-            küçük partide %26-77 KAYIP demek — yani motor bu dağılımla
+            küçük partide %26-77 kayıp demek — yani motor bu dağılımla
             kullanılamaz
 
-        ⚠ BEDELİ GECİKME, VE BÜTÇESİ VAR
+        Bedeli gecikme, ve bütçesi var
         En fazla `batch_fill_ms` kadar bekliyoruz. K3 kriteri ≤1500 ms;
         ölçülen p50 gecikme 377 ms. Yani ~1100 ms boşluk var ve 40-80 ms
         beklemek bunun küçük bir dilimi.
 
-        ⚠ VARSAYILAN 0 (KAPALI). Bu bir iyimserlik değil disiplin: aynı
+        Varsayılan 0 (kapalı). Bu bir iyimserlik değil disiplin: aynı
         proje daha önce ölçülmeden açılan bir özellikle (kapasite geri
         basıncı) kendi verimini yarıya düşürmüştü. Değer ölçümle
         belirlenip açılacak.
@@ -589,7 +589,7 @@ class InferenceWorker:
         return batch
 
     def _run_batch(self, batch: list) -> None:  # type: ignore[type-arg]
-        # ⭐ TOPLAM PARTİ SÜRESİ — aşamaların ARASINDA kalan işi görmek için.
+        # Toplam parti süresi — aşamaların arasında kalan işi görmek için.
         #
         # Aşamaları tek tek ölçmek yetmiyor: ilk kırılımda aşamalar
         # 6.97 ms/kare veriyordu ama kare başına gerçek CPU ~15 ms'ti.
@@ -597,14 +597,14 @@ class InferenceWorker:
         # tespitleri Track nesnelerine çevirmek, poz kırpıntılarını
         # hazırlamak, döngü yükü, metrik çağrıları.
         #
-        # ⚠ Parçaları ölçüp toplamı ölçmemek, "kalanı sıfırdır" demeyi
-        # sessizce varsaymaktır. Toplamı da ölçünce fark GÖRÜNÜR hale
+        # Parçaları ölçüp toplamı ölçmemek, "kalanı sıfırdır" demeyi
+        # sessizce varsaymaktır. Toplamı da ölçünce fark görünür hale
         # geliyor ve ancak o zaman kovalanabiliyor.
         t_parti = time.perf_counter()
         try:
             self._run_batch_ic(batch)
         finally:
-            # ⚠ `observe` SANİYE bekliyor; `perf_counter` farkı zaten saniye.
+            # `observe` saniye bekliyor; `perf_counter` farkı zaten saniye.
             metrics.inference_duration.labels(stage="parti_TOPLAM").observe(
                 (time.perf_counter() - t_parti) / max(len(batch), 1),
             )
@@ -615,7 +615,7 @@ class InferenceWorker:
         images = [self._pool.read(message.ref) for message in batch]
         _okuma = (time.perf_counter() - t_read) * 1000.0
         self.read_ms.append(_okuma)
-        # ⚠⚠ 09.09.2026 — BU SÜRELER ZATEN ÖLÇÜLÜYORDU, DIŞARI ÇIKMIYORDU
+        # 09.09.2026 — bu süreler zaten ölçülüyordu, dışarı çıkmıyordu
         #
         # `read_ms` / `publish_ms` / `release_ms` / `wait_ms` Gün 1'den beri
         # toplanıyor ama yalnızca konsol özetine basılıyordu. Prometheus'a
@@ -626,9 +626,9 @@ class InferenceWorker:
         # diye bilinmeyen bir kutuydu (P-65). Kutunun içi zaten
         # ölçülmüştü — sadece kimse bakamıyordu.
         #
-        # ⭐ P-60'ın aynısı: `queue_depth` de yayınlanıyordu, hiçbir betik
+        # P-60'ın aynısı: `queue_depth` de yayınlanıyordu, hiçbir betik
         # okumuyordu. Aynı hafta ikinci kez: veri toplamak, veriyi
-        # GÖRÜNÜR kılmak değildir.
+        # görünür kılmak değildir.
         metrics.inference_duration.labels(stage="shm_read").observe(
             _okuma / 1000.0 / len(batch),
         )
@@ -649,8 +649,8 @@ class InferenceWorker:
         metrics.inference_duration.labels(stage="detect").observe(infer_s / len(batch))
         metrics.batch_size.observe(len(batch))
 
-        # ─── KADEME 2a: poz ─────────────────────────────────
-        # Takipten ÖNCE çalışır. Sebep: takipçi keypoint'leri kaynak
+        # ─── Kademe 2a: poz ─────────────────────────────────
+        # Takipten önce çalışır. Sebep: takipçi keypoint'leri kaynak
         # tespitten `det_idx` üzerinden taşıyor (botsort.py); iskeleti
         # tespite şimdi yazarsak kimlikle birlikte kendiliğinden gidiyor.
         #
@@ -672,7 +672,7 @@ class InferenceWorker:
                 metrics.inference_duration.labels(stage="pose").observe(pose_s / len(batch))
                 self.pose_ms.append(pose_s / len(batch) * 1000.0)
 
-        # ─── KADEME 1b: takip ───────────────────────────────
+        # ─── Kademe 1b: takip ───────────────────────────────
         # Tespitler kimliksizdir. Takipçi her kişiye kalıcı bir kimlik
         # ve hız vektörü verir. Kamera bazlı sıralı işlenmeli — batch
         # içindeki mesajlar zaten akış sırasında geliyor.
@@ -685,13 +685,13 @@ class InferenceWorker:
         metrics.inference_duration.labels(stage="track").observe(track_s / len(batch))
         self.track_ms.append(track_s / len(batch) * 1000.0)
 
-        # ⚠ Duvar saati — `captured_at` alım SÜRECİNDE damgalandı ve
+        # Duvar saati — `captured_at` alım sürecinde damgalandı ve
         # monotonik saatlerin süreçler arası farkı tanımsızdır
         # (gerekçe: ingest/decoder.py · DecodedFrame.timestamp).
         now_wall = time.time()
 
-        # ─── KADEME 2b: yüz + ifade ─────────────────────────
-        # Takipten SONRA çalışıyor, çünkü kapının ikinci basamağı
+        # ─── Kademe 2b: yüz + ifade ─────────────────────────
+        # Takipten sonra çalışıyor, çünkü kapının ikinci basamağı
         # "bu İZ için süre doldu mu" — kimlik olmadan seyreltme
         # yapılamaz, her karede aynı kişiyi baştan sınıflandırırdık.
         #
@@ -702,7 +702,7 @@ class InferenceWorker:
             self._run_expression(batch, images, tracked, now_wall)
 
         t_publish = time.perf_counter()
-        # ⭐ Serileştirme ile yayınlama AYRI ölçülüyor: ikisi farklı
+        # Serileştirme ile yayınlama ayrı ölçülüyor: ikisi farklı
         # müdahale gerektiriyor. Serileştirme saf CPU (JSON kurma) —
         # çözümü msgpack ya da daha yalın bir yük. Yayınlama Valkey I/O —
         # çözümü çağrıları boru hattına almak. Birlikte ölçülselerdi
@@ -761,22 +761,22 @@ class InferenceWorker:
         tracked: list[list[Track]],
         now: float,
     ) -> None:
-        """KADEME 2b'yi batch'teki her kareye uygular.
+        """Kademe 2b'yi batch'teki her kareye uygular.
 
         Sonuç doğrudan `Track.expression` alanına yazılıyor; oradan
         `to_dict()` ile mesaja giriyor.
 
         İki tür sonuç var ve ikisi de kullanılıyor:
-          · bu turda SINIFLANDIRILAN izler → `results` sözlüğünden
+          · bu turda sınıflandırılan izler → `results` sözlüğünden
           · daha önce sınıflandırılmış izler → `last_for()` ile
 
         İkincisi olmasa etiket 2 saniyede bir yanıp sönerdi: kademe
         seyrek çalıştığı için aradaki karelerde sonuç üretilmiyor.
-        Son bilinen etiketi taşımak, PLAN §6.3'ün "zamansal yumuşatma"
+        Son bilinen etiketi taşımak, proje planının "zamansal yumuşatma"
         gereğinin doğal sonucu.
 
-        ⚠ Hata YUTULUYOR. Bu kademe füzyonda 0.10 ağırlıklı bir yan
-        sinyal; çökmesi KADEME 1'i (her şeyin temeli) durdurmamalı.
+        Hata yutuluyor. Bu kademe füzyonda 0.10 ağırlıklı bir yan
+        sinyal; çökmesi kademe 1'i (her şeyin temeli) durdurmamalı.
         """
         assert self._expression is not None
         t0 = time.perf_counter()
@@ -832,9 +832,9 @@ class InferenceWorker:
         return out
 
     def _kendi_kameram(self, batch: list) -> list:  # type: ignore[type-arg]
-        """Bu worker'a ait OLMAYAN kareleri işlemeden bırakır (P-67 · B).
+        """Bu worker'a ait olmayan kareleri işlemeden bırakır (P-67 · B).
 
-        ⚠⚠ NEDEN KAMERA BÖLÜŞTÜRME ŞART — naif paylaşım SESSİZCE BOZAR
+        Neden kamera bölüştürme şart — naif paylaşım sessizce bozar
         ----------------------------------------------------------------
         Birden çok çıkarım worker'ı aynı tüketici grubundan okuyabilir ve
         Valkey kareleri aralarında **gelişigüzel** dağıtır. Ama BoT-SORT
@@ -844,16 +844,16 @@ class InferenceWorker:
         Aynı kameranın kareleri iki worker'a bölünürse her ikisinde de
         **yarım iz** oluşur: kimlikler kopar, hız vektörleri saçmalar ve
         zamansal özelliklerin (pencere, tırmanma, model) tamamı bozulur.
-        Ve arıza SESSİZDİR — sistem çalışmaya, alarm üretmeye devam eder.
+        Ve arıza sessizdir — sistem çalışmaya, alarm üretmeye devam eder.
 
         Bu yüzden her kamera **tam olarak bir** worker'a ait olmalı.
 
-        ⚠ ATILAN KARE MUTLAKA SERBEST BIRAKILMALI
+        Atılan kare mutlaka serbest bırakılmalı
         `_release` çağrılmazsa slot havuza dönmez ve üretici birkaç
         saniye içinde `no_slot`a düşer — P-38'in aynısı. Bu yüzden
         `_drop_stale` ile aynı deseni izliyor.
 
-        ⚠ İSRAF DÜRÜSTÇE: bu tasarımda her worker TÜM kareleri okuyup
+        Açık konuşmak gerekirse israf var: bu tasarımda her worker tüm kareleri okuyup
         çoğunu atıyor. Temiz çözüm kamera başına ayrı akış olurdu; bu
         sürüm ölçüm yapabilmek için bilinçli olarak basit tutuldu.
         Atılanlar `reason="baska_worker"` ile sayılıyor, gizlenmiyor.
@@ -871,12 +871,12 @@ class InferenceWorker:
         return benim
 
     def _drop_stale(self, batch: list) -> list:  # type: ignore[type-arg]
-        """Çok eskimiş kareleri İŞLEMEDEN atar.
+        """Çok eskimiş kareleri işlemeden atar.
 
-        ⚠ BU, GECİKMEYİ SINIRLAYAN TEK MEKANİZMA
+        BU, gecikmeyi sınırlayan tek mekanizma
         ----------------------------------------
         "Eski kare değersizdir" ilkesini P-12'den beri söylüyoruz ama
-        şimdiye kadar yalnızca ÜRETİCİ tarafında uyguluyorduk (slot
+        şimdiye kadar yalnızca üretici tarafında uyguluyorduk (slot
         yoksa at). Tüketici tarafında hiç uygulanmıyordu: kuyruğa giren
         kare, ne kadar beklerse beklesin sonunda işleniyordu.
 
@@ -886,7 +886,7 @@ class InferenceWorker:
         geliyordu.
 
         Eski kareyi işlemek iki kez zarar veriyor: (1) sonucu zaten
-        değersiz, (2) o sırada TAZE kare işlenemiyor. Atmak her iki
+        değersiz, (2) o sırada taze kare işlenemiyor. Atmak her iki
         sorunu da çözüyor ve sistem kendi kendini toparlıyor —
         birikim ne kadar büyükse o kadar hızlı eritiliyor.
 
@@ -898,7 +898,7 @@ class InferenceWorker:
         if self._max_age_s <= 0:
             return batch
 
-        # ⚠ Duvar saati — `captured_at` başka bir süreçten geliyor
+        # Duvar saati — `captured_at` başka bir süreçten geliyor
         # (gerekçe: ingest/decoder.py · DecodedFrame.timestamp).
         now = time.time()
         fresh = [m for m in batch if now - m.captured_at <= self._max_age_s]
@@ -913,7 +913,7 @@ class InferenceWorker:
     def _release(self, batch: list) -> None:  # type: ignore[type-arg]
         """Slotları havuza geri ver ve mesajları onayla.
 
-        Bu ikisi ATLANIRSA sistem kilitlenir: üretici boş slot bulamaz.
+        Bu ikisi atlanırsa sistem kilitlenir: üretici boş slot bulamaz.
         Hata yolunda bile çağrılmalı (P-10).
         """
         self._allocator.release_many([m.ref.slot for m in batch])
@@ -952,14 +952,14 @@ class InferenceWorker:
     def _publish_capacity(self, now: float) -> None:
         """Ölçülen tüketim hızını alım katmanına bildirir.
 
-        ⚠ NEDEN — israfı kesmek için
+        Neden — israfı kesmek için
         Alım 80 kare/sn üretirken çıkarım ~6 kare/sn tüketiyordu ve
         karelerin %89'u atılıyordu. Atmak gecikmeyi sınırlıyor (P-25)
         ama atılan her kare için decode + BGR + letterbox CPU'su zaten
         ödenmiş oluyor — ve o CPU, aynı çekirdekleri paylaşan bu
         süreçten çalınıyor.
 
-        ÖLÇÜLEN hız yayınlanıyor, teorik tavan değil: gerçek hız
+        Ölçülen hız yayınlanıyor, teorik tavan değil: gerçek hız
         termal kısıtlama, kalabalık sahne ve CPU çekişmesini zaten
         içinde barındırıyor. Teorik bir sayı bunları göremezdi.
 
@@ -992,7 +992,7 @@ class InferenceWorker:
         metrics.shm_slots_free.set(self._allocator.available)
         metrics.queue_depth.labels(queue=self._frames.name).set(self._frames.depth)
         metrics.queue_depth.labels(queue=self._results.name).set(self._results.depth)
-        # ⭐ ASIL geri basınç: gruba teslim edilmemiş kayıt (P-60).
+        # Asıl geri basınç: gruba teslim edilmemiş kayıt (P-60).
         # `depth` (XLEN) MAXLEN tavanına çakılıyor ve birikmeyi
         # gösteremiyor; `lag` tüketici yetiştikçe sıfıra iniyor.
         gecikme = self._frames.grup_gecikmesi(GROUP)
@@ -1007,15 +1007,15 @@ class InferenceWorker:
     def _gpu_olc() -> None:
         """VRAM ve GPU kullanımını metriklere yazar.
 
-        ⚠ NEDEN `memory_reserved`, `memory_allocated` DEĞİL
+        Neden `memory_reserved`, `memory_allocated` değil
         PyTorch ayırıcısı işletim sisteminden blok blok VRAM alıyor ve
-        tensör serbest bırakılınca o bloğu OS'e geri VERMİYOR — yeniden
+        tensör serbest bırakılınca o bloğu OS'e geri vermiyor — yeniden
         kullanmak için elinde tutuyor. `memory_allocated` şu anda canlı
         tensörleri sayar; `memory_reserved` sürecin gerçekten işgal
-        ettiği VRAM'i. VRAM bütçesi (PLAN §2.2, 4.6 GB / 7 GB) ikincisi
+        ettiği VRAM'i. VRAM bütçesi (4.6 GB / 7 GB) ikincisi
         üzerinden tutulmalı: başka bir sürecin kullanamayacağı miktar o.
 
-        ⚠ GPU KULLANIMI OKUNAMAYABİLİR — ve sessizce sıfır YAZILMIYOR
+        GPU kullanımı okunamayabilir — ve sessizce sıfır yazılmıyor
         `torch.cuda.utilization()` pynvml gerektiriyor; yoksa istisna
         atıyor. O durumda metrik hiç güncellenmiyor (Prometheus'ta
         "veri yok" görünür). Alternatif olan `.set(0)`, ölçülemeyen bir
@@ -1033,7 +1033,7 @@ class InferenceWorker:
         try:
             metrics.gpu_utilization.set(torch.cuda.utilization())
         except Exception as exc:  # pragma: no cover — pynvml yoksa
-            # ⚠ Bir KEZ uyarılıyor, her raporda değil: bu çağrı 5
+            # Bir kez uyarılıyor, her raporda değil: bu çağrı 5
             # dakikada bir yapılıyor ve pynvml kalıcı olarak yoksa log
             # gereksiz yere şişerdi. Ama tamamen sessiz kalmak da
             # yanlış: GPU panosunun neden boş olduğu sorulduğunda
@@ -1051,7 +1051,7 @@ class InferenceWorker:
     def _p50(samples: deque[float]) -> float:
         """Medyan.
 
-        ⚠ Kasıtlı olarak ortalama DEĞİL. Worker her başladığında kuyrukta
+        Kasıtlı olarak ortalama değil. Worker her başladığında kuyrukta
         birikmiş kareleri bulur ve ilk saniyelerde hem soğuk çekirdeklerle
         hem birikimle boğuşur; bu tek seferlik sıçramalar ortalamayı
         kalıcı olarak yukarı çeker ve sistem sanki yavaşmış gibi görünür.
@@ -1123,9 +1123,9 @@ class InferenceWorker:
                     f"iskelet çıkan %{stats['skeleton_hit_rate'] * 100:.1f}"
                 )
 
-        # KADEME 2b — kapının nerede eleme yaptığı raporlanıyor.
+        # Kademe 2b — kapının nerede eleme yaptığı raporlanıyor.
         # "Kaç sınıflandırma yapıldı" tek başına yanıltıcı: 0 çıkması
-        # modülün bozuk olduğunu değil, uygun GİRDİ olmadığını gösteriyor
+        # modülün bozuk olduğunu değil, uygun girdi olmadığını gösteriyor
         # olabilir. Eleme dağılımı bu ikisini ayırt ediyor.
         if self._expression is not None:
             e = self._expression.stats
@@ -1140,7 +1140,7 @@ class InferenceWorker:
                 f"yüz yok {e['no_face']:.0f} · kalitesiz {e['low_quality']:.0f}"
             )
 
-        # Kimlik kararlılığı (PLAN.md §6.1): zamansal analizin tamamı
+        # Kimlik kararlılığı: zamansal analizin tamamı
         # buna dayanıyor. Parçalanma oranı yüksekse "bu kişi 3 saniyedir
         # hızlanıyor" cümlesi kurulamaz.
         t = self._tracker.stats
@@ -1244,8 +1244,8 @@ def main() -> int:
         try:
             expression = build_expression_stage()
         except Exception as exc:
-            # KADEME 2b yan bir sinyal (füzyonda 0.10 ağırlık). Modeli
-            # yüklenemiyorsa sistem ONSUZ devam etmeli — tespit ve takip
+            # Kademe 2b yan bir sinyal (füzyonda 0.10 ağırlık). Modeli
+            # yüklenemiyorsa sistem onsuz devam etmeli — tespit ve takip
             # her şeyin temeli ve onlar çalışıyor.
             log.error("ifade_kademesi_kurulamadi", error=f"{type(exc).__name__}: {exc}")
 

@@ -2,20 +2,20 @@
 
 Neden bu araca ihtiyaç var
 --------------------------
-K8 kriteri (PLAN §1.4): *"erken uyarı avansı ≥ 2 saniye"* — yani sistem
-olayı, olay OLMADAN önce haber vermeli. Bunu ölçmek için iki zamana
+K8 kriteri: *"erken uyarı avansı ≥ 2 saniye"* — yani sistem
+olayı, olay olmadan önce haber vermeli. Bunu ölçmek için iki zamana
 ihtiyaç var:
 
     (a) sistemin alarm verdiği an      → boru hattından çıkıyor
-    (b) olayın gerçekten başladığı an  → ELDE YOK
+    (b) olayın gerçekten başladığı an  → elde yok
 
-⚠ RWF-2000 ETİKETİ (b)'Yİ VERMİYOR — ve K8'in zor olmasının sebebi bu
+RWF-2000 etiketi (b)'yi vermiyor — ve K8'in zor olmasının sebebi bu
 RWF etiketi **klip seviyesinde**: "bu 5 saniyelik klipte kavga var."
 Kavganın kaçıncı saniyede başladığını söylemiyor. Literatürdeki
 şiddet tespiti çalışmalarının neredeyse tamamı bu etiketle yetiniyor
 ve "var/yok" doğruluğu raporluyor.
 
-⭐ **Projenin özgün katkısı tam burada:** literatür "şiddet var mı"
+**Projenin özgün katkısı tam burada:** literatür "şiddet var mı"
 diye soruyor, biz "kaç saniye önce söyleyebildik" diye soruyoruz.
 İkinci soru bir gözetim sisteminde birincisinden daha değerli —
 olaydan sonra doğru tespit etmek adli kayıt, olaydan önce haber vermek
@@ -29,26 +29,26 @@ Nasıl kullanılır
 
 Her klip için bir pencere açılır. Tuşlar:
 
-    BOŞLUK  oynat / duraklat
+    Boşluk  oynat / duraklat
     → / ←   bir kare ileri / geri
     D / A   on kare ileri / geri
-    S       ŞU ANKİ KAREYİ "kavganın başladığı an" olarak İŞARETLE
+    S       şu anki kareyi "kavganın başladığı an" olarak işaretle
     R       baştan oynat
-    N       bu klibi ATLA (belirsizse — atlamak, tahmin etmekten iyi)
+    N       bu klibi atla (belirsizse — atlamak, tahmin etmekten iyi)
     Q       kaydet ve çık
 
-⚠ ATLAMAK BİR SEÇENEK VE KULLANILMALI
+Atlamak bir seçenek ve kullanılmalı
 Kavganın nerede başladığı belirsizse (klip zaten kavganın ortasında
 başlıyorsa, ya da itişme mi şakalaşma mı belli değilse) **N'e bas.**
 Belirsiz bir etiketi zorlamak, ölçüme gürültü katar ve K8 sayısını
 sahte bir kesinlikle raporlamamıza yol açar.
 
-⚠ ETİKETLEYİCİ TARAFLILIĞI — raporda yazılacak bilinen sınır
+Etiketleyici taraflılığı — raporda yazılacak bilinen sınır
 Etiketi, sistemi yazan kişi koyuyor. "Kavga burada başladı" kararı
 öznel ve sistemin ne zaman alarm verdiğini bilen biri farkında
 olmadan etiketi oraya yaklaştırabilir. İki azaltma uygulanıyor:
 
-  1. Etiketleme, skorlamadan ÖNCE ve skorlar GÖRÜLMEDEN yapılıyor —
+  1. Etiketleme, skorlamadan önce ve skorlar görülmeden yapılıyor —
      bu araç boru hattını hiç çalıştırmıyor, sadece video gösteriyor.
   2. Klip sırası karıştırılıyor (sabit tohumla) ki dosya adına göre
      sistematik bir eğilim oluşmasın.
@@ -85,7 +85,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 RWF_FIGHT = PROJECT_ROOT / "data" / "datasets" / "RWF-2000" / "val" / "fight"
 CIKTI = PROJECT_ROOT / "data" / "annotations" / "rwf_k8.json"
 
-# ⚠ `evaluate_rwf.py` ile AYNI tohum. Aynı tohum, aynı sıralama demek;
+# `evaluate_rwf.py` ile aynı tohum. Aynı tohum, aynı sıralama demek;
 # etiketlenen klipler ile skorlanan klipler örtüşsün diye.
 TOHUM = 42
 
@@ -93,7 +93,7 @@ TOHUM = 42
 def _mevcut() -> dict[str, Any]:
     """Varsa önceki etiketleri yükler — iş yarıda bırakılabilsin.
 
-    ⚠ 25 klip etiketlemek yaklaşık bir saat. Tek oturumda bitirmeyi
+    25 klip etiketlemek yaklaşık bir saat. Tek oturumda bitirmeyi
     zorunlu kılmak, yorgun etiketlemeye yol açar ve etiketin kalitesi
     ölçümün tavanıdır.
     """
@@ -234,7 +234,7 @@ def main() -> int:
                 karar = "cik"
 
         cv2.destroyWindow(pencere)
-        # ⚠ HER KLİPTEN SONRA KAYDEDİLİYOR. Bir saatlik elle işi
+        # Her klipten sonra kaydediliyor. Bir saatlik elle işi
         # program çökmesine ya da yanlış tuşa emanet etmek olmaz.
         _kaydet(etiketler, atlananlar)
         if karar == "cik":
@@ -247,7 +247,7 @@ def main() -> int:
     if len(etiketler) < 15:
         print(
             "⚠ 15'ten az etiket var. K8 sayısı bu örneklemle çok gürültülü\n"
-            "  olur; en az 20 hedeflenmeli (YOL-HARITASI §1.2).",
+            "  olur; en az 20 hedeflenmeli.",
             file=sys.stderr,
         )
     return 0

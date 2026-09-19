@@ -4,15 +4,13 @@ version = "0.1.0"
 description = "SENTINEL — Çok kameralı akıllı gözetim sistemi"
 requires-python = ">=3.13"
 
-# ─── ÇEKİRDEK BAĞIMLILIKLAR ───────────────────────────────────
-# Faz 0-2 için yeterli. Ağır ML paketleri 'gpu' extra'sında (aşağıda),
-# çünkü PyTorch'un CUDA yapısı ayrı bir indeks gerektirir ve
-# Gün 4'e (ilk YOLO çalıştırması) kadar ihtiyacımız yok.
+# ─── Çekirdek bağımlılıklar ───────────────────────────────────
+# Ağır ML paketleri 'gpu' ek grubunda (aşağıda), çünkü PyTorch'un CUDA
+# yapısı ayrı bir indeks gerektiriyor.
 dependencies = [
     # Web katmanı
     "fastapi>=0.136",
     "uvicorn[standard]>=0.34",
-    "python-multipart>=0.0.20",
     "websockets>=14",
     # Konfigürasyon ve doğrulama
     "pydantic>=2.10",
@@ -20,54 +18,44 @@ dependencies = [
     # Veritabanı
     "sqlalchemy[asyncio]>=2.0.36",
     "asyncpg>=0.30",
-    "alembic>=1.14",
     # Valkey — redis-py protokol uyumludur, Valkey ile değişmeden çalışır
     "redis>=5.2",
     # Video ve görüntü işleme
     "av>=13.1",              # PyAV — shell'e çıkmaz, komut enjeksiyonu riski yok
     "opencv-python>=4.10",   # MOG2 hareket filtresi + YuNet yüz tespiti
     "numpy>=2.1",
-    # Güvenlik (PLAN.md §11.1)
-    "argon2-cffi>=23.1",     # G01 — parola hash'i (MD5/SHA DEĞİL)
+    # Güvenlik
+    "argon2-cffi>=23.1",     # G01 — parola hash'i (MD5/SHA değil)
     "pyjwt>=2.10",           # G02
-    "cryptography>=44",
-    # Depolama (S3 / Garage)
-    "boto3>=1.35",
     # Gözlemlenebilirlik
     "structlog>=24.4",
     "prometheus-client>=0.21",
-    # Analitik (hafif — ağır ML değil)
-    "scikit-learn>=1.6",     # IsolationForest — kamera normal profili
+    # Analitik
+    "scikit-learn>=1.6",     # LightGBM'in sklearn arayüzü (LGBMClassifier)
     "scipy>=1.15",
-    # Yardımcılar
-    "orjson>=3.10",
     "httpx>=0.28",
-    "typer>=0.15",           # worker başlatma CLI'ı
 ]
 
-# ⚠ `emotiefflib` ve `onnxruntime-gpu` buradan ÇIKARILDI, `gpu` extra'ya
+# `emotiefflib` ve `onnxruntime-gpu` buradan çıkarıldı, `gpu` extra'ya
 #   taşındı. İki sebep:
 #   1. Bu dosyanın kendi kuralı: "Ağır ML paketleri 'gpu' extra'sında."
 #      emotiefflib ağır bir ML paketi; çekirdekte olması kurala aykırıydı.
-#   2. `onnxruntime-gpu` İKİ YERDE, ÇELİŞEN kısıtlarla tanımlıydı
+#   2. `onnxruntime-gpu` iki yerde, çelişen kısıtlarla tanımlıydı
 #      (çekirdekte >=1.28.0, gpu extra'sında >=1.20). uv iki kısıtı
 #      kesiştirmek zorunda kalıyordu ve hangi sürümün çözüldüğü
 #      belirsizleşiyordu — "onnxruntime CUDA sağlayıcısı etkinleşmedi"
 #      açık maddesinin muhtemel kaynağı bu.
 
-# ─── GPU / ML BAĞIMLILIKLARI ─────────────────────────────────
+# ─── GPU / ML bağımlılıkları ─────────────────────────────────
 #  Kurulum:  uv sync --extra gpu
-#  ⚠ PyTorch'un CUDA yapısı ayrı indeksten gelir. Doğru CUDA sürümü
-#    Gün 4'te donanım üzerinde doğrulanacak (LITERATUR.md §O / S01).
+#  PyTorch'un CUDA yapısı ayrı indeksten geliyor (aşağıda).
 [project.optional-dependencies]
 gpu = [
     "torch>=2.6",
     "torchvision>=0.21",
-    "ultralytics>=8.3",      # YOLO26 / YOLO11   ⚠ Lisans: AGPL-3.0
-    # KADEME 2b — yüz ifadesi. TEK tanım burada (çekirdekten taşındı).
-    # ⚠ CUDA sağlayıcısı bu ortamda yüklenmedi (beklediği cuDNN yok);
-    #   model CPU'da ~58 ms/yüz. Ölçüm:
-    #   benchmarks/expression_20260817-gun13.json
+    "ultralytics>=8.3",      # YOLO26 / YOLO11   Lisans: AGPL-3.0
+    # Kademe 2b — yüz ifadesi. Tek tanım burada (çekirdekten taşındı).
+    # Ölçüm: benchmarks/expression_20260817-gun13.json
     "onnxruntime-gpu>=1.20",
     "emotiefflib>=1.1.1",
     "lightgbm>=4.5",         # tırmanma skoru taban modeli
@@ -97,9 +85,9 @@ packages = ["src/sentinel"]
 [tool.uv]
 package = true
 
-# ─── onnxruntime (CPU) BİLEREK ELENİYOR ───────────────────────
+# ─── onnxruntime (CPU) bilerek eleniyor ───────────────────────
 # Sorun: `emotiefflib` bağımlılık olarak `onnxruntime` (CPU derlemesi)
-# istiyor. Biz `onnxruntime-gpu` kuruyoruz. İkisi de PyPI'da AYRI paket
+# istiyor. Biz `onnxruntime-gpu` kuruyoruz. İkisi de PyPI'da ayrı paket
 # ama **aynı dizine** (`site-packages/onnxruntime/`) açılıyor. Sonuç:
 # hangisi sonra kurulursa `onnxruntime.dll`'i o eziyor. Bizde CPU
 # sürümü kazanmıştı ve tablo şöyleydi:
@@ -114,7 +102,7 @@ package = true
 # etkinleşmedi" açık maddesinin kök sebebi buydu; eksik cuDNN değil,
 # iki paketin aynı dizini paylaşması.
 #
-# Neden elemek güvenli: `onnxruntime-gpu` da `onnxruntime` MODÜLÜNÜ
+# Neden elemek güvenli: `onnxruntime-gpu` da `onnxruntime` modülünü
 # sağlıyor. emotiefflib'in `import onnxruntime` satırı çalışmaya devam
 # ediyor; bağımlılık beyanı sadece fazla dar yazılmış.
 #
@@ -123,7 +111,7 @@ package = true
 override-dependencies = ["onnxruntime ; python_version < '0'"]
 
 # ─── PyTorch CUDA indeksi ─────────────────────────────────────
-# PyPI'daki torch wheel'i Windows'ta CPU-ONLY gelir. CUDA yapısı
+# PyPI'daki torch wheel'i Windows'ta CPU-only gelir. CUDA yapısı
 # PyTorch'un kendi indeksinden alınmalı.
 #
 # Neden cu128: RTX 3070 Ampere (sm_86) mimarisi; cu126/128/129'un üçü de
@@ -155,7 +143,7 @@ select = [
     "C4",       # comprehensions
     "SIM",      # simplify
     "ASYNC",    # asenkron hataları
-    "S",        # bandit — GÜVENLİK (shell=True, sabit sır, zayıf hash…)
+    "S",        # bandit — güvenlik (shell=True, sabit sır, zayıf hash…)
     "RUF",
 ]
 ignore = [
@@ -180,28 +168,25 @@ strict = true
 warn_unused_configs = true
 plugins = ["pydantic.mypy"]
 
-# ⚠ 03.09.2026 — LİSTE GERÇEKLE HİZALANDI
-# Önceki liste kurulu OLMAYAN üç paketi (sklearn, lightgbm, botocore)
+# 03.09.2026 — liste gerçekle hizalandı
+# Önceki liste kurulu olmayan üç paketi (sklearn, lightgbm, botocore)
 # sayıyordu ve gerçekten kullanılan ikisini (emotiefflib, torch)
 # saymıyordu. Sonuç: mypy 13 hata veriyordu ve bunların 3'ü kodla
 # değil, bu listeyle ilgiliydi.
 #
-# ⚠ Neden `ignore_missing_imports` ve neden `follow_imports=skip` değil:
+# Neden `ignore_missing_imports` ve neden `follow_imports=skip` değil:
 # bu paketlerin hiçbiri tip bilgisi (py.typed) yayınlamıyor. Onları
 # yok saymak bizim kodumuzun denetimini kapatmıyor, yalnızca üçüncü
 # taraf sınırında duruyor.
 #
-# `sklearn`/`lightgbm` KASTEN duruyor: eğitilmiş saldırganlık modeli
-# (K5 tabanı 0.712) yazılırsa ilk kullanılacak paketler bunlar ve
-# `warn_unused_configs` bunları "kullanılmayan bölüm" diye bildiriyor
-# — o uyarı kabul edildi, hata değil.
+# `sklearn`/`lightgbm` saldırganlık modelinin eğitimi ve çıkarımı için.
 [[tool.mypy.overrides]]
 module = [
     "cv2.*", "av.*", "ultralytics.*", "emotiefflib.*", "onnxruntime.*",
-    "sklearn.*", "lightgbm.*", "boto3.*", "botocore.*",
+    "sklearn.*", "lightgbm.*",
 ]
 ignore_missing_imports = true
-# ⚠ `ultralytics` paketi `YOLO`'yu `__all__` ile AÇIKÇA ihraç etmiyor
+# `ultralytics` paketi `YOLO`'yu `__all__` ile açıkça ihraç etmiyor
 # ve mypy bunu `attr-defined` hatası sayıyor. Sınıf var, çalışıyor,
 # yıllardır kamuya açık API'nin parçası — burada denetlenen şey
 # paketin kendi paketleme titizliği, bizim kodumuz değil.

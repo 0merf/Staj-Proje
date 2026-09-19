@@ -5,7 +5,7 @@
 
 ## Bağlam
 
-⚠ **30.08.2026'ya kadar alarmlar HİÇBİR YERE kaydedilmiyordu.**
+**30.08.2026'ya kadar alarmlar hiçbir yere kaydedilmiyordu.**
 
 Analytics worker bir olay üretiyor, Valkey akışına yazıyor, panel
 açıksa gösteriyor — **panel kapalıysa olay hiç olmamış gibi
@@ -24,7 +24,7 @@ Bu tablonun üç özelliği var ve üçü de zaman serisi:
 1. **Yalnızca ekleme yapılıyor.** Olaylar sonradan değişmez.
 2. **Sorgular hep zaman aralıklı.** *"Son 24 saatte cam-09'da neler
    oldu"* — hiçbir zaman "tüm tarihte" sorulmuyor.
-3. **Eski veri değerini yitiriyor ama ÖZETİ yitirmiyor.** Üç ay önceki
+3. **Eski veri değerini yitiriyor ama özeti yitirmiyor.** Üç ay önceki
    tek bir alarmın ayrıntısı gereksiz; *"üç ay önce günde kaç alarm
    vardı"* değerli.
 
@@ -60,26 +60,26 @@ saklama politikası    → eski ham satırlar otomatik siliniyor,
                         özet KALIYOR
 ```
 
-⚠ **Sürekli toplulaştırma K7'nin ta kendisi.** K7 kriteri
+**Sürekli toplulaştırma K7'nin ta kendisi.** K7 kriteri
 *"kamera-saat başına yanlış alarm ≤3"* diyor ve bugüne kadar her
 ölçümde elle bir betik yazılıp Valkey akışı dinlenmişti.
 `olay_saatlik` görünümü tam olarak bu sayıyı **sürekli** üretiyor:
 kriter artık bir ölçüm koşusunun değil, **sistemin normal
 çıktısının** parçası (`GET /api/v1/events/ozet`).
 
-### ⚠ Neden ayrı bir `kanit` JSONB sütunu
+### Neden ayrı bir `kanit` JSONB sütunu
 
 Her anomali türünün kanıtı farklı: düşmede en-boy oranı ve eğim,
 saldırganlıkta bileşen skorları, Katman A'da sigma sapması. Bunları
 ayrı sütunlara açmak, **her yeni kural için şema değişikliği** demekti.
-JSONB, alarmın NEDEN verildiğini kaybetmeden şemayı sabit tutuyor — ve
+JSONB, alarmın neden verildiğini kaybetmeden şemayı sabit tutuyor — ve
 operatöre gösterilen açıklama da buradan geliyor.
 
-> ⭐ Bu sütun boşsa alarm bir **iddia**, doluysa bir **gözlem**.
+> Bu sütun boşsa alarm bir **iddia**, doluysa bir **gözlem**.
 
-### ⚠ Neden Alembic değil, düz SQL
+### Neden Alembic değil, düz SQL
 
-Alembic bağımlılığı kurulu ama kullanılmıyor. Tek tablolu bir şema için
+Alembic kullanmadım. Tek tablolu bir şema için Alembic'in
 otomatik revizyon üretimi kazandırdığından fazla makine getiriyor.
 Daha önemlisi: `create_hypertable` ve sürekli toplulaştırma Alembic'in
 bilmediği TimescaleDB çağrıları; hepsi elle SQL yazılacaktı zaten.
@@ -95,16 +95,16 @@ yükleniyor. K7 sürekli ölçülüyor. 30 gün sonra ham satırlar otomatik
 siliniyor (KVKK: *"gerektiğinden uzun saklamamak"* bir yükümlülük,
 tercih değil).
 
-**Kaybedilen:** Bir eklenti bağımlılığı. ⚠ Azaltma: eklenti yoksa
+**Kaybedilen:** Bir eklenti bağımlılığı. Azaltma: eklenti yoksa
 tablo **yine kuruluyor**, yalnızca zaman serisi özellikleri atlanıyor
 ve WARNING loglanıyor. Sistem düz PostgreSQL'de de ayakta kalıyor —
 eklenti bir **optimizasyon**, bir ön koşul değil.
 
-**Ayrı süreç kararı:** Alarm worker'ı analytics'in İÇİNDE değil.
+**Ayrı süreç kararı:** Alarm worker'ı analytics'in içinde değil.
 Veritabanına yazmak ağ turu + disk fsync demek; bunu analiz döngüsüne
 koymak iki şeyi birden bozardı: gecikme (K3) doğrudan artar, **ve
-veritabanı yavaşlarsa ANALİZ yavaşlar.** Yardımcı bir bileşenin
-arızası ana boru hattını durduramaz (PLAN §4.2).
+veritabanı yavaşlarsa analiz yavaşlar.** Yardımcı bir bileşenin
+arızası ana boru hattını durduramaz.
 
 ## Ölçüm
 
@@ -113,12 +113,12 @@ yazıldı, `GET /api/v1/events/ozet` saatlik kırılımı döndürüyor.
 
 Üretilen ve **yazılan** alarm sayısı ayrı metrikler
 (`sentinel_anomalies_total` vs `sentinel_olaylar_yazildi_total`) ve
-Grafana'da yan yana çiziliyor. ⚠ İkisi ayrışırsa veritabanı yolu
+Grafana'da yan yana çiziliyor. İkisi ayrışırsa veritabanı yolu
 tıkanmış demektir — **ve bu, sistem dışarıdan sağlıklı görünürken
 sessizce olur:** panel canlı alarmları göstermeye devam eder, yalnızca
 geçmiş birikmez.
 
-### ⚠ Kurulumda çıkan üç tuzak (P-34)
+### Kurulumda çıkan üç tuzak (P-34)
 
 1. **Şema tek metin + `split(";")` ile bölünüyordu** ve
    `syntax error at end of input` veriyordu. Sebep: **SQL yorumunun
@@ -129,7 +129,7 @@ geçmiş birikmez.
    `'{}'::jsonb` içeriyor ve `format` onu yer tutucu sanıp
    `IndexError` fırlatıyordu.
 
-3. ⭐ **`materialized_only = false` — en öğretici olanı.**
+3. **`materialized_only = false` — en öğretici olanı.**
    `GET /events/ozet?saat=1` **boş dönüyordu.** Sebep sessizdi:
    yenileme politikası `end_offset => 1 hour` kullanıyor, yani en son
    saat kasten özetlenmiyor (yarım saatlik veriyi tam saat gibi
@@ -137,6 +137,6 @@ geçmiş birikmez.
    girmediğinden operatör *"son 1 saatte hiçbir şey olmadı"* cevabı
    alıyordu — **oysa alarmlar tabloya yazılmıştı.**
 
-   > ⭐ Bir gözetim sisteminde en tehlikeli cevap budur: **"hiçbir şey
+   > Bir gözetim sisteminde en tehlikeli cevap budur: **"hiçbir şey
    > yok" ile "bakmadım" aynı görünüyorsa, sistem sessizce yanıltıyor
    > demektir.**

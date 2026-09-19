@@ -1,6 +1,6 @@
-"""Letterbox dönüşümü ve TERS dönüşümü.
+"""Letterbox dönüşümü ve ters dönüşümü.
 
-⚠ NEDEN BU TEST ÖNCELİKLİ
+Neden bu test öncelikli
 -------------------------
 Bu dönüşümün hatası **sessizdir.** Koordinatlar geçerli sayılar olarak
 çıkar, sadece yanlış uzaya aittir. Sonuç: kutular tarayıcıda yanlış yere
@@ -40,7 +40,7 @@ SIZES = [
 
 @pytest.mark.parametrize(("width", "height"), SIZES)
 def test_letterbox_ciktisi_her_zaman_kare_ve_dogru_tip(width: int, height: int) -> None:
-    """Batch'e girecek her kare AYNI şekilde olmak zorunda.
+    """Batch'e girecek her kare aynı şekilde olmak zorunda.
 
     GPU'ya verilen tensör tek parça; kameralar farklı çözünürlükte
     olduğu için hepsi aynı kare tuvale oturtulmalı.
@@ -52,7 +52,7 @@ def test_letterbox_ciktisi_her_zaman_kare_ve_dogru_tip(width: int, height: int) 
 
 @pytest.mark.parametrize(("width", "height"), SIZES)
 def test_en_boy_orani_korunuyor(width: int, height: int) -> None:
-    """Sıkıştırma DEĞİL dolgulama.
+    """Sıkıştırma değil dolgulama.
 
     Bu ders P-14'te pahalıya öğrenildi: kırpıntıları kareye
     sıkıştırdığımızda iskelet başarısı %88 yerine %47 çıkmıştı.
@@ -89,10 +89,10 @@ def test_dolgu_notr_gri_ve_icerik_ortalanmis() -> None:
 
 @pytest.mark.parametrize(("width", "height"), SIZES)
 def test_gidis_donus_kutuyu_baslangic_yerine_getiriyor(width: int, height: int) -> None:
-    """⚠ ASIL TEST — sessiz hatayı yakalayan budur.
+    """Asıl test — sessiz hatayı yakalayan budur.
 
     Kaynak kutu → model uzayı → geri. Başladığı yere dönmeli.
-    Bu tutmazsa kutular tarayıcıda yanlış yere çizilir ve HİÇBİR
+    Bu tutmazsa kutular tarayıcıda yanlış yere çizilir ve hiçbir
     hata mesajı çıkmaz.
     """
     _out, box = letterbox(_frame(width, height))
@@ -137,7 +137,7 @@ def test_ters_donusum_kaynak_sinirlarina_kirpiyor() -> None:
 
 
 def test_hiz_donusumune_dolgu_EKLENMEZ() -> None:
-    """Hız bir FARK — sabit kayma sadeleşir, yalnızca ölçek kalır.
+    """Hız bir fark — sabit kayma sadeleşir, yalnızca ölçek kalır.
 
     Buraya dolgu payı eklenseydi hız vektörü sistematik olarak yanlış
     olur ve tarayıcıdaki ara değerleme kutuları kaydırırdı.

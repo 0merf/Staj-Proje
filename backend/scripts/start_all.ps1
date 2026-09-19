@@ -1,24 +1,24 @@
-﻿# SENTINEL — tüm bileşenleri doğru sırada başlatır ve DOĞRULAR.
+﻿# SENTINEL — tüm bileşenleri doğru sırada başlatır ve doğrular.
 #
-# ⚠ SIRA ÖNEMLİ — keyfi değil, teknik zorunluluk:
+# Sıra önemli — keyfi değil, teknik zorunluluk:
 #   1. Altyapı (Docker)  — diğer her şey buna bağlı
 #   2. Alım worker'ı     — paylaşımlı bellek havuzunu O oluşturur (--owner)
-#   3. Çıkarım worker'ı  — havuza BAĞLANIR, önce havuz var olmalı
+#   3. Çıkarım worker'ı  — havuza bağlanır, önce havuz var olmalı
 #   4. Analitik worker'ı — çıkarım sonuçlarından anomali/saldırganlık üretir
 #   5. Alarm worker'ı    — olayları TimescaleDB'ye kalıcılaştırır
 #   6. API               — sonuç akışını dinler, panele yayınlar
 #   7. (opsiyonel) React geliştirme sunucusu
 #
-# ⚠ 30.08.2026 — ANALİTİK VE ALARM WORKER'LARI EKSİKTİ
+# 30.08.2026 — analitik ve alarm worker'ları eksikti
 # Bu betik 4 adımdı ve analitik worker'ını hiç başlatmıyordu. Sonuç:
-# "başlattım" denen sistemde tespit ve takip çalışıyor ama HİÇBİR
-# ANOMALİ ÜRETİLMİYORDU — panel kutuları çiziyor, alarm paneli sonsuza
+# "başlattım" denen sistemde tespit ve takip çalışıyor ama hiçbir
+# anomali üretilmiyordu — panel kutuları çiziyor, alarm paneli sonsuza
 # dek boş kalıyordu. Elle başlatıldığı için günlerce fark edilmedi.
 #
-# Mimari kural 0: belgelenen başlatma yolu sistemin TAMAMINI ayağa
+# Mimari kural 0: belgelenen başlatma yolu sistemin tamamını ayağa
 # kaldırmalı. Kaldırmıyorsa belge yalan söylüyor demektir.
 #
-# Bu betik kör beklemek yerine her adımı DOĞRULAR: bir bileşen
+# Bu betik kör beklemek yerine her adımı doğrular: bir bileşen
 # gerçekten ayağa kalkmadan sonrakine geçmez. Böylece "başlattım ama
 # çalışmıyor" durumu sessiz kalmaz.
 #
@@ -75,23 +75,23 @@ function Wait-Url {
     return $false
 }
 
-# ─── 0. KOPYA SÜREÇ ÖN KONTROLÜ ──────────────────────────────
+# ─── 0. Kopya süreç ÖN kontrolü ──────────────────────────────
 #
-# ⚠⚠ 09.09.2026 — BU KONTROL YOKTU VE İKİ GÜN KAYBETTİRDİ (P-58)
+# 09.09.2026 — bu kontrol yoktu ve iki gün kaybettirdi (P-58)
 #
 # Bu betik hiçbir şey sormadan yeni bir takım worker başlatıyordu.
-# Zaten bir takım koşuyorsa sonuç: 40 RTSP akışı, İKİ KOPYA YOLO
+# Zaten bir takım koşuyorsa sonuç: 40 RTSP akışı, iki kopya YOLO
 # (mimari kural 3 ihlali — "modeller tek süreçte tek kopya"), ve iki
 # `--owner` alım worker'ı aynı paylaşımlı bellek havuzu için yarışıyor.
 #
-# Belirti sinsi: sistem ÇALIŞIYOR görünüyor, yalnızca yavaş. RAM %98.7,
+# Belirti sinsi: sistem çalışıyor görünüyor, yalnızca yavaş. RAM %98.7,
 # gecikme iki katı. Suçlu iki gün boyunca modelde arandı.
 #
-# ⚠ CLAUDE.md bu tuzağı zaten yazıyordu — *"Her `uv run` 2 python.exe
+# Proje notlarım bu tuzağı zaten yazıyordu — *"Her `uv run` 2 python.exe
 # üretir; 2 normal, 4 = kopya var demektir."* Yazılı bir uyarı, otomatik
 # bir kontrolün yerini tutmuyor.
 #
-# ⚠ NEDEN RSS FİLTRESİ: `uv run` bir rol için birden çok python.exe
+# Neden RSS filtresi: `uv run` bir rol için birden çok python.exe
 # üretiyor (sarmalayıcılar + asıl süreç). Sarmalayıcılar ~5-25 MB,
 # asıl süreçler 100 MB - 3 GB. Sarmalayıcıları saymak yanlış alarm
 # üretirdi; `measure_canli.py` de aynı ölçütü kullanıyor.
@@ -152,7 +152,7 @@ if (-not $SkipDocker) {
 }
 
 # ─── 2. Alım worker'ı (havuz sahibi) ─────────────────────────
-# ⚠ 14.09.2026 — açılmayan bileşen olsa da betik ÇIKIŞ KODU 0 döndürüyordu.
+# 14.09.2026 — açılmayan bileşen olsa da betik çıkış kodu 0 döndürüyordu.
 # Temiz kopyada kurulum testinde çıkarım süreci çöktü (eksik paket) ama
 # betik başarıyla bitti ve kurulum "SENTINEL çalışıyor" dedi. Devam etme
 # davranışı korunuyor (hata ayıklarken diğer günlükler de oluşsun) ama sonda
@@ -188,7 +188,7 @@ if (-not (Wait-Url -Url "http://127.0.0.1:9110/metrics" -Label "çıkarım worke
 # ─── 4. Analitik worker'ı ────────────────────────────────────
 # Çıkarım sonuçlarını okur, özellik pencerelerini besler, Katman A/B
 # anomalilerini ve tırmanma skorunu üretir.
-# ⚠ Çıkarım worker'ından SONRA: `inference.results` akışı olmadan
+# Çıkarım worker'ından sonra: `inference.results` akışı olmadan
 # tüketici grubu kuracak bir şey yok.
 Write-Host "`n[4/7] Analitik worker'ı — anomali + saldırganlık"
 Start-Component -Name "analytics" -Exe "uv" -ArgList @(
@@ -200,8 +200,8 @@ if (-not (Wait-Url -Url "http://127.0.0.1:9120/metrics" -Label "analitik worker'
 }
 
 # ─── 5. Alarm worker'ı ───────────────────────────────────────
-# Olayları TimescaleDB'ye yazar. ⚠ Bu bileşen olmadan sistem çalışır
-# ama alarm GEÇMİŞİ tutulmaz: panel kapandığında olay kaybolur.
+# Olayları TimescaleDB'ye yazar. Bu bileşen olmadan sistem çalışır
+# ama alarm geçmişi tutulmaz: panel kapandığında olay kaybolur.
 Write-Host "`n[5/7] Alarm worker'i — olaylari veritabanina yazar"
 Start-Component -Name "alerting" -Exe "uv" -ArgList @(
     "run", "python", "-m", "sentinel.alerting.worker"
@@ -246,11 +246,11 @@ Write-Host "  Durdur       : pwsh backend/scripts/stop_all.ps1"
 Write-Host "─────────────────────────────────────────────" -ForegroundColor Cyan
 Write-Host ""
 
-# ─── SON YOKLAMA ─────────────────────────────────────────────
-# ⚠ 14.09.2026 — "hazır" kontrolü süreç ölçüm portunu açınca geçiyordu.
-# Analitik süreci portu açıp 1 sn sonra model dosyasını okurken ÇÖKTÜ;
+# ─── Son yoklama ─────────────────────────────────────────────
+# 14.09.2026 — "hazır" kontrolü süreç ölçüm portunu açınca geçiyordu.
+# Analitik süreci portu açıp 1 sn sonra model dosyasını okurken çöktü;
 # betik "hazır" demişti. Bu yüzden her şey açıldıktan sonra bekleyip
-# hepsi YENİDEN yoklanıyor: hâlâ cevap vermeyen, açılmamış sayılır.
+# hepsi yeniden yoklanıyor: hâlâ cevap vermeyen, açılmamış sayılır.
 Write-Host "`nSon yoklama (15 sn sonra, çöken süreç var mı)..."
 Start-Sleep -Seconds 15
 $yoklama = [ordered]@{ "alim" = 9101; "cikarim" = 9110; "analitik" = 9120; "alarm" = 9130 }

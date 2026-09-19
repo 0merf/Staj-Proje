@@ -1,18 +1,18 @@
 import { expect, test } from '@playwright/test'
 
 /**
- * OLAYLAR SAYFASI — ısı haritası + olay tablosu zinciri.
+ * Olaylar sayfası — ısı haritası + olay tablosu zinciri.
  *
- * ⭐ NEDEN BU TESTLER VAR
+ * Neden bu testler var
  * ----------------------
  * Eski zaman çizelgesinde hücreler `cursor-default` idi ve `onClick`
- * yoktu: bilgi ÜRETİLİYORDU ama kullanıcı ona ULAŞAMIYORDU. Kullanıcı
+ * yoktu: bilgi üretiliyordu ama kullanıcı ona ulaşamıyordu. Kullanıcı
  * bunu kendisi bildirdi ("kutuların üstüne tıklıyorum, hiçbir bilgi
  * çıkmıyor").
  *
- * ⚠ Bir birim testi bunu ASLA gösteremezdi: bileşen render oluyordu,
+ * Bir birim testi bunu asla gösteremezdi: bileşen render oluyordu,
  * veri doğruydu, sayılar doğruydu. Eksik olan tek şey tıklanabilirlikti.
- * Projenin İKİNCİ TEZİ (P-43/44/45) tam olarak bu: kapsam maddeleri
+ * Projenin ikinci tezi (P-43/44/45) tam olarak bu: kapsam maddeleri
  * modüllerle değil, kullanıcının yapabildiği işlerle işaretlenmeli.
  *
  * Bu yüzden aşağıdaki testlerin adları modül değil, İŞ tarif ediyor.
@@ -55,7 +55,7 @@ test('operatör olay tablosunda tek tek kayıtları okuyabiliyor', async ({ page
     .toBeGreaterThan(0)
 })
 
-test('operatör bir olaya tıklayıp KANITINI görebiliyor', async ({ page }) => {
+test('operatör bir olaya tıklayıp kanıtını görebiliyor', async ({ page }) => {
   await olaylaraGit(page)
 
   // Olay tablosunun ilk satırı (ısı haritası tablosu ayrı; olay
@@ -72,7 +72,7 @@ test('operatör bir olaya tıklayıp KANITINI görebiliyor', async ({ page }) =>
   expect(acikMetin.length).toBeGreaterThan(20)
 })
 
-test('ısı haritasındaki hücreye tıklamak tabloyu O SAATE daraltıyor', async ({
+test('ısı haritasındaki hücreye tıklamak tabloyu O saate daraltıyor', async ({
   page,
 }) => {
   await olaylaraGit(page)
@@ -87,7 +87,7 @@ test('ısı haritasındaki hücreye tıklamak tabloyu O SAATE daraltıyor', asyn
   )
   expect(oncekiKameralar.size).toBeGreaterThan(1)
 
-  // ⚠ Isı haritası hücreleri artık DÜĞME. Eski sürümde `<td>` idiler
+  // Isı haritası hücreleri artık düğme. Eski sürümde `<td>` idiler
   // ve bu satır hiçbir şey bulamazdı — testin asıl nöbet tuttuğu yer.
   const isiTablosu = page.getByTestId('isi-haritasi')
   const dolu = isiTablosu.locator('tbody button').filter({ hasText: /^\d+$/ })
@@ -105,9 +105,9 @@ test('ısı haritasındaki hücreye tıklamak tabloyu O SAATE daraltıyor', asyn
   // unutmak, "olay yok" diye yanlış sonuç çıkarmanın en kolay yolu.
   await expect(page.locator('button', { hasText: /cam-.*·.*×/ }).first()).toBeVisible()
 
-  // ⭐ ASIL SINAV: "satır sayısı azaldı" ZAYIF bir iddia — tıklama hiç
+  // Asıl sınav: "satır sayısı azaldı" zayıf bir iddia — tıklama hiç
   // çalışmasa da sayı aynı kalır ve `<=` koşulu geçerdi. Bunun yerine
-  // daralan tablodaki HER satırın seçilen kameraya ait olduğu
+  // daralan tablodaki her satırın seçilen kameraya ait olduğu
   // doğrulanıyor. Bu, filtrenin gerçekten uygulandığının kanıtı.
   await expect
     .poll(
@@ -139,13 +139,13 @@ test('filtre temizlenince tablo geri geniştiyor', async ({ page }) => {
     .toBeGreaterThanOrEqual(darAdet)
 })
 
-test('açık/koyu tema değişiyor ve HATIRLANIYOR', async ({ page }) => {
+test('açık/koyu tema değişiyor ve hatırlanıyor', async ({ page }) => {
   await olaylaraGit(page)
 
   await page.getByTitle('Açık tema').click()
   await expect(page.locator('html')).toHaveAttribute('data-tema', 'acik')
 
-  // ⚠ Asıl sınav yenilemeden SONRA: tercih `localStorage`'a yazılıp
+  // Asıl sınav yenilemeden sonra: tercih `localStorage`'a yazılıp
   // React yüklenmeden önce uygulanmazsa sayfa koyu açılır (flash).
   await page.reload()
   await expect(page.locator('html')).toHaveAttribute('data-tema', 'acik')
@@ -154,7 +154,7 @@ test('açık/koyu tema değişiyor ve HATIRLANIYOR', async ({ page }) => {
   await expect(page.locator('html')).not.toHaveAttribute('data-tema', 'acik')
 })
 
-test('"iz kaydet" düğmesi ARTIK YOK (tanı aracıydı, işi bitti)', async ({ page }) => {
+test('"iz kaydet" düğmesi artık yok (tanı aracıydı, işi bitti)', async ({ page }) => {
   await olaylaraGit(page)
   await expect(page.getByRole('button', { name: 'iz kaydet' })).toHaveCount(0)
 })

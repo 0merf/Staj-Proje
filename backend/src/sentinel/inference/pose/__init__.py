@@ -1,4 +1,4 @@
-"""KADEME 2a — poz tahmini (iskelet çıkarımı).
+"""Kademe 2a — poz tahmini (iskelet çıkarımı).
 
 Neden ayrı kademe olduğu ve ölçüm dayanağı: `base.py` modül başlığı.
 """

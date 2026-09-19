@@ -1,44 +1,33 @@
-# Ekran Görüntüleri — çekilecekler listesi
+# Ekran Görüntüleri
 
-> Rapor eki. **Bu dizin 01.09.2026 itibarıyla BOŞ.**
-> `YOL-HARITASI.md` §4.1
+Panelin ekran görüntüleri. 01-06 arası `frontend/e2e/ekran-goruntusu.spec.ts`
+ile Playwright'tan üretiliyor; arayüz değişirse aynı testle yeniden
+üretilebilir.
 
-## ⚠ MAHREMİYET KURALI — önce bunu oku
+| Dosya | İçerik |
+|---|---|
+| `01-giris.png` | Giriş ekranı |
+| `02-izgara-20-kamera.png` | 20 kameralık ızgara |
+| `03-canli-kutular.png` | Canlı video üzerinde tespit kutuları ve iskeletler |
+| `04-kutucuk-yakin.png` | Tek kutucuğun yakın görünümü |
+| `05-zaman-cizelgesi.png` | Kamera × saat ısı haritası ve olay tablosu |
+| `06-kamera-detayi.png` | Kamera detay sayfası |
+| `07-klip-zinciri-dogrulama.png` | Alarm klibinin panelde oynatılması (P-83) |
 
-Bu sistem **gerçek insanları** içeren görüntüler işliyor. İki veri
-setinde tanımlanabilir kişiler var ve `SOURCE.md` dosyalarında açık
-kural yazılı:
+## Mahremiyet kuralı
+
+Sistem gerçek insanları içeren görüntüler işliyor. İki veri setinde
+tanımlanabilir kişiler var ve `SOURCE.md` dosyalarında bunun kuralını
+yazdım:
 
 | Set | Kamera | Kural |
 |---|---|---|
-| Oxford TownCentre | cam-09 | Rapora **görüntü konulmayacak** |
-| UR Fall | cam-16 | Yüzü açık araştırma gönüllüsü — **görüntü konulmayacak** |
+| Oxford TownCentre | cam-09 | Rapora görüntü konmuyor |
+| UR Fall | cam-16 | Yüzü açık araştırma gönüllüsü, görüntü konmuyor |
 
-**Gösterilebilecek olan:** iskelet ve kutu çizimleri, altındaki
-görüntü olmadan. Panelin "görünüm modu" düğmesi bunu zaten
-destekliyor (kapalı / kutular / iskelet).
+Bu kameralar için yalnızca iskelet ve kutu çizimleri, altındaki görüntü
+olmadan gösterilebilir. Panelin görünüm modu düğmesi (kapalı / kutular /
+iskelet) bunu destekliyor. Bir gözetim sistemi raporunda mahremiyet ihlali
+yapmak raporun kendi tezini çürütür.
 
-⚠ Bir gözetim sistemi raporunda mahremiyet ihlali yapmak, raporun
-kendi tezini çürütür.
-
-## Çekilecekler
-
-| # | Ne | Neden | Nasıl |
-|---|---|---|---|
-| 1 | **Panel — 20 kamera** | K1'in görsel kanıtı | `/app`, hepsini aç · ⚠ cam-09 ve cam-16 kutucuklarını kapat ya da iskelet moduna al |
-| 2 | **Alarm paneli — kanıt satırları açık** | ⭐ Açıklanabilirliğin vitrini. "Anomali var" demek yetmez; hangi ölçümün eşiği neden aştığı görünmeli | Bir düşme alarmı bekle (cam-16 her ~5.4 sn) |
-| 3 | **Füzyon alarmı** | Beş sinyalin birleşimi. `birleşen sinyal sayısı ≥2` görünmeli | Alarm türü `RİSK (birleşik)` |
-| 4 | **Grafana — boru hattı sağlığı** | K2/K3/K7 + boş slot | `:3000` → `sentinel-boru-hatti` |
-| 5 | **Giriş ekranı** | Güvenlik bölümü (§5) | Çıkış yapıp `/app` |
-| 6 | **Kimlik doğrulama reddi** | 401/403 davranışı | DevTools ağ sekmesi, tokensiz istek |
-| 7 | **Denetim izi** | G19 — "kim ne zaman izledi" | `/api/v1/auth/denetim` (admin) |
-| 8 | **K6 ROC sonucu** | Terminal çıktısı yeterli | `evaluate_k6.py` çıktısı |
-
-## Adlandırma
-
-```
-NN-kisa-aciklama.png     → 01-panel-20-kamera.png
-```
-
-⚠ Ekran görüntüsünde **parola, token ya da `.env` içeriği görünmesin.**
-Tarayıcı DevTools açıkken çekiyorsan `Authorization` başlığını kırp.
+Ekran görüntülerinde parola, token ya da `.env` içeriği görünmemeli.

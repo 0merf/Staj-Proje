@@ -1,13 +1,13 @@
 # Kamera Çiftliği Kaynak Videoları — Kaynak, Lisans ve Atıf
 
-> **PLAN.md §7.2 kuralı:** Her veri seti için indirme adresi, lisans ve
+> **Proje planı kuralı:** Her veri seti için indirme adresi, lisans ve
 > alıntı bilgisi kaydedilir. Veri **git'e girmez**, bu dosya girer.
 
 ## Ne için kullanılıyor
 
 20 gerçek IP kamera yok. Bu videolar MediaMTX ile **20 bağımsız RTSP
 akışına** dönüştürülüyor; sistem açısından gerçek kameralardan ayırt
-edilemezler (PLAN.md §7.1).
+edilemezler.
 
 ```
 _sources/<set>/*.mp4
@@ -32,7 +32,7 @@ Kamera → kaynak eşlemesi **`data/videos/manifest.json`** dosyasındadır
 | **Kullanım** | cam-01…cam-08 — **normal sahne** |
 
 **Neden bu set:** Anomali modülünün "normal"i öğrenmesi için uzun,
-olaysız, sabit kamera görüntüsü gerekiyor (PLAN.md §6.4 Katman A).
+olaysız, sabit kamera görüntüsü gerekiyor (Katman A).
 VIRAT tam olarak bunu sağlıyor — gerçek gözetim açısı, gerçek yaya
 trafiği, dakikalarca hiçbir şey olmayan bölümler.
 
@@ -54,7 +54,7 @@ sahiplerine başvuru gerekir.
 | **İçerik** | Çoklu kamera, kalabalık akışı, yürüyüş/koşu/dağılma senaryoları |
 | **Kullanım** | Kalabalık ve **ani dağılma** senaryoları |
 
-**Neden bu set:** PLAN.md §6.4 Katman B'de "ani dağılma (panik
+**Neden bu set:** Proje planı Katman B'de "ani dağılma (panik
 göstergesi)" ve "aşırı kalabalık" kuralları var. PETS 2009 bu
 davranışları **sahnelenmiş ama gerçekçi** biçimde içeriyor ve kare
 seviyesinde belgeli.
@@ -78,10 +78,10 @@ seviyesinde belgeli.
 
 **Neden bu set:** Yanında **yer gerçeği (ground truth)** geliyor —
 `TownCentre-groundtruth.top`. Gün 23'teki takip değerlendirmesinde
-(PLAN.md §14.2 · HOTA/IDF1) MOT17 dışında ikinci bir referans olarak
+(HOTA/IDF1) MOT17 dışında ikinci bir referans olarak
 kullanılabilir.
 
-⚠ **Mahremiyet notu:** Bu video gerçek kişilerin rızası alınmadan
+**Mahremiyet notu:** Bu video gerçek kişilerin rızası alınmadan
 kaydedilmiş bir kamu alanı görüntüsüdür ve bazı kurumlar kullanımını
 kısıtlamıştır. **Yalnızca yerel değerlendirmede** kullanılıyor;
 ekran görüntüsü ya da klip teslim paketine/rapora **konulmayacak**.
@@ -103,7 +103,7 @@ ekran görüntüsü ya da klip teslim paketine/rapora **konulmayacak**.
 | **Kullanım** | cam-19, cam-20 — **duygu modülü testi** |
 
 **Neden bu set:** Gözetim setlerinde yüzler 15 piksel civarında ve
-KADEME 2b'yi besleyemiyor (ölçüldü:
+kademe 2b'yi besleyemiyor (ölçüldü:
 `benchmarks/expression_20260818-gun14.json`). Pexels klipleri yakın plan
 yüz içerdiği için ifade sınıflandırmanın **çalıştığı koşulda çalıştığını**
 gösterebiliyor.
@@ -112,7 +112,7 @@ gösterebiliyor.
 ticari kullanım serbest. Bu projedeki tek kısıtsız kaynak.
 https://www.pexels.com/license/
 
-⚠ Dosya adları Pexels'in özgün kimliklerini koruyor
+Dosya adları Pexels'in özgün kimliklerini koruyor
 (`14720058_1920_1080_25fps.mp4`), böylece kaynak klip her zaman geri
 bulunabilir.
 
@@ -128,7 +128,7 @@ bulunabilir.
 | Normalize etme | `scripts/prepare_videos.py` — 720p / H.264 / 25 FPS |
 | Kamera eşlemesi | `data/videos/manifest.json` |
 
-## Kamera dağılımı (PLAN.md §7.1)
+## Kamera dağılımı
 
 | Kamera | İçerik | Amaç |
 |---|---|---|

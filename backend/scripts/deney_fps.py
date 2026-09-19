@@ -1,25 +1,24 @@
 """MOD A / MOD B — analiz hızı doğruluğu nasıl etkiliyor? (P-55)
 
-⭐ SORU KULLANICININ
--------------------
-> *"Bizim analizimiz yavaş olduğu için, yani 2.5 FPS civarında olduğu
-> için bilekler vb. hızlı görünüyor olabilir. Eğer saniyede 10-15 FPS
-> civarında bir işlem gücü olsa daha detaylı ve derin inceleme şansı
-> olacaktır — tabi gürültü de gelecektir ama modelin onu ayırt etmesi
-> gerekir."*
+Soru
+----
+Analizimiz yavaş (2.5 FPS civarında) olduğu için bilekler gibi uzuvlar
+hızlı görünüyor olabilir. Saniyede 10-15 kare işleyebilseydik daha
+ayrıntılı bir inceleme mümkün olurdu; gürültü de artardı ama modelin
+onu ayırt etmesi gerekir.
 
 Bu aynı zamanda **Mod A / Mod B** çalışmasının çekirdeği:
 
     MOD A — 20 kamera kısıtı altında ne yapabiliyoruz (2.75 FPS)
     MOD B — tek videoya tüm gücü versek ne olurdu (yüksek FPS)
 
-İKİ ETKİ TERS YÖNDE ÇALIŞIYOR
+İki etki ters yönde çalışıyor
 -----------------------------
 1. **Sonlu fark gürültüsü** — hız ardışık konumlardan hesaplanıyor:
 
        v̂ = (x₂ − x₁) / Δt        gürültü ≈ σ√2 / Δt
 
-   Konum hatası σ sabit; Δt küçüldükçe gürültü BÜYÜR.
+   Konum hatası σ sabit; Δt küçüldükçe gürültü büyür.
        2.75 FPS → Δt 0.364 sn →  3.9σ
        8.25 FPS → Δt 0.121 sn → 11.7σ
       15.0 FPS → Δt 0.067 sn → 21.2σ
@@ -27,22 +26,22 @@ Bu aynı zamanda **Mod A / Mod B** çalışmasının çekirdeği:
 
 2. **Zamansal örtüşme (aliasing)** — bir yumruk ~0.2 saniye sürer.
    2.75 FPS'te örnekler arası 0.36 sn; olay iki örnek arasına düşüp
-   TAMAMEN kaçabilir. Yani düşük FPS olayı **kaçırır**.
+   tamamen kaçabilir. Yani düşük FPS olayı **kaçırır**.
 
 Hangisinin baskın olduğu **ampirik** bir soru ve bu betik onu ölçüyor.
 
-⚠⚠ TEK DEĞİŞKEN KURALI — VE BURADA NEDEN ZOR
+Tek değişken kuralı — ve burada neden zor
 --------------------------------------------
 İlk denemede 2.75 FPS 482/96 klip, 8.25 FPS 545/108 klip üretti:
 yüksek FPS'te daha çok kare → daha çok klip özellik çıkarabiliyor.
 İkisini doğrudan kıyaslamak **iki farklı sınavı** kıyaslamak olurdu —
 bu projede beş kez yakalanan hatanın aynısı (P-17, P-36, P-41, P-46).
 
-Bu yüzden karşılaştırma **yalnızca ORTAK kliplerde** yapılıyor: her iki
+Bu yüzden karşılaştırma **yalnızca ortak kliplerde** yapılıyor: her iki
 FPS'te de özellik üretebilmiş klipler. Kalan tek değişken FPS.
 
-⚠ Ve ortak kümeye inmenin bir bedeli var: kaybedilen klipler rastgele
-değil — düşük FPS'te elenen klipler genellikle KISA ya da AZ KİŞİLİ
+Ve ortak kümeye inmenin bir bedeli var: kaybedilen klipler rastgele
+değil — düşük FPS'te elenen klipler genellikle kısa ya da az kişili
 olanlar. Bu, ortak kümeyi "kolay" tarafa kaydırabilir; sonuç böyle
 okunmalı.
 
@@ -67,7 +66,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 TMP = PROJECT_ROOT / "data" / "_tmp"
 BENCHMARKS = PROJECT_ROOT / "benchmarks"
 
-# (etiket, dosya adı) — hepsi AYNI klip havuzundan, farklı FPS'te.
+# (etiket, dosya adı) — hepsi aynı klip havuzundan, farklı FPS'te.
 KOSULAR = (
     ("2.75 FPS (MOD A · canlı)", "rwf_ozellikler.json"),
     ("4.00 FPS", "rwf_ozellikler_4fps.json"),
@@ -174,7 +173,7 @@ def main() -> int:
     for etiket, d in veriler.items():
         print(f"{etiket:<26} {len(d['train']):>7} {len(d['val']):>6}")
 
-    # ─── ORTAK KLİP KÜMESİ ───
+    # ─── Ortak klip kümesi ───
     ortak: dict[str, set[str]] = {}
     for bolum in ("train", "val"):
         kumeler = [
@@ -200,7 +199,7 @@ def main() -> int:
         ad = f"_fps_deney_{abs(hash(etiket)) % 100000}.json"
         (TMP / ad).write_text(json.dumps(filtreli, ensure_ascii=False),
                               encoding="utf-8")
-        # ⚠ Eğitim ALT SÜREÇTE koşuluyor: aynı betiğin içinden LightGBM'i
+        # Eğitim alt süreçte koşuluyor: aynı betiğin içinden LightGBM'i
         # tekrar tekrar çağırmak durum sızdırabilir (rastgele tohum,
         # global ayar). Ayrı süreç, temiz zemin.
         tahmin_ad = f"_fps_tahmin_{abs(hash(etiket)) % 100000}.json"
@@ -208,9 +207,9 @@ def main() -> int:
             [sys.executable, str(Path(__file__).parent / "train_aggression.py"),
              "--egit", "--ozellik-dosyasi", ad,
              "--tahmin-cikti", tahmin_ad,
-             # ⚠⚠ 09.09.2026 — BU BAYRAK OLMADAN TARAMA ÜRETİMİ EZİYORDU
+             # 09.09.2026 — bu bayrak olmadan tarama üretimi eziyordu
              # Beş koşunun her biri `models/saldirganlik_lgbm.txt`ye
-             # yazıyordu; üretimde kalan, döngünün SON bitirdiği model
+             # yazıyordu; üretimde kalan, döngünün son bitirdiği model
              # oluyordu (24.75 FPS · AUC 0.918) — en iyisi (16.50) değil,
              # üretimin hızı (2.75) hiç değil. Tam anlatım: P-63.
              "--model-cikti", f"models/_deney/fps_{abs(hash(etiket)) % 100000}.txt"],
@@ -237,14 +236,14 @@ def main() -> int:
             ty.unlink(missing_ok=True)
         (TMP / ad).unlink(missing_ok=True)
 
-    # ─── ⭐ EŞLEŞTİRİLMİŞ BOOTSTRAP ───
-    # ⚠ Determinizm ANLAMLILIK DEĞİLDİR. Eğitim birebir tekrarlanabilir
+    # ─── Eşleştirilmiş bootstrap ───
+    # Determinizm anlamlılık değildir. Eğitim birebir tekrarlanabilir
     # (iki koşuda da 0.906 / 0.903 / 0.936 çıktı) ama 96 kliplik bir
     # doğrulama kümesinde 0.030'luk bir AUC farkı yine de örnekleme
     # gürültüsü olabilir.
     #
-    # Eşleştirilmiş bootstrap: val kliplerini yeniden örnekle, HER İKİ
-    # ayarın AUC'sini AYNI örneklemde hesapla, farkın dağılımına bak.
+    # Eşleştirilmiş bootstrap: val kliplerini yeniden örnekle, her iki
+    # ayarın AUC'sini aynı örneklemde hesapla, farkın dağılımına bak.
     # Eşleştirme, kliplerin zorluk farkından gelen varyansı düşürüyor —
     # eşleştirilmemiş bir test bu farkı bulamayacak kadar geniş bir
     # aralık verirdi.
@@ -267,7 +266,7 @@ def main() -> int:
         print(f"En yüksek AUC: {tepe} ({en_iyi[1]['auc']:.3f})")
         print(f"AUC aralığı  : {aralik:.3f}")
 
-        # ⭐⭐ İÇ OPTİMUM ARANIYOR — bulunması TEORİYİ DOĞRULAR.
+        # İÇ optimum aranıyor — bulunması teoriyi doğrular.
         #
         # Modül başlığında iki ters etki tarif edildi:
         #   (1) örtüşme kaybı              → yüksek FPS'i sever
@@ -275,10 +274,10 @@ def main() -> int:
         #
         # İki ters etkinin imzası **önce yükselip sonra düşen** bir
         # eğridir. Monoton bir eğri, etkilerden yalnızca birinin baskın
-        # olduğunu gösterirdi; TEPE NOKTASI ikisinin de gerçek olduğunu
+        # olduğunu gösterirdi; tepe noktası ikisinin de gerçek olduğunu
         # gösterir.
         #
-        # ⚠ İlk sürüm yalnızca "en yüksek hangisi" diye soruyordu ve
+        # İlk sürüm yalnızca "en yüksek hangisi" diye soruyordu ve
         # 24.75 FPS ölçülene kadar "yüksek FPS daha iyi" diyordu —
         # eğri henüz dönmemişti. Tek yönlü bir soru, tek yönlü bir
         # cevap üretir.

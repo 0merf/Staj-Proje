@@ -1,15 +1,15 @@
-"""ŞÜPHELİ ESKİ ÖLÇÜMLERİ YENİDEN YAPAR — duvar saati VE CPU zamanı (P-59).
+"""Şüpheli eski ölçümleri yeniden yapar — duvar saati ve CPU zamanı (P-59).
 
-⚠⚠ NEDEN BU BETİK VAR
+Neden bu betik var
 ---------------------
 P-58'de projenin en pahalı ölçüm hatası bulundu:
 
 > Modelin `predict` çağrısı **0.307 ms** ölçülüyordu ve bu sayı
-> DOĞRUYDU. Ama iş 20 iş parçacığına yayıldığı için duvar saati
+> doğruydu. Ama iş 20 iş parçacığına yayıldığı için duvar saati
 > küçüktü; **CPU zamanı 20 katıydı** ve asıl maliyet oradaydı.
 > Analitik worker 8 çekirdek yiyordu.
 
-⭐ Bu, tek bir ölçümün hatası değil, bir **ÖLÇÜM SINIFININ** hatası:
+Bu, tek bir ölçümün hatası değil, bir **ölçüm sınıfının** hatası:
 çok iş parçacıklı çalışan her şeyi "kaç ms sürdü" diye ölçmek
 maliyeti sistematik olarak **eksik gösterir**.
 
@@ -21,13 +21,13 @@ doğrulanmadı:
     P-18  "ön işleme 6.78 → 3.87 ms" — OpenCV çok iş parçacıklı
     detect "6.3 ms, %53 ileri geçiş" — CUDA olayıyla ölçüldü (bu sağlam)
 
-⚠ KARŞILAŞTIRMA ZEMİNİ YOK — VE BU DÜRÜSTÇE SÖYLENMELİ
+Karşılaştırma zemini yok — ve bu açıkça söylenmeli
 Kod, mimari ve kütüphane sürümleri o günden bu yana değişti. Bu
 yüzden bu betik "eski sayı yanlıştı" diyemez; yalnızca **bugünün
 sayısını doğru yöntemle** üretir. Eski sayılarla fark görülürse
 sebebi ölçüm yöntemi de olabilir, kod değişikliği de.
 
-NE ÖLÇÜLÜYOR — VE NEDEN İKİ SAYI
+NE ölçülüyor — ve neden iki sayı
 ---------------------------------
 Her aşama için:
 
@@ -35,13 +35,13 @@ Her aşama için:
     CPU zamanı (ms)   — "kaç çekirdek-milisaniye harcandı"
     paralellik        — CPU / duvar oranı
 
-⭐ Oran 1.0 ise tek iş parçacıklı. 8.0 ise iş 8 çekirdeğe yayılmış:
+Oran 1.0 ise tek iş parçacıklı. 8.0 ise iş 8 çekirdeğe yayılmış:
 duvar saati küçük görünür ama 20 kameralık bir sistemde o 8 çekirdek
 gerçek bir kısıttır.
 
-⚠ CPU zamanı `psutil.Process().cpu_times()` farkından alınıyor —
-sürecin TAMAMINI kapsar. Bu yüzden ölçüm sırasında başka iş
-yapılmamalı ve boru hattı KAPALI olmalı.
+CPU zamanı `psutil.Process().cpu_times()` farkından alınıyor —
+sürecin tamamını kapsar. Bu yüzden ölçüm sırasında başka iş
+yapılmamalı ve boru hattı kapalı olmalı.
 
 Kullanım:
     uv run python scripts/yeniden_olc.py
@@ -61,14 +61,14 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
 
-# ⚠⚠ THREAD AYARI `sentinel` IMPORT EDİLMEDEN ÖNCE YAPILMALI
+# Thread ayarı `sentinel` IMPORT edilmeden önce yapılmalı
 #
 # `sentinel/__init__.py` BLAS havuzunu tek iş parçacığına sabitliyor
-# (P-58) ama yalnızca ortam değişkeni TANIMSIZSA. Burada önce
+# (P-58) ama yalnızca ortam değişkeni tanımsızsa. Burada önce
 # tanımlarsak o dokunmuyor ve eski (sınırsız) davranışı ölçebiliyoruz.
 #
-# ⭐ Bu, ölçümün ta kendisi: "eski sayılar çok iş parçacıklılık
-# yüzünden mi düşük görünüyordu?" sorusu ancak İKİ KOŞU kıyaslanınca
+# Bu, ölçümün ta kendisi: "eski sayılar çok iş parçacıklılık
+# yüzünden mi düşük görünüyordu?" sorusu ancak iki koşu kıyaslanınca
 # cevaplanır.
 _THREAD = None
 for _i, _a in enumerate(sys.argv):
@@ -85,7 +85,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 VIDEOLAR = PROJECT_ROOT / "data" / "videos"
 BENCHMARKS = PROJECT_ROOT / "benchmarks"
 
-# Eski iddialar — karşılaştırma için, "doğru cevap" olarak DEĞİL.
+# Eski iddialar — karşılaştırma için, "doğru cevap" olarak değil.
 ESKI = {
     "on_isleme": {"ms": 3.87, "kayit": "P-18", "not": "6.78 → 3.87 iddiası"},
     "tespit": {"ms": 6.30, "kayit": "P-33", "not": "%53'ü ileri geçiş"},
@@ -98,8 +98,8 @@ ESKI = {
 class Olcum:
     """Bir aşamayı hem duvar saati hem CPU zamanıyla ölçer.
 
-    ⚠ CPU zamanı süreç geneli: `cpu_times()` kullanıcı + sistem
-    zamanını TÜM iş parçacıkları için toplar. Ölçüm sırasında başka
+    CPU zamanı süreç geneli: `cpu_times()` kullanıcı + sistem
+    zamanını tüm iş parçacıkları için toplar. Ölçüm sırasında başka
     iş yapılmamalı.
     """
 
@@ -201,7 +201,7 @@ def main() -> int:
         )
 
         yuz = YuNetFaceDetector(settings.face_detector_weights)
-        # ⚠ YuNet TÜM KAREDE değil, KİŞİ KIRPINTISINDA yüz arıyor
+        # YuNet tüm karede değil, kişi kırpıntısında yüz arıyor
         # (yunet.py: "Kişi kırpıntısının üst bölgesinde"). Ölçüm de
         # üretimdeki gibi kırpıntıyla yapılmalı — tüm kareyi vermek
         # başka bir işi ölçer ve P-30'un sayısıyla kıyaslanamaz.
@@ -230,7 +230,7 @@ def main() -> int:
         print(f"⚠ yüz/ifade ölçülemedi: {type(hata).__name__}: {hata}\n")
 
     # ─── 5. Decode — P-07/P-09 ───
-    # ⚠ Ayrı ölçülüyor: tek kare değil, akıştan ardışık kare çözme.
+    # Ayrı ölçülüyor: tek kare değil, akıştan ardışık kare çözme.
     def _decode_n(n: int = 30) -> float:
         c = cv2.VideoCapture(str(video))
         c.set(cv2.CAP_PROP_POS_FRAMES, 100)
@@ -286,8 +286,8 @@ def main() -> int:
     print(f"{'aşama':<14} {'CPU ms/sn':>12} {'çekirdek':>10}")
     toplam_cek = 0.0
     for s in sonuc:
-        # ⚠ Decode ALIM hızında koşuyor (3.7 FPS/kam), analiz hızında
-        # değil — kareler hareket filtresinden ÖNCE çözülüyor.
+        # Decode alım hızında koşuyor (3.7 FPS/kam), analiz hızında
+        # değil — kareler hareket filtresinden önce çözülüyor.
         ms_sn = (
             s["cpu_ms"] * 3.7 * 20 if s["asama"] == "decode_cpu"
             else s["cpu_ms"] * kare_sn

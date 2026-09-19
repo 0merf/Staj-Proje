@@ -1,6 +1,6 @@
 """Canlı sonuç WebSocket uç noktası.
 
-⚠ GÜVENLİK — WebSocket CORS'a UYMAZ (PLAN.md §11.1 / G06)
+Güvenlik — WebSocket CORS'a uymaz (G06)
 ---------------------------------------------------------
 Tarayıcının "farklı origin'den istek atamazsın" kuralı `fetch`/XHR için
 geçerlidir; WebSocket el sıkışması bu kuralın **dışındadır**. Kötü niyetli
@@ -17,21 +17,21 @@ Protokol
                             Kullanıcı başına bağlantı sınırı (G14)
     ← hello                 sunucu bilgisi
     → subscribe {cameras}   istemci abone olmak istediği kameraları söyler
-    ← subscribed {cameras}  SUNUCU YETKİ KONTROLÜ YAPAR, izinsizleri çıkarır
+    ← subscribed {cameras}  sunucu yetki kontrolü yapar, izinsizleri çıkarır
     ← frame …               sürekli sonuç akışı
     → ping / ← pong         canlılık
 
-Güvenlik durumu — neyin yapıldığı, neyin YAPILMADIĞI
+Güvenlik durumu — neyin yapıldığı, neyin yapılmadığı
 ----------------------------------------------------
-✅ G06 `Origin` doğrulaması (aynı köken + beyaz liste, şema dâhil)
-✅ G02/G03 JWT kimlik doğrulaması — `httponly` çerezden okunuyor
-✅ G07 abonelikte yeniden yetkilendirme — BEYAZ LİSTE ile
-✅ G14 kullanıcı başına eşzamanlı bağlantı sınırı
-❌ G05 kamera bazlı yetki — `user_camera_access` tablosu YOK, yani
+G06 `Origin` doğrulaması (aynı köken + beyaz liste, şema dâhil)
+G02/G03 JWT kimlik doğrulaması — `httponly` çerezden okunuyor
+G07 abonelikte yeniden yetkilendirme — beyaz liste ile
+G14 kullanıcı başına eşzamanlı bağlantı sınırı
+G05 kamera bazlı yetki — `user_camera_access` tablosu yok, yani
    doğrulanmış her kullanıcı tüm kameralara abone olabiliyor.
    Bu eksik raporda böyle yazılacak, "yapıldı" diye değil.
 
-⚠ 03.09.2026 — BU BAŞLIK BAYATTI
+03.09.2026 — bu başlık bayattı
 Önceki sürüm *"Faz 1'de eklenecek: JWT ile kimlik doğrulama... Şu an
 tüm kameralar açık"* diyordu. JWT doğrulaması Gün 16'da eklenmişti
 (satır ~330) ama başlık güncellenmemişti. Mimari kural 0: belgede
@@ -75,19 +75,19 @@ def _same_origin(origin: str, host_header: str | None, scheme: str | None = None
     gerekirdi; adres değişince (farklı port, farklı makine) sessizce
     kırılırdı. Bkz. docs/report/problems.md · P-11
 
-    ⚠ ŞEMA DA KARŞILAŞTIRILIYOR
+    Şema da karşılaştırılıyor
     ---------------------------
     `Host` başlığı yalnızca "127.0.0.1:8001" taşır, şema içermez.
     İlk sürüm bu yüzden yalnızca host:port karşılaştırıyordu ve
     `Origin: https://127.0.0.1:8001` ile `Host: 127.0.0.1:8001`
-    eşleşiyordu — oysa http ile https AYRI kökenlerdir.
+    eşleşiyordu — oysa http ile https ayrı kökenlerdir.
 
     Pratikte sömürülmesi zor (aynı host:port'ta iki şema aynı anda
     duramaz) ama aynı köken politikasının tanımı üç bileşenlidir:
     şema + host + port. İkisini kontrol edip üçüncüsünü atlamak,
     kontrolün adını yanlış koymak olurdu.
 
-    Şema `Host`'tan gelmiyor; bağlantının KENDİ şemasından türetiliyor
+    Şema `Host`'tan gelmiyor; bağlantının kendi şemasından türetiliyor
     (`ws` → `http`, `wss` → `https`). Çağıran taraf veriyor.
     """
     if not host_header:
@@ -145,7 +145,7 @@ def origin_allowed(
 def _parts(url: str) -> tuple[str, str | None, int | None] | None:
     """URL'yi (şema, host, port) üçlüsüne ayırır; ayrıştırılamazsa None.
 
-    ⚠ `urlsplit` TEMBEL ÇALIŞIR — bu bir tuzak
+    `urlsplit` tembel çalışır — bu bir tuzak
     -----------------------------------------
     İlk sürüm şöyleydi:
 
@@ -154,7 +154,7 @@ def _parts(url: str) -> tuple[str, str | None, int | None] | None:
         except ValueError:
             return False
         ...
-        candidate.port          # ← ValueError BURADA fırlıyor
+        candidate.port          # ← ValueError burada fırlıyor
 
     `urlsplit` çağrısı bozuk girdide bile hata vermiyor; ayrıştırmayı
     alan erişimine erteliyor. `.port` ise portu tam sayıya çeviremezse
@@ -162,12 +162,12 @@ def _parts(url: str) -> tuple[str, str | None, int | None] | None:
     hata `for` döngüsünün içinde, korumasız fırlıyordu.
 
     Somut etki: `Origin: http://:::` başlığıyla gelen bir bağlantı
-    WebSocket işleyicisini çökertiyordu. Kimlik doğrulaması GEREKMEYEN,
-    el sıkışma TAMAMLANMADAN tetiklenebilen bir hata yolu — yani dışarıdan
+    WebSocket işleyicisini çökertiyordu. Kimlik doğrulaması gerekmeyen,
+    el sıkışma tamamlanmadan tetiklenebilen bir hata yolu — yani dışarıdan
     ulaşılabilir. Bu testle yakalandı (tests/unit/test_ws_guvenlik.py).
 
     Ders: bir kütüphane çağrısını `try` içine almak, o çağrının ürettiği
-    NESNEYİ kullanmanın da güvenli olduğu anlamına gelmiyor.
+    nesneyi kullanmanın da güvenli olduğu anlamına gelmiyor.
     """
     try:
         parsed = urlsplit(url)
@@ -177,15 +177,15 @@ def _parts(url: str) -> tuple[str, str | None, int | None] | None:
 
 
 def _tanimli_kameralar() -> frozenset[str]:
-    """Sistemde TANIMLI kamera adları.
+    """Sistemde tanımlı kamera adları.
 
-    ⚠ MediaMTX'e sorulmuyor, yapılandırmadan üretiliyor. MediaMTX'e
+    MediaMTX'e sorulmuyor, yapılandırmadan üretiliyor. MediaMTX'e
     sormak, bir dış servisin döndürdüğü listeyi yetki kararına temel
     yapmak olurdu; o servis ele geçirilirse yetki sınırı da gider.
     Yapılandırma bizim kontrolümüzde.
     """
     n = get_settings().camera_count
-    # ⚠ `cam-21-live` adı MediaMTX yapılandırmasında sabit
+    # `cam-21-live` adı MediaMTX yapılandırmasında sabit
     # (infra/mediamtx/mediamtx.yml · `source: publisher`) ve
     # `scripts/publish_webcam.py` onu kullanıyor. Buraya elle yazmak
     # bir kopya — ama alternatifi MediaMTX'e sormaktı ve bir dış
@@ -196,11 +196,11 @@ def _tanimli_kameralar() -> frozenset[str]:
 def authorize_cameras(requested: list[str]) -> list[str]:
     """İstemcinin istediği kameralardan izin verilenleri döndürür (G07).
 
-    ⚠ İSTEMCİNİN GÖNDERDİĞİ LİSTEYE ASLA GÜVENİLMEZ
+    İstemcinin gönderdiği listeye asla güvenilmez
     WebSocket'te istemci istediği mesajı gönderebilir; abonelik listesi
-    bir İSTEK, bir bildirim değil.
+    bir istek, bir bildirim değil.
 
-    ⚠ 01.09.2026 — BİÇİM DOĞRULAMASI YETMİYORDU
+    01.09.2026 — biçim doğrulaması yetmiyordu
     Önceki sürüm yalnızca "harf-rakam-tire, 1-64 karakter" diye
     bakıyordu; `cam-99` ya da `admin-panel` gibi var olmayan adlar
     geçiyordu. Tek başına ciddi bir açık değil (olmayan kameradan veri
@@ -211,9 +211,9 @@ def authorize_cameras(requested: list[str]) -> list[str]:
     Ayrıca sessiz bir hata kaynağıydı: yazım hatası yapan bir istemci
     "abone oldum" cevabı alıp hiç veri görmüyordu.
 
-    ⚠ AÇIK İŞ — G05 (kamera bazlı yetki)
-    Burada henüz KULLANICIYA göre kısıt yok: her doğrulanmış kullanıcı
-    tüm kameralara abone olabiliyor. PLAN §11.1 G05 bir
+    Açık İŞ — G05 (kamera bazlı yetki)
+    Burada henüz kullanıcıya göre kısıt yok: her doğrulanmış kullanıcı
+    tüm kameralara abone olabiliyor. Proje planı (G05) bir
     `user_camera_access` tablosu istiyor (hassas alanlar kısıtlansın).
     Tablo yok, bu yüzden kısıt da yok — ve bu eksik raporda böyle
     yazılacak, "yapıldı" diye değil.
@@ -255,11 +255,11 @@ async def _receiver(client: Client) -> None:
                 json.dumps({"type": "subscribed", "cameras": allowed}, separators=(",", ":"))
             )
         elif kind == "watching":
-            # Panel hangi kutucukları AÇTIĞINI bildiriyor. Bu bilgi
+            # Panel hangi kutucukları açtığını bildiriyor. Bu bilgi
             # örnekleme hızını yönlendiriyor: operatörün baktığı kamera
-            # daha sık analiz edilir (PLAN.md §5.2).
+            # daha sık analiz edilir.
             #
-            # ⚠ Yetki kontrolünden geçiyor — istemci izinsiz bir kamerayı
+            # Yetki kontrolünden geçiyor — istemci izinsiz bir kamerayı
             # "izliyorum" diye bildirip kaynak yönlendiremesin.
             requested = message.get("cameras") or []
             watched = authorize_cameras(requested if isinstance(requested, list) else [])
@@ -306,22 +306,22 @@ async def live_feed(websocket: WebSocket) -> None:
     # kapsasın diye geçiliyor (bkz. _same_origin).
     scheme = "https" if websocket.url.scheme == "wss" else "http"
     if not origin_allowed(origin, host_header, scheme):
-        # Bağlantıyı KABUL ETMEDEN reddet — el sıkışma tamamlanmasın
+        # Bağlantıyı kabul etmeden reddet — el sıkışma tamamlanmasın
         log.warning("ws_origin_reddedildi", origin=origin or "(yok)", host=host_header)
         await websocket.close(code=CLOSE_POLICY_VIOLATION, reason="origin not allowed")
         return
 
-    # ⚠ ORIGIN DOĞRULAMASI KİMLİK DOĞRULAMASI DEĞİL
+    # ORIGIN doğrulaması kimlik doğrulaması değil
     # `Origin` yalnızca "bu istek hangi sayfadan geldi" der; tarayıcı
     # dışı bir istemci onu istediği gibi yazabilir. Kimin bağlandığını
     # ancak token söyler.
     #
-    # ⚠ TOKEN ÇEREZDEN OKUNUYOR, başlıktan değil. Tarayıcının WebSocket
+    # Token çerezden okunuyor, başlıktan değil. Tarayıcının WebSocket
     # API'si özel başlık eklemeye izin vermiyor; çerez ise el sıkışmada
     # kendiliğinden gidiyor. Bu yüzden erişim tokenı `httponly` çerez
     # olarak da veriliyor (routers/oturum.py · _cerez_koy).
     #
-    # ⚠ 1008 (policy violation) ile kapatılıyor, kabul edilmeden.
+    # 1008 (policy violation) ile kapatılıyor, kabul edilmeden.
     # Kabul edip sonra kapatmak, kimliksiz istemciye bir an için de
     # olsa açık bir kanal vermek demekti.
     token = websocket.cookies.get("sentinel_token")
@@ -340,7 +340,7 @@ async def live_feed(websocket: WebSocket) -> None:
 
     kullanici = str(govde.get("sub", ""))
 
-    # ⚠ G14 — KULLANICI BAŞINA BAĞLANTI SINIRI (03.09.2026)
+    # G14 — kullanıcı başına bağlantı sınırı (03.09.2026)
     #
     # `MAX_WS_CONNECTIONS_PER_USER` ayarı `.env`'de ve `config.py`'de
     # Gün 1'den beri duruyordu ve **hiçbir yerde okunmuyordu.** Yani
@@ -349,7 +349,7 @@ async def live_feed(websocket: WebSocket) -> None:
     # izlenimini veriyordu. Bu, çalışmayan kalite kapısıyla aynı
     # sınıf hata: olmayan korumadan kötüsü, var sanılan korumadır.
     #
-    # ⚠ Neden bu sınır bir gözetim sisteminde önemli: her WS bağlantısı
+    # Neden bu sınır bir gözetim sisteminde önemli: her WS bağlantısı
     # 20 kameranın canlı analiz akışını dinliyor. Çalınmış tek bir
     # hesapla yüzlerce bağlantı açmak hem sunucuyu yorar hem de
     # veriyi sınırsız kopyalar. Sınır, çalınmış hesabın verebileceği

@@ -1,11 +1,9 @@
-"""Her alarmı KAYNAK VİDEODA bulup klip keser — yer gerçeği için (P-68).
+"""Her alarmı kaynak videoda bulup klip keser — yer gerçeği için (P-68).
 
-⭐⭐ NEDEN BU BETİK — projenin en büyük bilimsel açığı
+Neden bu betik — projenin en büyük bilimsel açığı
 ------------------------------------------------------
-Kullanıcının tespiti:
-
-> *"Sistem alarm veriyor ama bu alarmı doğrulayan bir şey yok. Bu bizim
-> projenin en büyük sıkıntılarından biri olmaz mı?"*
+Çıkış noktası şu gözlemdi: sistem alarm veriyor ama bu alarmları
+doğrulayan hiçbir şey yok. Bu, projenin en büyük eksiklerinden biriydi.
 
 Haklıydı. Elimizdeki yer gerçeği RWF-2000 (klip seviyesi), Avenue (kare
 seviyesi), cam-16 (UR Fall) ve cam-18 (kontrol) ile sınırlıydı. 20
@@ -13,18 +11,18 @@ kameralık çiftliğin geneli için hiçbir etiket yoktu — **ve K7 tam da
 orada ölçülüyordu.** Bu yüzden bildirilen "11.69 alarm/kamera-saat" bir
 *alarm oranı*dır, yanlış alarm oranı değil.
 
-⭐ Çözüm mümkün, çünkü kameralarımız **video dosyası**. Gerçek bir IP
+Çözüm mümkün, çünkü kameralarımız **video dosyası**. Gerçek bir IP
 kamerada geçmişe dönüp bakmak imkânsız olurdu; bizde her alarmın
 kaynak videoda tam olarak nereye denk geldiği bulunabiliyor.
 
-⚠ EKSİK OLAN TEK ŞEY BİLGİNİN TAŞINMASIYDI
+Eksik olan tek şey bilginin taşınmasıydı
 `FrameMessage.pts` (kaynak videodaki saniye) boru hattında Gün 1'den
 beri vardı; çıkarım worker'ı sonucu yayınlarken onu **düşürüyordu**.
 Üç küçük değişiklikle uçtan uca taşındı ve `kanit.video_pts` olarak
 kaydediliyor — `kanit` zaten `jsonb` olduğu için **veritabanı şeması
 değişmedi**.
 
-NASIL KULLANILIR
+Nasıl kullanılır
 ----------------
     uv run python scripts/alarm_klipleri.py --saat 6 --adet 60
     # -> data/_tmp/alarm_klipleri/<tur>/<cam>_<pts>_<id>.mp4
@@ -35,10 +33,10 @@ Sonra klipler izlenip CSV'de `dogru` sütunu doldurulur (1 = gerçek olay,
 
     uv run python scripts/alarm_klipleri.py --ozet
 
-⚠ ETİKETLEME KURALI — önce yaz, sonra bak
+Etiketleme kuralı — önce yaz, sonra bak
 Neyin "gerçek" sayılacağı klipler izlenmeden yazılmalı. Sonradan
 tanımlamak, gördüğünü haklı çıkaracak bir tanım seçmek olur (P-49'un
-dersi: ölçütün TANIMI olayın tanımını yanlış çizebiliyor).
+dersi: ölçütün tanımı olayın tanımını yanlış çizebiliyor).
 """
 
 from __future__ import annotations
@@ -59,7 +57,7 @@ VIDEO_DIZINI = PROJECT_ROOT / "data" / "videos"
 CIKTI = PROJECT_ROOT / "data" / "_tmp" / "alarm_klipleri"
 CSV_YOLU = CIKTI / "etiket_sablonu.csv"
 
-ONCE_S = 3.0  # alarmdan kaç saniye ÖNCE başlasın
+ONCE_S = 3.0  # alarmdan kaç saniye önce başlasın
 TOPLAM_S = 6.0  # klip uzunluğu
 
 
@@ -83,14 +81,14 @@ async def _olaylari_al(saat: float, adet: int) -> list[dict[str, Any]]:
 def _kes(kamera: str, pts: float, hedef: Path) -> bool:
     """Kaynak videodan alarm anının etrafını keser. Başarısızsa False.
 
-    ⚠ NEDEN `ffmpeg` CLI DEĞİL: bu makinede `ffmpeg` PATH'te yok (PyAV
+    Neden `ffmpeg` CLI değil: bu makinede `ffmpeg` PATH'te yok (PyAV
     kütüphaneyi gömüyor ama komut satırı aracını değil). Dış bir araca
     bağlanmak, betiği "benim makinemde çalışıyor" sınıfına sokardı.
     OpenCV zaten bağımlılığımız.
 
-    ⚠ Alarm anı klibin ORTASINDA: `ONCE_S` saniye öncesinden başlıyor.
+    Alarm anı klibin ortasında: `ONCE_S` saniye öncesinden başlıyor.
     Sebep — bir alarmın doğru olup olmadığına karar vermek için olayın
-    ÖNCESİNİ görmek gerekiyor. Yalnızca alarm anından itibaren kesmek,
+    öncesini görmek gerekiyor. Yalnızca alarm anından itibaren kesmek,
     "neden alarm verdi" sorusunu cevaplanamaz kılardı.
     """
     import cv2
@@ -108,23 +106,23 @@ def _kes(kamera: str, pts: float, hedef: Path) -> bool:
         if genislik <= 0 or yukseklik <= 0:
             return False
 
-        # ⚠⚠ 10.09.2026 — `pts` DOSYA İÇİ KONUM DEĞİL, DÖNGÜ BOYUNCA BİRİKİYOR
+        # 10.09.2026 — `pts` dosya içi konum değil, döngü boyunca birikiyor
         #
         # MediaMTX kaynak videoları `-stream_loop -1 -fflags +genpts` ile
-        # SONSUZ DÖNGÜDE yayınlıyor. `genpts` her turda zaman damgasını
+        # sonsuz döngüde yayınlıyor. `genpts` her turda zaman damgasını
         # sıfırlamıyor, **birikimli** üretiyor. Yani `pts = 2037.73` bir
         # 300 saniyelik videoda "2037. saniye" demek değil, "yayın
         # başlayalı 2037 saniye oldu" demek.
         #
         # İlk sürüm bunu doğrudan konum olarak kullanıyordu:
-        #   cap.set(POS_MSEC, 2037_730)  →  dosyanın SONUNUN ötesi
-        #   → okuma başarısız → 257 baytlık BOŞ klip
+        #   cap.set(POS_MSEC, 2037_730)  →  dosyanın sonunun ötesi
+        #   → okuma başarısız → 257 baytlık boş klip
         #
-        # ⚠ Ve betik bunu BAŞARILI sanıyordu: kontrolü `dosya var ve
+        # Ve betik bunu başarılı sanıyordu: kontrolü `dosya var ve
         # boyut > 0` idi. 257 bayt "var ve >0". "12/12 klip kesildi"
         # diye rapor edildi ve klipler açılmıyordu.
         #
-        # ⭐ Doğrusu videonun süresine göre MOD almak. Bu, döngüdeki
+        # Doğrusu videonun süresine göre MOD almak. Bu, döngüdeki
         # konumu doğru veriyor — ve yalnızca kaynak sonsuz döngüde
         # olduğu için geçerli bir varsayım (kurulumumuzun özelliği).
         toplam_kare = cap.get(cv2.CAP_PROP_FRAME_COUNT)
@@ -160,14 +158,14 @@ def _kes(kamera: str, pts: float, hedef: Path) -> bool:
     finally:
         cap.release()
 
-    # ⚠⚠ BAŞARI KONTROLÜ ZAYIFTI VE YALAN SÖYLÜYORDU
+    # Başarı kontrolü zayıftı ve yalan söylüyordu
     #
     # Eski kontrol: `hedef.exists() and st_size > 0`.
     # 257 baytlık, hiç kare içermeyen, açılamayan bir dosya bu testi
-    # GEÇİYORDU — ve betik "12/12 klip kesildi" diye raporluyordu.
+    # geçiyordu — ve betik "12/12 klip kesildi" diye raporluyordu.
     #
-    # ⭐ Bir çıktının var olması, kullanılabilir olması demek değil.
-    # Şimdi dosya GERÇEKTEN AÇILIP ilk karesi okunuyor: kontrol, dosyanın
+    # Bir çıktının var olması, kullanılabilir olması demek değil.
+    # Şimdi dosya gerçekten açılıp ilk karesi okunuyor: kontrol, dosyanın
     # yapacağı işi yapıyor.
     if yazilan == 0 or not hedef.exists():
         return False
@@ -210,8 +208,8 @@ def _uret(args: argparse.Namespace) -> int:
             "skor": round(float(o["skor"]), 3),
             "video_pts": round(float(pts), 2),
             "ts": str(o["ts"]),
-            # ⬇ ELLE DOLDURULACAK: 1 = gerçek olay · 0 = yanlış alarm
-            #    boş = emin değilim (ANALİZ DIŞI bırakılır)
+            # ↓ elle doldurulacak: 1 = gerçek olay · 0 = yanlış alarm
+            #    boş = emin değilim (analiz dışı bırakılır)
             "dogru": "",
             "not": "",
         })

@@ -1,12 +1,12 @@
-"""Çıkarım worker'ının YALNIZ BAŞINA kapasitesi.
+"""Çıkarım worker'ının yalnız başına kapasitesi.
 
 Cevaplanan soru
 ---------------
 Boru hattında çıkarım ~2 kare/sn işliyor. İzole ölçümde poz 2.77 ms/kare
 çıkmıştı — 15-100 kat fark. İki hipotez var ve ayrılmaları şart:
 
-    A) Tüketici GERÇEKTEN yavaş  →  optimizasyon çıkarımda
-    B) ÇEKİŞME yavaşlatıyor      →  optimizasyon alımda / süreç ayrımında
+    A) Tüketici gerçekten yavaş  →  optimizasyon çıkarımda
+    B) çekişme yavaşlatıyor      →  optimizasyon alımda / süreç ayrımında
 
 Bu betik B'yi ortadan kaldırıyor: **alım katmanı çalışmazken** aynı
 modeller, aynı kod yolu, aynı kameraların kareleriyle ölçüyor. Çıkan
@@ -16,7 +16,7 @@ sayı "bu makinede çıkarımın tavanı" oluyor.
 (GPU örtüştürme ve GPU kırpıntı hipotezleri; ikisi de makuldü, ikisi de
 ölçümle çürüdü).
 
-⚠ TEMSİLİ ÖRNEKLEM
+Temsili örneklem
 Kareler **20 kameranın hepsinden** ve gerçek çiftlik oranında alınıyor.
 Yalnızca kalabalık kameralardan örneklemek poz maliyetini 3 katına
 çıkarıyordu (P-15'in tekrarı, bugün bir kez daha yaşandı).

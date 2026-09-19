@@ -1,12 +1,12 @@
 """Çözme maliyeti metriklerinin ölçtüğünü sandığımız şeyi ölçtüğünü sınar (P-60).
 
-⭐ NEDEN BU TEST VAR
+Neden bu test var
 -------------------
 Eski `decode_duration` metriği adının söylediği şeyi ölçmüyordu:
 
-    last = time.perf_counter()          # önceki karenin İŞİ BİTTİĞİNDE
+    last = time.perf_counter()          # önceki karenin işi bittiğinde
     for frame in decoder.frames():
-        now = time.perf_counter()       # yeni kare GELDİĞİNDE
+        now = time.perf_counter()       # yeni kare geldiğinde
         decode_duration.observe(now - last)
 
 Ölçtüğü şey çözme değil, **bir sonraki karenin gelmesini bekleme**
@@ -16,14 +16,14 @@ süresiydi. 17 gün panoda durdu ve kimse fark etmedi — çünkü sayı
 Yeni metrikler `time.thread_time()` kullanıyor: yalnızca o iş
 parçacığının harcadığı CPU. Bloke geçen süre sayılmaz.
 
-⚠⚠ BU TESTİN NEYİ KANITLAMADIĞI — dürüstçe
+Bu testin neyi kanıtlamadığı
 -------------------------------------------
 İlk yazdığım sürüm "eski kodda düşerdi" diye iddia ediyordu. **Yanlıştı
 ve ölçülerek yakalandı:**
 
     duvar saati toplam      :  554.4 ms
-    ESKİ metrik toplasaydı  :   46.3 ms   ⬅ küçük!
-    YENİ çözme CPU          :   15.6 ms
+    eski metrik toplasaydı  :   46.3 ms   ← küçük!
+    Yeni çözme CPU          :   15.6 ms
 
 Sebep: eski metriğin şiştiği yer **canlı akışın tempo sınırıdır**. RTSP
 sunucusu kareleri gerçek zamanlı veriyor, yani 2.75 FPS'te bir sonraki
@@ -31,7 +31,7 @@ kare ~360 ms sonra geliyor ve eski metrik o beklemeyi yazıyordu. Yerel
 bir dosyada ise sonraki kare **anında** hazır — bekleme yok, eski
 metrik de küçük çıkıyor.
 
-> ⭐ Yani bu birim testi, üretimdeki hatayı **yeniden üretemez**;
+> Yani bu birim testi, üretimdeki hatayı **yeniden üretemez**;
 > bunun için gerçek zamanlı bir kaynak gerekir. Test etmediği şeyi
 > test ettiğini söylemek, ölçütün tanımını yanlış çizmek olurdu —
 > projede altı kez yakalanan hatanın (P-49) ta kendisi.
@@ -63,7 +63,7 @@ def _sayac(metrik: object, cam: str) -> float:
 
 
 def _cpu_yak(saniye: float) -> None:
-    """Verilen kadar GERÇEK CPU harcar (uyku değil — uyku CPU harcamaz)."""
+    """Verilen kadar gerçek CPU harcar (uyku değil — uyku CPU harcamaz)."""
     hedef = time.thread_time() + saniye
     while time.thread_time() < hedef:
         sum(i * i for i in range(2000))
@@ -71,9 +71,9 @@ def _cpu_yak(saniye: float) -> None:
 
 @pytest.fixture(scope="module")
 def video(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    """Küçük, GERÇEK bir H.264 dosyası üretir.
+    """Küçük, gerçek bir H.264 dosyası üretir.
 
-    ⚠ Sahte (mock) bir dekoder işe yaramazdı: ölçtüğümüz şey tam olarak
+    Sahte (mock) bir dekoder işe yaramazdı: ölçtüğümüz şey tam olarak
     gerçek çözme işinin CPU'su. Mock'lasaydık test, kodun kendi
     varsayımını tekrar etmekten ibaret olurdu.
     """
@@ -103,9 +103,9 @@ def video(tmp_path_factory: pytest.TempPathFactory) -> Path:
 
 class TestCozmeCpuAtfi:
     def test_TUKETICININ_CPUSU_cozmenin_hanesine_yazilmiyor(self, video: Path) -> None:
-        """⭐ ASIL TEST — atıf sınırı.
+        """Asıl test — atıf sınırı.
 
-        Tüketici her kare arasında ~50 ms GERÇEK CPU yakıyor (uyku
+        Tüketici her kare arasında ~50 ms gerçek CPU yakıyor (uyku
         değil; uyku `thread_time`'a zaten girmez, dolayısıyla hiçbir
         şey sınamazdı).
 
@@ -127,7 +127,7 @@ class TestCozmeCpuAtfi:
         yakilan = kare_sayisi * yakim
 
         assert len(kareler) == kare_sayisi
-        # ⚠ `list(...)` üreteci tüketiciden ÖNCE tükettiği için burada
+        # `list(...)` üreteci tüketiciden önce tükettiği için burada
         # yakım zaten ayrı; asıl senaryo aşağıdaki döngüde.
         assert cpu < yakilan, (
             f"çözme CPU'su {cpu * 1000:.0f} ms, yakılan {yakilan * 1000:.0f} ms — "
@@ -135,7 +135,7 @@ class TestCozmeCpuAtfi:
         )
 
     def test_yield_ICINDE_yakilan_cpu_cozmeye_atfedilmiyor(self, video: Path) -> None:
-        """Aynı sınır, ama tüketici üreteci ADIM ADIM sürerken yakıyor.
+        """Aynı sınır, ama tüketici üreteci adım adım sürerken yakıyor.
 
         Yukarıdaki test `list()` kullanıyor (üreteç önce tükeniyor).
         Burada tüketici her `yield` arasında CPU yakıyor — üretimdeki
@@ -154,7 +154,7 @@ class TestCozmeCpuAtfi:
         yakilan = kare_sayisi * yakim
 
         assert adet == kare_sayisi
-        # ⭐ İşaret `yield`den sonra tazelenmezse cpu ≈ yakılan + çözme
+        # İşaret `yield`den sonra tazelenmezse cpu ≈ yakılan + çözme
         # olurdu. Yarısını eşik almak, Windows'un ~15.6 ms iş parçacığı
         # CPU çözünürlüğüne rağmen güvenli bir ayrım bırakıyor.
         assert cpu < yakilan / 2, (
@@ -166,11 +166,11 @@ class TestCozmeCpuAtfi:
         """Çözme her karede, BGR yalnızca yayınlananlarda ödeniyor.
 
         İkisini ayrı tutmak, örnekleme hızını düşürmenin neyi
-        kazandırdığını gösteriyor: **decode bedeli DÜŞMEZ, BGR bedeli
+        kazandırdığını gösteriyor: **decode bedeli düşmez, BGR bedeli
         düşer.** `decoder.py` başındaki not tam da bunu söylüyor ve bu
         test o notun doğru olduğunu sınıyor.
 
-        ⚠ SAYININ BÜYÜKLÜĞÜ SINANMIYOR — sınanamaz. Windows'ta iş
+        Sayının büyüklüğü sınanmıyor — sınanamaz. Windows'ta iş
         parçacığı CPU çözünürlüğü ~15.6 ms; 320×240 bir karenin BGR
         dönüşümü ~0.1 ms. Tek tek ölçüldüğünde sayaç 0 okuyor. Sayaç
         monoton biriktiği için **üretimdeki binlerce karede toplam
@@ -198,7 +198,7 @@ class TestDosyaKaynagi:
     def test_dosya_acilirken_CANLI_AKIS_secenekleri_uygulanmiyor(
         self, video: Path,
     ) -> None:
-        """⚠ `fflags=nobuffer` dosya çözmeyi TAMAMEN bozuyor.
+        """`fflags=nobuffer` dosya çözmeyi tamamen bozuyor.
 
         Ölçüldü: aynı mp4, canlı akış seçenekleriyle **0 kare**,
         seçeneksiz 45 kare. Beş seçenek tek tek çıkarıldığında yalnızca

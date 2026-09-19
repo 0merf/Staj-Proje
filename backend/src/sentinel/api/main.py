@@ -4,7 +4,7 @@ Kapsam: kimlik doğrulama + RBAC, kamera envanteri, canlı sonuç
 WebSocket'i, olay geçmişi, sağlık kontrolleri, Prometheus metrikleri
 ve React SPA servisi.
 
-⚠ 03.09.2026 — BU BAŞLIK 17 GÜN BAYAT KALDI
+03.09.2026 — bu başlık 17 gün bayat kaldı
 Önceki hâli şuydu: *"Faz 0 kapsamı: sağlık kontrolleri, metrikler ve
 geliştirme durum paneli. Kimlik doğrulama, kamera CRUD ve WebSocket
 katmanı sonraki fazlarda eklenecek."*
@@ -57,15 +57,15 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         camera_count=settings.camera_count,
         target_fps=settings.target_fps,
     )
-    # Sonuç yayıncısı: inference.results akışını TEK okuyucu takip eder,
+    # Sonuç yayıncısı: inference.results akışını tek okuyucu takip eder,
     # WebSocket istemcilerine dağıtır (api/ws/manager.py)
     await broadcaster.start()
 
-    # ⚠ Kullanıcı ve denetim tabloları AÇILIŞTA kuruluyor (idempotent).
+    # Kullanıcı ve denetim tabloları açılışta kuruluyor (idempotent).
     # Elle migration gerektiren bir sistem, bir bileşen yeniden
     # başladığında sessizce çalışmaz duruma gelir.
     #
-    # ⚠ Başarısızlık API'yi DURDURMUYOR: veritabanı geçici olarak
+    # Başarısızlık API'yi durdurmuyor: veritabanı geçici olarak
     # erişilemezse panelin video ve canlı analiz yolu çalışmaya devam
     # etmeli. Giriş uçları o sırada 503 dönecek — ki doğrusu da bu.
     try:
@@ -97,9 +97,9 @@ app = FastAPI(
 )
 
 # CORS — yalnızca beyaz listedeki origin'ler
-# ⚠ Bu WebSocket'i KAPSAMAZ. WS el sıkışması CORS'a uymaz; `Origin`
-#   başlığı orada ELLE doğrulanıyor (`api/ws/live.py · origin_allowed`,
-#   PLAN.md §11.1 / G06). Bu ayrımı bilmemek yaygın bir açık kaynağı:
+# Bu WebSocket'i kapsamaz. WS el sıkışması CORS'a uymaz; `Origin`
+#   başlığı orada elle doğrulanıyor (`api/ws/live.py · origin_allowed`,
+#   Proje planı / G06). Bu ayrımı bilmemek yaygın bir açık kaynağı:
 #   CORS ayarlandı diye WebSocket'in de korunduğu sanılıyor.
 app.add_middleware(
     CORSMiddleware,
@@ -112,16 +112,16 @@ app.add_middleware(
 
 @app.middleware("http")
 async def _istek_olc(request: Any, call_next: Any) -> Any:
-    """Her isteği sayar (PLAN §13.1 · `sentinel_http_requests_total`).
+    """Her isteği sayar (`sentinel_http_requests_total`).
 
-    ⚠ YOL ŞABLONU KULLANILIYOR, HAM YOL DEĞİL
+    Yol şablonu kullanılıyor, ham yol değil
     `/api/v1/events?camera=cam-03` gibi bir yolu olduğu gibi etiket
     yapmak, Prometheus'ta **kardinalite patlaması** demek: her farklı
     sorgu yeni bir zaman serisi üretir ve bir süre sonra Prometheus'u
     dize etiketleriyle boğar. FastAPI'nin eşleştirdiği rota şablonu
     (`/api/v1/events`) sabit sayıda seri üretiyor.
 
-    ⚠ Eşleşmeyen istekler (404) tek bir "bilinmeyen" etiketinde
+    Eşleşmeyen istekler (404) tek bir "bilinmeyen" etiketinde
     toplanıyor — aksi hâlde rastgele yol deneyen bir tarayıcı
     (saldırgan ya da bot) metrik deposunu şişirebilirdi. Bu, ölçüm
     ucunun kendisinin bir saldırı yüzeyi olduğu az bilinen bir durum.
@@ -138,18 +138,18 @@ async def _istek_olc(request: Any, call_next: Any) -> Any:
 # ─── Sağlık ve durum ─────────────────────────────────────────
 
 
-# ⚠ HANGİ UÇ NEDEN KORUNUYOR — karar tablosu
+# Hangi UÇ neden korunuyor — karar tablosu
 #
-#   /system/live      AÇIK      canlılık probu; yalnızca "ayaktayım" der.
+#   /system/live      açık      canlılık probu; yalnızca "ayaktayım" der.
 #                               `start_all.ps1` bununla doğruluyor ve
 #                               izleme sistemleri kimlik taşımaz.
-#   /metrics          AÇIK      Prometheus kazıyor. 127.0.0.1'e bağlı;
-#                               dışa açılırsa Caddy'de korunacak (PLAN §10).
+#   /metrics          açık      Prometheus kazıyor. 127.0.0.1'e bağlı;
+# dışa açılırsa Caddy'de korunacak.
 #   /system/health    viewer    servis sürümlerini ve iç durumu sızdırıyor
 #   /system/config    viewer    kamera sayısı, FPS, iç yapılandırma
 #   /cameras          viewer    kamera listesi
 #   /events*          viewer    olay geçmişi
-#   /cameras/webcam/* OPERATOR  ⚠ YENİ bir kamera açıyor — mahremiyet
+#   /cameras/webcam/* OPERATOR  yeni bir kamera açıyor — mahremiyet
 #                               açısından okumaktan tamamen farklı
 #   /auth/denetim     admin     kimin ne zaman çalıştığını gösteriyor
 @app.get("/api/v1/system/health", tags=["system"])
@@ -186,7 +186,7 @@ async def list_cameras(
     Sentetik test yolları (`cam-test-*`) kamera değil test aparatıdır ve
     listeye girmez; `?include_test=true` ile görülebilirler.
 
-    Not: MediaMTX yalnızca AKTİF yolları listeler; regex ile tanımlı
+    Not: MediaMTX yalnızca aktif yolları listeler; regex ile tanımlı
     cam-02…cam-20 biri bağlanana kadar görünmez. Bu uç nokta tanımlı
     listeyi kamera çiftliği manifestinden alıp durumla birleştirir.
     """
@@ -208,20 +208,20 @@ async def webcam_start(
 ) -> JSONResponse:
     """Webcam yayınını başlatır (cam-21-live).
 
-    ⚠ Kamera yalnızca bu çağrıyla açılır — kendiliğinden açılmaz.
+    Kamera yalnızca bu çağrıyla açılır — kendiliğinden açılmaz.
 
-    ⚠ 03.09.2026 — DENETİM KAYDI BURADA EKSİKTİ (G19)
+    03.09.2026 — denetim kaydı burada eksikti (G19)
     `operator` rolü Gün 16'da zorunlu kılınmıştı ama yanındaki not
     hâlâ *"Faz 1'de rol ve denetim kaydı zorunlu olacak"* diyordu.
     Rol gelmişti, **denetim kaydı gelmemişti** — ve not bayat olduğu
     için eksik görünmez hâle gelmişti.
 
     Bu, denetim izinin en çok gerektiği eylem: sistemdeki diğer her uç
-    var olan bir görüntüyü OKUYOR, bu uç **yeni bir kamera açıyor.**
-    PLAN §11.1/G19 zaten "kamera görüntüleme" için denetim istiyordu;
-    kamera AÇMA, okumadan daha ağır bir eylem.
+    var olan bir görüntüyü okuyor, bu uç **yeni bir kamera açıyor.**
+    Proje planı (G19) zaten "kamera görüntüleme" için denetim istiyordu;
+    kamera açma, okumadan daha ağır bir eylem.
 
-    ⚠ Denetim kaydı sonuçtan BAĞIMSIZ yazılıyor (`basarili` alanıyla).
+    Denetim kaydı sonuçtan bağımsız yazılıyor (`basarili` alanıyla).
     Başarısız bir açma denemesi de kayda değer: niyet gerçekleşmiş
     olmasa da beyan edilmiştir.
     """
@@ -256,13 +256,13 @@ async def _denetim(
     basarili: bool = True,
     ayrinti: dict[str, Any] | None = None,
 ) -> None:
-    """Denetim izine yazar — hata isteği DÜŞÜRMEZ.
+    """Denetim izine yazar — hata isteği düşürmez.
 
-    ⚠ Bu takas bilinçli ve tartışmalı olduğu için yazılıyor:
+    Bu takas bilinçli ve tartışmalı olduğu için yazılıyor:
     denetim kaydı yazılamazsa istek yine de işleniyor. Alternatif,
     veritabanı erişilemezken kamera açmayı tümden engellemekti.
 
-    Yüksek güvenlikli bir kurulumda doğru seçim TERSİ olurdu:
+    Yüksek güvenlikli bir kurulumda doğru seçim tersi olurdu:
     "denetlenemeyen eylem yapılamaz". Bu bir staj/demo kurulumu ve
     veritabanı arızasının tüm operasyonu durdurması orantısız —
     ama karar raporda böyle, gerekçesiyle yazılacak. Sessizce
@@ -291,9 +291,9 @@ async def liveness() -> dict[str, Any]:
 async def public_config(
     _: Annotated[Kullanici, Depends(mevcut_kullanici)],
 ) -> dict[str, Any]:
-    """Arayüzün ihtiyaç duyduğu, sır İÇERMEYEN ayarlar.
+    """Arayüzün ihtiyaç duyduğu, sır içermeyen ayarlar.
 
-    ⚠ 03.09.2026 — `privacy_blur_default` BU YANITTAN ÇIKARILDI
+    03.09.2026 — `privacy_blur_default` bu yanıttan çıkarıldı
     Bu alan `true` dönüyordu ve sistemde hiçbir bulanıklaştırma yoktu;
     ön yüz de alanı hiç okumuyordu. Yani API, yapmadığı bir şeyi
     yaptığını beyan ediyordu — en kötü tür hata, çünkü kimse
@@ -317,7 +317,7 @@ async def public_config(
 async def metrik_ucu() -> Response:
     """Prometheus metrik uç noktası.
 
-    ⚠ Fonksiyon adı `metrics` DEĞİL: `sentinel.metrics` modülü bu
+    Fonksiyon adı `metrics` değil: `sentinel.metrics` modülü bu
     dosyaya `metrics` adıyla aktarılıyor ve aynı adı kullanmak modülü
     gölgeliyordu. Yol (`/metrics`) değişmedi — yalnızca Python adı.
     """

@@ -1,6 +1,6 @@
-"""Saldırganlık tırmanma skoru — PLAN.md §6.5.
+"""Saldırganlık tırmanma skoru.
 
-⚠ NEDEN BU TESTLER KRİTİK
+Neden bu testler kritik
 -------------------------
 Bu skor operatöre "burada kavga çıkıyor olabilir" dedirtiyor. Yanlış
 olduğunda iki yönde de pahalı:
@@ -8,14 +8,14 @@ olduğunda iki yönde de pahalı:
   · fazla duyarlı → operatör alarmları kapatır, sistem işe yaramaz
   · fazla sağır   → gerçek olay kaçar, sistemin varlık sebebi kalmaz
 
-Ve hata SESSİZDİR: skor üretilir, makul görünür, sadece yanlış sebeple
+Ve hata sessizdir: skor üretilir, makul görünür, sadece yanlış sebeple
 yükselmiştir.
 
 Bu yüzden testler "skor yükseliyor mu" diye bakmıyor — **doğru sebeple**
 yükseliyor mu diye bakıyor. En önemlisi ayrımlar:
 
-    hızlı bilek AMA yalnız      → egzersiz, skor DÜŞÜK olmalı
-    hızlı bilek + yakın + dönük → kavga örüntüsü, skor YÜKSEK
+    hızlı bilek ama yalnız      → egzersiz, skor düşük olmalı
+    hızlı bilek + yakın + dönük → kavga örüntüsü, skor yüksek
 """
 
 from __future__ import annotations
@@ -101,10 +101,10 @@ def akis(
     kareler: list[tuple[float, list[tuple[int, float, bool, bool]]]],
     esikler: object | None = None,
 ) -> list:
-    """Sahneyi KARE KARE besler — canlı worker'ın yaptığı gibi.
+    """Sahneyi kare kare besler — canlı worker'ın yaptığı gibi.
 
-    ⚠ NEDEN `sahne` YETMİYOR
-    `sahne` tüm kareleri depoya yükleyip skorlayıcıyı BİR KEZ çağırıyor.
+    Neden `sahne` yetmiyor
+    `sahne` tüm kareleri depoya yükleyip skorlayıcıyı bir kez çağırıyor.
     Skor üstel hareketli ortalamayla yumuşatıldığı için (EMA_ALFA=0.4)
     tek çağrıda ham değerin ancak %40'ı görünür — skor hiç oturmaz.
 
@@ -146,13 +146,13 @@ def akis(
 
 
 # ══════════════════════════════════════════════════════════════
-#  ⭐ Asıl ayrım: yalnız mı, etkileşimde mi?
+#  Asıl ayrım: yalnız mı, etkileşimde mi?
 # ══════════════════════════════════════════════════════════════
 
 
 class TestYalnizVsEtkilesim:
     def test_YALNIZ_kisi_hizli_bilek_ALARM_VERMIYOR(self) -> None:
-        """⚠ En kritik test.
+        """En kritik test.
 
         Hızlı bilek hareketi tek başına saldırganlık değildir: egzersiz,
         el sallama, oyun aynı sinyali verir. Bu test tutmazsa sistem
@@ -175,7 +175,7 @@ class TestYalnizVsEtkilesim:
         assert skorlar[0].skor < ESIK_UYARI_GIR, (
             f"yalnız kişi uyarı eşiğini aşmamalı, skor={skorlar[0].skor:.2f}"
         )
-        # Yakınlık bileşeni SIFIR olmalı — kimse yok
+        # Yakınlık bileşeni sıfır olmalı — kimse yok
         assert skorlar[0].bilesenler["yakinlik"] == 0.0
 
     def test_YAKIN_ve_KARSILIKLI_kisilerde_skor_YUKSEK(self) -> None:
@@ -212,7 +212,7 @@ class TestYalnizVsEtkilesim:
         assert any(s.karsi_taraf is not None for s in skorlar)
 
     def test_YAN_YANA_GECEN_iki_yaya_DIKKAT_bile_vermiyor(self) -> None:
-        """⚠ REGRESYON — 26.08.2026'da üretimde patlayan senaryo bu.
+        """Regresyon — 26.08.2026'da üretimde patlayan senaryo bu.
 
         Ölçüm: **26.4 yanlış alarm/kamera-saat**, hedef ≤3 (K7). Kırılımda
         en büyük kalem saldırganlıktı ve tek başına Oxford caddesinde
@@ -224,7 +224,7 @@ class TestYalnizVsEtkilesim:
         ölü bölgesi yoktu, sıradan bir yaya bileşenlerin çoğunu yarıdan
         fazla dolduruyordu ve toplam 0.55'i (uyarı) aşıyordu.
 
-        Bu test o senaryoyu sabitliyor: iki kişi birbirine doğru NORMAL
+        Bu test o senaryoyu sabitliyor: iki kişi birbirine doğru normal
         hızda yürüyor, yan yana geçiyorlar, kolları yürüyüş temposunda
         sallanıyor. Kavga yok — **dikkat seviyesi bile çıkmamalı.**
 
@@ -245,7 +245,7 @@ class TestYalnizVsEtkilesim:
             kareler.append((ts, [(1, sol, kol, True), (2, sag, kol, False)]))
             sol += 12.0
             sag -= 12.0
-        # ⚠ Kare kare besleniyor: EMA'nın oturması şart (bkz. `akis`).
+        # Kare kare besleniyor: EMA'nın oturması şart (bkz. `akis`).
         skorlar = akis(kareler)
         assert skorlar
 
@@ -259,7 +259,7 @@ class TestYalnizVsEtkilesim:
         """Kapı açık/kapalı aynı sahnede kıyaslanıyor.
 
         Yalnız bir kişinin şiddetli hareketi kapı açıkken belirgin
-        biçimde daha düşük skor almalı. Kapının VARLIK sebebi bu;
+        biçimde daha düşük skor almalı. Kapının varlık sebebi bu;
         kapatılırsa test kırmızıya döner ve sebep görünür olur.
         """
         from dataclasses import replace
@@ -289,7 +289,7 @@ class TestYalnizVsEtkilesim:
 
 class TestCiftOzellikleri:
     def test_UZAK_cift_hic_hesaplanmiyor(self) -> None:
-        """⚠ Kombinatorik patlama koruması.
+        """Kombinatorik patlama koruması.
 
         17 kişilik sahnede 136 çift var. Uzak çiftler bilgi taşımıyor
         ve hesaplanmaları israf.
@@ -329,7 +329,7 @@ class TestCiftOzellikleri:
         assert ciftler[0].yaklasma_hizi > 0
 
     def test_mesafe_GOVDE_BOYUNA_normalize(self) -> None:
-        """⚠ Aynı gerçek mesafe, farklı uzaklıkta aynı sayıyı vermeli.
+        """Aynı gerçek mesafe, farklı uzaklıkta aynı sayıyı vermeli.
 
         Piksel kullansaydık kameraya yakın herkes "temas hâlinde"
         görünürdü.
@@ -366,23 +366,23 @@ class TestCiftOzellikleri:
 
 class TestHisterezis:
     def test_seviye_TITREMIYOR(self) -> None:
-        """⚠ Girme ve çıkma eşikleri farklı olmasa panel titrerdi.
+        """Girme ve çıkma eşikleri farklı olmasa panel titrerdi.
 
-        Skor eşiğin hemen altına inince seviye HEMEN düşmemeli.
+        Skor eşiğin hemen altına inince seviye hemen düşmemeli.
         """
-        # ⚠ SAYILAR EŞİKLERDEN TÜRETİLİYOR, ELLE YAZILMIYOR
+        # Sayılar eşiklerden türetiliyor, elle yazılmıyor
         # İlk sürüm 0.60 / 0.90 / 0.45 / 0.30 yazıyordu. Bu değerler o
         # günkü eşiklere (0.35/0.55/0.75) göre seçilmişti; 26.08'de
-        # skorun ÖLÇEĞİ değişip eşikler yeniden kalibre edilince test
+        # skorun ölçeği değişip eşikler yeniden kalibre edilince test
         # kırıldı — oysa histerezis mantığında hiçbir şey değişmemişti.
         #
         # Test neyi sınadığını bilmeli: burada sınanan şey seviye
-        # geçişlerinin MANTIĞI, kalibrasyonun kendisi değil. Kalibrasyon
+        # geçişlerinin mantığı, kalibrasyonun kendisi değil. Kalibrasyon
         # ölçümle değişir ve değiştiğinde bu testin kırılmaması gerekir.
         e = VARSAYILAN
         s = TirmanmaSkorlayici(e)
 
-        # ⚠ YUKARI YÖNDE HİSTEREZİS YOK: skor bir anda yükselirse
+        # Yukarı yönde histerezis yok: skor bir anda yükselirse
         # seviye de anında yükselmeli. Merdiven gibi çıkmak erken
         # uyarı avansını (K8) doğrudan yerdi.
         uyari_ustu = (e.esik_uyari_gir + e.esik_alarm_gir) / 2
@@ -391,7 +391,7 @@ class TestHisterezis:
             "ani sıçrama anında alarm olmalı"
         )
 
-        # Girme eşiğinin ALTINDA ama çıkma eşiğinin ÜSTÜNDE → seviye korunur
+        # Girme eşiğinin altında ama çıkma eşiğinin üstünde → seviye korunur
         arada = (e.esik_uyari_cik + e.esik_uyari_gir) / 2
         assert e.esik_uyari_cik < arada < e.esik_uyari_gir
         assert s._seviye(arada, "uyari") == "uyari"
@@ -422,7 +422,7 @@ class TestHisterezis:
 
 
 def test_bilesenler_TOPLAM_skoru_aciklamali() -> None:
-    """⚠ Açıklanabilirlik: operatör "neden" sorusunun cevabını görmeli.
+    """Açıklanabilirlik: operatör "neden" sorusunun cevabını görmeli.
 
     Bileşenler eksikse alarm bir kara kutu olur ve operatör güvenmez.
     """

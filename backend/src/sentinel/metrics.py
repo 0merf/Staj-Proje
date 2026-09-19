@@ -1,6 +1,6 @@
 ﻿"""Prometheus metrikleri.
 
-Tanım listesi PLAN.md §13.1'dedir. Buradaki her metriğin bir amacı var;
+Tanım listesi proje planındadır. Buradaki her metriğin bir amacı var;
 "her ihtimale karşı" metrik toplamıyoruz — her biri bir soruyu cevaplıyor.
 """
 
@@ -46,13 +46,13 @@ motion_gate_ratio = Gauge(
     ["cam"],
 )
 
-# ⚠⚠ 09.09.2026 — ESKİ ADI `decode_duration`'DI VE YANLIŞ ŞEYİ ÖLÇÜYORDU
+# 09.09.2026 — eski adı `decode_duration`'DI ve yanlış şeyi ölçüyordu
 #
 # Eski kod (`ingest/worker.py`):
 #
-#     last = time.perf_counter()          # önceki karenin İŞİ BİTTİĞİNDE
+#     last = time.perf_counter()          # önceki karenin işi bittiğinde
 #     for frame in decoder.frames():
-#         now = time.perf_counter()       # yeni kare GELDİĞİNDE
+#         now = time.perf_counter()       # yeni kare geldiğinde
 #         decode_duration.observe(now - last)
 #
 # Aradaki süre çözme işi değil, **bir sonraki karenin gelmesini
@@ -61,7 +61,7 @@ motion_gate_ratio = Gauge(
 # söylediği şeyi değil, kendi ayarımızı ölçüyordu. Kovaların tavanı
 # 0.25 sn olduğu için de neredeyse her gözlem `+Inf`'e düşüyordu.
 #
-# ⭐ Aralığın kendisi işe yarar bir sayı — sadece adı yanlıştı. Dürüst
+# Aralığın kendisi işe yarar bir sayı — sadece adı yanlıştı. Doğru
 # adıyla bırakıldı.
 frame_interval = Histogram(
     "sentinel_frame_interval_seconds",
@@ -71,21 +71,21 @@ frame_interval = Histogram(
     buckets=(0.02, 0.05, 0.1, 0.2, 0.35, 0.5, 1.0, 2.0),
 )
 
-# ⭐⭐ ASIL İŞİ ÖLÇEN METRİKLER — duvar saati DEĞİL, CPU ZAMANI (P-58/P-60)
+# Asıl işi ölçen metrikler — duvar saati değil, CPU zamanı (P-58/P-60)
 #
 # Neden duvar saati olmaz: `container.decode()` ağdan veri beklerken
-# BLOKE oluyor. Onu `perf_counter` ile ölçmek, hatayı bir kat aşağıda
+# bloke oluyor. Onu `perf_counter` ile ölçmek, hatayı bir kat aşağıda
 # tekrarlamak olurdu — yine beklemeyi ölçerdik.
 #
-# `time.thread_time()` yalnızca O İŞ PARÇACIĞININ harcadığı CPU'yu
+# `time.thread_time()` yalnızca O İŞ parçacığının harcadığı CPU'yu
 # sayar; bloke geçen süre sayılmaz. Kamera başına bir iş parçacığı
 # olduğu için tam da istediğimiz şey.
 #
-# ⚠ NEDEN HISTOGRAM DEĞİL COUNTER: Windows'ta `GetThreadTimes`
+# Neden HISTOGRAM değil COUNTER: Windows'ta `GetThreadTimes`
 # çözünürlüğü ~15.6 ms. Kare başına ~2 ms'lik bir işi tek tek ölçmek
-# çoğunlukla 0 verirdi. Ama sayaç MONOTON birikiyor; kare sınırlarında
+# çoğunlukla 0 verirdi. Ama sayaç monoton birikiyor; kare sınırlarında
 # okunan farkların toplamı teleskoplanıp `son − ilk` oluyor. Yani
-# TOPLAM doğru, yalnızca dağılım ölçülemiyor. Kare başına maliyet
+# toplam doğru, yalnızca dağılım ölçülemiyor. Kare başına maliyet
 # `frames_received` ile bölünerek elde edilir.
 decode_cpu_seconds = Counter(
     "sentinel_decode_cpu_seconds_total",
@@ -153,28 +153,28 @@ pose_crops = Counter(
     ["result"],  # skeleton | empty
 )
 
-# Bir kişinin kimliğinin kaç kez değiştiğinin göstergesi (PLAN.md §6.1).
+# Bir kişinin kimliğinin kaç kez değiştiğinin göstergesi.
 # Zamansal analizin tamamı ("bu kişi 3 saniyedir hızlanıyor") kimliğin
 # kararlı kalmasına dayanır; kimlik sık değişiyorsa saldırganlık ve
 # anomali modüllerinin girdisi bozulur.
 #
 # Ölçüm yöntemi: doğrudan "ID switch" sayılamaz — bunun için gerçek
-# referans (ground truth) gerekir. Onun yerine PROXY sayıyoruz: kısa
+# referans (ground truth) gerekir. Onun yerine proxy sayıyoruz: kısa
 # ömürlü izler. Bir iz birkaç kare sonra kaybolup yerine yeni kimlikli
 # bir iz geliyorsa, bu büyük olasılıkla aynı kişidir.
 #
-# ⚠ METRİK ADI BİLEREK "switches" DEĞİL
+# Metrik adı bilerek "switches" değil
 # Önceki adı `sentinel_track_switches_total` idi ve yanlıştı: sayılan
-# şey ID switch değil, KISA ÖMÜRLÜ İZ. İkisi aynı şey değil — her kısa
+# şey ID switch değil, kısa ömürlü İZ. İkisi aynı şey değil — her kısa
 # iz bir switch olmayabilir (gerçek yanlış pozitif olabilir), her switch
 # de kısa iz üretmeyebilir (iki uzun iz kimlik takas edebilir).
 # Grafana panelinde ve raporda ad ne diyorsa o okunacağı için, adın
 # ölçtüğü şeyi söylemesi gerekiyor. Gerçek ID switch / IDF1 / HOTA
-# ölçümü MOT17 + TrackEval ister; o Gün 23'ün işi (PLAN.md §14.2).
+# ölçümü MOT17 + TrackEval ister; o Gün 23'ün işi.
 short_tracks = Counter(
     "sentinel_short_tracks_total",
     "Kimlik kararsızlığı VEKİL göstergesi: kısa ömürlü (terk edilmiş) iz sayısı. "
-    "Gerçek ID switch DEĞİLDİR — bkz. PLAN.md §14.2",
+    "Gerçek ID switch değildir (MOT17 + TrackEval gerektirir)",
     ["cam"],
 )
 
@@ -196,12 +196,12 @@ end_to_end_latency = Histogram(
     buckets=(0.05, 0.1, 0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 5.0),
 )
 
-# ⚠ 03.09.2026 — BU İKİ METRİK TANIMLIYDI AMA HİÇ DOLDURULMUYORDU
+# 03.09.2026 — bu iki metrik tanımlıydı ama hiç doldurulmuyordu
 # `gpu_memory_used` Gün 1'den beri tanımlıydı ve hiçbir yerde `.set()`
 # çağrılmıyordu; yani Prometheus'ta sürekli 0 duruyordu. Sonucu K4
 # ölçümünde ortaya çıktı: dayanıklılık koşusu "VRAM: None" yazdı.
 #
-# Etkisi gözlemden büyük: PLAN §13.2 dört Grafana panosu tanımlıyor ve
+# Etkisi gözlemden büyük: Proje planı dört Grafana panosu tanımlıyor ve
 # bunlardan **GPU panosu** tam olarak bu iki metriğe dayanıyordu.
 # Metrik olmayınca pano da kurulamadı — ve panonun yokluğu, metriğin
 # eksikliğinden daha görünürdü. Yani eksik, görünür bir belirti
@@ -219,8 +219,8 @@ gpu_utilization = Gauge(
 
 # ─── Analitik katmanı ─────────────────────────────────────────
 
-# Tespit edilen anomaliler. `type` ve `severity` etiketleri PLAN §8.1'deki
-# `events` tablosuyla AYNI değerleri kullanıyor — metrik ile veritabanı
+# Tespit edilen anomaliler. `type` ve `severity` etiketleri proje planındaki
+# `events` tablosuyla aynı değerleri kullanıyor — metrik ile veritabanı
 # ayrışırsa Grafana'daki sayı ile rapordaki sayı tutmaz.
 anomalies_total = Counter(
     "sentinel_anomalies_total",
@@ -228,27 +228,27 @@ anomalies_total = Counter(
     ["cam", "type", "severity"],
 )
 
-# Füzyon katmanının ürettiği anlık risk skoru — kamera başına AZAMİ.
-# ⚠ PLAN §13.1'de tanımlıydı, 03.09.2026'ya kadar kodda yoktu.
+# Füzyon katmanının ürettiği anlık risk skoru — kamera başına azami.
+# Proje planında tanımlıydı, 03.09.2026'ya kadar kodda yoktu.
 # Eksikliği görünmezdi çünkü alarmlar zaten sayılıyordu; ama alarm
-# EŞİĞİ GEÇEN riski gösterir, bu gauge eşiğin ALTINDAKİNİ de gösterir.
+# eşiği geçen riski gösterir, bu gauge eşiğin altındakini de gösterir.
 # Fark operasyonel: "sistem sessiz" ile "sistem sessiz ama risk
 # tırmanıyor" arasındaki ayrım tam olarak erken uyarının konusu (K8).
-# ⭐ Öğrenilmiş saldırganlık modelinin kamera başına çıktısı (P-56).
-# ⚠ `risk_score`dan AYRI: o füzyon sonrası birleşik risk, bu ham model
+# Öğrenilmiş saldırganlık modelinin kamera başına çıktısı (P-56).
+# `risk_score`dan ayrı: o füzyon sonrası birleşik risk, bu ham model
 # olasılığı. İkisini tek gauge'da toplamak, modelin mi füzyonun mu
 # konuştuğunu ayırt edilemez yapardı — P-40'ta panelin kare yerine
 # kişi sayması tam bu tür bir karışıklıktı.
-# ⚠⚠ MODELİN GERÇEK ÜRETİM MALİYETİ (P-57)
+# Modelin gerçek üretim maliyeti (P-57)
 #
 # Sentetik benchmark iki kez yanlış sonuç verdi:
 #   1. pencereyi 814 kareye şişirdi → 24.84 ms (58× abartı)
 #   2. düzeltilince 0.79 ms dedi → ama A/B ölçümü modelin 10.6
-#      ÇEKİRDEK yediğini gösterdi (246× eksik tahmin)
+#      çekirdek yediğini gösterdi (246× eksik tahmin)
 #
-# ⭐ Ders: sentetik ölçüm, üretimin girdi dağılımını taklit edemiyor.
-# Bu histogram maliyeti GERÇEK veriyle, GERÇEK kamera sayısıyla ve
-# GERÇEK kişi yoğunluğuyla ölçüyor.
+# Ders: sentetik ölçüm, üretimin girdi dağılımını taklit edemiyor.
+# Bu histogram maliyeti gerçek veriyle, gerçek kamera sayısıyla ve
+# gerçek kişi yoğunluğuyla ölçüyor.
 aggression_model_duration = Histogram(
     "sentinel_aggression_model_duration_seconds",
     "Saldirganlik modeli asama suresi (besle / degerlendir)",
@@ -262,15 +262,15 @@ aggression_model_score = Gauge(
     ["cam"],
 )
 
-# ⭐⭐ FÜZYONUN HER SİNYALİ AYRI AYRI — "hangi sinyal karara katkı
+# Füzyonun her sinyali ayrı ayrı — "hangi sinyal karara katkı
 # veriyor" sorusunun tek gözlemlenebilir cevabı (P-72).
 #
-# ⚠ NEDEN GEREKLİ: `risk_score` yalnızca BİRLEŞİK skoru gösteriyor.
+# Neden gerekli: `risk_score` yalnızca birleşik skoru gösteriyor.
 # Bir sinyal hiç ateşlemiyorsa (P-43'te ifade tam olarak buydu,
 # P-52'de kuralların %60'ı) birleşik skora bakarak anlaşılmıyor.
 #
 # Şartname üç yetenek istiyor (anomali · duygu · saldırganlık) ve
-# üçünün de KARARA katıldığını göstermenin yolu bu gauge.
+# üçünün de karara katıldığını göstermenin yolu bu gauge.
 fusion_signal = Gauge(
     "sentinel_fusion_signal",
     "Füzyona giren ham sinyallerin kamera başına AZAMİ değeri "
@@ -284,7 +284,7 @@ risk_score = Gauge(
     ["cam"],
 )
 
-# ⚠ BASTIRILAN ALARM SAYISI — K7'nin canlı kanıtı
+# Bastırılan alarm sayısı — K7'nin canlı kanıtı
 # `analytics/worker.py` bu sayacı (`fuzyon_bastirilan`) zaten tutuyordu
 # ama Prometheus'a hiç vermiyordu. Yani "tek sinyalli riski yayınlama"
 # kuralının kaç alarmı önlediği yalnızca worker kapanırken loga
@@ -295,7 +295,7 @@ false_alarm_suppressed = Counter(
     ["reason"],  # tek_sinyal | dusuk_tamlik | sogumada
 )
 
-# ⚠ ÜRETİLEN ile YAZILAN alarm sayısı AYRI ölçülüyor.
+# Üretilen ile yazılan alarm sayısı ayrı ölçülüyor.
 # İkisi ayrışırsa veritabanı yolu tıkanmış demektir — ve bu, sistem
 # dışarıdan sağlıklı görünürken sessizce olur: panel canlı alarmları
 # göstermeye devam eder, yalnızca geçmiş birikmez.
@@ -306,9 +306,9 @@ olaylar_yazildi = Counter(
     "Veritabanına kalıcı yazılan olay sayısı",
 )
 
-# ⚠ Klip sayısı ciddi olay sayısından AZ olabilir ve bu normaldir:
+# Klip sayısı ciddi olay sayısından az olabilir ve bu normaldir:
 # kayıt kapalıysa (varsayılan) hiç klip üretilmez. Sıfır klip, bozuk
-# bir klip yazıcısı değil KAPALI bir kayıt anlamına gelebilir —
+# bir klip yazıcısı değil kapalı bir kayıt anlamına gelebilir —
 # ikisini ayırt etmek için `MEDIAMTX_RECORD` değerine bakılmalı.
 klipler_uretildi = Counter(
     "sentinel_klipler_uretildi_total",
@@ -317,7 +317,7 @@ klipler_uretildi = Counter(
 
 # ─── Boru hattı sağlığı ───────────────────────────────────────
 
-# Çıkarım worker'ının ÖLÇÜLEN tüketim hızı (kare/sn).
+# Çıkarım worker'ının ölçülen tüketim hızı (kare/sn).
 # Alım katmanı üretimini buna göre kısıyor: atılan kare için decode +
 # BGR + letterbox CPU'su zaten ödenmiş oluyor ve o CPU çıkarımdan
 # çalınıyor (bkz. bus/streams.py · CAPACITY_KEY).
@@ -326,9 +326,9 @@ pipeline_capacity = Gauge(
     "Çıkarım worker'ının ölçülen tüketim hızı — üretici bunu hedefler",
 )
 
-# ⚠⚠ 09.09.2026 — AÇIKLAMASI YANLIŞTI: BU GERİ BASINÇ GÖSTERGESİ DEĞİL
+# 09.09.2026 — açıklaması yanlıştı: bu geri basınç göstergesi değil
 #
-# Değer `XLEN`, yani akışta TUTULAN kayıt sayısı. Ama `XACK` bir kaydı
+# Değer `XLEN`, yani akışta tutulan kayıt sayısı. Ama `XACK` bir kaydı
 # akıştan **silmiyor** (bunu `streams.py:365` zaten yazıyordu); kayıtlar
 # ancak `MAXLEN` budamasıyla düşüyor. Sonuç: akış birkaç saniye içinde
 # tavana çakılıyor ve orada kalıyor — tüketici ister yetişsin ister
@@ -336,14 +336,14 @@ pipeline_capacity = Gauge(
 #
 # Ölçüldü (09.09, sağlıklı sistem, hiçbir birikme yok):
 #
-#     inference.results : 5001   ⬅ ayar tam 5000, yani TAVAN + 1
+#     inference.results : 5001   ← ayar tam 5000, yani tavan + 1
 #     frames.ready      :   86
 #
 # 5001 sayısı bir birikme değil, yalnızca "akış dolu" demek. Bu metriğe
 # bakıp "kuyruk şişmiş" demek yanlış olurdu.
 #
-# ⭐ Bilgi kodda ZATEN VARDI — `streams.py`'daki yorum XACK'in silmediğini
-# açıkça yazıyor. Eksik olan, o bilginin metriğin AÇIKLAMASINA
+# Bilgi kodda zaten vardı — `streams.py`'daki yorum XACK'in silmediğini
+# açıkça yazıyor. Eksik olan, o bilginin metriğin açıklamasına
 # taşınmasıydı. Doğru bilgi yanlış yerde durunca yanlış bilgiyle aynı
 # sonucu veriyor.
 queue_depth = Gauge(
@@ -354,15 +354,15 @@ queue_depth = Gauge(
     ["queue"],
 )
 
-# ⭐ ASIL GERİ BASINÇ GÖSTERGESİ — tüketici grubunun GECİKMESİ
+# Asıl geri basınç göstergesi — tüketici grubunun gecikmesi
 #
 # `XINFO GROUPS` her grup için `lag` veriyor: akışa yazılmış ama o
-# gruba HENÜZ TESLİM EDİLMEMİŞ kayıt sayısı. `XLEN`'in aksine tüketici
+# gruba henüz teslim edilmemiş kayıt sayısı. `XLEN`'in aksine tüketici
 # yetiştikçe sıfıra iniyor, geri kaldıkça büyüyor — yani gerçekten
 # birikmeyi ölçüyor.
 #
-# ⚠ Neden gerekti: bir ölçümde alım 2.77 FPS yayınlarken çıkarım 1.42
-# FPS analiz ediyordu ve aradaki kareler HİÇBİR metrikte görünmüyordu
+# Neden gerekti: bir ölçümde alım 2.77 FPS yayınlarken çıkarım 1.42
+# FPS analiz ediyordu ve aradaki kareler hiçbir metrikte görünmüyordu
 # (P-60). `frames_dropped` alım tarafını sayıyor, `XLEN` tavana çakılı.
 # Birikmenin görülebileceği tek yer buydu ve ölçülmüyordu.
 consumer_lag = Gauge(
@@ -385,13 +385,13 @@ worker_up = Gauge(
 
 # ─── API ve güvenlik ──────────────────────────────────────────
 #
-# ⚠ 03.09.2026 — PLAN §13.2'NİN "GÜVENLİK PANOSU" KURULAMIYORDU
+# 03.09.2026 — proje planının "güvenlik panosu" kurulamıyordu
 # Dört Grafana panosundan biri güvenlik panosu: başarısız girişler,
 # yetki reddi, dışa aktarma hacmi. Üçünün de metriği yoktu.
 #
 # Bu, gözetim sistemi için sıradan bir eksik değil: G20 hesap
 # kilitleme ve G28 "başarısız giriş serisi uyarısı" ikisi de bu
-# sayaca dayanıyor. Kilitleme kodda VARDI (`routers/oturum.py`), ama
+# sayaca dayanıyor. Kilitleme kodda vardı (`routers/oturum.py`), ama
 # kilidin kaç kez devreye girdiğini kimse göremiyordu. Çalışan ama
 # gözlemlenemeyen bir savunma, ilk sessiz arızasına kadar çalışır.
 

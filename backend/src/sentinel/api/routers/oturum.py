@@ -1,11 +1,11 @@
-"""Giriş / yenileme / çıkış uçları — PLAN.md §11.1.
+"""Giriş / yenileme / çıkış uçları.
 
-⚠ HIZ SINIRI (G03) BU DOSYADA
+Hız sınırı (G03) bu dosyada
 Giriş ucu, kaba kuvvet saldırısının tek hedefi. Argon2 zaten deneme
 başına ~50 ms dayatıyor ama bu tek başına yetmez: saldırgan paralel
 deneyebilir. Kullanıcı adı + IP başına sayaç Valkey'de tutuluyor.
 
-⚠ SAYAÇ NEDEN VALKEY'DE, SÜREÇ BELLEĞİNDE DEĞİL
+Sayaç neden VALKEY'de, süreç belleğinde değil
 Süreç belleğindeki sayaç yeniden başlatmada sıfırlanır ve saldırgan
 sunucuyu yorup sayacı düşürebilir. Ayrıca birden çok API süreci
 çalışırsa (üretimde çalışacak) her biri kendi sayacını tutardı.
@@ -37,8 +37,8 @@ log = get_logger(__name__)
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
-# Kaba kuvvet sınırı: bu pencerede bu kadar BAŞARISIZ denemeden sonra
-# kilit. ⚠ Başarılı giriş sayacı sıfırlıyor — meşru kullanıcı yanlış
+# Kaba kuvvet sınırı: bu pencerede bu kadar başarısız denemeden sonra
+# kilit. Başarılı giriş sayacı sıfırlıyor — meşru kullanıcı yanlış
 # yazıp sonra doğru yazınca cezalandırılmamalı.
 DENEME_SINIRI = 8
 PENCERE_S = 300
@@ -47,11 +47,11 @@ PENCERE_S = 300
 def _istemci_ip(request: Request) -> str:
     """İstemci IP'si.
 
-    ⚠ `X-Forwarded-For` GÜVENİLMİYOR. İstemci onu istediği gibi
+    `X-Forwarded-For` güvenilmiyor. İstemci onu istediği gibi
     yazabilir; ters vekil arkasında çalışırken vekilin ayarladığı
     değere güvenmek gerekir ve o güven açıkça yapılandırılmalıdır
-    (Caddy devreye girince, PLAN §10). Şimdilik doğrudan bağlantı
-    adresi kullanılıyor — yanlış olabilir ama YANILTICI değil.
+    (Caddy devreye girince). Şimdilik doğrudan bağlantı
+    adresi kullanılıyor — yanlış olabilir ama yanıltıcı değil.
     """
     return request.client.host if request.client else "bilinmiyor"
 
@@ -65,7 +65,7 @@ def _kilitli_mi(kullanici_adi: str, ip: str) -> bool:
         deger = connect().get(_anahtar(kullanici_adi, ip))
         return int(deger) >= DENEME_SINIRI if deger else False
     except Exception:
-        # ⚠ Valkey erişilemezse GİRİŞ ENGELLENMİYOR. Hız sınırı bir
+        # Valkey erişilemezse giriş engellenmiyor. Hız sınırı bir
         # ek koruma; onu zorunlu ön koşula çevirmek, Valkey arızasını
         # tüm sistemin kimlik doğrulama arızasına dönüştürürdü.
         # Argon2'nin deneme başına maliyeti hâlâ devrede.
@@ -98,7 +98,7 @@ class YenilemeIstegi(BaseModel):
 def _cerez_koy(yanit: Response, token: str) -> None:
     """Erişim tokenını çereze koyar.
 
-    ⚠ `httponly=True`: JavaScript okuyamıyor, yani XSS ile token
+    `httponly=True`: JavaScript okuyamıyor, yani XSS ile token
     çalınamıyor. `samesite=lax`: başka sitelerden gelen isteklerde
     gönderilmiyor (CSRF koruması). `secure` yalnızca HTTPS'te —
     geliştirmede `127.0.0.1` üzerinden HTTP kullanılıyor ve `secure`
@@ -122,10 +122,10 @@ async def giris(istek: GirisIstegi, request: Request, yanit: Response) -> dict[s
     ip = _istemci_ip(request)
 
     if _kilitli_mi(istek.kullanici_adi, ip):
-        # ⚠ G20 kilidi ÇALIŞIYORDU ama GÖRÜNMÜYORDU (03.09.2026 eklendi).
+        # G20 kilidi çalışıyordu ama görünmüyordu (03.09.2026 eklendi).
         # Kilit Gün 16'da yazıldı; kaç kez devreye girdiğini gösteren
         # hiçbir metrik yoktu. G28 ("başarısız giriş serisi uyarısı")
-        # ve PLAN §13.2'nin güvenlik panosu ikisi de bu sayaca
+        # ve proje planının güvenlik panosu ikisi de bu sayaca
         # dayanıyor. Gözlemlenemeyen bir savunma, ilk sessiz arızasına
         # kadar çalışır.
         metrics.auth_failures.labels(reason="kilitli").inc()
@@ -139,7 +139,7 @@ async def giris(istek: GirisIstegi, request: Request, yanit: Response) -> dict[s
 
     kayit = await depo.kullanici_al(istek.kullanici_adi)
 
-    # ⚠ KULLANICI YOKSA DA PAROLA DOĞRULANIYOR — zamanlama saldırısı
+    # Kullanıcı yoksa da parola doğrulanıyor — zamanlama saldırısı
     # Var olmayan bir kullanıcı için hemen dönmek, cevap süresinden
     # "bu kullanıcı adı var mı" bilgisini sızdırır. Sahte bir hash'e
     # karşı doğrulama yaparak iki yolun süresi eşitleniyor.
@@ -158,7 +158,7 @@ async def giris(istek: GirisIstegi, request: Request, yanit: Response) -> dict[s
         await depo.denetim_yaz(
             "giris", kullanici_adi=istek.kullanici_adi, ip=ip, basarili=False
         )
-        # ⚠ TEK BİR HATA MESAJI. "kullanıcı yok" ile "parola yanlış"
+        # Tek bir hata mesajı. "kullanıcı yok" ile "parola yanlış"
         # ayrımı, saldırgana geçerli kullanıcı adlarını sayma imkânı
         # verir (kullanıcı numaralandırma).
         raise HTTPException(
@@ -189,7 +189,7 @@ async def giris(istek: GirisIstegi, request: Request, yanit: Response) -> dict[s
 async def yenile(istek: YenilemeIstegi, yanit: Response) -> dict[str, Any]:
     """Yenileme tokenı → yeni erişim tokenı.
 
-    ⚠ TOKEN SÜRÜMÜ KONTROL EDİLİYOR. JWT kendi kendini doğruladığı için
+    Token sürümü kontrol ediliyor. JWT kendi kendini doğruladığı için
     imzası geçerli olan eski bir yenileme tokenı, parola değiştirilmiş
     olsa bile çalışırdı. Veritabanındaki sayaçla karşılaştırmak,
     "tüm oturumları kapat" işlevini mümkün kılan tek mekanizma.
@@ -224,11 +224,11 @@ async def cikis(
 ) -> dict[str, str]:
     """Çerezi siler.
 
-    ⚠ DÜRÜST İSİMLENDİRME: bu bir İPTAL değil. Elde tutulan bir Bearer
+    Doğru isimlendirme: bu bir iptal değil. Elde tutulan bir Bearer
     tokenı süresi dolana kadar (en fazla 15 dakika) hâlâ geçerli.
     Gerçek iptal için `jti` kara listesi gerekiyor ve erişim tokenının
     kısa ömrü karşılığında bilinçli olarak yapılmadı (guvenlik.py).
-    Yenileme tokenları için iptal VAR: `/auth/oturumlari-kapat`.
+    Yenileme tokenları için iptal var: `/auth/oturumlari-kapat`.
     """
     yanit.delete_cookie("sentinel_token", path="/")
     await depo.denetim_yaz("cikis", kullanici_adi=kullanici.kullanici_adi)
@@ -246,9 +246,9 @@ async def denetim(
     _: Annotated[Kullanici, Depends(rol_gerekli(Rol.ADMIN))],
     limit: int = 100,
 ) -> dict[str, Any]:
-    """Denetim izi — YALNIZCA admin.
+    """Denetim izi — yalnızca admin.
 
-    ⚠ Bu uç, "kim hangi kamerayı izledi" sorusunun cevabını taşıyor ve
+    Bu uç, "kim hangi kamerayı izledi" sorusunun cevabını taşıyor ve
     kendisi de hassas: kimlerin ne zaman çalıştığını gösteriyor.
     Operatörlere kapalı olması bilinçli.
     """

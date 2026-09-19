@@ -27,15 +27,15 @@ FARM_MANIFEST = PROJECT_ROOT / "data" / "videos" / "manifest.json"
 
 # Çiftlik dışındaki sabit yollar (mediamtx.yml'de elle tanımlı)
 #
-# ⚠ TESLİM EDİLEN SİSTEM 20 KAMERADIR
+# Teslim edilen sistem 20 kameradır
 # Şartname "en az 20 kamera" istiyor ve çiftlikte tam 20 var. Aşağıdaki
 # sentetik yollar **kamera değil test aparatıdır**: video dosyası
 # olmadan boru hattını denemek ve hareket filtresinin gerçekten yük
-# düşürdüğünü ispatlamak için varlar (PLAN §5.1). Panelde kamera gibi
+# düşürdüğünü ispatlamak için varlar. Panelde kamera gibi
 # görünüyorlardı ve toplamı 24 gösteriyorlardı — sayı hem kafa
 # karıştırıyor hem şartnameyle uyuşmuyordu.
 #
-# Silinmediler, GİZLENDİLER: `?include_test=true` ile geri geliyorlar.
+# Silinmediler, gizlendiler: `?include_test=true` ile geri geliyorlar.
 # Test aparatını silmek, onu bir daha kurmak zorunda kalmak demektir.
 TEST_PATHS: list[dict[str, str]] = [
     {"name": "cam-test-motion", "label": "Test — hareketli desen", "kind": "synthetic"},
@@ -43,7 +43,7 @@ TEST_PATHS: list[dict[str, str]] = [
     {"name": "cam-test-static", "label": "Test — tamamen durağan", "kind": "synthetic"},
 ]
 
-# Webcam çiftliğin DIŞINDA — bilinçli. K1 kriteri "20 kamera 30 dk
+# Webcam çiftliğin dışında — bilinçli. K1 kriteri "20 kamera 30 dk
 # kesintisiz" diyor; webcam ise mahremiyet gereği elle açılıyor (KVKK)
 # ve laptop uyursa düşer. 20'nin içine koysaydık dayanıklılık testi
 # webcam yüzünden kalabilirdi. Raporda "20 kayıtlı kamera + 1 canlı
@@ -155,11 +155,11 @@ async def list_cameras(*, include_test: bool = False) -> dict[str, Any]:
 
     # MediaMTX'te olup manifestte olmayan yollar (elle eklenmiş olabilir)
     #
-    # ⚠ TEST YOLLARI BURADAN DA SIZIYORDU
+    # Test yolları buradan da sızıyordu
     # `TEST_PATHS` listeden çıkarılmıştı ama bu döngü onları MediaMTX'in
     # çalışma durumundan "bilinmeyen yol" diye geri ekliyordu — panel
     # yine 24 kamera gösteriyordu. Bir şeyi bir yerden gizlemek, onu
-    # gizlemek değil; girdiği HER kapıyı kapatmak gerekiyor.
+    # gizlemek değil; girdiği her kapıyı kapatmak gerekiyor.
     #
     # Test yolları burada da eleniyor. Gerçekten bilinmeyen bir yol
     # (operatörün elle eklediği kamera) yine görünür — o bilgi değerli.

@@ -10,14 +10,14 @@ zorunda; tüm kareyi taramak boşa iş olurdu.
 Neden EmotiEffLib
 -----------------
 AffectNet üzerinde eğitilmiş, hazır ağırlıklı, 8 sınıflı. Sıfırdan
-eğitmek bu projenin kapsamı değil (PLAN.md §3.4).
+eğitmek bu projenin kapsamı değil.
 
 Ölçülen maliyetler (18.08.2026, `scripts/benchmark_expression.py`):
 
     YuNet yüz tespiti   1.46 ms / kırpıntı
     EmotiEffLib ifade   7.41 ms / yüz  (cpu)  ·  7.51 ms  (cuda)
 
-⚠ Bu dosya uzun süre "~58 ms/yüz, GPU sağlayıcısı etkinleşmedi"
+Bu dosya uzun süre "~58 ms/yüz, GPU sağlayıcısı etkinleşmedi"
 diyordu. **İkisi de yanlıştı:** maliyet ~8 kat düşük ve CUDA sağlayıcısı
 artık yükleniyor (P-30). Ama GPU kazandırmıyor, çünkü emotiefflib toplu
 çağrı yapmıyor — ayrıntı ve ölçüm `emotion/base.py` modül başlığında.
@@ -68,7 +68,7 @@ class YuNetFaceDetector:
         if not path.is_file():
             raise FileNotFoundError(
                 f"YuNet modeli yok: {path}\n"
-                "  uv run python scripts/fetch_models.py --faces"
+                "  OpenCV Zoo'daki YuNet yüz tespit modelini (.onnx) bu yola koyun"
             )
         started = time.perf_counter()
         self._detector = cv2.FaceDetectorYN.create(
@@ -92,7 +92,7 @@ class YuNetFaceDetector:
         if head.shape[0] < MIN_INPUT_PX or head.shape[1] < MIN_INPUT_PX:
             return None
 
-        # ⚠ setInputSize her çağrıda gerekli: kırpıntılar farklı
+        # setInputSize her çağrıda gerekli: kırpıntılar farklı
         # boyutlarda geliyor ve YuNet girdi boyutunu önceden bilmek
         # istiyor. Atlanırsa sessizce yanlış ölçekte tarar.
         self._detector.setInputSize((head.shape[1], head.shape[0]))
@@ -121,7 +121,7 @@ class YuNetFaceDetector:
 class EmotiEffExpressionClassifier:
     """EmotiEffLib ile yüz ifadesi sınıflandırma.
 
-    ⚠ Çıktı bir DUYGU İDDİASI değildir (base.py modül başlığı).
+    Çıktı bir duygu iddiası değildir (base.py modül başlığı).
     """
 
     def __init__(
@@ -133,7 +133,7 @@ class EmotiEffExpressionClassifier:
     ) -> None:
         """
         Args:
-            thread: ONNX Runtime iş parçacığı sayısı. ⚠ Varsayılan 1 —
+            thread: ONNX Runtime iş parçacığı sayısı. Varsayılan 1 —
                 gerekçesi aşağıda.
         """
         import onnxruntime as ort
@@ -141,7 +141,7 @@ class EmotiEffExpressionClassifier:
 
         started = time.perf_counter()
 
-        # ⚠⚠⚠ ONNX OTURUMUNA İŞ PARÇACIĞI SINIRI ENJEKTE EDİLİYOR (P-60)
+        # ONNX oturumuna İŞ parçacığı sınırı enjekte ediliyor (P-60)
         #
         # `emotiefflib` oturumu şöyle kuruyor ve dışarıdan ayar
         # almıyor:
@@ -154,21 +154,21 @@ class EmotiEffExpressionClassifier:
         #
         # Ölçüldü (P-59, `yeniden_olc.py`):
         #     ifade  duvar 6.25 ms · CPU 86.72 ms · paralellik 13.88×
-        #     20 kamera bütçesinde TEK BAŞINA 5.03 ÇEKİRDEK
+        #     20 kamera bütçesinde tek başına 5.03 çekirdek
         #
-        # ⚠ `OMP_NUM_THREADS=1` (P-58) BURAYA İŞLEMİYOR: ONNX Runtime
+        # `OMP_NUM_THREADS=1` (P-58) buraya işlemiyor: ONNX Runtime
         # kendi iş parçacığı havuzunu kullanıyor, OpenMP'yi değil.
         # Bu yüzden ayrı bir müdahale gerekiyor.
         #
-        # ⭐ ÖLÇÜLDÜ (40 tahmin, 96×96 yüz, bu makine 20 çekirdek):
+        # Ölçüldü (40 tahmin, 96×96 yüz, bu makine 20 çekirdek):
         #
         #     thread   duvar ms   CPU ms   paralellik
-        #        1       13.44     13.28      0.99     ⬅ varsayılan
+        #        1       13.44     13.28      0.99     ← varsayılan
         #        2        8.96     17.97      2.00
         #        4        6.68     26.56      3.98
-        #       20        9.15    175.39     19.17     ⬅ ESKİ davranış
+        #       20        9.15    175.39     19.17     ← eski davranış
         #
-        # ⭐⭐ Eski varsayılan HER AÇIDAN kötüydü: duvar saatinde bile
+        # Eski varsayılan her açıdan kötüydü: duvar saatinde bile
         # thread=4'ten yavaş (9.15 ⟷ 6.68) ama CPU'da **13 kat** pahalı.
         # Klasik aşırı paralelleştirme — küçük bir modelde iş parçacığı
         # eşgüdüm maliyeti işin kendisini geçiyor.
@@ -177,7 +177,7 @@ class EmotiEffExpressionClassifier:
         # saati değil: ifade kademesi zaten seyreltilmiş çalışıyor ve
         # +7 ms gecikme karşılığında ~0.8 çekirdek kazanılıyor.
         #
-        # ⭐ YÖNTEM: `InferenceSession` yalnızca BU kurulum boyunca
+        # Yöntem: `InferenceSession` yalnızca bu kurulum boyunca
         # sarmalanıyor ve hemen geri alınıyor. Kütüphaneyi kalıcı
         # olarak yamamak, aynı süreçteki başka ONNX kullanıcılarını
         # (YuNet, TensorRT dışa aktarımı) da etkilerdi.
@@ -197,7 +197,7 @@ class EmotiEffExpressionClassifier:
                 engine="onnx", model_name=model_name, device=device
             )
         finally:
-            # ⚠ `finally`: kurulum patlasa bile kütüphane eski hâline
+            # `finally`: kurulum patlasa bile kütüphane eski hâline
             # dönmeli. Yamalı bırakmak sessiz bir yan etki olurdu.
             ort.InferenceSession = orijinal
         self.classified = 0
@@ -213,20 +213,20 @@ class EmotiEffExpressionClassifier:
         """Yüz listesini sınıflandırır: [(etiket, güven), ...]"""
         if not face_crops:
             return []
-        # ⚠⚠ 10.09.2026 — KANAL SIRASI DÜZELTİLDİ (P-73)
+        # 10.09.2026 — kanal sırası düzeltildi (P-73)
         #
         # Boru hattı baştan sona **BGR**: PyAV `bgr24` veriyor, OpenCV
         # BGR bekliyor, letterbox BGR taşıyor. Ama EmotiEffLib bir
         # ImageNet ön işlemesi kullanan CNN sarıyor ve o modeller
         # **RGB** ile eğitiliyor. Hiçbir yerde dönüşüm yoktu; modele
-        # kırmızı ile mavi kanalları YER DEĞİŞMİŞ yüzler gidiyordu.
+        # kırmızı ile mavi kanalları yer değişmiş yüzler gidiyordu.
         #
-        # ⚠ Etkisi ölçüldü, abartılmamalı: 40 yüzlük örneklemde
+        # Etkisi ölçüldü, abartılmamalı: 40 yüzlük örneklemde
         # etiketlerin **%22'si** değişti (31/40 aynı kaldı). Yani hata
         # gerçek ama sistemi tek başına bozmuyordu — asıl gürültü düşük
         # güvenli tahminlerden geliyordu.
         #
-        # ⭐ Yine de düzeltildi: bir modele eğitildiğinden farklı kanal
+        # Yine de düzeltildi: bir modele eğitildiğinden farklı kanal
         # sırasıyla girdi vermek, sonucu ölçülemez biçimde bozmaktır.
         # "Fark küçük" bir gerekçe değil.
         rgb_crops = [c[:, :, ::-1] if c.ndim == 3 and c.shape[2] == 3 else c

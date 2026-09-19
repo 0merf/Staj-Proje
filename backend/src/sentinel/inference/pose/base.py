@@ -1,4 +1,4 @@
-"""Poz tahmini arayüzü — KADEME 2a.
+"""Poz tahmini arayüzü — kademe 2a.
 
 Neden ayrı bir kademe (ölçümle verilmiş karar)
 ----------------------------------------------
@@ -33,7 +33,7 @@ Maliyet (ölçülen, RTX 3070 Laptop · FP16 · 192 px kırpıntı · batch 32):
     ────────────────────────────────
     toplam            10.29 ms/kare  → 20 kamerada ~%53 GPU
 
-PLAN.md §2.3 bunu 8.95 ms diye tahmin etmişti (kişi başına 1.0 ms
+Proje planı bunu 8.95 ms diye tahmin etmişti (kişi başına 1.0 ms
 varsayımıyla); ölçülen 1.30 ms/kişi ile tahmin doğrulandı.
 """
 
@@ -49,7 +49,7 @@ from sentinel.inference.detector.base import Detection
 # Kişi kutusuna eklenen dolgu oranı. Tespit kutusu bazen uzuvları
 # kırpar (uzanan kol, kaldırılan ayak); %15 dolgu bunları kırpıntıya
 # geri sokar. Saldırganlık modülü tam da bilek konumuna bakacak
-# (PLAN.md §6.5.2), yani kırpılan kol doğrudan sinyal kaybıdır.
+#, yani kırpılan kol doğrudan sinyal kaybıdır.
 CROP_PADDING = 0.15
 
 # Kırpıntının modele verildiği kare boyut. Ölçümde 192 ve 256
@@ -97,7 +97,7 @@ class PoseEstimator(Protocol):
         `detections[i][j]` kişisinin iskeletidir (bulunamazsa None).
 
         Toplu arayüz olmasının sebebi mimaridir: tüm karelerin tüm
-        kırpıntıları TEK havuzda toplanıp GPU'ya birlikte verilir.
+        kırpıntıları tek havuzda toplanıp GPU'ya birlikte verilir.
         Ölçüm bunun ne kadar önemli olduğunu gösteriyor — kırpıntı
         başına maliyet batch 8'de 2.84 ms, batch 32'de 1.30 ms.
         """

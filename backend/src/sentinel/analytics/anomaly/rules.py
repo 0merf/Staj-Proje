@@ -1,4 +1,4 @@
-"""KATMAN B — kural tabanlı anomaliler (PLAN.md §6.4).
+"""Katman B — kural tabanlı anomaliler.
 
 Neden kural, neden model değil
 ------------------------------
@@ -6,31 +6,31 @@ Anomali için etiketli veri toplanamaz: tanımı gereği "daha önce
 görülmemiş olan"dır. "Kavga" için 2000 klip bulunur ama "anormal" diye
 bir sınıf yoktur — otoparkta koşmak anormal, spor salonunda değil.
 
-Bu yüzden PLAN §6.4 iki katmanlı: **Katman A** her kameranın kendi
+Bu yüzden proje planı iki katmanlı: **Katman A** her kameranın kendi
 normalini istatistiksel olarak öğrenir (veri toplama gerektirir),
 **Katman B** ise fizikle tanımlanabilen, evrensel olayları yakalar.
 Bu dosya Katman B.
 
 Katman B'nin üstünlüğü: **ilk günden çalışır.** Öğrenme süresi
 beklemez, açıklanabilir ("kutu oranı tersine döndü, gövde 72° eğildi"),
-ve yanlış alarm verdiğinde SEBEBİ görülebilir. Katman A tamamlayıcıdır,
+ve yanlış alarm verdiğinde sebebi görülebilir. Katman A tamamlayıcıdır,
 alternatif değil.
 
-⚠ HER KURAL BİR EŞİK DEĞİL, BİR KANIT ZİNCİRİDİR
+Her kural bir eşik değil, bir kanıt zinciridir
 ------------------------------------------------
 "Kutu oranı > 1.0 ise düşme" demek yanlış olurdu: eğilip bir şey alan
-kişi de o oranı verir. Gerçek düşme üç şeyin BİRLİKTE olmasıdır —
-oran tersine döner, gövde eğimi ANİ değişir, sonra hareket durur.
+kişi de o oranı verir. Gerçek düşme üç şeyin birlikte olmasıdır —
+oran tersine döner, gövde eğimi ani değişir, sonra hareket durur.
 
 Tek koşullu kural yanlış alarm üretir; yanlış alarm operatörün sisteme
 güvenini bitirir ve K7 kriterinin (≤3 alarm/kamera-saat) tamamı bunun
 üzerine kuruludur.
 
-⚠ HİSTEREZİS ZORUNLU
+Histerezis zorunlu
 --------------------
 Tek eşikle skor sınırda salınırsa alarm saniyede birkaç kez açılıp
 kapanır. Girme eşiği çıkma eşiğinden yüksektir — bir termostatın
-çalışma mantığı (PLAN §6.5.3).
+çalışma mantığı.
 """
 
 from __future__ import annotations
@@ -53,20 +53,20 @@ DUSME_EN_BOY = 0.9
 # Gövdenin dikeyden sapması. 55°: oturan kişi ~30°, eğilen ~45°,
 # yere yatan >70°. Aradaki bant bilinçli olarak geniş bırakıldı.
 DUSME_EGIM_DERECE = 55.0
-# ⚠ ÜST SINIR — canlı koşuda sahte düşme yakalandı
+# Üst sınır — canlı koşuda sahte düşme yakalandı
 # cam-17'de "gövde eğimi 175°" ile düşme alarmı çıktı. 175°, omuz-kalça
-# vektörünün neredeyse tam AŞAĞI baktığı anlamına gelir: yani kişi baş
-# aşağı. Bu bir düşme değil, BOZUK İSKELET — poz modeli omuz ile kalçayı
+# vektörünün neredeyse tam aşağı baktığı anlamına gelir: yani kişi baş
+# aşağı. Bu bir düşme değil, bozuk iskelet — poz modeli omuz ile kalçayı
 # ters atamış.
 #
 # Gerçek bir düşmede gövde yatay olur (55-120°). 150° üstü fiziksel
 # olarak insan duruşu değil; jimnastikçi bile o hâlde kalmaz.
 #
-# Ders: bir eşiğin ALT sınırını koyup üst sınırını unutmak, gürültüyü
+# Ders: bir eşiğin alt sınırını koyup üst sınırını unutmak, gürültüyü
 # "aşırı güçlü kanıt" diye okumaya yol açıyor. Aralık kontrolü tek
 # taraflı olmamalı.
 DUSME_EGIM_AZAMI = 150.0
-# ⚠ ASIL AYIRT EDİCİ: eğimin DEĞİŞİM HIZI.
+# Asıl ayırt edici: eğimin değişim hızı.
 # Düşme ani bir olaydır; eğilerek çanta almak yavaştır. 40°/sn,
 # yarım saniyede 20° değişime denk gelir — kontrollü bir hareket
 # bu hıza çıkmaz.
@@ -75,38 +75,38 @@ DUSME_EGIM_HIZI = 40.0
 # ─── Koşma ───
 # Birim: gövde boyu/saniye (ölçek normalize, bkz. features/skeleton.py).
 #
-# ⚠ EŞİK ARTIK FİZİKTEN DEĞİL, ÖLÇÜMDEN TÜRETİLİYOR
+# Eşik artık fizikten değil, ölçümden türetiliyor
 # İlk sürüm fizikten hesaplamıştı: yürüme 1.4 m/s ÷ boy 1.7 m ≈ 0.8
-# gövde/sn, koşu ≈ 1.8 → eşik 1.5. Makul ama DOĞRULANMAMIŞTI.
+# gövde/sn, koşu ≈ 1.8 → eşik 1.5. Makul ama doğrulanmamıştı.
 #
 # Ölçüm (benchmarks/speed_20260821.json, 20 kamera, 13 745 örnek):
 #     p50 0.34 · p90 0.66 · p95 0.77 · p99 0.94 · azami 1.79
 # Eşik 1.5, örneklerin yalnızca %0.1'ini aşıyor — yani zaten
 # muhafazakâr. Fizik tahmini şaşırtıcı biçimde iyi çıktı.
 #
-# ⚠ ASIL SORUN EŞİK DEĞİL, GİRDİ GÜRÜLTÜSÜ
+# Asıl sorun eşik değil, girdi gürültüsü
 # Panelde görülen koşma alarmları 1.58-2.21 gövde/sn gösteriyordu —
 # p99'un 2-3 katı, hatta ölçümün azamisinden büyük. Bunlar koşan insan
-# değil, TAKİP GÜRÜLTÜSÜ: kimlik parçalanması %45-72 ölçülmüştü ve
+# değil, takip gürültüsü: kimlik parçalanması %45-72 ölçülmüştü ve
 # takipçi bir kimliği başka kişiye atadığında konum sıçrıyor, sahte
 # bir hız doğuyor.
 #
-# Bu yüzden eşik korunuyor ama koşma kuralına AYRI bir güvenilirlik
+# Bu yüzden eşik korunuyor ama koşma kuralına ayrı bir güvenilirlik
 # şartı kondu (KOSMA_MIN_TAMLIK). Gerçekten koşan biri kadrajda
 # saniyelerce kalır; iki örnekten "koşuyor" demek gürültüyü olay
 # sanmaktır.
 KOSMA_HIZ = 1.5
 
-# ⚠ Koşma için genel tamlık eşiğinden DAHA YÜKSEK bir şart.
+# Koşma için genel tamlık eşiğinden daha yüksek bir şart.
 # 0.5 ≈ 6 örnek ≈ 1.5 saniyelik gözlem. Alarm kayıtlarında sorunlu
 # olanların hepsi %25-42 tamlıktaydı, yani 2-3 örnek.
-# Neden yalnızca koşmada: düşme ANİ bir olaydır ve az örnekte bile
-# gerçektir; koşma ise SÜREGELEN bir durum ve tek sıçramayla
+# Neden yalnızca koşmada: düşme ani bir olaydır ve az örnekte bile
+# gerçektir; koşma ise süregelen bir durum ve tek sıçramayla
 # ayırt edilemez.
 KOSMA_MIN_TAMLIK = 0.5
 
 # ─── Oyalanma ───
-# ⚠ 3 saniyelik pencereden ÇIKARILAMAZ — pencere boyu zaten 3 sn.
+# 3 saniyelik pencereden çıkarılamaz — pencere boyu zaten 3 sn.
 # Bu yüzden kural motoru iz başına kümülatif süre tutuyor.
 OYALANMA_SANIYE = 45.0
 # Kişi bu kadar yer değiştirmediyse "aynı yerde" sayılıyor (gövde boyu).
@@ -118,7 +118,7 @@ OYALANMA_YARICAP = 0.6
 OYALANMA_OLAGAN_ORAN = 0.15
 
 # ─── Kalabalık ───
-# ⚠ Mutlak eşik YOK — kamera başına öğrenilen taban çizgisi kullanılıyor.
+# Mutlak eşik yok — kamera başına öğrenilen taban çizgisi kullanılıyor.
 # Yoğun caddede 15 kişi normal, boş otoparkta 5 kişi anormal. Sabit bir
 # sayı ikisinden birinde daima yanlış olurdu.
 KALABALIK_KAT = 2.5  # taban çizgisinin bu katı aşılırsa
@@ -126,13 +126,13 @@ KALABALIK_ASGARI = 4  # bu sayının altında hiç alarm yok (gürültü)
 
 # ─── Güvenilirlik ───
 # Bu tamlığın altındaki özellik vektörü kural değerlendirmesine
-# GİRMEZ. Ölçüm (18.08): izlerin medyan ömrü ~4 kare; iki örnekten
+# girmez. Ölçüm (18.08): izlerin medyan ömrü ~4 kare; iki örnekten
 # hesaplanmış bir "eğim değişim hızı" gürültüdür.
 ASGARI_TAMLIK = 0.25
 
-# ─── Alarm bastırma (PLAN §6.6) ───
+# ─── Alarm bastırma ───
 #
-# ⚠ HİSTEREZİS TEK BAŞINA YETMEDİ — canlı ölçüm gösterdi
+# Histerezis tek başına yetmedi — canlı ölçüm gösterdi
 # İlk sürümde yalnızca histerezis vardı. 90 saniyelik koşuda 13 anomali
 # çıktı, 9'u kalabalık ve aynı kamera tekrar tekrar alarm verdi:
 # kişi sayısı eşiğin altına inip tekrar çıkınca histerezis serbest
@@ -141,17 +141,17 @@ ASGARI_TAMLIK = 0.25
 # Hesap: 9 alarm / 90 sn / 20 kamera ≈ 18 alarm/kamera-saat.
 # K7 kriteri ≤3 diyor. Altı kat aşım.
 #
-# Histerezis "sınırdaki değer titremesin" diye vardır; SOĞUMA ise
+# Histerezis "sınırdaki değer titremesin" diye vardır; soğuma ise
 # "aynı olay tekrar tekrar bildirilmesin" diye. Farklı problemler,
 # ikisi birden gerekiyor.
 SOGUMA_KAMERA_S = 60.0   # aynı kamera + aynı tür
 SOGUMA_IZ_S = 120.0      # aynı iz, tür fark etmeksizin
 
-# ⚠ KATMAN A İÇİN AYRI VE UZUN SOĞUMA
+# Katman A için ayrı ve uzun soğuma
 # Katman A istatistiksel bir sapma sinyali: aynı kamerada arka arkaya
 # çok sayıda kişi "olağandışı" çıkabilir (ışık değişimi, kalabalık bir
 # an, öğrenme henüz oturmamış bir bölge). Fiziksel olaylardan farklı
-# olarak bunlar TEK BİR DURUMUN belirtileridir, ayrı olaylar değil.
+# olarak bunlar tek bir durumun belirtileridir, ayrı olaylar değil.
 # 60 saniyelik soğuma bu yüzden yetmiyordu; ölçümde alarmların %78'i
 # buradan geliyordu.
 SOGUMA_OLAGANDISI_S = 300.0
@@ -163,14 +163,14 @@ KALABALIK_ISINMA = 200
 
 
 class AnomaliTuru(StrEnum):
-    """PLAN §8.1'deki `event_type` ile aynı değerler."""
+    """Proje planındaki `event_type` ile aynı değerler."""
 
     DUSME = "fall"
     KOSMA = "running"
     OYALANMA = "loitering"
     KALABALIK = "crowd"
-    # KATMAN A — kamera normaline göre olağandışılık.
-    # Kural tabanlı değil, ÖĞRENİLMİŞ profile göre üretiliyor
+    # Katman A — kamera normaline göre olağandışılık.
+    # Kural tabanlı değil, öğrenilmiş profile göre üretiliyor
     # (anomaly/normalcy.py). Ayrı bir tür olması bilinçli: operatör
     # "bu fizikî bir olay mı, yoksa istatistiksel bir sapma mı"
     # ayrımını görebilmeli.
@@ -178,7 +178,7 @@ class AnomaliTuru(StrEnum):
 
 
 # Her türün taban ciddiyeti. Düşme tıbbi acil olabilir; oyalanma
-# yalnızca dikkat çeker. PLAN §6.5.3 seviyeleriyle aynı sözlük.
+# yalnızca dikkat çeker. Proje planındaki seviyelerle aynı sözlük.
 CIDDIYET: dict[AnomaliTuru, str] = {
     AnomaliTuru.DUSME: "warning",
     AnomaliTuru.KOSMA: "attention",
@@ -192,10 +192,10 @@ CIDDIYET: dict[AnomaliTuru, str] = {
 class Anomali:
     """Tespit edilen tek bir anomali.
 
-    ⚠ `kanit` alanı zorunlu. Operatöre "anomali var" demek yetmez;
+    `kanit` alanı zorunlu. Operatöre "anomali var" demek yetmez;
     hangi ölçümün eşiği neden aştığı gösterilmeli. Açıklanabilirlik
     olmadan operatör sisteme güvenmez ve alarmları kapatır — K7'nin
-    asıl riski budur (PLAN §8.1 `contributing_signals`).
+    asıl riski budur (`contributing_signals`).
     """
 
     camera: str
@@ -211,10 +211,10 @@ class Anomali:
     def to_dict(self) -> dict[str, object]:
         """WS mesajına gömülecek biçim.
 
-        ⚠ Anahtar `type` DEĞİL `anomaly`.
+        Anahtar `type` değil `anomaly`.
         WebSocket sarmalayıcısı mesaja `{"type": "alert"}` ekliyor ve bu
         sözlük onun üzerine açılıyor (`**data`). `type` kullansaydık
-        sarmalayıcının değerini EZERDİ: mesaj `type: "alert"` yerine
+        sarmalayıcının değerini ezerdi: mesaj `type: "alert"` yerine
         `type: "fall"` olarak giderdi ve tarayıcı onu tanımazdı.
         Sessiz bir hata — alarm gönderilir ama panelde hiç görünmez.
         """
@@ -234,21 +234,21 @@ class _IzDurumu:
     """Bir izin kural motorundaki kalıcı durumu.
 
     3 saniyelik pencere bazı kurallar için yetmiyor: oyalanma dakikalar
-    sürer. Bu yüzden pencere DIŞINDA da durum tutuluyor.
+    sürer. Bu yüzden pencere dışında da durum tutuluyor.
     """
 
     # Kümülatif oyalanma — pencereler arası birikir
     oyalanma_s: float = 0.0
     son_gorulme: float = 0.0
-    # Histerezis: şu an hangi anomaliler AKTİF?
+    # Histerezis: şu an hangi anomaliler aktif?
     # Aktif bir anomali, çıkma eşiğinin altına inene kadar yeniden
     # alarm üretmez — yoksa saniyede birkaç kez tekrarlanırdı.
     aktif: set[AnomaliTuru] = field(default_factory=set)
-    # Bu iz için en son NE ZAMAN alarm üretildi (tür fark etmeksizin).
-    # ⚠ `None` = hiç alarm olmadı. `0.0` sentinel olarak KULLANILMAZ:
+    # Bu iz için en son NE zaman alarm üretildi (tür fark etmeksizin).
+    # `None` = hiç alarm olmadı. `0.0` sentinel olarak kullanılmaz:
     # soğuma `simdi - son < 60` diye hesaplanıyor ve `simdi` küçükken
     # (test, sentetik veri, sıfırlanmış saat) `0 - 0 = 0 < 60` çıkıp
-    # İLK alarmı bile bastırıyordu. Gerçek kullanımda duvar saati büyük
+    # ilk alarmı bile bastırıyordu. Gerçek kullanımda duvar saati büyük
     # olduğu için görünmezdi — sessiz ve yalnızca belirli koşullarda
     # ortaya çıkan bir hata.
     son_alarm: float | None = None
@@ -268,7 +268,7 @@ class KuralMotoru:
         self._kalabalik_taban: dict[str, float] = {}
         self._kalabalik_ornek: Counter[str] = Counter()
         self._kalabalik_aktif: set[str] = set()
-        # (kamera, tür) -> son alarm anı. PLAN §6.6 soğuma kuralı.
+        # (kamera, tür) -> son alarm anı. Proje planındaki soğuma kuralı.
         self._son_alarm: dict[tuple[str, AnomaliTuru], float] = {}
         self.bastirilan = 0
         self.toplam: dict[AnomaliTuru, int] = dict.fromkeys(AnomaliTuru, 0)
@@ -289,12 +289,12 @@ class KuralMotoru:
             dt: Bu kameranın son değerlendirmesinden bu yana geçen süre.
                 Oyalanma birikimi buna göre yapılıyor — kameralar farklı
                 hızlarda analiz edildiği için sabit bir adım kullanmak
-                yanlış olurdu (uyarlanabilir FPS, PLAN §5.2).
+                yanlış olurdu (uyarlanabilir FPS).
             oyalanma_normali: iz kimliği → o kişinin bulunduğu hücrede
                 gözlemlerin kaçta kaçının durağan olduğu (0-1), ya da
                 bilinmiyorsa `None`.
 
-                ⚠ NEDEN DIŞARIDAN GELİYOR
+                Neden dışarıdan geliyor
                 Bu bilgi Katman A'nın (öğrenilmiş profil) malı. Katman B
                 onu `import` etseydi iki katman birbirine bağlanırdı;
                 oysa Katman B'nin tek başına — profil olmadan, ilk
@@ -310,7 +310,7 @@ class KuralMotoru:
             durum = self._izler.setdefault((camera, ozellik.track_id), _IzDurumu())
             durum.son_gorulme = simdi
 
-            # ⚠ Güvenilirlik kapısı: az örnekten çıkan sayı gürültüdür
+            # Güvenilirlik kapısı: az örnekten çıkan sayı gürültüdür
             if ozellik.tamlik < ASGARI_TAMLIK:
                 continue
 
@@ -325,7 +325,7 @@ class KuralMotoru:
             ):
                 if bulgu is None:
                     continue
-                # ⚠ Soğuma histerezisin YERİNE değil, ÜSTÜNE.
+                # Soğuma histerezisin yerine değil, üstüne.
                 # Histerezis sınırdaki titremeyi keser; soğuma aynı
                 # olayın tekrar tekrar bildirilmesini keser.
                 if self._sogumada_mi(camera, bulgu.tur, durum, simdi):
@@ -347,19 +347,19 @@ class KuralMotoru:
     def _sogumada_mi(
         self, camera: str, tur: AnomaliTuru, durum: _IzDurumu | None, simdi: float
     ) -> bool:
-        """Bu alarm yakın zamanda zaten bildirildi mi? (PLAN §6.6)
+        """Bu alarm yakın zamanda zaten bildirildi mi?
 
         İki ayrı soğuma var ve ikisi farklı şeyi koruyor:
 
-          · KAMERA+TÜR : aynı kamerada aynı olay 60 sn'de bir kez.
+          · kamera+tür : aynı kamerada aynı olay 60 sn'de bir kez.
             Kalabalık gibi kamera seviyesi olaylar için tek koruma bu.
 
-          · İZ : aynı kişi 120 sn'de bir kez, TÜRDEN BAĞIMSIZ. Düşen
+          · İZ : aynı kişi 120 sn'de bir kez, türden bağımsız. Düşen
             biri yerde kalırken hem "düşme" hem "oyalanma" üretebilir;
             operatöre aynı kişi için art arda iki alarm göndermek
             dikkat dağıtır.
 
-        ⚠ Bastırılan alarm SAYILIYOR. Gizlenmiş bir alarm kaybolmuş
+        Bastırılan alarm sayılıyor. Gizlenmiş bir alarm kaybolmuş
         sayılmamalı: bastırma oranı yükseliyorsa eşikler yanlış demektir
         ve bu bilgi raporda K7'nin yanında durmalı.
         """
@@ -397,7 +397,7 @@ class KuralMotoru:
         Tek başına hiçbiri yeterli değil:
           · kutu oranı tersine döndü      → eğilen kişi de bunu yapar
           · gövde yatay                   → oturan/yatan kişi de öyle
-          · eğim ANİ değişti              → asıl ayırt edici
+          · eğim ani değişti              → asıl ayırt edici
 
         Üçü birlikteyse düşmedir. Bu, "kanıt zinciri" tasarımının en
         net örneği: yanlış alarmı önleyen şey eşiğin sıkılığı değil,
@@ -407,12 +407,12 @@ class KuralMotoru:
             return None
 
         genis = o.en_boy_orani >= DUSME_EN_BOY
-        # Aralık kontrolü ÇİFT taraflı: üst sınır bozuk iskeleti eliyor
+        # Aralık kontrolü çift taraflı: üst sınır bozuk iskeleti eliyor
         yatay = DUSME_EGIM_DERECE <= o.govde_egimi <= DUSME_EGIM_AZAMI
         ani = (o.govde_egimi_degisimi or 0.0) >= DUSME_EGIM_HIZI
 
         if not (genis and yatay and ani):
-            # Histerezis çıkışı: üç koşuldan İKİSİ birden düştüyse
+            # Histerezis çıkışı: üç koşuldan ikisi birden düştüyse
             # anomali bitmiş sayılıyor. Tek koşulun düşmesiyle
             # kapatmak, sınırdaki bir değerde alarmı titretirdi.
             if durum.aktif and sum((genis, yatay, ani)) <= 1:
@@ -452,14 +452,14 @@ class KuralMotoru:
     ) -> Anomali | None:
         """Koşma — hız gövde boyuna normalize edilmiş.
 
-        ⚠ Birim kritik: piksel/sn kullansaydık kameraya yakın herkes
+        Birim kritik: piksel/sn kullansaydık kameraya yakın herkes
         "koşuyor" sayılırdı. Gövde/sn ile 3 metredeki kişi ile 20
         metredeki kişi aynı ölçüye vuruluyor.
         """
         if o.govde_hizi is None:
             return None
 
-        # ⚠ Koşma için ek güvenilirlik şartı (bkz. KOSMA_MIN_TAMLIK).
+        # Koşma için ek güvenilirlik şartı (bkz. KOSMA_MIN_TAMLIK).
         # Az örnekten çıkan yüksek hız, koşan insan değil takip
         # gürültüsüdür — ölçümle doğrulandı.
         if o.tamlik < KOSMA_MIN_TAMLIK:
@@ -497,7 +497,7 @@ class KuralMotoru:
     ) -> None:
         """Kümülatif oyalanma sayacı.
 
-        ⚠ Pencere içinden okunamaz: pencere 3 saniye, oyalanma
+        Pencere içinden okunamaz: pencere 3 saniye, oyalanma
         dakikalar sürer. Kişi yer değiştirmediği sürece sayaç birikiyor,
         hareket edince sıfırlanıyor.
         """
@@ -513,22 +513,22 @@ class KuralMotoru:
         durum: _IzDurumu,
         bolge_duragan_oran: float | None = None,
     ) -> Anomali | None:
-        """Oyalanma — süre TEK BAŞINA yetmez, yer de sorulur.
+        """Oyalanma — süre tek başına yetmez, yer de sorulur.
 
-        ⚠ 26.08.2026 — KURAL BİR KANIT DAHA İSTİYOR
+        26.08.2026 — kural bir kanıt daha istiyor
         Önceki hâli yalnızca süreye bakıyordu: "45 saniyedir aynı
         yerde" → alarm. Canlı ölçümde bu, VIRAT otoparkında ve Avenue
         gezinti yolunda yanlış alarm üretiyordu — bankta oturan,
         vitrine bakan, birini bekleyen insan da aynı ölçüyü verir.
 
-        Süre uzunluğu bir anomali değil, bir GÖZLEMDİR. Anomali olan,
-        insanların normalde DURMADIĞI bir yerde durmaktır. Bu, mimari
+        Süre uzunluğu bir anomali değil, bir gözlemdir. Anomali olan,
+        insanların normalde durmadığı bir yerde durmaktır. Bu, mimari
         kural 7'nin ("her kameranın normali ayrı") mekân boyutundaki
-        karşılığı ve PLAN §6.4'ün "oyalanma süresi — hücre başına
+        karşılığı ve proje planının "oyalanma süresi — hücre başına
         dağılım" maddesi.
 
-        ⚠ `None` gelirse (profil hazır değil, hücre az gözlenmiş) kural
-        ESKİ DAVRANIŞINA döner: süreye bakıp alarm verir. Eksik bilgi
+        `None` gelirse (profil hazır değil, hücre az gözlenmiş) kural
+        eski davranışına döner: süreye bakıp alarm verir. Eksik bilgi
         yüzünden susmak, sistemin ilk saatlerinde oyalanmayı tümden
         kör etmek olurdu — Katman B'nin varlık sebebi profil olmadan da
         çalışabilmesi.
@@ -551,7 +551,7 @@ class KuralMotoru:
             kanit["bolgede_duranlarin_orani"] = round(bolge_duragan_oran, 3)
             if bolge_duragan_oran >= OYALANMA_OLAGAN_ORAN:
                 # Burası zaten durulan bir yer — kayda değer bir şey yok.
-                # ⚠ `aktif`e EKLENMİYOR: kişi buradan çıkıp durulmayan
+                # `aktif`e eklenmiyor: kişi buradan çıkıp durulmayan
                 # bir hücreye geçerse alarm verilebilmeli.
                 self.bastirilan += 1
                 return None
@@ -570,9 +570,9 @@ class KuralMotoru:
         )
 
     def _kalabalik(self, camera: str, kisi_sayisi: int) -> Anomali | None:
-        """Aşırı kalabalık — KAMERA BAŞINA öğrenilen taban çizgisine göre.
+        """Aşırı kalabalık — kamera başına öğrenilen taban çizgisine göre.
 
-        ⚠ Mimari kural 7'nin en somut uygulaması. Yoğun caddede
+        Mimari kural 7'nin en somut uygulaması. Yoğun caddede
         (cam-09) 15 kişi normal; boş otoparkta (cam-07) 5 kişi anormal.
         Sabit bir eşik ikisinden birinde daima yanlış olurdu.
 
@@ -580,7 +580,7 @@ class KuralMotoru:
         Katman A'nın (IsolationForest + ızgara histogramları) basit bir
         habercisi — aynı ilke, çok daha ucuz.
 
-        ⚠ α küçük (0.02) çünkü taban çizgisi YAVAŞ değişmeli: kalabalık
+        α küçük (0.02) çünkü taban çizgisi yavaş değişmeli: kalabalık
         anı tabanı da yukarı çekerse kural kendi kendini körleştirir.
         """
         taban = self._kalabalik_taban.get(camera)
@@ -591,7 +591,7 @@ class KuralMotoru:
         self._kalabalik_taban[camera] = 0.02 * kisi_sayisi + 0.98 * taban
         self._kalabalik_ornek[camera] += 1
 
-        # ⚠ ISINMA KORUMASI — öğrenilmemiş eşikle karar verme
+        # Isınma koruması — öğrenilmemiş eşikle karar verme
         # Taban çizgisi ilk gözleme eşitleniyor ve α=0.02 ile yavaş
         # yakınsıyor. İlk saniyelerde "normal" henüz bilinmiyor; o
         # sırada alarm üretmek, olmayan bir referansa göre karar
@@ -630,9 +630,9 @@ class KuralMotoru:
         tamlik: float,
         simdi: float,
     ) -> Anomali | None:
-        """KATMAN A'nın bulgusunu kural motorunun kapılarından geçirir.
+        """Katman A'nın bulgusunu kural motorunun kapılarından geçirir.
 
-        ⚠ NEDEN BURADAN GEÇİYOR
+        Neden buradan geçiyor
         Katman A ayrı bir dosyada (normalcy.py) ama soğuma ve histerezis
         kural motorunda. İki ayrı bastırma mantığı yazmak, aynı hatayı
         iki yerde düzeltmek demekti — canlı ölçüm soğumanın ne kadar
@@ -667,7 +667,7 @@ class KuralMotoru:
     def saldirganlik_sogumada_mi(self, camera: str, track_id: int, simdi: float) -> bool:
         """Saldırganlık bildirimi için iz soğuması.
 
-        ⚠ Kural motorundan geçiyor çünkü soğuma İZ BAZINDA ortak olmalı:
+        Kural motorundan geçiyor çünkü soğuma İZ bazında ortak olmalı:
         aynı kişi için hem "olağandışı" hem "saldırganlık" alarmı
         çıkarsa operatöre aynı durum iki kez bildirilmiş olur.
         Tek bir bastırma kapısı, iki ayrı mantık yazmaktan iyi.
@@ -694,7 +694,7 @@ class KuralMotoru:
     @property
     def stats(self) -> dict[str, int]:
         cikti = {t.value: n for t, n in self.toplam.items()}
-        # ⚠ Bastırılan alarm gizlenmiş bir bilgi DEĞİL, raporlanan bir
+        # Bastırılan alarm gizlenmiş bir bilgi değil, raporlanan bir
         # sayı. Oran yükseliyorsa eşikler yanlış demektir ve bu, K7'nin
         # yanında durması gereken bir teşhis sinyali.
         cikti["bastirilan"] = self.bastirilan

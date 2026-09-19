@@ -1,22 +1,22 @@
-"""Kural ağırlıklarını ÖLÇEREK yeniden belirler (P-52).
+"""Kural ağırlıklarını ölçerek yeniden belirler (P-52).
 
-⭐ NEDEN
+Neden
 -------
 `diagnose_kural.py` cam-15'te kural yolunun neden çöktüğünü gösterdi:
 
     bileşen    ağırlık   normal   kavga   oran   ateşleme(kavga)
-    yakinlik     0.30    0.3956  0.3956   1.00        99%   ⬅ DOYMUŞ
-    bilek        0.25    0.0000  0.0000    —          20%   ⬅ ÖLÜ
-    yaklasma     0.20    0.0000  0.0000    —          12%   ⬅ ÖLÜ
-    enerji       0.15    0.0000  0.0000    —          13%   ⬅ ÖLÜ
-    durus        0.10    0.0564  0.0900   1.60        91%   ⬅ TEK AYIRT EDEN
+    yakinlik     0.30    0.3956  0.3956   1.00        99%   ← doymuş
+    bilek        0.25    0.0000  0.0000    —          20%   ← ölü
+    yaklasma     0.20    0.0000  0.0000    —          12%   ← ölü
+    enerji       0.15    0.0000  0.0000    —          13%   ← ölü
+    durus        0.10    0.0564  0.0900   1.60        91%   ← tek ayırt eden
 
-Ayırt eden tek bileşen EN DÜŞÜK ağırlığa sahip. Ve bu tesadüf değil:
+Ayırt eden tek bileşen en düşük ağırlığa sahip. Ve bu tesadüf değil:
 elle yazılan ağırlıklar bir **halk teorisini** kodluyordu — "kavga =
 hızlı yumruk". Gerçek gözetim görüntüsündeki şiddet çoğunlukla
 boğuşma, tutma, itme: **kollar yavaş, duruş bozuk.**
 
-⭐⭐ Aynı sonucu LightGBM bağımsız olarak söyledi. Öğrenilen modelin
+Aynı sonucu LightGBM bağımsız olarak söyledi. Öğrenilen modelin
 en etkili 10 özelliğinin 10'u da gövde/duruş:
 
     ham_govde_hizi_medyan            48
@@ -25,26 +25,26 @@ en etkili 10 özelliğinin 10'u da gövde/duruş:
     ham_durus_genisligi_azami        22
     ham_en_boy_orani_p75             22
     ...
-    sahne_bilek_hizi_p75_medyan      20   ⬅ bilek ancak 11. sırada
+    sahne_bilek_hizi_p75_medyan      20   ← bilek ancak 11. sırada
 
 Kural 0.40 ağırlığı uzuv hızına, 0.10'u duruşa veriyordu. Model tam
 tersini öğrendi.
 
-⚠ AMA BU BİR HİPOTEZ, SONUÇ DEĞİL
+Ama bu bir hipotez, sonuç değil
 ---------------------------------
 "Model duruşa bakıyor, öyleyse kural da baksın" mantıklı görünüyor ama
 ölçülmeden yazılamaz — bu projede tam olarak bu tür makul görünen
 çıkarımlar defalarca çürüdü. Bu betik hipotezi sınıyor.
 
-YÖNTEM
+Yöntem
 ------
-`data/_tmp/rwf_ozellikler.json` her klibin KARE SERİSİNİ saklıyor
+`data/_tmp/rwf_ozellikler.json` her klibin kare serisini saklıyor
 (bileşen değerleri). Ağırlıkları değiştirip skoru yeniden hesaplamak
 GPU gerektirmiyor — aynı bileşenler, farklı ağırlıklı toplam.
 
-⚠⚠ AŞIRI UYUM KORUMASI: arama YALNIZCA `train` bölümünde yapılıyor,
-sonuç YALNIZCA `val` bölümünde raporlanıyor. Aynı kümede arayıp aynı
-kümede raporlamak K5'te zaten bilinen bir yanlılıktı (CLAUDE.md:
+Aşırı uyum koruması: arama yalnızca `train` bölümünde yapılıyor,
+sonuç yalnızca `val` bölümünde raporlanıyor. Aynı kümede arayıp aynı
+kümede raporlamak K5'te zaten bilinen bir yanlılıktı (proje notlarım:
 *"en_iyi_esik, F1'in hesaplandığı aynı 120 klip üzerinde aranıyor"*);
 burada tekrarlanmıyor.
 
@@ -72,8 +72,8 @@ BENCHMARKS = PROJECT_ROOT / "benchmarks"
 
 BILESENLER = ("yakinlik", "bilek", "yaklasma", "enerji", "durus")
 
-# Etkileşim kapısı — `aggression.py` ile AYNI formül.
-# ⚠ Kopyalanmış bir sabit değil, aynı davranışın çevrim dışı ikizi.
+# Etkileşim kapısı — `aggression.py` ile aynı formül.
+# Kopyalanmış bir sabit değil, aynı davranışın çevrim dışı ikizi.
 # Ayrışırsa burada bulunan ağırlıklar canlıda başka bir skor üretir.
 ETKILESIM_TABAN = 0.15
 
@@ -120,7 +120,7 @@ def _f1(skorlar: list[float], etiketler: list[int]) -> tuple[float, float]:
 def _klip_skoru(seri: list[dict[str, float]], agirlik: dict[str, float]) -> float:
     """Bir klibin skoru: kare skorlarının p90'ı.
 
-    ⚠ p90, `max` DEĞİL — P-47'nin dersi: `max` tek bir bozuk kareyi
+    p90, `max` değil — P-47'nin dersi: `max` tek bir bozuk kareyi
     tüm klibin skoru yapar.
     """
     kare_skorlari: list[float] = []
@@ -178,7 +178,7 @@ def main() -> int:
     print(f"  train AUC {m_tr[0]:.3f} F1 {m_tr[1]:.3f} | "
           f"val AUC {m_val[0]:.3f} F1 {m_val[1]:.3f}\n")
 
-    # ─── Izgara araması — YALNIZCA train üzerinde ───
+    # ─── Izgara araması — yalnızca train üzerinde ───
     # Ağırlıklar 0.05 adımlarla, toplamı 1.0. Beş bileşen için
     # kombinasyon sayısı yönetilebilir (~10 bin).
     adim = args.adim

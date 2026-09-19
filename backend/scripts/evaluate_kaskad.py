@@ -1,42 +1,42 @@
-"""KASKAD DENEYİ — ucuz kural kapısı → pahalı sınıflandırıcı.
+"""Kaskad deneyi — ucuz kural kapısı → pahalı sınıflandırıcı.
 
 Araştırma sorusu
 ----------------
-Kural tabanlı bir ÖN ELEME, öğrenilmiş sınıflandırıcının önüne
+Kural tabanlı bir ÖN eleme, öğrenilmiş sınıflandırıcının önüne
 konursa ne olur?
 
     A. Yalnız kural         (elle konmuş ağırlıklar)
     B. Yalnız LightGBM      (öğrenilmiş ağırlıklar)
-    C. KASKAD: kural kapısı → geçerse LightGBM
+    C. Kaskad: kural kapısı → geçerse LightGBM
 
-⚠ HİPOTEZ AÇIKÇA YAZILIYOR — sonuç ne çıkarsa çıksın raporlanacak
+Hipotez açıkça yazılıyor — sonuç ne çıkarsa çıksın raporlanacak
 Kaskadın ikinci aşamanın **ayırt etme gücünü artırması beklenmiyor.**
 Bir kapı sınıflandırıcı değildir; yalnızca filtreler. Beklenen kazanç:
 
-    ✅ kesinlik (precision) ↑   — bariz olmayanlar kapıda eleniyor
-    ✅ hesap maliyeti ↓          — LightGBM her karede çağrılmıyor
-    ❌ duyarlılık (recall) ↓      — kapı bir gerçek olayı elerse
-                                   ikinci aşama onu HİÇ göremez
+    kesinlik (precision) ↑   — bariz olmayanlar kapıda eleniyor
+    hesap maliyeti ↓          — LightGBM her karede çağrılmıyor
+    duyarlılık (recall) ↓      — kapı bir gerçek olayı elerse
+                                   ikinci aşama onu hiç göremez
 
-⭐ VE ASIL ÖLÇÜLEN ŞEY BU PROJENİN MERKEZÎ KISITI
+Ve asıl ölçülen şey bu projenin merkezî kısıtı
 Bu sistemin problemi doğruluk değil, **20 eşzamanlı kamerayı tek orta
-seviye GPU'da gerçek zamanlı işlemek** (PLAN §1.2). Kaskadı "daha
+seviye GPU'da gerçek zamanlı işlemek**. Kaskadı "daha
 doğru" diye değil, **"aynı doğrulukta, daha az hesapla"** diye
 savunuyoruz — ve o savunmanın sayısı `lgbm_cagri_orani`.
 
 Kaskad neden bu mimariye uyuyor
 -------------------------------
-Sistem zaten kademeli (PLAN §4, mimari kural 4):
+Sistem zaten kademeli (mimari kural 4):
 
-    KADEME 0  hareket filtresi   → karelerin %85'i burada eleniyor
-    KADEME 1  tespit + takip
-    KADEME 2  poz + yüz
-    KADEME 3  (bu betik) davranış sınıflandırma
+    Kademe 0  hareket filtresi   → karelerin %85'i burada eleniyor
+    kademe 1  tespit + takip
+    kademe 2  poz + yüz
+    kademe 3  (bu betik) davranış sınıflandırma
 
 Kaskad, aynı ilkenin bir kademe aşağısı: **ucuz olan önce baksın,
 pahalı olan yalnızca gerektiğinde çalışsın.**
 
-⚠ KAPI NEYE BAKIYOR — ve neden bunlara
+Kapı neye bakıyor — ve neden bunlara
 Saldırganlık tanımı gereği **etkileşimli** bir olay. Kapı bu tanımı
 doğrudan uyguluyor:
 
@@ -47,11 +47,11 @@ doğrudan uyguluyor:
                  (kavga uzuv hareketi olmadan olmaz)
 
 Üçü de **iskeletten** geliyor: ten rengi, kıyafet ve görünüşten
-bağımsız (PLAN §12.2 — yanlılık azaltma gerekçesi).
+bağımsız (yanlılık azaltma gerekçesi).
 
-⚠ KAPI "VEYA" DEĞİL "VE" — gerekçesi
+Kapı "veya" değil "VE" — gerekçesi
 Herhangi biri yeterli olsaydı kapı neredeyse hiç kapanmazdı: kalabalık
-bir sahnede yakınlık daima yüksek. Kavga ÜÇÜNÜN AYNI ANDA olmasıdır.
+bir sahnede yakınlık daima yüksek. Kavga üçünün aynı anda olmasıdır.
 
 Literatür
 ---------
@@ -91,18 +91,18 @@ MODEL_DOSYASI = PROJECT_ROOT / "models" / "saldirganlik_lgbm.txt"
 
 TOHUM = 42
 
-# ─── KURAL KAPISI EŞİKLERİ ───
+# ─── Kural kapısı eşikleri ───
 #
-# ⚠ Bu değerler `benchmark_features.py` ile ölçülen CANLI dağılımdan
+# Bu değerler `benchmark_features.py` ile ölçülen canlı dağılımdan
 # türetildi, keyfi seçilmedi. 20 kamera / 200 sn / 40 bin özellik
 # vektöründe normal davranışın p90'ı:
 #
 #     bilek_hizi_azami  p90 = 1.80   (doyum 3.0)
 #     yakinlik          p90 ≈ 0.35
 #
-# Kapı, normal davranışın ÜSTÜNDE bir yerde durmalı ama gerçek
+# Kapı, normal davranışın üstünde bir yerde durmalı ama gerçek
 # olayları elememeli. Aşağıdaki değerler o aralığın alt ucunda —
-# yani kapı BOL tutuluyor. Gerekçe: bir kapının en kötü hatası
+# yani kapı bol tutuluyor. Gerekçe: bir kapının en kötü hatası
 # gerçek olayı elemektir; hesap tasarrufu bunun karşılığında feda
 # edilebilir, doğru pozitif edilemez.
 KAPI_YAKINLIK = 0.15
@@ -126,9 +126,9 @@ def _auc(poz: list[float], neg: list[float]) -> float:
 def _en_iyi_f1(poz: list[float], neg: list[float]) -> tuple[float, float, float, float]:
     """Eşik taraması ile en iyi F1.
 
-    ⚠ EŞİK TEST KÜMESİNDE ARANIYOR — bilinen yanlılık, ADR-0007 ile
-    AYNI yöntem. Kasten aynı: üç yapılandırma (kural / LightGBM /
-    kaskad) aynı optimistik yöntemle ölçülüyor ki KARŞILAŞTIRMA adil
+    Eşik test kümesinde aranıyor — bilinen yanlılık, ADR-0007 ile
+    aynı yöntem. Kasten aynı: üç yapılandırma (kural / LightGBM /
+    kaskad) aynı optimistik yöntemle ölçülüyor ki karşılaştırma adil
     olsun. Mutlak sayılar hepsinde şişkin; aralarındaki fark anlamlı.
     """
     en_iyi = (0.0, 0.0, 0.0, 0.0)
@@ -148,9 +148,9 @@ def _en_iyi_f1(poz: list[float], neg: list[float]) -> tuple[float, float, float,
 
 
 def _kapi_gecti_mi(kare: dict[str, float]) -> bool:
-    """Bir KARE kural kapısını geçiyor mu.
+    """Bir kare kural kapısını geçiyor mu.
 
-    ⚠ "VE" mantığı: üçü birden. Gerekçe modül başlığında.
+    "VE" mantığı: üçü birden. Gerekçe modül başlığında.
     """
     return (
         kare.get("yakinlik", 0.0) >= KAPI_YAKINLIK
@@ -194,17 +194,17 @@ def main() -> int:
 
     booster = lgb.Booster(model_file=str(MODEL_DOSYASI))
 
-    # ⚠ SÜTUN SIRASI MODELDEN DEĞİL, ÖLÇÜM JSON'UNDAN OKUNUYOR
+    # Sütun sırası modelden değil, ölçüm JSON'undan okunuyor
     #
     # Model bir numpy dizisiyle eğitildiği için LightGBM sütunlara
     # kendi adlarını verdi: `Column_0`, `Column_1`, … Yani modelin
-    # kendisi hangi sütunun "durus_azami" olduğunu BİLMİYOR.
+    # kendisi hangi sütunun "durus_azami" olduğunu bilmiyor.
     #
-    # ⚠ Bu sessiz bir felaket kaynağı: sütunları alfabetik sırayla
+    # Bu sessiz bir felaket kaynağı: sütunları alfabetik sırayla
     # yeniden üretsek ve bir gün yeni bir özellik eklensek, sıra
-    # kayar ve model YANLIŞ sütunları okur — hata vermeden, sadece
+    # kayar ve model yanlış sütunları okur — hata vermeden, sadece
     # yanlış skor üreterek. (Aynı sınıf tuzak: `analytics/ifade.py`
-    # etiket kümesi, `train_aggression.py` BILESENLER listesi.)
+    # etiket kümesi, `train_aggression.py` bilesenler listesi.)
     #
     # Eğitim betiği sırayı JSON'a yazıyor; tek doğru kaynak orası.
     kayitlar = sorted(BENCHMARKS.glob("saldirganlik_model_*.json"))
@@ -219,11 +219,11 @@ def main() -> int:
         return 1
 
     def _matris(satirlar: list[dict[str, Any]]) -> Any:
-        # ⚠ EKSİK DEĞER `NaN` — `train_aggression.py` ile AYNI kural.
+        # Eksik değer `NaN` — `train_aggression.py` ile aynı kural.
         # Ham özellikler `None` ise klip sözlüğüne hiç yazılmıyor;
         # sıfır koymak modele "ölçtüm ve sıfırdı" demek olurdu.
         # Eğitimde NaN kullanılıp çıkarımda sıfır kullanmak, modeli
-        # eğitildiğinden BAŞKA bir dağılımla beslemek demektir.
+        # eğitildiğinden başka bir dağılımla beslemek demektir.
         return np.array([
             [float(s[c]) if c in s else float("nan") for c in sutunlar]
             for s in satirlar
@@ -232,7 +232,7 @@ def main() -> int:
     y = np.array([int(s["etiket"]) for s in val])
     lgbm_olasilik = booster.predict(_matris(val))
     # Kural tabanlı skor: klip içindeki azami tırmanma skoru
-    # (`evaluate_rwf.py` · K5 ile AYNI toplulaştırma).
+    # (`evaluate_rwf.py` · K5 ile aynı toplulaştırma).
     kural_skor = np.array([float(s["skor_azami"]) for s in val])
 
     # ─── Kapı istatistiği ───
@@ -243,13 +243,13 @@ def main() -> int:
         g, t = _kapi_istatistigi(s)
         gecen_kare += g
         toplam_kare += t
-        # Klip seviyesinde karar: kapı EN AZ BİR karede açıldıysa
+        # Klip seviyesinde karar: kapı en az bir karede açıldıysa
         # ikinci aşama o klip için çağrılmış sayılıyor.
         kapi_acildi.append(g > 0)
 
-    # ─── C: KASKAD skoru ───
-    # ⚠ Kapı kapalıysa skor 0.0 — yani "olay yok" deniyor.
-    # Bu, kaskadın TANIMI: ikinci aşama çağrılmadıysa çıktı da yok.
+    # ─── C: kaskad skoru ───
+    # Kapı kapalıysa skor 0.0 — yani "olay yok" deniyor.
+    # Bu, kaskadın tanımı: ikinci aşama çağrılmadıysa çıktı da yok.
     kaskad_skor = np.array([
         float(p) if acik else 0.0
         for p, acik in zip(lgbm_olasilik, kapi_acildi, strict=True)

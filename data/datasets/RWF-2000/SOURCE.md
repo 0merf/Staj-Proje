@@ -1,12 +1,12 @@
 # RWF-2000 — Kaynak, Lisans ve Atıf
 
-> **PLAN.md §7.2 kuralı:** Her veri seti için indirme adresi, lisans ve
+> **Proje planı kuralı:** Her veri seti için indirme adresi, lisans ve
 > alıntı bilgisi kaydedilir. Veri **git'e girmez**, bu dosya girer.
 
 ## Ne için kullanılıyor
 
 **Saldırgan davranışın erken tespiti** modülünün eğitim ve
-değerlendirme seti (PLAN.md §6.5.5).
+değerlendirme seti.
 
 | Aşama | İş | Gün |
 |---|---|---|
@@ -16,7 +16,7 @@ değerlendirme seti (PLAN.md §6.5.5).
 | 4 | GRU tırmanma modeli, taban modeli geçiyor mu | 18 |
 | 5 | **Erken uyarı avansı** — elle etiketli alt küme | 17-18 |
 
-Başarı kriteri **K5: F1 ≥ 0.85** (PLAN.md §1.4).
+Başarı kriteri **K5: F1 ≥ 0.85**.
 
 ## Kaynak
 
@@ -44,7 +44,7 @@ Klipler ~5 saniyelik, 30 FPS. Kaynak **gerçek gözetim kameraları** —
 literatürde bu setin tercih edilme sebebi bu (Hockey Fight gibi
 setler spor yayınından derlenmiştir ve sahne dağılımı gerçekçi değildir).
 
-## ⚠ Dosya adları DEĞİŞTİRİLDİ
+## Dosya adları değiştirildi
 
 Özgün arşivdeki bazı dosya adları 240 karaktere kadar çıkıyor ve bozuk
 kodlamalı (mojibake). Windows'un `MAX_PATH` sınırı 260 karakter olduğu
@@ -82,7 +82,7 @@ yazarların şartlarına uyulmasını istiyor.
 > Video Database for Violence Detection.* 25th International Conference
 > on Pattern Recognition (ICPR), 4183-4190. arXiv:1911.05913
 
-## Karşılaştırma bağlamı (LITERATUR.md §6.5.1)
+## Karşılaştırma bağlamı
 
 Literatürde bu set üzerinde raporlanan sonuçlar:
 
@@ -91,6 +91,6 @@ Literatürde bu set üzerinde raporlanan sonuçlar:
 | RTVD-Net | %93.28 | YOLO-Pose iskeleti üzerinde ön eğitim |
 | 60 bin parametreli iskelet modeli | %90.25 | Çok hafif |
 
-⚠ Bizim katkımız doğruluk yarışı değil, **erken uyarı avansı**:
+Bizim katkımız doğruluk yarışı değil, **erken uyarı avansı**:
 literatürdeki çalışmalar "şiddet var/yok" doğruluğu raporluyor, "kaç
-saniye önce" sorusunu ölçmüyor (PLAN.md §6.5.5 adım 5).
+saniye önce" sorusunu ölçmüyor (adım 5).

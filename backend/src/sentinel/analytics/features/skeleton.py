@@ -12,7 +12,7 @@ COCO-17 keypoint düzeni
   13 sol diz     14 sağ diz
   15 sol ayak    16 sağ ayak
 
-⚠ ÖLÇEK NORMALİZASYONU ZORUNLU
+Ölçek normalizasyonu zorunlu
 ------------------------------
 Kameraya 3 metre uzaklıktaki bir kişi ile 20 metre uzaklıktaki kişi
 aynı hareketi yaptığında piksel cinsinden hızları **10 kat** farklı
@@ -26,10 +26,10 @@ Bu yüzden mesafe ve hız birimlerinin tamamı **gövde boyuna** bölünür:
 Böylece "bileğini saniyede 2 gövde boyu kadar hareket ettirdi" cümlesi
 kameradaki konumdan bağımsız anlam taşır.
 
-⚠ EKSİK KEYPOINT UYDURULMAZ
+Eksik keypoınt uydurulmaz
 ---------------------------
 Güveni eşiğin altında olan keypoint **yok** sayılır, enterpolasyon
-yapılmaz (PLAN.md §6.2). Görünmeyen bir uzvun yerini tahmin etmek,
+yapılmaz. Görünmeyen bir uzvun yerini tahmin etmek,
 olmayan bir duruşu varmış gibi göstermektir — ve o duruş doğrudan
 "saldırganlık" skoruna girer.
 
@@ -55,7 +55,7 @@ SOL_AYAK, SAG_AYAK = 15, 16
 BILEKLER = (SOL_BILEK, SAG_BILEK)
 
 # Bir keypoint'in "var" sayılması için gereken en düşük güven.
-# PLAN.md §6.2 ile aynı değer; panelde de aynı eşik kullanılıyor
+# Proje planı ile aynı değer; panelde de aynı eşik kullanılıyor
 # (frontend/src/lib/skeleton.ts · KP_CONF_MIN) — ikisi ayrışırsa
 # operatörün gördüğü iskelet ile analiz edilen iskelet farklı olur.
 KP_MIN_CONF = 0.3
@@ -100,7 +100,7 @@ def kalca_merkezi(kp: np.ndarray) -> np.ndarray | None:
 def govde_boyu(kp: np.ndarray, bbox: tuple[float, float, float, float]) -> float | None:
     """Ölçek normalizasyonu için referans uzunluk (piksel).
 
-    ⚠ İKİ KADEMELİ — ve sıra önemli
+    İki kademeli — ve sıra önemli
     Tercih edilen ölçü **omuz-kalça mesafesi**: kişi otursa, eğilse ya
     da kollarını kaldırsa bile bu mesafe sabit kalır.
 
@@ -136,7 +136,7 @@ def aci(a: np.ndarray, tepe: np.ndarray, b: np.ndarray) -> float:
 def dikeyle_aci(vektor: np.ndarray) -> float:
     """Bir vektörün dikey eksenle açısı (derece, 0-180).
 
-    ⚠ Görüntü koordinatlarında y AŞAĞI doğru artar. Dik duran bir
+    Görüntü koordinatlarında y aşağı doğru artar. Dik duran bir
     kişide kalça→omuz vektörü **yukarı**, yani negatif y yönündedir.
     Referans olarak `(0, -1)` alınıyor; `(0, 1)` alınsaydı dik duruş
     180° çıkar ve "yere yatmış" ile karışırdı.
@@ -153,7 +153,7 @@ def govde_egimi(kp: np.ndarray) -> float | None:
 
     0° = dik duruyor · 90° = yatay (düşmüş ya da öne eğilmiş)
 
-    PLAN §6.5.2'de "öne yaslanma (agresif duruş)" göstergesi; ayrıca
+    Proje planında "öne yaslanma (agresif duruş)" göstergesi; ayrıca
     §6.4 Katman B'deki **düşme** kuralının ana girdisi.
     """
     omuz, kalca = omuz_merkezi(kp), kalca_merkezi(kp)
@@ -171,7 +171,7 @@ def kol_yuksekligi(kp: np.ndarray, taraf: str = "sol") -> float | None:
         0.0 = bilek omuz hizasında ya da altında (kol aşağıda)
         1.0 = bilek kol boyu kadar yukarıda (kol tam kalkmış)
 
-    PLAN §6.5.2 `arm_elevation`. Vuruş hazırlığının en doğrudan
+    Proje planındaki `arm_elevation` göstergesi. Vuruş hazırlığının en doğrudan
     göstergelerinden biri.
     """
     omuz_i, dirsek_i, bilek_i = (
@@ -201,7 +201,7 @@ def kol_yuksekligi(kp: np.ndarray, taraf: str = "sol") -> float | None:
 def durus_genisligi(kp: np.ndarray, olcek: float) -> float | None:
     """Ayak bilekleri arası mesafe / gövde boyu.
 
-    PLAN §6.5.2 `stance_width`. Geniş duruş savunma/saldırı
+    Proje planındaki `stance_width` göstergesi. Geniş duruş savunma/saldırı
     hazırlığıdır; dar duruş rahat yürüyüştür.
     """
     sol, sag = nokta(kp, SOL_AYAK), nokta(kp, SAG_AYAK)
@@ -216,7 +216,7 @@ def omuz_yonu(kp: np.ndarray) -> np.ndarray | None:
     Omuz hattına **dik** olan yön. İki kişinin karşılıklı olup
     olmadığını (`mutual_facing`) anlamak için kullanılıyor.
 
-    ⚠ İşaret belirsizliği var: omuz hattına dik iki yön vardır (öne ve
+    İşaret belirsizliği var: omuz hattına dik iki yön vardır (öne ve
     arkaya) ve tek bir 2B iskeletten hangisinin "ön" olduğu kesin
     bilinemez. Burun görünüyorsa onu kullanarak ayrım yapılıyor;
     görünmüyorsa (kişi sırtı dönük) None dönüyor — yanlış yön üretmek

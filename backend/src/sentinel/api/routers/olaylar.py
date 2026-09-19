@@ -1,6 +1,6 @@
 """Olay geçmişi uç noktaları — operatörün "dün gece ne oldu" sorusu.
 
-⚠ NEDEN CANLI WEBSOCKET YETMİYOR
+Neden canlı WEBSOCKET yetmiyor
 Panel şu ana kadar alarmları yalnızca canlı WebSocket'ten alıyordu.
 Bunun iki sonucu vardı:
 
@@ -11,21 +11,21 @@ Bunun iki sonucu vardı:
 Gözetim sisteminin asıl değeri geriye bakabilmekte. Canlı akış
 "dikkat", geçmiş "kanıt".
 
-⚠ TAMAMEN OKUMA UÇLARI
+Tamamen okuma uçları
 Buradan hiçbir şey yazılmıyor, silinmiyor. Olay kaydı bir denetim izi
 (audit trail) niteliğinde: sistemin ne zaman ne dediğini sonradan
 değiştirebilmek, kaydın değerini bitirir.
 
-⚠ 03.09.2026 — KLİP UCU EKLENDİ VE NEDEN ÖNEMLİ
+03.09.2026 — klip ucu eklendi ve neden önemli
 Bu dosya alarmların `klip` anahtarını 30.08'den beri döndürüyordu ve
-o anahtarla yapılacak HİÇBİR ŞEY yoktu: klibi getiren bir uç yoktu,
+o anahtarla yapılacak hiçbir şey yoktu: klibi getiren bir uç yoktu,
 panel alanı hiç kullanmıyordu. Yani zincir şöyleydi:
 
-    alarm → klip KESİLDİ → anahtar veritabanına yazıldı → ???
+    alarm → klip kesildi → anahtar veritabanına yazıldı → ???
 
 Klip yazıcısının 12 birim testi vardı ve hepsi geçiyordu; kimse
 "peki kesilen klibe nasıl ulaşılıyor" diye sormamıştı. Kapsam
-maddesi (PLAN §1.3 "olay öncesi/sonrası klip arşivi") yarım
+maddesi ("olay öncesi/sonrası klip arşivi") yarım
 kalmıştı — ve yarım olduğu görünmüyordu, çünkü her parçası tek tek
 çalışıyordu.
 """
@@ -50,27 +50,27 @@ router = APIRouter(prefix="/api/v1/events", tags=["events"])
 
 KLIP_KOKU = PROJECT_ROOT / "data" / "clips"
 
-# ⚠ G12 — PATH TRAVERSAL: BEYAZ LİSTE, KARA LİSTE DEĞİL
+# G12 — PATH TRAVERSAL: beyaz liste, kara liste değil
 #
 # Klip anahtarı `alerting/klip.py · klip_anahtari()` tarafından
-# üretiliyor ve biçimi TAM olarak şu:
+# üretiliyor ve biçimi tam olarak şu:
 #
 #     2026/09/03/cam-16/115742_fall.mp4
 #     YYYY/MM/DD/<kamera>/HHMMSS_<tur>.mp4
 #
 # Desen bu biçimin tamamını tarif ediyor. `..`, mutlak yol, sürücü
-# harfi, ters bölü, boş parça — hiçbiri desene UYMADIĞI için elenmiş
+# harfi, ters bölü, boş parça — hiçbiri desene uymadığı için elenmiş
 # oluyor; tek tek yasaklamaya gerek kalmıyor.
 #
-# ⚠ Kara liste yaklaşımı burada özellikle tehlikeli olurdu: `..` için
+# Kara liste yaklaşımı burada özellikle tehlikeli olurdu: `..` için
 # filtre yazan biri `%2e%2e`, `..%2f`, `....//` gibi kodlamaları
 # kaçırır. Beyaz liste bu sınıf hatanın tamamını kapatıyor — yalnızca
-# İZİN VERİLEN biçimi tarif ettiğimiz için, düşünmediğimiz saldırı
+# izin verilen biçimi tarif ettiğimiz için, düşünmediğimiz saldırı
 # biçimleri de tanım gereği eleniyor.
-# ⚠ SON ÇAPA `\Z`, `$` DEĞİL — küçük ama gerçek bir fark
-# Python'da `$` yalnızca dizenin sonunu değil, SONDAKİ YENİ SATIRDAN
-# ÖNCESİNİ de eşleştirir. Yani `^...\.mp4$` deseni
-# `".../115742_fall.mp4\n"` girdisini KABUL EDER. `\Z` bunu yapmaz:
+# Son çapa `\Z`, `$` değil — küçük ama gerçek bir fark
+# Python'da `$` yalnızca dizenin sonunu değil, sondaki yeni satırdan
+# öncesini de eşleştirir. Yani `^...\.mp4$` deseni
+# `".../115742_fall.mp4\n"` girdisini kabul eder. `\Z` bunu yapmaz:
 # yalnızca dizenin gerçek sonu.
 #
 # Tek başına sömürülebilir değil (sondaki `\n` yolu değiştirmez) ama
@@ -81,13 +81,13 @@ KLIP_DESENI = re.compile(
     r"\A\d{4}/\d{2}/\d{2}/[A-Za-z0-9_-]{1,32}/\d{6}_[a-z_]{1,32}\.mp4\Z"
 )
 
-# ⚠ Kamera adı beyaz listesi yerine biçim doğrulaması: `cam-NN` ya da
+# Kamera adı beyaz listesi yerine biçim doğrulaması: `cam-NN` ya da
 # test kameraları. Doğrudan SQL'e bağlı parametre olarak gidiyor
 # (enjeksiyon yolu yok) ama biçimi doğrulamak, yazım hatası yüzünden
 # sessizce boş sonuç dönmeyi de engelliyor.
 KAMERA_DESENI = r"^[A-Za-z0-9_-]{1,32}$"
 TUR_DESENI = r"^[a-z_]{1,32}$"
-# Ciddiyet KAPALI bir küme — biçim değil, TAM LİSTE doğrulanıyor.
+# Ciddiyet kapalı bir küme — biçim değil, tam liste doğrulanıyor.
 # Üç değerin dışında bir şey gelirse sorgu boş dönerdi ve kullanıcı
 # "olay yok" sanırdı; burada 422 ile açıkça reddediliyor.
 CIDDIYET_DESENI = r"^(attention|warning|alarm)$"
@@ -125,7 +125,7 @@ async def olay_listesi(
             bit=bit,
         )
     except Exception as exc:
-        # ⚠ İstisna metni ISTEMCIYE VERİLMİYOR (PLAN §11.1 / G09).
+        # İstisna metni istemciye verilmiyor (G09).
         # Veritabanı hataları şema adı, sütun adı, hatta bağlantı dizesi
         # sızdırabiliyor. Loga tam hâli, istemciye yalnızca durum.
         log.error("olay_sorgusu_basarisiz", error=f"{type(exc).__name__}: {exc}")
@@ -158,11 +158,11 @@ async def saatlik(
 ) -> dict[str, Any]:
     """Saatlik alarm özeti — K7 kriterinin sürekli hâli.
 
-    ⚠ Bu uç, K7'yi ("kamera-saat başına yanlış alarm ≤3") artık bir
+    Bu uç, K7'yi ("kamera-saat başına yanlış alarm ≤3") artık bir
     ölçüm koşusu olmaktan çıkarıyor: sayı sistemin normal çıktısı.
     `alarm_kamera_saat` alanı doğrudan o kriterin karşılığı.
 
-    ⚠ "YANLIŞ alarm" değil "alarm" sayılıyor. Bir alarmın yanlış
+    "Yanlış alarm" değil "alarm" sayılıyor. Bir alarmın yanlış
     olduğunu söyleyebilmek yer gerçeği ister ve o zemin yalnızca
     kontrol kamerasında (cam-18) var. Bu uç ham sayıyı veriyor;
     yorumu yapan raporun kendisi.
@@ -208,21 +208,21 @@ async def klip(
     `anahtar`, olay kaydındaki `klip` alanı:
         `2026/09/03/cam-16/115742_fall.mp4`
 
-    ⚠ ROL: `viewer` YETİYOR — ve bu bilinçli bir karar
+    Rol: `viewer` yetiyor — ve bu bilinçli bir karar
     Canlı ızgara zaten `viewer`'a ham video gösteriyor. Klibi
     `operator`'a kısıtlamak tutarsız olurdu: aynı görüntünün canlısı
     serbest, kaydı yasak. Kısıtlanması gereken şey görüntüye erişim
-    değil, görüntünün DIŞARI ÇIKARILMASI — ve onun mekanizması yetki
-    değil DENETİM.
+    değil, görüntünün dışarı çıkarılması — ve onun mekanizması yetki
+    değil denetim.
 
-    ⚠ HER ERİŞİM DENETİME YAZILIYOR (G19)
-    PLAN §11.1/G19 "klip dışa aktarma"yı açıkça denetlenecek eylemler
+    Her erişim denetime yazılıyor (G19)
+    Proje planı (G19) "klip dışa aktarma"yı açıkça denetlenecek eylemler
     arasında sayıyor. Bir klip indirilebilir bir dosya: bir kez
     çıktığında sistemin kontrolünden tamamen çıkıyor. Kimin neyi ne
     zaman indirdiği, indirmeyi engellemekten daha uygulanabilir bir
     koruma.
 
-    ⚠ 404 AYRIM YAPMIYOR — bilinçli
+    404 ayrım yapmıyor — bilinçli
     "Biçim bozuk", "dosya yok" ve "dizin dışına çıkıyor" durumlarının
     üçü de aynı 404'ü döndürüyor. Farklı cevaplar vermek, saldırgana
     dosya sisteminin haritasını çıkarma imkânı verirdi (var olan ve
@@ -238,16 +238,16 @@ async def klip(
 
     yol = (KLIP_KOKU / anahtar).resolve()
 
-    # ⚠ İKİNCİ SAVUNMA: DESEN GEÇSE BİLE YOL DOĞRULANIYOR
+    # İkinci savunma: desen geçse bile yol doğrulanıyor
     # Desen zaten `..` geçirmiyor; bu kontrol yine de duruyor çünkü
     # sembolik bağlantılar deseni atlatabilir. `data/clips/2026` bir
     # symlink ise `resolve()` onu takip eder ve dosya kök dizinin
-    # DIŞINA düşebilir. Tek savunmaya güvenmemek, savunmanın
+    # dışına düşebilir. Tek savunmaya güvenmemek, savunmanın
     # varsayımının yanlış çıkabileceğini kabul etmektir.
     if not yol.is_relative_to(KLIP_KOKU.resolve()) or not yol.is_file():
         raise HTTPException(404, "klip bulunamadı")
 
-    # ⚠ Denetim kaydı dosya GÖNDERİLMEDEN önce yazılıyor. Sonra
+    # Denetim kaydı dosya gönderilmeden önce yazılıyor. Sonra
     # yazılsaydı, aktarım yarıda kesilen bir indirme kayda hiç
     # geçmezdi — oysa dosya kısmen de olsa çıkmış olurdu.
     try:
@@ -264,7 +264,7 @@ async def klip(
     return FileResponse(
         yol,
         media_type="video/mp4",
-        # ⚠ `inline`: tarayıcı oynatsın, indirme diyaloğu açmasın.
+        # `inline`: tarayıcı oynatsın, indirme diyaloğu açmasın.
         # Operatörün ihtiyacı "izlemek"; indirme ayrı ve daha ağır bir
         # eylem olarak kalmalı (kullanıcı yine de kaydedebilir ama
         # varsayılan davranış dışarı çıkarma olmamalı).

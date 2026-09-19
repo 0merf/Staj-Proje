@@ -1,13 +1,13 @@
 """WebSocket güvenlik kontrolleri ve dosya adı temizleme.
 
-⚠ NEDEN BU TESTLER
+Neden bu testler
 ------------------
 Buradaki üç fonksiyon güvenlik sınırında duruyor ve **ikisi zaten bir
 kez hataya yol açtı**:
 
   · `origin_allowed`  → P-11 ve P-21: kontrol çalışıyordu ama meşru
     istemciyi de engelliyordu. İki kez aynı sınıf hata.
-  · `_safe_name`      → G12 path traversal (10.09'da KALDIRILDI:
+  · `_safe_name`      → G12 path traversal (10.09'da kaldırıldı:
     testin sınadığı `/debug/trace` uç noktası, panelden "iz kaydet"
     düğmesiyle birlikte silindi — kullanılmayan bir yazma yüzeyiydi).
 
@@ -26,7 +26,7 @@ from sentinel.api.ws.live import MAX_SUBSCRIPTIONS, authorize_cameras, origin_al
 
 
 class TestOriginDogrulamasi:
-    """WebSocket CORS'a UYMAZ — Origin elle doğrulanmak zorunda.
+    """WebSocket CORS'a uymaz — Origin elle doğrulanmak zorunda.
 
     Kötü niyetli bir sayfa kullanıcının tarayıcısından bizim sunucumuza
     WS açabilir ve tüm kamera akışını dinleyebilir. `CORSMiddleware`
@@ -47,7 +47,7 @@ class TestOriginDogrulamasi:
         assert origin_allowed("http://localhost:5173", "127.0.0.1:8001")
 
     def test_P21_GERILEMESI_localhost_ve_127_0_0_1_IKISI_DE_calisiyor(self) -> None:
-        """⚠ P-21 gerilemesi — `localhost` ile `127.0.0.1` AYRI kökenlerdir.
+        """P-21 gerilemesi — `localhost` ile `127.0.0.1` ayrı kökenlerdir.
 
         Tarayıcı `Origin` başlığını adres çubuğuna ne yazıldıysa ona göre
         gönderir. Aynı makineyi göstermeleri fark etmez. Beyaz listede
@@ -72,7 +72,7 @@ class TestOriginDogrulamasi:
         assert not origin_allowed("http://127.0.0.1:9999", "127.0.0.1:8001")
 
     def test_ayni_host_FARKLI_SEMA_reddediliyor(self) -> None:
-        """http ile https AYRI kökenlerdir — şema de karşılaştırılmalı.
+        """http ile https ayrı kökenlerdir — şema de karşılaştırılmalı.
 
         `Host` başlığı şema taşımaz; şema bağlantının kendisinden
         (ws/wss) türetilip veriliyor. Bu test olmasa `Origin: https://`
@@ -111,9 +111,9 @@ class TestOriginDogrulamasi:
 
 
 class TestKameraYetkilendirmesi:
-    """İstemcinin gönderdiği listeye ASLA olduğu gibi güvenilmez (G07).
+    """İstemcinin gönderdiği listeye asla olduğu gibi güvenilmez (G07).
 
-    ⚠ 01.09.2026 — SÖZLEŞME DEĞİŞTİ: biçim → BEYAZ LİSTE
+    01.09.2026 — sözleşme değişti: biçim → beyaz liste
     Önceki sürüm yalnızca "harf-rakam-tire" diye bakıyordu ve `cam-99`
     gibi var olmayan adlar geçiyordu. Tek başına ciddi bir açık değil
     (olmayan kameradan veri akmaz) ama yetki kontrolünün ilkesi
@@ -122,7 +122,7 @@ class TestKameraYetkilendirmesi:
 
     Bu sınıftaki testler o eski sözleşmeyi kodluyordu; yeni davranışa
     göre güncellendi. Test bir sözleşmedir ve sözleşme değişince test
-    de değişmeli — ama değişikliğin GEREKÇESİ yazılmalı, yoksa
+    de değişmeli — ama değişikliğin gerekçesi yazılmalı, yoksa
     "testi geçirmek için testi değiştirdim" ile ayırt edilemez.
     """
 
@@ -134,7 +134,7 @@ class TestKameraYetkilendirmesi:
         ]
 
     def test_TANIMSIZ_kamera_adi_ELENIYOR(self) -> None:
-        """⚠ Yeni davranış. `cam-99` biçim olarak kusursuz ama YOK.
+        """Yeni davranış. `cam-99` biçim olarak kusursuz ama yok.
 
         Eski sürümde geçiyordu ve istemci "abone oldum" cevabı alıp
         hiç veri görmüyordu — sessiz bir hata kaynağı.
@@ -153,7 +153,7 @@ class TestKameraYetkilendirmesi:
     def test_abonelik_sayisi_sinirli(self) -> None:
         """Sınırsız abonelik = tek istemcinin sunucuyu boğması (G13/G14).
 
-        ⚠ Sınır DOĞRULAMADAN ÖNCE uygulanıyor: istemci 10 000 ad
+        Sınır doğrulamadan önce uygulanıyor: istemci 10 000 ad
         gönderirse hepsini beyaz listeye karşı sınamak da bir yük
         olurdu. Kesme önce, doğrulama sonra.
         """

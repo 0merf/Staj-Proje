@@ -11,7 +11,7 @@ import type { Camera } from './types'
 
 /** Oturum durumu.
  *
- * ⚠ `null` = HENÜZ BİLİNMİYOR, `false` = giriş yapılmamış.
+ * `null` = henüz bilinmiyor, `false` = giriş yapılmamış.
  * İkisini tek bir boolean'a sıkıştırmak, sayfa açılırken bir an için
  * giriş ekranını göstermek demekti — kullanıcı zaten girişliyse bu
  * "atıldım mı?" izlenimi verirdi.
@@ -21,7 +21,7 @@ type Oturum = { kullanici_adi: string; rol: string } | false | null
 export default function App() {
   const [oturum, setOturum] = useState<Oturum>(null)
 
-  // ⚠ "Girişli miyim" sorusu SUNUCUYA soruluyor, tokena bakılarak
+  // "Girişli miyim" sorusu sunucuya soruluyor, tokena bakılarak
   // değil. Token `httponly` çerezde ve JavaScript onu okuyamıyor
   // (components/Giris.tsx). Bu, tokenı localStorage'da tutmanın
   // XSS riskinden kaçınmanın bedeli — ve ucuz bir bedel.
@@ -74,11 +74,11 @@ function Panel({ kullanici }: { kullanici: { kullanici_adi: string; rol: string 
   return (
     <div className="flex h-screen flex-col">
       <Header kullanici={kullanici} />
-      {/* ⚠ Alarm paneli SABİT, içerik kayar.
+      {/* Alarm paneli sabit, içerik kayar.
           Alarm kaçırılmaması gereken tek şey; onu kaydırma alanının
           içine koysaydık operatör aşağı indiğinde görünmez olurdu.
 
-          ⚠ Alarm paneli HER SAYFADA duruyor — zaman çizelgesine
+          Alarm paneli her sayfada duruyor — zaman çizelgesine
           bakarken canlı bir alarm gelirse operatör onu kaçırmamalı.
           Gözetim sisteminde "başka sayfadaydım" bir mazeret değil. */}
       <div className="flex min-h-0 flex-1">

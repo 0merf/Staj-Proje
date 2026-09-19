@@ -1,4 +1,4 @@
-/** WHEP istemcisi — videoyu KENDİ kontrolümüzde oynatmak için.
+/** WHEP istemcisi — videoyu kendi kontrolümüzde oynatmak için.
  *
  * Neden kendi istemcimiz, neden `<iframe>` değil
  * ----------------------------------------------
@@ -10,10 +10,10 @@
  *     hareket etmeye devam ediyordu — sorunun en net kanıtı)
  *   · gecikme tamponu ekleyemiyorduk
  *
- * Video ve kutular tarayıcıya iki AYRI kanaldan geliyor (WebRTC ve
+ * Video ve kutular tarayıcıya iki ayrı kanaldan geliyor (WebRTC ve
  * WebSocket) ve aralarında doğal bir zaman hizası yok. Literatür bu
  * durumda kare seviyesinde senkronizasyonun zorunlu olduğunu söylüyor
- * (LITERATUR.md §R). Hizalayabilmek için önce videonun kontrolünü
+ *. Hizalayabilmek için önce videonun kontrolünü
  * ele almak gerekiyordu — bu dosya onu yapıyor.
  *
  * WHEP nedir
@@ -40,9 +40,9 @@ export interface WhepSession {
  * baskın bileşen jitter tamponudur. Yani bu ölçüm "video kaç ms
  * geriden geliyor" sorusunun iyi bir yaklaşığı.
  *
- * ⚠ Tam bir uçtan uca ölçüm DEĞİL: kameranın kendi kodlama gecikmesini
+ * Tam bir uçtan uca ölçüm değil: kameranın kendi kodlama gecikmesini
  * ve MediaMTX'in paketleme süresini içermez. Ama bizim ihtiyacımız
- * mutlak değer değil, analiz yoluyla ARASINDAKİ FARK.
+ * mutlak değer değil, analiz yoluyla arasındaki fark.
  */
 const lastStats = new WeakMap<RTCPeerConnection, { delay: number; count: number }>()
 
@@ -61,16 +61,16 @@ export async function measureVideoLatencyMs(pc: RTCPeerConnection): Promise<numb
     })
     if (!count) return null
 
-    // ⚠ ARALIK ÖLÇÜMÜ — kümülatif ortalama DEĞİL.
+    // Aralık ölçümü — kümülatif ortalama değil.
     // Bu iki sayaç oturum başından beri birikiyor. Oranları alınca
     // "oturum boyunca ortalama gecikme" çıkıyor; tamponu değiştirince
     // bu ortalama yeni değere çok yavaş yaklaşıyor.
     //
     // Sonucu: tampon 500 ms'e çıkarıldığı hâlde ölçüm hâlâ ~100 ms
-    // gösteriyordu. Kod videoyu olduğundan TAZE sanıp kutuları fazla
+    // gösteriyordu. Kod videoyu olduğundan taze sanıp kutuları fazla
     // ileri taşıyordu — kullanıcı "kutu adamdan önce gitti" dedi.
     //
-    // İki ölçüm arasındaki FARKI alınca anlık değer çıkıyor.
+    // İki ölçüm arasındaki farkı alınca anlık değer çıkıyor.
     // (Aynı ders sunucu tarafında da yaşandı: kümülatif ortalama
     // başlangıç birikimini kalıcı taşıyordu.)
     const prev = lastStats.get(pc)
@@ -172,24 +172,24 @@ export async function connectWhep(
 /**
  * Tarayıcıya "bu videoyu N milisaniye tamponla" der.
  *
- * ⚠ PROJENİN KUTU HİZALAMA SORUNUNUN ÇÖZÜMÜ BU SATIR.
+ * Projenin kutu hizalama sorununun çözümü bu satır.
  *
  * Problem: analiz sonucu ~450 ms eski, video canlı. Kutuyu nereye
- * çizeceğiz? Şimdiye kadar kişinin nerede OLACAĞINI hız vektöründen
+ * çizeceğiz? Şimdiye kadar kişinin nerede olacağını hız vektöründen
  * tahmin ediyorduk (ekstrapolasyon). İnsan yavaşlar/döner/durur, tahmin
- * tutmaz, ve bir sonraki gerçek sonuç kutuyu SIÇRATARAK doğru yere
- * çeker — kullanıcının gördüğü "takılma" buydu.
+ * tutmaz, ve bir sonraki gerçek sonuç kutuyu sıçratarak doğru yere
+ * çeker — panelde gördüğüm "takılma" buydu.
  *
- * Oyun ağ literatürünün (LITERATUR.md §T) yerleşik çözümü tersini
+ * Oyun ağ literatürünün yerleşik çözümü tersini
  * söylüyor: **tahmin etme, görüntüyü geciktir.** Video 450 ms geriden
- * gelirse, ekranda gösterilen an için elimizde İKİ gerçek ölçüm olur
+ * gelirse, ekranda gösterilen an için elimizde iki gerçek ölçüm olur
  * (öncesi ve sonrası) ve aradaki konum hesaplanır — tahmin edilmez.
  *
  * Film dublajı mantığı: çevirmenin ne diyeceğini tahmin etmezsin,
  * görüntüyü çeviri hazır olana kadar bekletirsin.
  *
  * Bedeli 450 ms tazelik. Gözetimde bu takas rahatlıkla kabul edilir:
- * operatör için kutunun DOĞRU YERDE olması, yarım saniye daha taze
+ * operatör için kutunun doğru yerde olması, yarım saniye daha taze
  * olmasından önemli. (Alarm zaten ayrı kanaldan, gecikmesiz geliyor.)
  *
  * Tarayıcı uyumluluğu: standart ad `jitterBufferTarget`, Chrome hâlâ
@@ -207,10 +207,10 @@ export function setVideoBuffer(pc: RTCPeerConnection, ms: number): boolean {
     const r = receiver as unknown as Record<string, unknown>
     try {
       if ('jitterBufferTarget' in r) {
-        r.jitterBufferTarget = clamped        // standart ad: MİLİSANİYE
+        r.jitterBufferTarget = clamped        // standart ad: milisaniye
         applied = true
       } else if ('playoutDelayHint' in r) {
-        r.playoutDelayHint = clamped / 1000   // Chrome eski adı: SANİYE
+        r.playoutDelayHint = clamped / 1000   // Chrome eski adı: saniye
         applied = true
       }
     } catch {

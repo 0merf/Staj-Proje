@@ -1,7 +1,7 @@
 /**
  * Overlay geometrisi testleri.
  *
- * ⚠⚠ BU DOSYA BİR DENETİM BULGUSUNUN CEVABI
+ * Bu dosya bir denetim bulgusunun cevabı
  * Hakem denetimi §4.1: *"215 arka uç testine karşı 1 ön yüz test
  * dosyası. Canvas/overlay çizimi test edilmiyor — oysa P-14 ve P-26
  * tam oradan çıkmıştı."*
@@ -30,16 +30,16 @@ describe('olcek', () => {
     expect(olcek(1280, 720, 1280, 720)).toEqual({ sx: 1, sy: 1 })
   })
 
-  it('⭐ FARKLI cozunurluklu kameralar dogru olcekleniyor (P-26)', () => {
+  it('Farklı cozunurluklu kameralar dogru olcekleniyor (P-26)', () => {
     // 960×720 kaynak, 480×360 canvas → yatayda ve dikeyde 0.5
     expect(olcek(480, 360, 960, 720)).toEqual({ sx: 0.5, sy: 0.5 })
-    // 900×720 kaynak — en-boy orani farkli, olcekler AYRI olmali
+    // 900×720 kaynak — en-boy orani farkli, olcekler ayrı olmali
     const o = olcek(450, 360, 900, 720)
     expect(o.sx).toBeCloseTo(0.5)
     expect(o.sy).toBeCloseTo(0.5)
   })
 
-  it('en-boy orani farkliysa sx ve sy AYRI hesaplaniyor', () => {
+  it('en-boy orani farkliysa sx ve sy ayrı hesaplaniyor', () => {
     // Tek bir olcek kullanmak P-26'nin ta kendisiydi.
     const o = olcek(640, 360, 1280, 720)
     expect(o.sx).toBeCloseTo(0.5)
@@ -50,19 +50,19 @@ describe('olcek', () => {
     expect(carpik.sx).not.toBeCloseTo(carpik.sy)
   })
 
-  it('⚠ kare boyutu YOKSA varsayilana dusuyor, Infinity uretmiyor', () => {
+  it('kare boyutu yoksa varsayilana dusuyor, Infinity uretmiyor', () => {
     const o = olcek(640, 360, undefined, undefined)
     expect(o.sx).toBeCloseTo(640 / VARSAYILAN_KAYNAK.w)
     expect(o.sy).toBeCloseTo(360 / VARSAYILAN_KAYNAK.h)
   })
 
-  it('⚠ SIFIR kare boyutu Infinity uretmiyor', () => {
+  it('Sıfır kare boyutu Infinity uretmiyor', () => {
     const o = olcek(640, 360, 0, 0)
     expect(Number.isFinite(o.sx)).toBe(true)
     expect(Number.isFinite(o.sy)).toBe(true)
   })
 
-  it('⚠ NaN kare boyutu varsayilana dusuyor', () => {
+  it('NaN kare boyutu varsayilana dusuyor', () => {
     const o = olcek(640, 360, Number.NaN, Number.NaN)
     expect(Number.isFinite(o.sx)).toBe(true)
     expect(o.sx).toBeCloseTo(640 / VARSAYILAN_KAYNAK.w)
@@ -75,9 +75,9 @@ describe('kutuyuOlcekle', () => {
     expect(k).toEqual({ x: 50, y: 100, w: 100, h: 150 })
   })
 
-  it('⭐ olcek 1 degilse KONUM da olcekleniyor, sadece boyut degil', () => {
+  it('olcek 1 degilse konum da olcekleniyor, sadece boyut degil', () => {
     // P-26'nin sinsi hali: boyut olceklenip konum unutulursa kutular
-    // dogru buyuklukte ama YANLIS YERDE cizilir.
+    // dogru buyuklukte ama yanlis yerde cizilir.
     const k = kutuyuOlcekle([100, 100, 200, 200], { sx: 0.25, sy: 0.25 })
     expect(k.x).toBe(25)
     expect(k.y).toBe(25)
@@ -85,7 +85,7 @@ describe('kutuyuOlcekle', () => {
     expect(k.h).toBe(25)
   })
 
-  it('⚠ TERS kutu (x2<x1) normallestiriliyor, negatif genislik yok', () => {
+  it('Ters kutu (x2<x1) normallestiriliyor, negatif genislik yok', () => {
     const k = kutuyuOlcekle([300, 500, 100, 200], { sx: 1, sy: 1 })
     expect(k.w).toBe(200)
     expect(k.h).toBe(300)
@@ -98,7 +98,7 @@ describe('kutuyuOlcekle', () => {
     expect(k).toEqual({ x: 20, y: 20, w: 0, h: 0 })
   })
 
-  it('⭐ farkli sx/sy kutuyu dogru sekilde carpitiyor', () => {
+  it('farkli sx/sy kutuyu dogru sekilde carpitiyor', () => {
     const k = kutuyuOlcekle([0, 0, 100, 100], { sx: 0.5, sy: 1.0 })
     expect(k.w).toBe(50)
     expect(k.h).toBe(100)
@@ -114,24 +114,24 @@ describe('hareketli', () => {
     expect(hareketli([HAREKET_ESIGI - 1, 0])).toBe(false)
   })
 
-  it('esikte TAM degeri hareketli SAYMIYOR (kesin esitsizlik)', () => {
+  it('esikte tam degeri hareketli saymıyor (kesin esitsizlik)', () => {
     expect(hareketli([HAREKET_ESIGI, 0])).toBe(false)
   })
 
-  it('x ve y MUTLAK degerleri toplaniyor — ters yon iptal etmiyor', () => {
+  it('x ve y mutlak degerleri toplaniyor — ters yon iptal etmiyor', () => {
     // [-10, -10] → 20 > 15. Isaretli toplasaydik -20 olurdu ve
     // sola-yukari hizli giden kisi "durgun" gorunurdu.
     expect(hareketli([-10, -10])).toBe(true)
   })
 
-  it('⚠ hiz YOKSA durgun (bilinmiyor ≠ hareketli)', () => {
+  it('hiz yoksa durgun (bilinmiyor ≠ hareketli)', () => {
     expect(hareketli(undefined)).toBe(false)
     expect(hareketli(null)).toBe(false)
     expect(hareketli([])).toBe(false)
     expect(hareketli([5])).toBe(false)
   })
 
-  it('⚠ NaN/Infinity hiz hareketli SAYILMIYOR', () => {
+  it('NaN/Infinity hiz hareketli sayılmıyor', () => {
     expect(hareketli([Number.NaN, 0])).toBe(false)
     expect(hareketli([Number.POSITIVE_INFINITY, 0])).toBe(false)
   })
@@ -142,7 +142,7 @@ describe('kutuEtiketi', () => {
     expect(kutuEtiketi(7, 0.92)).toBe('#7 92%')
   })
 
-  it('⚠ kimlik YOKSA yalnizca guven — kutu yine de cizilir (P-13)', () => {
+  it('kimlik yoksa yalnizca guven — kutu yine de cizilir (P-13)', () => {
     expect(kutuEtiketi(undefined, 0.5)).toBe('50%')
   })
 
@@ -156,7 +156,7 @@ describe('kutuEtiketi', () => {
 })
 
 describe('kutuRengi ve cizgiDeseni', () => {
-  it('onaysiz kutu gri ve KESIKLI', () => {
+  it('onaysiz kutu gri ve kesıklı', () => {
     expect(kutuRengi(false, true)).toBe('#8b98ad')
     expect(cizgiDeseni(false)).toEqual([5, 4])
   })
@@ -170,7 +170,7 @@ describe('kutuRengi ve cizgiDeseni', () => {
     expect(cizgiDeseni(true)).toEqual([])
   })
 
-  it('⚠ onaysizlik hareketten ONCE geliyor — gri, yesil degil', () => {
+  it('onaysizlik hareketten once geliyor — gri, yesil degil', () => {
     // Onaylanmamis bir izin hizi guvenilmez; onu "hareketli yesil"
     // gostermek operatore olmayan bir kesinlik vaat ederdi.
     expect(kutuRengi(false, true)).not.toBe(kutuRengi(true, true))

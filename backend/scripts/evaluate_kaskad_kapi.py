@@ -1,55 +1,53 @@
-"""KADEMELİ KOŞULLU FÜZYON — hangi kapı doğru kapı? (P-53)
+"""Kademeli koşullu füzyon — hangi kapı doğru kapı? (P-53)
 
-⭐ FİKİR KİMİN
+Fikir kimin
 -------------
-Kullanıcının önerisi:
-
-> *"Katmanlı bir eleme süreci olacak: önce kural tabanlılar bakacak,
-> kutulara bakacak aradaki mesafe ne, temas gerçekleşti mi — o zaman
-> LightGBM'e hızlıdan veririz, o ekstra bir analiz yapar. Yani çift
-> katmanlı olur ve yanlış alarmları da engellemiş oluruz."*
+Denediğim fikir katmanlı bir eleme: önce kural tabanlı kontroller
+kutulara bakar (aradaki mesafe ne, temas var mı), ancak ondan sonra
+LightGBM devreye girip ek bir analiz yapar. Böylece iki katmanlı bir
+yapı olur ve yanlış alarmların bir kısmı baştan elenir.
 
 İlk kaskad denemesi (`evaluate_kaskad.py`) bunu **tam saldırganlık
 skoruyla** kapıladı ve battı: F1 0.829 → 0.411, kavgaların %73'ü
 elendi. O zaman "kaskad işe yaramıyor" diye kapatılmıştı.
 
-⚠ O sonuç doğruydu ama ÇIKARIM yanlıştı. `diagnose_kural.py` daha
+O sonuç doğruydu ama çıkarım yanlıştı. `diagnose_kural.py` daha
 sonra kapının neden bu kadar çok kavgayı elediğini gösterdi:
 
     RWF kavga kliplerinde bileşen ateşleme oranı
-        yakinlik  92%      ⬅ canlı
-        durus     84%      ⬅ canlı
-        bilek     17%      ⬅ ÖLÜ
-        enerji    10%      ⬅ ÖLÜ
-        yaklasma   6%      ⬅ ÖLÜ
+        yakinlik  92%      ← canlı
+        durus     84%      ← canlı
+        bilek     17%      ← ölü
+        enerji    10%      ← ölü
+        yaklasma   6%      ← ölü
 
 Tam skor, ağırlığının %60'ını ölü bileşenlerden alıyor. Onunla
 kapılamak, kapıyı **gürültüyle** kapatmak demekti.
 
-⭐⭐ Kaskad fikri yanlış değildi; SEÇİLEN KAPI yanlıştı.
+Kaskad fikri yanlış değildi; seçilen kapı yanlıştı.
 
 Bu betik dört kapıyı yan yana ölçüyor:
 
     tam_skor     — eski deneme (tırmanma skorunun tamamı)
-    yakinlik     — "iki kişi yakın mı" (kullanıcının önerisi)
-    etkilesim    — max(yakinlik, yaklasma) = "yakın YA DA yaklaşıyor"
+    yakinlik     — "iki kişi yakın mı" (ilk önerdiğim kapı)
+    etkilesim    — max(yakinlik, yaklasma) = "yakın ya da yaklaşıyor"
     durus        — tek başına ayırt eden bileşen
 
-NE ÖLÇÜLÜYOR — VE NEDEN İKİ AYRI ŞEY
+NE ölçülüyor — ve neden iki ayrı şey
 ------------------------------------
-Bir kaskadın iki gerekçesi olabilir ve BİRBİRİNDEN BAĞIMSIZDIR:
+Bir kaskadın iki gerekçesi olabilir ve birbirinden bağımsızdır:
 
-  1. HIZ    — pahalı aşama daha az çağrılır
-  2. DOĞRULUK — kapı, modelin yanıldığı yerleri eler
+  1. Hız    — pahalı aşama daha az çağrılır
+  2. Doğruluk — kapı, modelin yanıldığı yerleri eler
 
-⚠ Bu boru hattında (1) zaten ölçüldü ve GEÇERSİZ: LightGBM çıkarımı
+Bu boru hattında (1) zaten ölçüldü ve geçersiz: LightGBM çıkarımı
 kare başına 0.0004 ms; toplam 11.10 ms'nin %0.004'ü. Modeli kapılamak
 yanlış aşamayı kapılamaktır — pahalı olan tespit + poz.
 
 Dolayısıyla kaskadın tek savunulabilir gerekçesi (2). Bu betik onu
 ölçüyor: kapı, model-tek-başına'ya göre F1'i **artırıyor mu**?
 
-⚠ AYRIK TUTULMUŞ VERİ: eşik araması `train`de, rapor `val`de.
+Ayrık tutulmuş veri: eşik araması `train`de, rapor `val`de.
 
 Kullanım:
     uv run python scripts/evaluate_kaskad_kapi.py
@@ -80,8 +78,8 @@ KAPILAR = ("tam_skor", "yakinlik", "etkilesim", "durus")
 def _kapi_degeri(seri: list[dict[str, float]], kapi: str) -> float:
     """Klibin kapı değeri — kare değerlerinin p90'ı.
 
-    ⚠ p90, `max` DEĞİL (P-47): tek bir bozuk kare tüm klibi geçirmesin.
-    Ama medyan da değil — kapı YÜKSEK DUYARLILIKLI olmalı, olayın
+    p90, `max` değil (P-47): tek bir bozuk kare tüm klibi geçirmesin.
+    Ama medyan da değil — kapı yüksek duyarlılıklı olmalı, olayın
     yalnızca bir kısmında görünen bir işaret klibi geçirmeye yeter.
     """
     if not seri:
@@ -179,7 +177,7 @@ def main() -> int:
 
         kapi_v = va["kapi"][kapi]
         gecen = sum(1 for k in kapi_v if k >= ke) / len(kapi_v)
-        # ⭐ KAPININ ASIL RİSKİ: kaç GERÇEK kavga daha modele varmadan elendi
+        # Kapının asıl riski: kaç gerçek kavga daha modele varmadan elendi
         kavga_toplam = sum(va["etiket"])
         kavga_gecen = sum(
             1 for k, e in zip(kapi_v, va["etiket"], strict=True) if k >= ke and e == 1
@@ -201,7 +199,7 @@ def main() -> int:
           f"{m_val['f1']:>7.3f} {m_val['kesinlik']:>9.3f} "
           f"{m_val['duyarlilik']:>11.3f}")
 
-    # ⭐ TAKAS EĞRİSİ — "en iyi eşik 0.00" tek başına az şey söylüyor.
+    # Takas eğrisi — "en iyi eşik 0.00" tek başına az şey söylüyor.
     # Kapı sıkıldıkça ne oluyor, görülmeli: kaybedilen kavga ⟷ kazanılan
     # kesinlik. Eğri düz düşüyorsa kapının kazandıracağı bir bölge yok.
     print("\n═══ TAKAS EĞRİSİ — kapı sıkıldıkça (val) ═══")

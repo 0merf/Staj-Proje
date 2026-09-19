@@ -3,15 +3,14 @@
 #
 #  Kullanım:
 #    docker compose up -d              # temel altyapı
-#    docker compose --profile storage up -d   # + Garage (Hafta 4)
 #    docker compose ps                 # durum
 #    docker compose logs -f <servis>
 #    docker compose down               # durdur  (-v = verileri de sil)
 #
-#  ⚠ GÜVENLİK: Tüm portlar 127.0.0.1'e bağlıdır — dış ağa AÇIK DEĞİL.
+#  Güvenlik: Tüm portlar 127.0.0.1'e bağlıdır — dış ağa açık değil.
 #    Python YZ worker'ları Windows'ta native çalıştığı için localhost
 #    erişimi gereklidir. Üretimde bu portlar tamamen kapatılır
-#    (PLAN.md §11.1 / G16).
+# (G16).
 # ══════════════════════════════════════════════════════════════
 
 name: sentinel
@@ -24,10 +23,10 @@ x-logging: &default-logging
 
 # ─── Ortak tanım: beş servis de bunu miras alıyor ───
 #
-# ⚠⚠ 06.09.2026 — `profiles` OLMADAN BU BLOK SİSTEMİ KİLİTLİYORDU
+# 06.09.2026 — `profiles` olmadan bu blok sistemi kilitliyordu
 #
 # Bu beş servis `build:` içeriyor. Profil verilmediğinde Compose onları
-# VARSAYILAN servis sayıyor ve `docker compose up -d` komutu, yalnızca
+# varsayılan servis sayıyor ve `docker compose up -d` komutu, yalnızca
 # altyapıyı ayağa kaldırmak isteyen kullanıcıya haber vermeden
 # **16.8 GB'lık imajı derlemeye başlıyordu.**
 #
@@ -35,16 +34,16 @@ x-logging: &default-logging
 # hiçbir konteyner ayağa kalkmıyor, hata da vermiyor — çünkü aslında
 # çalışıyor, sadece PyTorch+CUDA indiriyor.
 #
-# ⚠ Ve bu derleme bir kez C: diskini TAMAMEN doldurdu: 67 GB ara ürün
+# Ve bu derleme bir kez C: diskini tamamen doldurdu: 67 GB ara ürün
 # + 16.8 GB imaj. Docker'ın varsayılan veri konumu C:'de ve derlemeden
 # önce boş alan kontrol edilmemişti.
 #
 # Artık iki ayrı komut var ve ikisi de ne yapacağını söylüyor:
 #
-#     docker compose up -d                  → SADECE altyapı (derleme YOK)
+#     docker compose up -d                  → sadece altyapı (derleme yok)
 #     docker compose --profile app up -d    → + uygulama (imaj gerekli)
 #
-# ⭐ Ders: bir dosyaya eklenen servis, o dosyayı kullanan HERKESİN
+# Ders: bir dosyaya eklenen servis, o dosyayı kullanan herkesin
 # varsayılan davranışını değiştirir. `profiles` bu değişikliği
 # "istersen" hâline getiriyor.
 x-app: &app
@@ -56,16 +55,16 @@ x-app: &app
   restart: unless-stopped
   env_file: [.env]
   environment: &app-env
-    # ⚠ Konteyner içinden servisler ADIYLA çözülüyor, 127.0.0.1 ile
+    # Konteyner içinden servisler adıyla çözülüyor, 127.0.0.1 ile
     # değil: her konteynerin kendi loopback'i var ve `127.0.0.1`
-    # konteynerin KENDİSİNİ işaret eder.
+    # konteynerin kendisini işaret eder.
     VALKEY_HOST: valkey
     POSTGRES_HOST: postgres
     POSTGRES_PORT: "5432"
     MEDIAMTX_HOST: mediamtx
     MEDIAMTX_API_PORT: "9997"
     MEDIAMTX_RTSP_PORT: "8554"
-    # ⚠ AMA WHEP ADRESİ TARAYICIYA GİDİYOR — o Docker ağının dışında
+    # Ama WHEP adresi tarayıcıya gidiyor — o Docker ağının dışında
     # ve `mediamtx` adını çözemez (bkz. config.py · mediamtx_public_host).
     MEDIAMTX_PUBLIC_HOST: "127.0.0.1"
     VALKEY_URL: ""          # host/port'tan türetilsin
@@ -128,7 +127,7 @@ services:
     logging: *default-logging
 
   # ─── MEDIAMTX — kamera çiftliği (RTSP) + tarayıcıya WebRTC/WHEP ───
-  #  Yeniden kodlama YAPMAZ; sadece kapsayıcı değiştirir (PLAN.md §3.3)
+  # Yeniden kodlama yapmaz; sadece kapsayıcı değiştirir
   mediamtx:
     image: bluenviron/mediamtx:latest-ffmpeg
     container_name: sentinel-mediamtx
@@ -136,13 +135,13 @@ services:
     volumes:
       - ./infra/mediamtx/mediamtx.yml:/mediamtx.yml:ro
       - ./data/videos:/videos:ro
-      # ⚠ Bu bağlama YAZILABİLİR (:ro yok) — olay klibinin kaynağı.
+      # Bu bağlama yazılabilir (:ro yok) — olay klibinin kaynağı.
       # MediaMTX akışları buraya kaydediyor; alarm anında ilgili zaman
-      # aralığı yeniden kodlanmadan kesilip Garage'a yükleniyor.
-      # Gerekçe: infra/mediamtx/mediamtx.yml · "SÜREKLİ KAYIT" bloğu.
+      # aralığı yeniden kodlanmadan kesilip data/clips altına yazılıyor.
+      # Gerekçe: infra/mediamtx/mediamtx.yml · "sürekli kayıt" bloğu.
       - ./data/recordings:/recordings
     environment:
-      # ⚠ KAYIT ANAHTARI — varsayılan KAPALI
+      # Kayıt anahtarı — varsayılan kapalı
       # Kaynak videolar sonsuz döngüde yayınlanıyor, yani kayıt açıksa
       # disk durmadan yazılır (~14 GB/saat, ölçüldü). Klip/alarm zinciri
       # üzerinde çalışılmayan günlerde bu saf israf.
@@ -206,17 +205,17 @@ services:
     networks: [sentinel]
     logging: *default-logging
 
-  # ─── CADDY — TLS sonlandırma + TEK GİRİŞ NOKTASI (G18) ───
+  # ─── CADDY — TLS sonlandırma + tek giriş noktası (G18) ───
   #
-  # ⭐ P-37'nin TAM çözümü. O gün bulunmuştu: API kimlik doğrulamalı,
-  # VİDEO değil. Uygulanan çözüm bir ağ kısıtıydı (port 127.0.0.1'e
-  # bağlandı) — bu erişimi sınırlar, açığı KAPATMAZ.
+  # P-37'nin tam çözümü. O gün bulunmuştu: API kimlik doğrulamalı,
+  # video değil. Uygulanan çözüm bir ağ kısıtıydı (port 127.0.0.1'e
+  # bağlandı) — bu erişimi sınırlar, açığı kapatmaz.
   #
   # Caddy videoyu API ile aynı kökene alıyor ve `forward_auth` ile
   # her WHEP isteğini önce FastAPI'ye sorduruyor. Yetkisizse video
   # baytı bile akmıyor.
   #
-  # ⚠ Varsayılan KAPALI (`tls` profili). Sebep: geliştirme sırasında
+  # Varsayılan kapalı (`tls` profili). Sebep: geliştirme sırasında
   # tarayıcı sertifika uyarısı iterasyonu yavaşlatıyor ve mevcut
   # ölçüm betikleri düz HTTP kullanıyor. Açmak:
   #     docker compose --profile tls up -d caddy
@@ -232,7 +231,7 @@ services:
       - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
       - caddy-config:/config
-    # ⚠ API bu makinede NATIVE çalışıyor (Docker'da değil).
+    # API bu makinede natıve çalışıyor (Docker'da değil).
     # Linux'ta `host.docker.internal` otomatik gelmez; açıkça
     # eşleniyor ki yapılandırma taşınabilir olsun.
     extra_hosts:
@@ -242,36 +241,16 @@ services:
     networks: [sentinel]
     logging: *default-logging
 
-  # ─── GARAGE — S3 uyumlu klip arşivi ───
-  #  ⚠ Tek seferlik "layout" kurulumu gerektirir → Hafta 4'e ertelendi.
-  #    Klipler Gün 19'a kadar gerekmiyor; o zamana dek STORAGE_BACKEND=localfs.
-  #    Başlatmak için:  docker compose --profile storage up -d
-  #    Ardından:        pwsh infra/garage/init.ps1
-  garage:
-    image: dxflrs/garage:v2.0.0
-    container_name: sentinel-garage
-    restart: unless-stopped
-    profiles: ["storage"]
-    volumes:
-      - ./infra/garage/garage.toml:/etc/garage.toml:ro
-      - garage-meta:/var/lib/garage/meta
-      - garage-data:/var/lib/garage/data
-    ports:
-      - "127.0.0.1:3900:3900"   # S3 API
-      - "127.0.0.1:3903:3903"   # yönetim API
-    networks: [sentinel]
-    logging: *default-logging
-
   # ══════════════════════════════════════════════════════════════
-  #  UYGULAMA — API + YZ worker'ları  (03.09.2026'da eklendi)
+  #  Uygulama — API + YZ worker'ları  (03.09.2026'da eklendi)
   # ══════════════════════════════════════════════════════════════
   #
-  # ⚠ NEDEN ŞİMDİYE KADAR YOKTU
+  # Neden şimdiye kadar yoktu
   # Geliştirme stratejisi "altyapı Docker'da, Python worker'ları
   # Windows'ta native" idi ve gerekçesi şuydu: *"Windows+Docker+GPU =
-  # WSL2 karmaşası, iterasyonu yavaşlatır"* (CLAUDE.md §2).
+  # WSL2 karmaşası, iterasyonu yavaşlatır"* (proje notlarım).
   #
-  # ⚠ O GEREKÇE SINANDI VE ÇÜRÜDÜ (03.09.2026)
+  # O gerekçe sınandı ve çürüdü (03.09.2026)
   #     docker run --rm --gpus all nvidia/cuda:12.8.0-base nvidia-smi
   #     → NVIDIA GeForce RTX 3070 Laptop GPU, 8192 MiB
   # `nvidia` çalışma zamanı Docker'a kayıtlıydı. Varsayım, bir kez
@@ -279,13 +258,13 @@ services:
   # *"bir kararın gerekçesi belgeye girdikten sonra veri gibi
   # davranmaya başlıyor."*
   #
-  # ⚠ TEK İMAJ, BEŞ SERVİS: hepsi aynı `sentinel-app` imajını
+  # Tek imaj, beş servis: hepsi aynı `sentinel-app` imajını
   # kullanıyor, yalnızca `command` farklı. Beş ayrı imaj beş kez
   # ~6 GB'lık PyTorch+CUDA katmanı demekti.
   #
-  # ⚠ BAŞLATMA SIRASI TEKNİK ZORUNLULUK (start_all.ps1 ile aynı):
-  #   ingest → paylaşımlı bellek havuzunu O YARATIR (`--owner`)
-  #   inference → havuza BAĞLANIR, önce havuz var olmalı
+  # Başlatma sırası teknik zorunluluk (start_all.ps1 ile aynı):
+  #   ingest → paylaşımlı bellek havuzunu O yaratır (`--owner`)
+  #   inference → havuza bağlanır, önce havuz var olmalı
   # `depends_on` bunu garanti ediyor; elle sıra takibi gerekmiyor.
 
   # ─── API + React paneli ───
@@ -297,7 +276,7 @@ services:
       <<: *app-env
       # Panel konteyner dışından açılıyor; köken doğrulaması host
       # adresini tanımalı (P-11 / P-21 — `localhost` ile `127.0.0.1`
-      # AYRI kökenlerdir, ikisi de yazılıyor).
+      # ayrı kökenlerdir, ikisi de yazılıyor).
       ALLOWED_ORIGINS: "http://127.0.0.1:8001,http://localhost:8001,http://127.0.0.1:5173"
     ports:
       - "127.0.0.1:${API_PORT:-8001}:8001"
@@ -311,19 +290,19 @@ services:
       retries: 5
       start_period: 20s
 
-  # ─── ALIM — paylaşımlı bellek havuzunun SAHİBİ ───
+  # ─── Alım — paylaşımlı bellek havuzunun sahibi ───
   ingest:
     <<: *app
     container_name: sentinel-ingest
-    # ⚠ `ipc: shareable` — KONTEYNERLEŞTİRMENİN EN KRİTİK SATIRI
+    # `ipc: shareable` — konteynerleştirmenin en kritik satırı
     #
     # Mimari kural 1: ham kare Valkey'den geçmez, paylaşımlı bellek
     # kullanılır (1080p kare ~6 MB). Ama paylaşımlı bellek segmentleri
     # IPC ad alanına özeldir: iki ayrı konteyner varsayılan olarak
-    # BİRBİRİNİN `/dev/shm`'ini göremez.
+    # birbirinin `/dev/shm`'ini göremez.
     #
     # Bu satır olmadan çıkarım worker'ı havuzu bulamaz ve sistem
-    # "kare gelmiyor" diye SESSİZCE durur — tam olarak P-38'in
+    # "kare gelmiyor" diye sessizce durur — tam olarak P-38'in
     # belirtisi. `shareable`, bu ad alanını başka konteynerlere
     # açıyor; `inference` aşağıda ona katılıyor.
     ipc: shareable
@@ -337,18 +316,18 @@ services:
       valkey: {condition: service_healthy}
       mediamtx: {condition: service_healthy}
 
-  # ─── ÇIKARIM — GPU · modeller TEK KOPYA (mimari kural 3) ───
+  # ─── Çıkarım — GPU · modeller tek kopya (mimari kural 3) ───
   inference:
     <<: *app
     container_name: sentinel-inference
-    # Alım worker'ının IPC ad alanına KATILIYOR — paylaşımlı bellek
+    # Alım worker'ının IPC ad alanına katılıyor — paylaşımlı bellek
     # havuzunu ancak böyle görebiliyor.
     ipc: "service:ingest"
     command: ["python", "-m", "sentinel.inference.worker",
               "--batch-size", "8", "--stats-interval", "300"]
     ports:
       - "127.0.0.1:9110:9110"
-    # ⚠ GPU AYIRMA — Compose'un `deploy.resources` biçimi
+    # GPU ayırma — Compose'un `deploy.resources` biçimi
     deploy:
       resources:
         reservations:
@@ -359,7 +338,7 @@ services:
     depends_on:
       ingest: {condition: service_started}
 
-  # ─── ANALİTİK — anomali + saldırganlık + füzyon ───
+  # ─── Analitik — anomali + saldırganlık + füzyon ───
   analytics:
     <<: *app
     container_name: sentinel-analytics
@@ -369,7 +348,7 @@ services:
     depends_on:
       inference: {condition: service_started}
 
-  # ─── ALARM — olayları TimescaleDB'ye kalıcılaştırır ───
+  # ─── Alarm — olayları TimescaleDB'ye kalıcılaştırır ───
   alerting:
     <<: *app
     container_name: sentinel-alerting
@@ -391,5 +370,3 @@ volumes:
   postgres-data:
   prometheus-data:
   grafana-data:
-  garage-meta:
-  garage-data:

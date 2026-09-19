@@ -1,7 +1,7 @@
 -- ══════════════════════════════════════════════════════════════
 --  SENTINEL — PostgreSQL ilk kurulum
---  Bu betik YALNIZCA veritabanı ilk oluşturulurken çalışır.
---  Tablo şeması Alembic göçleri ile yönetilir (backend/src/sentinel/db/migrations).
+--  Bu betik yalnızca veritabanı ilk oluşturulurken çalışır.
+--  Tablo şemasını uygulama her açılışta kuruyor (backend/src/sentinel/db/schema.py).
 -- ══════════════════════════════════════════════════════════════
 
 -- TimescaleDB: zaman serisi yetenekleri (hypertable, sürekli

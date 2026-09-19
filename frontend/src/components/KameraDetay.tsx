@@ -1,16 +1,16 @@
-/** Kamera detay sayfası — PLAN §10.1'in ikinci eksik sayfası.
+/** Kamera detay sayfası — proje planının ikinci eksik sayfası.
  *
- * ⚠ NEDEN IZGARADAKİ KUTUCUK YETMİYOR
+ * Neden ızgaradaki kutucuk yetmiyor
  * Izgarada bir kutucuk ~320 piksel genişliğinde. Bu boyutta:
  *   · iskelet eklemleri üst üste biniyor
  *   · yüz ifadesi etiketi okunmuyor
  *   · birden çok kişi varsa kutular ayırt edilemiyor
  *
- * Operatör bir alarmı DOĞRULAMAK istediğinde ("gerçekten düşmüş mü?")
+ * Operatör bir alarmı doğrulamak istediğinde ("gerçekten düşmüş mü?")
  * ızgara görüntüsü karar vermeye yetmiyor. Bu sayfa tek kamerayı tam
  * genişlikte gösteriyor ve yanına o kameranın olay geçmişini koyuyor.
  *
- * ⚠ KUTUCUK BİLEŞENİ YENİDEN KULLANILIYOR, KOPYALANMIYOR
+ * Kutucuk bileşeni yeniden kullanılıyor, kopyalanmıyor
  * `CameraTile` zaten WHEP bağlantısı, kutu ara değerleme, iskelet
  * çizimi ve senkronizasyonu yapıyor. Detay için ikinci bir çizici
  * yazmak, P-14 ve P-26'da düzeltilen hataların ikinci bir kopyasını
@@ -39,10 +39,10 @@ export function KameraDetay({ webrtcBase }: Props) {
   const playing = useStore((s) => s.playing)
   const toggle = useStore((s) => s.togglePlaying)
 
-  // ⚠ Yapı ZamanCizelgesi ile aynı gerekçeyle değişti (ESLint bulgusu):
+  // Yapı ZamanCizelgesi ile aynı gerekçeyle değişti (ESLint bulgusu):
   // efektin başında `setOlaylar(null)` basamaklı render tetikliyordu ve
-  // istek yarışı vardı — kamera hızlı değiştirilirse ESKİ kameranın
-  // yavaş yanıtı YENİ kameranın listesinin üstüne yazabiliyordu.
+  // istek yarışı vardı — kamera hızlı değiştirilirse eski kameranın
+  // yavaş yanıtı yeni kameranın listesinin üstüne yazabiliyordu.
   // "Yükleniyor" artık türetiliyor: gelen verinin anahtarı (kamera adı)
   // istenen kameradan farklıysa yükleniyoruz.
   const [veri, setVeri] = useState<{
@@ -52,22 +52,22 @@ export function KameraDetay({ webrtcBase }: Props) {
 
   const camera = cameras.find((c) => c.name === secili) ?? cameras[0]
 
-  // ⚠ Detay sayfasına gelindiğinde video OTOMATİK açılıyor.
+  // Detay sayfasına gelindiğinde video otomatik açılıyor.
   // Izgarada bu davranış yanlış olurdu (20 akış birden = P-24), ama
   // burada tek kamera var ve kullanıcı zaten onu görmeye geldi.
   const kameraAdi = camera?.name ?? null
 
   useEffect(() => {
     if (kameraAdi && !playing.has(kameraAdi)) toggle(kameraAdi)
-    // ⚠ `playing` bağımlılığa KONULMUYOR: konulsaydı kullanıcı videoyu
+    // `playing` bağımlılığa konulmuyor: konulsaydı kullanıcı videoyu
     // elle kapattığı anda efekt yeniden çalışıp geri açardı.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kameraAdi])
 
   useEffect(() => {
     if (!kameraAdi) return undefined
-    // ⚠ `AbortController`, mutable bir "iptal" bayrağından İYİ:
-    // bayrak yalnızca yanıtı yok sayar, controller isteğin KENDİSİNİ
+    // `AbortController`, mutable bir "iptal" bayrağından iyi:
+    // bayrak yalnızca yanıtı yok sayar, controller isteğin kendisini
     // iptal eder. Kamera hızlı değiştirilirse ağ da boşa çalışmaz.
     const kontrol = new AbortController()
     fetch(
@@ -122,7 +122,7 @@ export function KameraDetay({ webrtcBase }: Props) {
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4 lg:flex-row">
-        {/* ⚠ Kutucuk BÜYÜK: ızgaradakiyle aynı bileşen, farklı genişlik.
+        {/* Kutucuk büyük: ızgaradakiyle aynı bileşen, farklı genişlik.
             Canvas kendi ölçeğini video boyutundan alıyor, yani çizim
             büyütmede bozulmuyor. */}
         <div className="min-w-0 flex-1">

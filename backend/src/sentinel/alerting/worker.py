@@ -2,31 +2,31 @@
 
 Zincirdeki yeri
 ---------------
-    Analytics worker  →  Valkey `analytics.events`  →  [BU WORKER]  →  PostgreSQL
+    Analytics worker  →  Valkey `analytics.events`  →  [bu worker]  →  PostgreSQL
                                      ↓
                               WebSocket → panel (canlı)
 
-⚠ NEDEN AYRI BİR SÜREÇ, NEDEN ANALYTICS'İN İÇİNDE DEĞİL
+Neden ayrı bir süreç, neden analytics'in içinde değil
 Analytics worker saniyede onlarca kare işliyor ve gecikme bütçesi
 (K3 ≤1500 ms) onun üstünde. Veritabanına yazmak ağ turu + disk fsync
 demek; bunu analiz döngüsünün içine koymak iki şeyi birden bozardı:
 
   · gecikme doğrudan artar
-  · **veritabanı yavaşlarsa ANALİZ yavaşlar** — yardımcı bir bileşenin
-    arızası ana boru hattını durduramaz (PLAN §4.2)
+  · **veritabanı yavaşlarsa analiz yavaşlar** — yardımcı bir bileşenin
+    arızası ana boru hattını durduramaz
 
 Ayrı süreç bu bağı koparıyor: veritabanı tümden çökse bile tespit,
 takip, anomali ve panel çalışmaya devam ediyor. Kaybedilen şey alarm
-GEÇMİŞİ, alarmın kendisi değil.
+geçmişi, alarmın kendisi değil.
 
-⚠ TÜKETİCİ GRUBU KULLANILIYOR — "$" DEĞİL
+Tüketici grubu kullanılıyor — "$" değil
 Analytics worker canlı akışı `$` ile okuyor (geçmişi umursamıyor,
 gerçek zamanlı olan önemli). Alarm worker'ı **tam tersini** istiyor:
 hiçbir olayı kaçırmamalı, yeniden başlarsa kaldığı yerden devam
 etmeli. Tüketici grubu tam olarak bunu veriyor — okunmamış kayıtlar
 grupta bekliyor.
 
-⚠ KUYRUK YİNE DE SINIRLI (mimari kural 5)
+Kuyruk yine de sınırlı (mimari kural 5)
 `analytics.events` akışı `maxlen=1000`. Bu worker günlerce kapalı
 kalırsa eski alarmlar akıştan düşer ve yazılamaz. Sınırsız kuyruk
 alternatifi RAM patlamasıydı; bilinçli takas.
@@ -63,10 +63,10 @@ log = get_logger(__name__)
 AKIS = "analytics.events"
 GRUP = "alarm"
 
-# ⚠ KLİP YALNIZCA CİDDİ OLAYLAR İÇİN
+# Klip yalnızca ciddi olaylar için
 # `attention` seviyesinde saatte onlarca olay üretiliyor; hepsine klip
 # kesmek diski de CPU'yu da boşuna harcar ve önemli klipleri gürültüde
-# boğar. Klip bir KANIT; kanıt, iddianın ciddi olduğu yerde gerekir.
+# boğar. Klip bir kanıt; kanıt, iddianın ciddi olduğu yerde gerekir.
 KLIPLI_CIDDIYET = frozenset({"warning", "alarm"})
 
 _dur = False
@@ -104,7 +104,7 @@ class AlarmWorker:
     def _grubu_kur(self) -> None:
         """Tüketici grubunu kurar — yoksa akışı da yaratır.
 
-        ⚠ `mkstream=True`: alarm worker'ı analytics worker'dan önce
+        `mkstream=True`: alarm worker'ı analytics worker'dan önce
         açılabilir ve o durumda akış henüz yoktur. Sıra bağımlılığı
         kurmamak, başlatma betiğini basit tutuyor.
         """
@@ -116,7 +116,7 @@ class AlarmWorker:
                 raise
 
     async def calistir(self, sure: float | None = None) -> None:
-        # ⚠ Şema her açılışta kuruluyor (idempotent). Elle migration
+        # Şema her açılışta kuruluyor (idempotent). Elle migration
         # gerektiren bir sistem, bir bileşen yeniden başladığında
         # sessizce çalışmaz duruma gelir.
         async with motor().begin() as baglanti:
@@ -124,10 +124,10 @@ class AlarmWorker:
         log.info("sema_hazir")
 
         self._grubu_kur()
-        # ⚠ 03.09.2026 — BU WORKER `worker_up` YAYINLAMIYORDU
+        # 03.09.2026 — bu worker `worker_up` yayınlamıyordu
         # Diğer üç worker yayınlıyordu, bu yayınlamıyordu. Sonucu K4
         # (2 saat çökmesiz) ölçümünde ortaya çıktı: dayanıklılık testi
-        # "worker ayakta mı" sorusunu bu bileşen için CEVAPLAYAMIYORDU.
+        # "worker ayakta mı" sorusunu bu bileşen için cevaplayamıyordu.
         # Metrik ucu açıktı, yani dışarıdan sağlıklı görünüyordu —
         # süreç yaşıyor mu ölmüş mü ayırt edilemiyordu.
         metrics.worker_up.labels(component="alerting", worker_id=self._worker_id).set(1)
@@ -135,7 +135,7 @@ class AlarmWorker:
         son_rapor = basladi
 
         while not _dur:
-            # ⚠ `cast`: redis-py bu çağrı için çok geniş bir birleşik
+            # `cast`: redis-py bu çağrı için çok geniş bir birleşik
             # tip döndürüyor (bayt/str, tüketici grubu/normal okuma tüm
             # varyantları). `decode_responses=True` ile bağlandığımız
             # için pratikte her zaman `list[(str, list[(str, dict)])]`.
@@ -181,7 +181,7 @@ class AlarmWorker:
                 olay = olay_deposu.Olay.akistan(alanlar)
                 if olay is None:
                     self.atlanan += 1
-                    # ⚠ Bozuk kayıt yine de ACK'leniyor: aksi hâlde
+                    # Bozuk kayıt yine de ACK'leniyor: aksi hâlde
                     # sonsuza dek yeniden teslim edilir ve worker o tek
                     # kayda takılıp kalır (zehirli mesaj sorunu).
                     kimlikler.append(kimlik)
@@ -189,7 +189,7 @@ class AlarmWorker:
                 toplu.append(olay)
                 kimlikler.append(kimlik)
 
-        # ⚠ KLİP YAZIMDAN ÖNCE: `klip_anahtar` sütunu INSERT'e giriyor.
+        # Klip yazımdan önce: `klip_anahtar` sütunu INSERT'e giriyor.
         # Sonradan UPDATE etmek ikinci bir tur ve olayları güncellenebilir
         # kılmak demekti; olay kaydı bir denetim izi, değişmemeli.
         if self._klip_acik:
@@ -198,7 +198,7 @@ class AlarmWorker:
         if toplu:
             yazilan = await olay_deposu.yaz(toplu)
             if yazilan == 0:
-                # ⚠ ACK YOK: yazılamadıysa kayıt grupta bekliyor ve
+                # ACK yok: yazılamadıysa kayıt grupta bekliyor ve
                 # bir sonraki turda yeniden denenecek. Yazamadığımız
                 # bir alarmı "işlendi" saymak, sessiz veri kaybıdır.
                 self.basarisiz += len(toplu)
@@ -213,7 +213,7 @@ class AlarmWorker:
     def _klip_ekle(self, olay: olay_deposu.Olay) -> olay_deposu.Olay:
         """Ciddi olaylar için klip keser, anahtarı olaya ekler.
 
-        ⚠ Klip üretilemezse olay AYNEN dönüyor (`klip_anahtar=None`).
+        Klip üretilemezse olay aynen dönüyor (`klip_anahtar=None`).
         Kanıtı olmayan bir alarm hâlâ bir alarmdır; klip yüzünden alarm
         kaybetmek yanlış takas olurdu.
         """
@@ -241,7 +241,7 @@ def main() -> int:
     ap.add_argument("--batch", type=int, default=50)
     ap.add_argument("--no-klip", action="store_true", help="olay klibi kesme")
     ap.add_argument("--duration", type=float, default=None)
-    # ⚠ 9130 — 9120 ANALİTİK worker'ında kullanılıyor.
+    # 9130 — 9120 analitik worker'ında kullanılıyor.
     # İlk sürümde ikisi de 9120 idi; ikinci açılan sessizce metrik
     # sunucusunu kaybediyordu. Port çakışmaları bu projede daha önce
     # de yaşandı (P-01) ve hep aynı biçimde: bileşen çalışır görünür,

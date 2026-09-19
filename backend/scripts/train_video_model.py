@@ -1,14 +1,14 @@
-"""VIDEO MODELİ — literatürün yolunu kendi verimizde ölçer (P-54).
+"""Video modeli — literatürün yolunu kendi verimizde ölçer (P-54).
 
-⭐ NEDEN BU BETİK — kullanıcının sorusu
---------------------------------------
-> *"Bu LightGBM'i neden kullanıyoruz onu hâlâ tam anlamadım. LightGBM
-> tablosal verilerde iyi değil mi? Buradaki veriler görüntü verileri
-> değil mi, yani diziler/matrisler/tensörler hâlinde gelmiyor mu?"*
+Neden bu betik
+--------------
+Kendime sorduğum soru şuydu: LightGBM tablo verisinde iyi bir model,
+oysa buradaki veri görüntü, yani diziler ve tensörler. O zaman neden
+LightGBM kullanıyorum?
 
-Soru yerinde ve cevabı mimarinin tamamını açıklıyor.
+Bu sorunun cevabı mimarinin tamamını açıklıyor.
 
-BİZİM BORU HATTIMIZ GÖRÜNTÜYÜ LightGBM'e VERMİYOR
+Bizim boru hattımız görüntüyü LightGBM'e vermiyor
 -------------------------------------------------
 Görüntüyü işleyen şey zaten derin sinir ağları:
 
@@ -18,7 +18,7 @@ Görüntüyü işleyen şey zaten derin sinir ağları:
       → BoT-SORT               → kimlik + zaman serisi
       → özellik çıkarımı       → bilek hızı, duruş genişliği,
                                   gövde eğimi, en-boy oranı, çift
-                                  mesafesi… (SKALER, ~99 sütun)
+                                  mesafesi… (skaler, ~99 sütun)
       → LightGBM               → karar
 
 Yani görüntü → tablo dönüşümünü **CNN'ler** yapıyor; LightGBM yalnızca
@@ -26,35 +26,35 @@ o tablonun üzerinde karar veriyor. Bu, iskelet tabanlı eylem tanımanın
 standart kurgusu ve LightGBM tam da doğru yerde: girdisi gerçekten
 tablosal.
 
-⚠ AMA SORUNUN ASIL KISMI HAKLI
+Ama sorunun asıl kısmı haklı
 ------------------------------
 Literatürdeki RWF-2000 çalışmalarının çoğu bu yolu izlemiyor: **ham
 piksellere doğrudan 3B evrişim** uyguluyorlar (Flow-Gated Network,
 two-stream CNN, IDG-ViolenceNet…). Biz o yolu hiç denemedik, yalnızca
 onların yayınlanmış sayılarını yazdık.
 
-⭐ Kendi ölçmediğimiz bir sayıyla kıyaslanmak, bu projede defalarca
+Kendi ölçmediğimiz bir sayıyla kıyaslanmak, bu projede defalarca
 yanlış çıkan türden bir kıyas (P-17, P-41, P-51). Bu betik o boşluğu
 kapatıyor: literatürün yolunu **bizim verimizde, bizim bölünmemizde,
 bizim donanımımızda** koşturuyor.
 
-ADİL KARŞILAŞTIRMA KOŞULLARI
+Adil karşılaştırma koşulları
 ----------------------------
-1. **AYNI KLİPLER, AYNI BÖLÜNME.** Klip listeleri
+1. **Aynı klipler, aynı bölünme.** Klip listeleri
    `data/_tmp/rwf_ozellikler.json` içindeki train/val'den okunuyor.
    Farklı bölünme kullanmak, iki modeli iki farklı sınavda ölçmek olurdu.
-2. **AYNI DOĞRULAMA KÜMESİ.** Eşik val'de aranıyor — LightGBM'de de
-   öyle yapılmıştı; bilinen yanlılık ama İKİ TARAFTA DA aynı.
+2. **Aynı doğrulama kümesi.** Eşik val'de aranıyor — LightGBM'de de
+   öyle yapılmıştı; bilinen yanlılık ama iki tarafta da aynı.
 3. Kinetics-400 ön eğitimli ağırlıklar. Sıfırdan eğitmek 482 klipte
    anlamsız olurdu ve literatürdeki çalışmalar da ön eğitim kullanıyor.
 
-⚠ BEKLENEN SINIRLAMA — ve bu bir bulgu
+Beklenen sınırlama — ve bu bir bulgu
 --------------------------------------
 482 eğitim klibi, 33 milyon parametreli bir 3B CNN için **az**.
 Literatürdeki sayılar 1600 klip üzerinde eğitilmiş. Bu yüzden betik
 iki koşu yapabiliyor:
 
-    --tam-egitim yok  : 482 klip (LightGBM ile AYNI) → adil kıyas
+    --tam-egitim yok  : 482 klip (LightGBM ile aynı) → adil kıyas
     --tam-egitim      : RWF train'in tamamı (~1600) → videoya en iyi şans
 
 İkisini de raporlamak gerekiyor: birincisi "aynı veriyle hangi yöntem
@@ -88,7 +88,7 @@ BENCHMARKS = PROJECT_ROOT / "benchmarks"
 MODEL_DOSYASI = PROJECT_ROOT / "models" / "video_r3d18.pt"
 
 # Kinetics ön işleme — ön eğitimli ağırlıkların beklediği hâl.
-# ⚠ Değiştirilirse ön eğitim boşa gider: ağ başka bir dağılım görür.
+# Değiştirilirse ön eğitim boşa gider: ağ başka bir dağılım görür.
 KARE_SAYISI = 16
 BOYUT = 112
 KINETICS_ORT = (0.43216, 0.394666, 0.37645)
@@ -116,26 +116,26 @@ def _klip_tensoru(yol: Path) -> Any | None:
     cap.release()
     if len(kareler) < 4:
         return None
-    # ⚠ EŞİT ARALIKLI ÖRNEKLEME, ilk N kare DEĞİL: kavga klibin
+    # Eşit aralıklı örnekleme, ilk N kare değil: kavga klibin
     # herhangi bir yerinde olabilir ve baştan almak sonu hiç görmez.
     idx = np.linspace(0, len(kareler) - 1, KARE_SAYISI).round().astype(int)
     return np.stack([kareler[i] for i in idx])  # (T, H, W, C) uint8
 
 
 def _klip_yolu(ad: str, bolum: str) -> Path | None:
-    """Klip yolu — BÖLÜM ZORUNLU.
+    """Klip yolu — bölüm zorunlu.
 
-    ⚠⚠ RWF-2000'de val'deki 400 klibin **hepsi** train'de de AYNI ADLA
+    RWF-2000'de val'deki 400 klibin **hepsi** train'de de aynı adla
     var: `train/fight/fight_0001.avi` ve `val/fight/fight_0001.avi`
     ikisi de mevcut ve **farklı videolar** (md5 ve dosya boyutu farklı
     — doğrulandı).
 
-    Yani ada bakarak dosya bulmak, sessizce YANLIŞ bölümden video
+    Yani ada bakarak dosya bulmak, sessizce yanlış bölümden video
     okumaya yol açar: doğrulama kümesi eğitim videolarıyla dolar ve
     sonuç şişer. Hata görünmez — betik çalışır, sayı üretir, yalnızca
     yanlış olur.
 
-    ⚠ `train_aggression.py` bu tuzağa DÜŞMEDİ: o, dizinleri gezerek
+    `train_aggression.py` bu tuzağa düşmedi: o, dizinleri gezerek
     okuyor (`(RWF / bolum / sinif).glob(...)`). Yalnızca sonucu ada
     göre saklıyor. O yüzden LightGBM ölçümlerinde sızıntı yok —
     kontrol edildi.
@@ -163,9 +163,9 @@ def _cikar(args: argparse.Namespace) -> int:
             istenen.append((str(k["klip"]), int(k["etiket"]), bolum))
 
     if args.tam_egitim:
-        # ⚠ Val kümesi DEĞİŞMİYOR — yalnızca eğitim büyüyor. Val'i de
+        # Val kümesi değişmiyor — yalnızca eğitim büyüyor. Val'i de
         # büyütmek iki koşuyu farklı sınavda ölçmek olurdu.
-        # ⚠ Val kümesine DOKUNULMUYOR; yalnızca train büyüyor.
+        # Val kümesine dokunulmuyor; yalnızca train büyüyor.
         # Ad çakışması burada tehlikeli değil çünkü bölüm sabit ("train").
         mevcut = {a for a, _e, b in istenen if b == "train"}
         for sinif, etiket in (("fight", 1), ("nonfight", 0)):
@@ -179,7 +179,7 @@ def _cikar(args: argparse.Namespace) -> int:
     t0 = time.time()
     atlanan = 0
     for i, (ad, etiket, bolum) in enumerate(istenen, 1):
-        # ⚠ Dosya adı bölümü İÇERMELİ — train/val'de aynı adlar var.
+        # Dosya adı bölümü içermeli — train/val'de aynı adlar var.
         kok = ad[:-4] if ad.endswith(".avi") else ad
         anahtar = f"{bolum}_{kok}"
         hedef = TENSOR_DIZINI / f"{anahtar}.npy"
@@ -269,7 +269,7 @@ def _egit(args: argparse.Namespace) -> int:
             x = np.load(TENSOR_DIZINI / f"{kayit['klip']}.npy")  # (T,H,W,C)
             t = torch.from_numpy(x.copy()).permute(3, 0, 1, 2).float() / 255.0
             if self.egitim and random.random() < 0.5:  # noqa: S311
-                # ⚠ TEK ARTIRMA: yatay çevirme. Kavga aynaya göre
+                # Tek artırma: yatay çevirme. Kavga aynaya göre
                 # simetrik bir olay; renk/kırpma artırmaları ise
                 # Kinetics ön işlemesini bozar.
                 t = torch.flip(t, dims=[3])
@@ -286,7 +286,7 @@ def _egit(args: argparse.Namespace) -> int:
     model.fc = nn.Linear(model.fc.in_features, 1)
     model = model.to(cihaz)
 
-    # ⚠ Küçük veri + büyük ağ → düşük öğrenme oranı ve ağırlık sönümü.
+    # Küçük veri + büyük ağ → düşük öğrenme oranı ve ağırlık sönümü.
     # Gövdeye baştan tam öğrenme oranı vermek ön eğitimi siler.
     opt = torch.optim.AdamW([
         {"params": [p for n, p in model.named_parameters()
@@ -357,15 +357,15 @@ def _egit(args: argparse.Namespace) -> int:
     son = gecmis[-1]
     print(f"{'R3D-18 (SON devir, seçimsiz)':<34} {son['auc']:>7.3f} "
           f"{son['f1']:>7.3f} {'—':>9} {'—':>11}")
-    # ⚠⚠ İKİ SATIR DA BASILIYOR VE SEBEBİ ÖNEMLİ.
+    # İki satır da basılıyor ve sebebi önemli.
     #
     # "En iyi devir"i doğrulama kümesindeki AUC'ye bakarak seçmek,
-    # RAPORLADIĞIMIZ kümede seçim yapmaktır — 12 devrin maksimumunu
+    # raporladığımız kümede seçim yapmaktır — 12 devrin maksimumunu
     # almak tek bir eşik seçmekten daha güçlü bir yanlılık.
     #
     # LightGBM tarafında da benzeri var (eşik val'de aranıyor) ama
-    # derecesi farklı. Dürüst kıyas için ikisi de yazılıyor:
-    # seçimsiz son devir, yanlılığın ALT sınırını verir.
+    # derecesi farklı. Adil kıyas için ikisi de yazılıyor:
+    # seçimsiz son devir, yanlılığın alt sınırını verir.
     print("\n⚠ 'En iyi devir' val'de seçildi — raporlanan kümede seçim")
     print("  yapmak yanlılıktır. Seçimsiz son devir alt sınır olarak")
     print("  yukarıda; gerçek başarım ikisinin arasında.")

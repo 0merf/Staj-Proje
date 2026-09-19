@@ -4,8 +4,8 @@ Valkey'den **yalnızca meta veri** geçer. Ham kare paylaşımlı bellektedir
 (bkz. `sentinel.bus.shm`). Mesaj başına ~200 bayt; saniyede ~100 mesaj.
 Valkey'in kapasitesinin binde biri.
 
-⚠ Redis DEĞİL, Valkey. `redis-py` istemcisi protokol uyumlu olduğu için
-   değişmeden çalışır (LITERATUR.md §G).
+Redis değil, Valkey. `redis-py` istemcisi protokol uyumlu olduğu için
+   değişmeden çalışır.
 """
 
 from __future__ import annotations
@@ -90,8 +90,8 @@ class SlotAllocator:
     def sizanlari_geri_al(self, kullanimdaki: set[int]) -> list[int]:
         """Hiçbir yerde görünmeyen slotları havuza döndürür.
 
-        ⚠ NEDEN `sahipsizleri_topla` YETMEDİ
-        `XAUTOCLAIM` yalnızca AKIŞTA HÂLÂ DURAN asılı mesajları
+        Neden `sahipsizleri_topla` yetmedi
+        `XAUTOCLAIM` yalnızca akışta hâlâ duran asılı mesajları
         kurtarabiliyor. Akış sınırlı (`maxlen`) olduğu için asılı bir
         mesaj, o sırada akıştan düşmüş olabilir: `xautoclaim` onu boş
         alanlarla döndürüyor, yani **slot numarası artık bilinmiyor.**
@@ -100,8 +100,8 @@ class SlotAllocator:
         yalnızca 5'i kurtarılabildi, 43'ünün slotu kayıptı ve havuz
         5 slotla dönmeye devam etti.
 
-        ⚠ ÇÖZÜM: SAYMAK YERİNE MUHASEBE
-        Bir slot şu üç yerden birinde olmak ZORUNDA:
+        Çözüm: saymak yerine muhasebe
+        Bir slot şu üç yerden birinde olmak zorunda:
           (a) boş listede
           (b) akıştaki bir mesajın referansında
           (c) bir tüketicinin elinde (işlenmekte)
@@ -109,11 +109,11 @@ class SlotAllocator:
         Üçünde de olmayan slot sızmıştır. (a) ve (b) doğrudan okunuyor;
         (c) çağıran tarafından veriliyor.
 
-        ⚠ TEK TÜKETİCİ VARSAYIMINA DAYANIYOR ve o varsayım mimari kural
+        Tek tüketici varsayımına dayanıyor ve o varsayım mimari kural
         3'ün kendisi: "modeller tek süreçte tek kopya". İki çıkarım
         worker'ı olsaydı, birinin elindeki slotu diğeri sızmış sanıp
         havuza atardı ve aynı slota iki kare birden yazılırdı.
-        Bu yüzden yalnızca AÇILIŞTA çağrılıyor: o an bu worker'ın
+        Bu yüzden yalnızca açılışta çağrılıyor: o an bu worker'ın
         elinde hiçbir şey yok ve ikinci bir worker varsa zaten mimari
         ihlal edilmiş demektir.
         """
@@ -196,7 +196,7 @@ class FrameStream:
 
     Akış `MAXLEN ~ N` ile sınırlıdır: kuyruk dolduğunda **en eski kareler
     düşer**. Gerçek zamanlı sistemde 5 saniye önceki karenin değeri yoktur;
-    beklemek yerine atmak doğrudur (PLAN.md §4.3).
+    beklemek yerine atmak doğrudur.
     """
 
     __slots__ = ("_client", "_maxlen", "_stream")
@@ -216,14 +216,14 @@ class FrameStream:
     def parca_akisi(camera: str, parca_sayisi: int) -> str:
         """Bir kameranın hangi çıkarım akışına yazılacağını söyler (P-67).
 
-        ⚠ AYNI KAMERA HER ZAMAN AYNI PARÇAYA GİTMELİ
+        Aynı kamera her zaman aynı parçaya gitmeli
         BoT-SORT takipçisinin durumu çıkarım worker'ının içinde, kamera
         başına tutuluyor. Bir kameranın kareleri iki worker'a bölünürse
         her ikisinde de yarım iz oluşur, kimlikler kopar ve zamansal
-        özelliklerin tamamı bozulur — üstelik SESSİZCE.
+        özelliklerin tamamı bozulur — üstelik sessizce.
 
         Bu yüzden eşleme **deterministik**: kamera adının kararlı bir
-        özeti. `hash()` KULLANILMIYOR — Python'ın string hash'i süreçler
+        özeti. `hash()` kullanılmıyor — Python'ın string hash'i süreçler
         arasında rastgeleleştirilir (PYTHONHASHSEED), yani alım ve
         çıkarım süreçleri farklı sonuç üretirdi. Sessiz ve teşhisi çok
         zor bir hata olurdu.
@@ -236,7 +236,7 @@ class FrameStream:
     def reset(self) -> None:
         """Akışı tamamen temizler.
 
-        ⚠ Havuz sahibi worker açılışta bunu ÇAĞIRMALI. Sebebi:
+        Havuz sahibi worker açılışta bunu çağırmalı. Sebebi:
         önceki çalışmadan kalan mesajlar artık geçersiz slot referansları
         taşır. Tüketici onları okuyup slotları "geri verirse" aynı slot
         listede iki kez görünür — iki kamera aynı slota yazar ve kareler
@@ -282,9 +282,9 @@ class FrameStream:
         count: int = 8,
         block_ms: int = 1000,
     ) -> Iterator[FrameMessage]:
-        """Gruptan mesaj okur. Her mesaj gruptaki TEK bir tüketiciye gider.
+        """Gruptan mesaj okur. Her mesaj gruptaki tek bir tüketiciye gider.
 
-        ⚠ NOGROUP'A DAYANIKLI
+        NOGROUP'a dayanıklı
         Havuz sahibi (alım worker'ı) her açılışta akışı siler — bu
         zorunlu, yoksa önceki çalışmadan kalan geçersiz slot referansları
         havuzu bozar (P-10). Ama akış silinince tüketici grubu da silinir
@@ -292,7 +292,7 @@ class FrameStream:
 
         Yani alım worker'ını yeniden başlatmak çıkarım worker'ını
         öldürüyordu. Bir bileşenin normal yeniden başlaması başka bir
-        bileşeni düşürmemeli (PLAN.md §4.2 hata izolasyonu). Grubu
+        bileşeni düşürmemeli (hata izolasyonu). Grubu
         sessizce yeniden kurup devam ediyoruz.
         """
         try:
@@ -324,7 +324,7 @@ class FrameStream:
     ) -> list[FrameMessage]:
         """Ölmüş bir tüketicide asılı kalan mesajları geri alır.
 
-        ⚠ BU OLMADAN BİR ÇÖKÜŞ HAVUZU KALICI OLARAK KÜÇÜLTÜYOR
+        Bu olmadan bir çöküş havuzu kalıcı olarak küçültüyor
         --------------------------------------------------------
         Tüketici grubunda `XREADGROUP` ile okunan her mesaj, ACK
         gelene kadar o tüketiciye **asılı (pending)** kalır. Çıkarım
@@ -332,7 +332,7 @@ class FrameStream:
         mesajlar asılı kalır ve **onların paylaşımlı bellek slotları
         havuza geri dönmez.**
 
-        Yeni worker `>` ile yalnızca YENİ mesajları okuduğu için o
+        Yeni worker `>` ile yalnızca yeni mesajları okuduğu için o
         slotlar sonsuza dek kaybolur. 30.08.2026'da ölçüldü:
 
             48 slotun 48'i sızmış · boş slot 0/48 · üretim durmuş
@@ -341,14 +341,14 @@ class FrameStream:
         atıyor (`reason="no_slot"`), süreçlerin hepsi ayakta görünüyor,
         panel bağlı — sadece hiçbir şey işlenmiyor.
 
-        ⚠ NEDEN `XAUTOCLAIM`
+        Neden `XAUTOCLAIM`
         Beklemedeki mesajları listeleyip tek tek sahiplenmek yerine tek
         atomik çağrı: hem daha az tur, hem de iki worker aynı anda
         toplamaya kalkarsa yarış durumu yok.
 
-        ⚠ `bosta_ms` NEDEN BÜYÜK (30 sn)
+        `bosta_ms` neden büyük (30 sn)
         Bu eşik "bu mesajı işleyen tüketici ölmüştür" varsayımının
-        gerekçesi. Kısa tutulursa, YAVAŞ ama sağ bir tüketicinin
+        gerekçesi. Kısa tutulursa, yavaş ama sağ bir tüketicinin
         mesajları elinden alınır ve aynı kare iki kez işlenir. Normal
         işleme süresi milisaniyeler; 30 saniye rahat bir pay.
         """
@@ -363,7 +363,7 @@ class FrameStream:
         cikti: list[FrameMessage] = []
         for message_id, fields in kayitlar or []:
             if not fields:
-                # ⚠ Akıştan düşmüş (maxlen) ama hâlâ asılı olan kayıt:
+                # Akıştan düşmüş (maxlen) ama hâlâ asılı olan kayıt:
                 # `xautoclaim` bunu boş alanlarla döndürüyor. Slotu
                 # bilinmediği için kurtarılamaz; ACK'lenip listeden
                 # düşürülüyor, yoksa sonsuza dek toplanmaya çalışılır.
@@ -374,9 +374,9 @@ class FrameStream:
 
     @property
     def depth(self) -> int:
-        """Akışta TUTULAN kayıt sayısı (`XLEN`).
+        """Akışta tutulan kayıt sayısı (`XLEN`).
 
-        ⚠ GERİ BASINÇ GÖSTERGESİ DEĞİL. `XACK` kaydı akıştan silmiyor
+        Geri basınç göstergesi değil. `XACK` kaydı akıştan silmiyor
         (bkz. `islenmemis_slotlar` docstring'i); kayıtlar ancak `MAXLEN`
         budamasıyla düşüyor. Akış birkaç saniyede tavana çakılıyor ve
         tüketici yetişse de yetişmese de orada kalıyor.
@@ -386,14 +386,14 @@ class FrameStream:
         return int(self._client.xlen(self._stream))
 
     def grup_gecikmesi(self, group: str) -> int | None:
-        """Gruba henüz TESLİM EDİLMEMİŞ kayıt sayısı — gerçek birikme.
+        """Gruba henüz teslim edilmemiş kayıt sayısı — gerçek birikme.
 
         `XINFO GROUPS`'un `lag` alanı. `XLEN`'in aksine tüketici
         yetiştikçe sıfıra iniyor.
 
         Returns:
-            Gecikme, ya da grup/alan yoksa `None`. ⚠ `None` "sıfır"
-            demek DEĞİL — "ölçemedim" demek. İkisini karıştırmak, bu
+            Gecikme, ya da grup/alan yoksa `None`. `None` "sıfır"
+            demek değil — "ölçemedim" demek. İkisini karıştırmak, bu
             projede defalarca yakalanan "sonuç yok" ile "yanlış yere
             baktım" karışıklığının ta kendisi olurdu.
         """
@@ -408,18 +408,18 @@ class FrameStream:
         return None
 
     def islenmemis_slotlar(self, group: str) -> set[int]:
-        """Henüz İŞLENMEMİŞ mesajların işaret ettiği slot numaraları.
+        """Henüz işlenmemiş mesajların işaret ettiği slot numaraları.
 
         Slot muhasebesinin (b) kalemi (bkz.
         `SlotAllocator.sizanlari_geri_al`).
 
-        ⚠ "AKIŞTAKİ" DEĞİL "İŞLENMEMİŞ" — ilk sürümün hatası buydu
-        `XACK` bir mesajı akıştan **SİLMİYOR**, yalnızca tüketicinin
+        "Akıştaki" değil "işlenmemiş" — ilk sürümün hatası buydu
+        `XACK` bir mesajı akıştan **silmiyor**, yalnızca tüketicinin
         bekleyen listesinden çıkarıyor. Akıştan düşme ancak `maxlen`
         budamasıyla oluyor.
 
         Bu yüzden akışın tamamını taramak, çoktan işlenmiş ve slotu
-        ÇOKTAN İADE EDİLMİŞ mesajları da "kullanımda" saymak demekti:
+        çoktan iade edilmiş mesajları da "kullanımda" saymak demekti:
 
             akıştaki mesaj 99 · farklı slot 48 · boş slot 0/48
 
@@ -428,9 +428,9 @@ class FrameStream:
         her slot her zaman "birinde görünüyordu".
 
         Doğrusu iki küme:
-          · henüz TESLİM EDİLMEMİŞ mesajlar (grubun `last-delivered-id`
+          · henüz teslim edilmemiş mesajlar (grubun `last-delivered-id`
             değerinden sonrası)
-          · TESLİM EDİLMİŞ ama ACK'lenmemiş mesajlar (bekleyenler)
+          · teslim edilmiş ama ACK'lenmemiş mesajlar (bekleyenler)
 
         İkisi birlikte "slotu hâlâ tutulan" mesajları veriyor.
         """
@@ -449,7 +449,7 @@ class FrameStream:
         for _mid, alanlar in self._client.xrange(  # type: ignore[union-attr]
             self._stream, min=f"({son_teslim}", max="+"
         ):
-            # ⚠ Boş alan sözlüğü ELENIYOR — mypy'nin haklı olduğu yer.
+            # Boş alan sözlüğü eleniyor — mypy'nin haklı olduğu yer.
             # `xrange` dönüş tipi `... | None` içeriyor ve doğrudan
             # indekslemek statik olarak güvensiz. Aşağıdaki `except`
             # bunu zaten yakalıyordu ama istisnayla akış kontrolü
@@ -530,7 +530,7 @@ class ResultStream:
 
     @property
     def depth(self) -> int:
-        """Akışta TUTULAN kayıt sayısı — ⚠ geri basınç DEĞİL, bkz.
+        """Akışta tutulan kayıt sayısı — geri basınç değil, bkz.
         `FrameStream.depth`."""
         return int(self._client.xlen(self._stream))
 
@@ -538,7 +538,7 @@ class ResultStream:
         """Gruba henüz teslim edilmemiş kayıt sayısı (`XINFO GROUPS.lag`).
 
         `None` = ölçülemedi (grup yok ya da sunucu alanı vermiyor);
-        sıfır DEĞİL.
+        sıfır değil.
         """
         try:
             for g in self._client.xinfo_groups(self._stream):
@@ -559,8 +559,8 @@ __all__ = ["FrameMessage", "FrameStream", "ResultStream", "SlotAllocator", "conn
 
 
 # ─── Operatörün izlediği kameralar ────────────────────────────
-# Panel hangi kutucukları AÇTIYSA onları buraya yazar; alım worker'ı
-# okuyup o kameralara daha yüksek örnekleme hızı ayırır (PLAN.md §5.2).
+# Panel hangi kutucukları açtıysa onları buraya yazar; alım worker'ı
+# okuyup o kameralara daha yüksek örnekleme hızı ayırır.
 #
 # Neden Valkey: panel API sürecine bağlı, örnekleme kararı ise alım
 # sürecinde veriliyor. İkisi ayrı süreç; paylaşılan tek yer Valkey.
@@ -569,7 +569,7 @@ __all__ = ["FrameMessage", "FrameStream", "ResultStream", "SlotAllocator", "conn
 # Panel düzenli olarak yeniliyor; yenilenmezse kendiliğinden siliniyor
 # ve sistem "kimse izlemiyor" moduna dönüyor.
 #
-# ⚠ OTURUM BAŞINA AYRI ANAHTAR — tek global küme DEĞİL
+# Oturum başına ayrı anahtar — tek global küme değil
 # İlk sürüm tek bir `cameras:watched` kümesi kullanıyordu ve her yazma
 # `DELETE` + `SADD` yapıyordu. İki panel açıkken ikincinin `watching`
 # mesajı birincininkini siliyordu: iki operatörden biri kutucuk açtığı
@@ -578,7 +578,7 @@ __all__ = ["FrameMessage", "FrameStream", "ResultStream", "SlotAllocator", "conn
 # edilmezdi.
 #
 # Şimdi her WS oturumu kendi anahtarını yazıyor, alım worker'ı hepsinin
-# BİRLEŞİMİNİ okuyor. TTL yine oturum başına: bir panel kapanınca
+# birleşimini okuyor. TTL yine oturum başına: bir panel kapanınca
 # yalnızca onun anahtarı düşüyor, diğerleri etkilenmiyor.
 WATCHED_PREFIX = "cameras:watched:"
 WATCHED_TTL_S = 20
@@ -586,12 +586,12 @@ WATCHED_TTL_S = 20
 
 # ─── Tüketici kapasitesi ──────────────────────────────────────
 #
-# ⚠ ÜRETİCİ/TÜKETİCİ DENGESİZLİĞİ — ölçülen sorun
+# ÜRETİCİ/TÜKETİCİ dengesizliği — ölçülen sorun
 # 18.08.2026 ölçümü: alım 20 kamera × 4 FPS = 80 kare/sn üretiyor,
 # çıkarım ~6 kare/sn tüketiyor, **karelerin %89'u atılıyor.**
 #
 # Atmak gecikmeyi sınırlıyor (P-25, doğru karar) ama israfı çözmüyor:
-# atılan her kare için decode + BGR dönüşümü + letterbox CPU'su ZATEN
+# atılan her kare için decode + BGR dönüşümü + letterbox CPU'su zaten
 # ödenmiş oluyor. Ve BGR dönüşümü alım maliyetinin %77'si (P-09).
 #
 # Yani CPU'nun büyük kısmı çöpe giden kareler için harcanıyor — üstelik
@@ -602,7 +602,7 @@ WATCHED_TTL_S = 20
 # Çözüm: üreticiyi tüketici kapasitesine bağlamak. Tüketici kaç kare
 # işleyebiliyorsa üretici o kadar üretsin.
 #
-# Neden Valkey: iki AYRI süreç. Paylaşılan tek yer burası — izlenen
+# Neden Valkey: iki ayrı süreç. Paylaşılan tek yer burası — izlenen
 # kamera listesiyle aynı desen.
 #
 # Neden TTL: çıkarım worker'ı düşerse alım sonsuza dek kısık kalmamalı.
@@ -654,7 +654,7 @@ def set_watched_cameras(client: Redis, session_id: str, cameras: list[str]) -> N
 
 
 def get_watched_cameras(client: Redis) -> set[str]:
-    """Tüm açık oturumların izlediği kameraların BİRLEŞİMİ.
+    """Tüm açık oturumların izlediği kameraların birleşimi.
 
     Hiç panel açık değilse boş küme döner ve sistem "kimse izlemiyor"
     moduna geçer.

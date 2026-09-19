@@ -11,7 +11,7 @@
 Gün 2'de ilk ölçüm *"1 kamera ≈ 1 çekirdek, NVDEC şart"* dedi ve bu
 karar bir gün boyunca doğru sanıldı.
 
-## ⚠ İlk ölçüm YANLIŞTI
+## İlk ölçüm yanlıştı
 
 Ölçüm **RTSP akışından** yapılmıştı. Akış zaten gerçek zamanlı 25 FPS
 veriyor — ölçülen şey çözme kapasitesi değil, **akışın kendi hızıydı.**
@@ -22,7 +22,7 @@ Yerel dosyadan doğru ölçüm (13.08.2026):
 | | Sadece çözme | Çözme + BGR dönüşümü |
 |---|---|---|
 | CPU tek çekirdek | 1072 FPS | **249 FPS** |
-| NVDEC | 1142 FPS | **172 FPS** ⬅ daha yavaş |
+| NVDEC | 1142 FPS | **172 FPS** ← daha yavaş |
 
 ## Karar
 
@@ -41,7 +41,7 @@ yetiyor (14 çekirdeğin %14'ü).
 **Kaybedilen:** Yok — ölçüm NVDEC'in bu boru hattında zararlı olduğunu
 gösteriyor.
 
-## ⚠ Bu karar KOŞULLU
+## Bu karar koşullu
 
 Ölçüm, **kare CPU'ya inecek** varsayımıyla yapıldı. Zincir baştan sona
 GPU'da kalırsa (NVDEC → GPU resize → GPU hareket filtresi → doğrudan

@@ -1,37 +1,36 @@
-/** Olaylar sayfası — ısı haritası + GERÇEK OLAY TABLOSU.
+/** Olaylar sayfası — ısı haritası + gerçek olay tablosu.
  *
- * ⚠⚠ 10.09.2026 — YENİDEN TASARLANDI, ÇÜNKÜ OKUNMUYORDU
+ * 10.09.2026 — yeniden tasarlandı, çünkü okunmuyordu
  * ------------------------------------------------------
- * Kullanıcının tespiti: *"Bu zaman çizelgesinin olayı ne, burası ne
- * anlatıyor? Ben hiçbir şey anlamadım. Kutuların üstüne tıklıyorum
- * herhangi bir bilgi de çıkmıyor."*
+ * İlk sürümde zaman çizelgesi hiçbir şey anlatmıyordu: kutuların
+ * üstüne tıklayınca hiçbir bilgi çıkmıyordu.
  *
- * Haklıydı ve sebebi koddaydı: hücreler `cursor-default` idi ve
+ * Sebebi koddaydı: hücreler `cursor-default` idi ve
  * `onClick` yoktu. Tek bilgi kanalı `title` tooltip'iydi — yani
  * bilgi vardı ama **ulaşılamıyordu**.
  *
- * ⭐ Bu, projenin P-45'iyle aynı sınıf hata: *"klipler kesiliyordu,
- * kimse göremiyordu."* Bir şeyin ÜRETİLMİŞ olması, kullanılabilir
+ * Bu, projenin P-45'iyle aynı sınıf hata: *"klipler kesiliyordu,
+ * kimse göremiyordu."* Bir şeyin üretilmiş olması, kullanılabilir
  * olması demek değil. Kapsam maddeleri modüllerle değil, kullanıcının
  * yapabildiği işlerle işaretlenmeli — "ısı haritası çiziliyor" bir
  * modül ifadesi; "operatör bir hücreye tıklayıp o saatteki olayları
  * okuyabiliyor" bir kapsam ifadesi.
  *
- * ⚠ ISI HARİTASI NEDEN SİLİNMEDİ
+ * Isı haritası neden silinmedi
  * Kullanıcı "gerekirse değiştir" dedi, "sil" demedi — ve harita iki
  * soruyu tablodan daha iyi cevaplıyor: *ne zaman yoğunlaştı* ve
  * *hangi kameralar birlikte alarm verdi*. 2102 satırlık bir tabloda
  * "cam-15 ve cam-17 aynı saatte patlamış" görünmez. Harita artık
- * tablonun FİLTRESİ: bir hücreye tıkla, tablo o kameraya ve o saate
+ * tablonun filtresi: bir hücreye tıkla, tablo o kameraya ve o saate
  * daralsın.
  *
- * ⚠ VERİ KAYNAĞI İKİ AYRI UÇ
+ * Veri kaynağı iki ayrı UÇ
  *   · harita  → `/api/v1/events/ozet`  (saatlik toplulaştırma, ucuz)
  *   · tablo   → `/api/v1/events`       (tek tek olaylar, filtreli)
  * Haritayı ham olaylardan çizmek her açılışta yüz binlerce satır
  * taramak olurdu (ADR-0010).
  *
- * ⚠ RENK CİDDİYETE GÖRE, YOĞUNLUĞA GÖRE DEĞİL
+ * Renk ciddiyete göre, yoğunluğa göre değil
  * Bir hücredeki 20 "oyalanma" ile 1 "düşme" aynı renkte olsaydı,
  * operatör yoğunluğu ciddiyet sanırdı. Renk en yüksek ciddiyeti,
  * sayı ise adedi gösteriyor.
@@ -99,17 +98,17 @@ export function ZamanCizelgesi() {
   const [filtreCiddiyet, setFiltreCiddiyet] = useState('')
   const [acikSatir, setAcikSatir] = useState<string | null>(null)
 
-  // ⚠⚠ 08.09.2026 — YAPI DEĞİŞTİ, ÜÇ HATA BİRDEN DÜZELDİ (ESLint bulgusu)
+  // 08.09.2026 — yapı değişti, ÜÇ hata birden düzeldi (ESLint bulgusu)
   //
-  // Eski hâli üç ayrı `useState` + efektin BAŞINDA `setSatirlar(null)`
+  // Eski hâli üç ayrı `useState` + efektin başında `setSatirlar(null)`
   // idi. ESLint ilk kurulduğu koşuda bunu işaretledi ve arkasından üç
   // gerçek kusur çıktı:
   //
   // 1. `Date.now()` `useMemo` içinde çağrılıyordu. useMemo yalnızca
-  //    `[satirlar, saat]` değişince yeniden hesaplanıyor — yani SAAT
-  //    KOVALARI son veri çekiminde DONUYORDU.
-  // 2. İstek yarışı: `saat` hızlı değiştirilirse ESKİ ve yavaş yanıt,
-  //    YENİ yanıtın üstüne yazabiliyordu.
+  //    `[satirlar, saat]` değişince yeniden hesaplanıyor — yani saat
+  //    kovaları son veri çekiminde donuyordu.
+  // 2. İstek yarışı: `saat` hızlı değiştirilirse eski ve yavaş yanıt,
+  //    yeni yanıtın üstüne yazabiliyordu.
   // 3. Efektin başında setState → basamaklı yeniden render.
   const [veri, setVeri] = useState<{
     anahtar: number
@@ -119,7 +118,7 @@ export function ZamanCizelgesi() {
   }>({ anahtar: -1, satirlar: null, hata: null, simdi: 0 })
 
   useEffect(() => {
-    // ⚠ `AbortController`, mutable bayraktan iyi: isteğin kendisini
+    // `AbortController`, mutable bayraktan iyi: isteğin kendisini
     // iptal eder, yalnızca yanıtı yok saymakla kalmaz.
     const kontrol = new AbortController()
     const istekAni = Date.now() / 1000
@@ -142,7 +141,7 @@ export function ZamanCizelgesi() {
     }
   }, [saat])
 
-  // Yükleniyor durumu TÜRETİLİYOR, ayrı bir state değil.
+  // Yükleniyor durumu türetiliyor, ayrı bir state değil.
   const yukleniyor = veri.anahtar !== saat
   const satirlar = yukleniyor ? null : veri.satirlar
   const hata = yukleniyor ? null : veri.hata
@@ -158,7 +157,7 @@ export function ZamanCizelgesi() {
     }
     if (!satirlar) return bosluk
 
-    // ⚠ Kovalar VERİDEN değil ZAMANDAN üretiliyor. Yalnızca olay olan
+    // Kovalar veriden değil zamandan üretiliyor. Yalnızca olay olan
     // saatleri göstermek, "sessiz saatler"i görünmez yapardı — oysa
     // bir gözetim panelinde sessizlik de bilgidir.
     const suAnkiKova = Math.floor(veri.simdi / 3600) * 3600
@@ -182,7 +181,7 @@ export function ZamanCizelgesi() {
       turKumesi.add(s.tur)
     }
 
-    // ⚠ TÜM kameralar listeleniyor, yalnızca alarm verenler değil.
+    // Tüm kameralar listeleniyor, yalnızca alarm verenler değil.
     // "cam-18'de hiç alarm yok" bir bulgudur (kontrol kamerası) ve
     // ancak satır görünürse fark edilir.
     const bilinen = cameras.map((c) => c.name)
@@ -197,7 +196,7 @@ export function ZamanCizelgesi() {
   }, [satirlar, saat, cameras, veri.simdi])
 
   // ─────────────────────────────────────────────────────────────
-  // OLAY TABLOSU — tek tek kayıtlar
+  // Olay tablosu — tek tek kayıtlar
   // ─────────────────────────────────────────────────────────────
   const [olaylar, setOlaylar] = useState<{
     anahtar: string
@@ -212,7 +211,7 @@ export function ZamanCizelgesi() {
     const p = new URLSearchParams()
     p.set('limit', '200')
     if (secim) {
-      // ⚠ Hücre seçiliyse `saat` DEĞİL pencere gönderiliyor: hücre
+      // Hücre seçiliyse `saat` değil pencere gönderiliyor: hücre
       // "şu kamera, şu saat" demek ve "son N saat" bunu ifade edemez.
       p.set('camera', secim.camera)
       p.set('bas', String(secim.kova))
@@ -255,7 +254,7 @@ export function ZamanCizelgesi() {
 
   return (
     <div className="flex-1 overflow-auto p-4">
-      {/* ═══ ISI HARİTASI ═══ */}
+      {/* ═══ Isı haritası ═══ */}
       <div className="mb-3 flex flex-wrap items-center gap-3">
         <h2 className="text-sm font-semibold">Olay Zaman Çizelgesi</h2>
         <div className="flex gap-1">
@@ -292,8 +291,8 @@ export function ZamanCizelgesi() {
         </span>
       </div>
 
-      {/* ⚠ Kullanım ipucu görünür olmalı: eski sürümde hücrelerin bilgi
-          taşıdığı YALNIZCA tooltip'ten anlaşılıyordu ve kimse tooltip
+      {/* Kullanım ipucu görünür olmalı: eski sürümde hücrelerin bilgi
+          taşıdığı yalnızca tooltip'ten anlaşılıyordu ve kimse tooltip
           aramıyor. */}
       <p className="mb-2 text-[10px] text-muted">
         Bir hücreye tıklayın — aşağıdaki tablo o kameranın o saatine daralır.
@@ -305,7 +304,7 @@ export function ZamanCizelgesi() {
 
       {satirlar && (
         <div className="overflow-x-auto">
-          {/* ⚠ `data-testid`: iki tablonun da "kamera" başlığı var ve
+          {/* `data-testid`: iki tablonun da "kamera" başlığı var ve
               rol tabanlı seçiciler ikisini birden buluyor. Testin
               hangisine baktığı belirsiz kalmamalı. */}
           <table
@@ -319,7 +318,7 @@ export function ZamanCizelgesi() {
                 </th>
                 {kovalar.map((k) => {
                   const d = new Date(k * 1000)
-                  // ⚠ Yalnızca 0, 6, 12, 18 saatlerinde etiket: 72
+                  // Yalnızca 0, 6, 12, 18 saatlerinde etiket: 72
                   // saatlik görünümde her sütuna etiket koymak okunmaz
                   // bir şerit üretiyordu.
                   const goster = d.getHours() % 6 === 0
@@ -396,7 +395,7 @@ export function ZamanCizelgesi() {
         <p className="mt-4 text-xs text-muted">
           Bu aralıkta hiç olay yok.
           <br />
-          {/* ⚠ "Hiçbir şey yok" ile "bakamadım" ayrımı — ADR-0010'daki
+          {/* "Hiçbir şey yok" ile "bakamadım" ayrımı — ADR-0010'daki
               en öğretici hata tam buydu. */}
           <span className="text-[10px]">
             Sorgu çalıştı ve boş döndü — bu bir arıza değil, sessizlik.
@@ -404,13 +403,13 @@ export function ZamanCizelgesi() {
         </p>
       )}
 
-      {/* ═══ OLAY TABLOSU ═══ */}
+      {/* ═══ Olay tablosu ═══ */}
       <div className="mt-6 border-t border-line pt-4">
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <h2 className="text-sm font-semibold">Olaylar</h2>
 
           {secim ? (
-            /* ⚠ Seçim bir ÇİP olarak gösteriliyor: filtreli bir tabloya
+            /* Seçim bir çip olarak gösteriliyor: filtreli bir tabloya
                bakarken bunu unutmak, "olay yok" diye yanlış sonuç
                çıkarmanın en kolay yolu. */
             <button
@@ -538,7 +537,7 @@ export function ZamanCizelgesi() {
                         {(o.skor * 100).toFixed(0)}%
                       </td>
                       <td className="py-1.5 pr-3 font-mono text-muted">
-                        {/* ⚠ `tamlik` = özellik vektörünün ne kadarı
+                        {/* `tamlik` = özellik vektörünün ne kadarı
                             doluydu. Düşükse alarm zayıf kanıta dayanıyor
                             demektir ve operatör bunu görmeli. */}
                         {o.tamlik === null ? '—' : `${(o.tamlik * 100).toFixed(0)}%`}
@@ -567,7 +566,7 @@ export function ZamanCizelgesi() {
                                 </span>
                               </div>
                             ))}
-                            {/* ⚠ KANIT KLİBİ — "alarm bir iddia, klip bir
+                            {/* kanıt klibi — "alarm bir iddia, klip bir
                                 kanıt" (alerting/klip.py). */}
                             {o.klip && <KlipOynatici anahtar={o.klip} />}
                             {!o.klip && (

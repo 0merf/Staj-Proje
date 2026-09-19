@@ -1,4 +1,4 @@
-"""K4 — dayanıklılık ölçümü (PLAN §1.4, hedef: 2 saat çökmesiz).
+"""K4 — dayanıklılık ölçümü (hedef: 2 saat çökmesiz).
 
 Neden bu betik
 --------------
@@ -9,16 +9,16 @@ bırakıp sonra bakmak" değil. Öyle yapılırsa elde tek bir cümle kalır:
   · **Çökme tek arıza türü değil.** Bir worker ayakta kalıp iş
     üretmeyi bırakabilir; dışarıdan sağlıklı görünür.
   · **Sızıntı yavaştır.** P-38'de bir çökme paylaşımlı bellek havuzunu
-    KALICI olarak küçültüyordu ve arıza SESSİZDİ. Tek bir anlık
-    bakış onu göremez — sızıntı ancak ZAMAN SERİSİNDE görünür.
+    kalıcı olarak küçültüyordu ve arıza sessizdi. Tek bir anlık
+    bakış onu göremez — sızıntı ancak zaman serisinde görünür.
   · **Kanıt gerekiyor.** Rapora "iki saat koştu" yazmak bir iddiadır;
     `benchmarks/k4_*.json` bir bulgudur.
 
 Bu yüzden betik iki saat boyunca beş metrik ucunu düzenli aralıkla
 örnekliyor ve **arıza belirtilerini adlandırıyor.**
 
-⚠ AYNI KOŞUDAN K2 VE K3 DE ÇIKIYOR — ve bu bir bonus değil, bir DÜZELTME
-CLAUDE.md "gecikme 468 ms, analiz ~2.9 FPS" diyordu ama `benchmarks/`
+Aynı koşudan K2 ve K3 de çıkıyor — ve bu bir bonus değil, bir düzeltme
+Proje notlarım "gecikme 468 ms, analiz ~2.9 FPS" diyordu ama `benchmarks/`
 içinde 17.08'den (Gün 11) sonra tek bir gecikme/verim kaydı yoktu —
 o sayılar konsol çıktısından geliyordu. Projenin kendi kuralı
 ("her yeni ölçüm git'e giren bir JSON üretir") iki kriter için
@@ -26,16 +26,16 @@ o sayılar konsol çıktısından geliyordu. Projenin kendi kuralı
 bir koşuda tekrar ölçmek hem gereksiz hem de daha az güvenilir olurdu
 (iki saatlik pencere, beş dakikalık pencereden iyi bir tahmindir).
 
-⚠ NEDEN PROMETHEUS'A DEĞİL, UÇLARA DOĞRUDAN SORULUYOR
+Neden PROMETHEUS'a değil, uçlara doğrudan soruluyor
 Prometheus 10 saniyede bir kazıyor ve kendi saklama/örnekleme
 katmanını araya koyuyor. Ölçümün Prometheus'un ayarlarına bağlı
 olmaması gerekir; ayrıca Prometheus'un kendisi bu koşuda ölçülen
 sistemin bir parçası. Ölçüm aracını ölçtüğü sistemin içinden seçmek,
 bu projede üç kez pahalıya patladı (P-17, P-36, P-39).
 
-⚠ İLK 90 SANİYE ATILIYOR (P-28)
+İlk 90 saniye atılıyor (P-28)
 Isınma sırasında gecikme ve verim gerçek rejimi temsil etmiyor.
-Örnekler yine de KAYDEDİLİYOR — atılan şey yalnızca özet
+Örnekler yine de kaydediliyor — atılan şey yalnızca özet
 hesaplarındaki payları. Ham seriyi saklamak, sonradan "ısınma ne kadar
 sürdü" sorusunu cevaplanabilir tutuyor.
 
@@ -45,9 +45,9 @@ Kullanım
     uv run python scripts/measure_k4.py --sure 600       # 10 dk deneme
     uv run python scripts/measure_k4.py --aralik 15
 
-⚠ KOŞU KOŞULLARI
-    · panel KAPALI olmalı (P-24: 20 kutucuk verimi yarıya düşürüyor)
-    · koşarken sisteme DOKUNMA — docker restart dâhil (P-36)
+Koşu koşulları
+    · panel kapalı olmalı (P-24: 20 kutucuk verimi yarıya düşürüyor)
+    · koşarken sisteme dokunma — docker restart dâhil (P-36)
 """
 
 from __future__ import annotations
@@ -89,9 +89,9 @@ ISINMA_S = 90.0
 
 
 def _kazi(url: str, zaman_asimi: float = 4.0) -> str | None:
-    """Bir metrik ucunu okur. Okunamazsa None — bu bir VERİ NOKTASI.
+    """Bir metrik ucunu okur. Okunamazsa None — bu bir veri noktası.
 
-    ⚠ İstisna YUTULUYOR ve bu bilinçli: bir ucun cevap vermemesi tam
+    İstisna yutuluyor ve bu bilinçli: bir ucun cevap vermemesi tam
     olarak K4'ün aradığı şey. Betiği durdurmak, ölçümü aradığı arıza
     yüzünden iptal etmek olurdu.
     """
@@ -105,7 +105,7 @@ def _kazi(url: str, zaman_asimi: float = 4.0) -> str | None:
 def _ayristir(metin: str) -> dict[str, list[tuple[dict[str, str], float]]]:
     """Prometheus metin biçimini `ad → [(etiketler, değer)]` sözlüğüne çevirir.
 
-    ⚠ `prometheus_client.parser` KULLANILMIYOR, elle ayrıştırılıyor.
+    `prometheus_client.parser` kullanılmıyor, elle ayrıştırılıyor.
     Sebep: o ayrıştırıcı histogram kovalarını `_bucket` örneklerine
     geri döndürmek yerine kendi nesne modeline sarıyor ve `le`
     etiketini kaybetmeden almak zorlaşıyor. Burada ihtiyacımız olan şey
@@ -182,7 +182,7 @@ def _kovalar(
 def _yuzdelik(kovalar: dict[float, float], oran: float) -> float | None:
     """Kümülatif kovalardan yüzdelik — doğrusal ara değerleme ile.
 
-    ⚠ SONUÇ BİR TAHMİN, ölçüm değil. Histogram kovaları ham değerleri
+    Sonuç bir tahmin, ölçüm değil. Histogram kovaları ham değerleri
     saklamıyor; yüzdelik ancak kova sınırları arasında ara değerlenerek
     kestirilebilir. Kova sınırları geniş olduğunda hata da büyür ve bu
     raporda böyle yazılmalı — "p95 = 512 ms" değil, "p95 ≈ 512 ms
@@ -214,10 +214,10 @@ def _kova_farki(
 ) -> dict[float, float]:
     """İki kümülatif histogram anlık görüntüsünün farkı.
 
-    ⚠ NEDEN FARK ALINIYOR
+    Neden fark alınıyor
     Histogram kümülatif: süreç başından beri her şeyi sayıyor. Doğrudan
     yüzdelik almak, ısınma sırasındaki yüksek gecikmeleri sonsuza dek
-    ortalamaya katmak olurdu (P-28). Fark, yalnızca ısınma SONRASI
+    ortalamaya katmak olurdu (P-28). Fark, yalnızca ısınma sonrası
     pencereyi bırakıyor.
     """
     return {sinir: sayac - ilk.get(sinir, 0.0) for sinir, sayac in son.items()}
@@ -236,13 +236,13 @@ def _ornek_al() -> dict[str, Any]:
         if ham is None:
             # Uç cevap vermedi. Süreç ölmüş, asılmış ya da port
             # kapanmış olabilir — ayırt edemiyoruz ve etmemize gerek
-            # de yok: üçü de K4 açısından ARIZA.
+            # de yok: üçü de K4 açısından arıza.
             ornek["ayakta"][bilesen] = False
             continue
         olcumler = _ayristir(ham)
         ornek["ayakta"][bilesen] = True
 
-        # `worker_up` gauge'i sürecin KENDİ beyanı. Uç cevap veriyor
+        # `worker_up` gauge'i sürecin kendi beyanı. Uç cevap veriyor
         # ama gauge 0 ise: süreç yaşıyor, döngüsü bitmiş demektir.
         # Bu ayrım önemli — "ölmüş" ile "çalışmayı bırakmış" farklı
         # arızalar ve ikincisi çok daha sinsi.
@@ -268,15 +268,15 @@ def _ornek_al() -> dict[str, Any]:
             )
         elif bilesen == "inference":
             veri["bos_slot"] = _tek(olcumler, "sentinel_shm_slots_free")
-            # ⭐ KUYRUK DERİNLİĞİ — geri basıncın tek gözlemlenebilir izi.
+            # Kuyruk derinliği — geri basıncın tek gözlemlenebilir izi.
             #
-            # ⚠⚠ Bu metrik Gün 1'den beri yayınlanıyordu ve HİÇBİR ölçüm
+            # Bu metrik Gün 1'den beri yayınlanıyordu ve hiçbir ölçüm
             # betiği okumuyordu (P-60). Örnekleme 2.77 FPS iken analiz
             # 1.42 FPS ölçülen koşular var; aradaki kareler `frames_dropped`
-            # sayaçlarında GÖRÜNMÜYOR, çünkü kayıp alım tarafında değil,
+            # sayaçlarında görünmüyor, çünkü kayıp alım tarafında değil,
             # sınırlı akışın (`maxlen`) kuyruk sonunda oluyor.
             #
-            # ⭐ P-40'ın kardeşi: orada alet yanlış ölçüyordu, burada alet
+            # P-40'ın kardeşi: orada alet yanlış ölçüyordu, burada alet
             # doğru ölçüyor ama kimse bakmıyordu. Sonuç aynı: körlük.
             veri["kuyruk"] = _etikete_gore(
                 olcumler, "sentinel_queue_depth", "queue"
@@ -284,21 +284,21 @@ def _ornek_al() -> dict[str, Any]:
             veri["kapasite_fps"] = _tek(olcumler, "sentinel_pipeline_capacity_fps")
             veri["vram_bayt"] = _tek(olcumler, "sentinel_gpu_memory_used_bytes")
             veri["tespit"] = _toplam(olcumler, "sentinel_detections_total")
-            # ⚠ ANALİZ EDİLEN KARE SAYISI — ve buraya iki kez yanlış yazıldı
+            # Analiz edilen kare sayısı — ve buraya iki kez yanlış yazıldı
             #
             # İlk sürüm `sentinel_inference_duration_seconds_count{stage="detect"}`
             # kullanıyordu ve K2'yi **6 kat düşük** ölçtü (0.47 yerine
-            # ~2.8 FPS/kamera). Sebep: o histogram parti başına BİR kez
+            # ~2.8 FPS/kamera). Sebep: o histogram parti başına bir kez
             # gözlemleniyor (`inference/worker.py:544`), gözlemlenen
-            # DEĞER kare başına süre olsa da SAYACI parti sayıyor.
+            # değer kare başına süre olsa da sayacı parti sayıyor.
             # Ortalama parti 6 kare olduğu için sayaç tam 6 kat eksik.
             #
-            # ⚠ Genel ders: bir histogramın `_count` alanı "kaç şey"
-            # değil "kaç GÖZLEM" demektir. İkisi ancak gözlem başına bir
+            # Genel ders: bir histogramın `_count` alanı "kaç şey"
+            # değil "kaç gözlem" demektir. İkisi ancak gözlem başına bir
             # şey düşüyorsa aynıdır.
             #
             # `end_to_end_latency` ise kare başına gözlemleniyor
-            # (`inference/worker.py:624`, mesaj döngüsünün İÇİNDE) —
+            # (`inference/worker.py:624`, mesaj döngüsünün içinde) —
             # analiz edilen kareyi sayan tek doğru sayaç bu.
             veri["analiz_kare"] = _tek(
                 olcumler, "sentinel_end_to_end_latency_seconds_count"
@@ -367,28 +367,28 @@ def _degerlendir(ornekler: list[dict[str, Any]], sure: float) -> dict[str, Any]:
 
     # ─── Slot sızıntısı (P-38'in asıl sınavı) ───
     #
-    # ⚠ ANLIK BOŞ SLOT SAYISI DALGALANIR — sızıntı DEĞİLDİR.
+    # Anlık boş slot sayısı dalgalanır — sızıntı değildir.
     # Havuz sürekli alınıp bırakılıyor; bir anlık düşük değer normal.
     #
-    # ⚠⚠ 03.09.2026 — İLK SÜRÜM YANLIŞ ALARM ÜRETTİ (P-46)
-    # İlk sürüm pencereyi ikiye bölüp AZAMİ değerleri kıyaslıyordu:
+    # 03.09.2026 — ilk sürüm yanlış alarm üretti (P-46)
+    # İlk sürüm pencereyi ikiye bölüp azami değerleri kıyaslıyordu:
     #
-    #     ilk yarı azami 46  →  son yarı azami 41   ⇒ "SIZINTI ŞÜPHELİ"
+    #     ilk yarı azami 46  →  son yarı azami 41   ⇒ "sızıntı şüpheli"
     #
-    # Verdikt YANLIŞTI. İki uç değeri karşılaştırmak, iki örneklemli bir
+    # Verdikt yanlıştı. İki uç değeri karşılaştırmak, iki örneklemli bir
     # test yapmak demek — ve serinin standart sapması 5.9 slot iken 5
-    # slotluk bir fark tam olarak GÜRÜLTÜ. 20 dakikalık pencerelerde
+    # slotluk bir fark tam olarak gürültü. 20 dakikalık pencerelerde
     # azami şöyleydi: 35 → 46 → 43 → 41 → 37 → 41. Yani ilk pencere
     # zaten en düşüğüydü; monoton bir düşüş yok.
     #
-    # ⭐ Sızıntının imzası "son değer ilkinden küçük" değil, **zamanla
-    # düşen bir EĞİLİM.** Doğru araç en küçük kareler eğimi ve o eğimin
+    # Sızıntının imzası "son değer ilkinden küçük" değil, **zamanla
+    # düşen bir eğilim.** Doğru araç en küçük kareler eğimi ve o eğimin
     # serinin kendi dalgalanmasıyla kıyaslanması. Tek bir uç değer,
     # kaç örnek olursa olsun bir eğilim göstermez.
     #
-    # ⚠ Bu, projenin merkezî hatasının BEŞİNCİ örneği: ölçüm aracına,
+    # Bu, projenin merkezî hatasının beşinci örneği: ölçüm aracına,
     # ölçtüğü şeye gösterilen şüpheyi göstermemek. Fark şu ki bu kez
-    # araç ölçümden ÖNCE değil SONRA sorgulandı ve yanlış alarm
+    # araç ölçümden önce değil sonra sorgulandı ve yanlış alarm
     # yakalandı — ham seri JSON'a yazıldığı için mümkün oldu.
     slot_serisi = [
         (o["t"] - t0, o["veri"]["ingest"]["bos_slot"])
@@ -409,8 +409,8 @@ def _degerlendir(ornekler: list[dict[str, Any]], sure: float) -> dict[str, Any]:
         )
         sapma = statistics.stdev(degerler) if n > 1 else 0.0
         toplam_degisim = egim_sn * (slot_serisi[-1][0] - slot_serisi[0][0])
-        # ⚠ ÖLÇÜT: koşu boyunca eğimin öngördüğü toplam düşüş, serinin
-        # kendi standart sapmasını AŞIYOR MU. Aşmıyorsa gözlenen düşüş
+        # Ölçüt: koşu boyunca eğimin öngördüğü toplam düşüş, serinin
+        # kendi standart sapmasını aşıyor MU. Aşmıyorsa gözlenen düşüş
         # dalgalanmanın içinde kalıyor demektir ve "sızıntı var"
         # denemez. Bu eşik keyfi ama gerekçeli: bir eğilimin gürültüden
         # ayırt edilebilmesi için en az onun mertebesinde olması gerekir.
@@ -509,7 +509,7 @@ def _degerlendir(ornekler: list[dict[str, Any]], sure: float) -> dict[str, Any]:
                 else None
             ),
             "atilan_kare": {k: round(v) for k, v in atilan_fark.items()},
-            # ⭐ KARE MUHASEBESİ (P-60) — yayınlanan ile analiz edilen
+            # Kare muhasebesi (P-60) — yayınlanan ile analiz edilen
             # arasındaki fark hiçbir sayaçta görünmüyor; sınırlı akıştan
             # düşen kareler burada ortaya çıkıyor.
             "kare_yayinlandi": round(
@@ -520,7 +520,7 @@ def _degerlendir(ornekler: list[dict[str, Any]], sure: float) -> dict[str, Any]:
                 (son_inf.get("analiz_kare") or 0)
                 - (ilk_inf.get("analiz_kare") or 0)
             ),
-            # ⚠ Gauge — fark alınmaz, son anlık değer okunur.
+            # Gauge — fark alınmaz, son anlık değer okunur.
             "kuyruk_derinligi": {
                 **(son_ing.get("kuyruk") or {}),
                 **(son_inf.get("kuyruk") or {}),
@@ -557,7 +557,7 @@ def main() -> int:
     print("⚠ panel KAPALI olmalı (P-24) · koşarken sisteme DOKUNMA (P-36)\n")
 
     # İlk örnek: sistem gerçekten ayakta mı? Ayakta değilse iki saat
-    # beklemenin anlamı yok — arızayı BAŞTA söylemek, sonunda
+    # beklemenin anlamı yok — arızayı başta söylemek, sonunda
     # söylemekten iyidir.
     ilk = _ornek_al()
     eksik = [b for b, a in ilk["ayakta"].items() if not a]
@@ -637,7 +637,7 @@ def main() -> int:
     if b["atilan_kare"]:
         print(f"  atılan kare: {b['atilan_kare']}")
 
-    # ⭐ KARE MUHASEBESİ (P-60)
+    # Kare muhasebesi (P-60)
     yay, anl = b["kare_yayinlandi"], b["kare_analiz_edildi"]
     kayip = yay - anl
     print(f"  kare muhasebesi: yayın {yay} → analiz {anl} · "
@@ -657,7 +657,7 @@ def main() -> int:
             "ornekleme_araligi_s": args.aralik,
         },
         "sonuc": sonuc,
-        # ⚠ HAM SERİ DE YAZILIYOR. Özet bir yorumdur; ham seri veridir.
+        # Ham seri de yazılıyor. Özet bir yorumdur; ham seri veridir.
         # "Isınma ne kadar sürdü", "sızıntı ne zaman başladı" gibi
         # sorular ancak seriden cevaplanabilir ve o soruları şimdi
         # tahmin edemiyoruz.

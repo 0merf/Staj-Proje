@@ -1,6 +1,6 @@
-"""KADEME 0 hareket filtresinin etkinliğini ölçer.
+"""Kademe 0 hareket filtresinin etkinliğini ölçer.
 
-Cevaplanan soru (PLAN.md §5.1, LITERATUR.md §O / S03):
+Cevaplanan soru:
     "Hareket filtresi gerçekten yükün yüzde kaçını eliyor?"
 
 Bu, mimarinin temel varsayımıdır. Doğrulanmazsa 20 kamera hedefi

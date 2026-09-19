@@ -1,4 +1,4 @@
-"""Olay klibi çıkarma — MediaMTX kaydından PyAV ile REMUX.
+"""Olay klibi çıkarma — MediaMTX kaydından PyAV ile remux.
 
 Neden bu dosya var
 ------------------
@@ -6,7 +6,7 @@ Bir alarm satırı "cam-16'da 11:57'de düşme" diyor. Operatörün bir
 sonraki sorusu her zaman aynı: **"göster."** Klip olmadan alarm bir
 iddia; klip ile bir kanıt.
 
-⚠ NEDEN YENİDEN KODLAMA YOK — "REMUX"
+Neden yeniden kodlama yok — "remux"
 -------------------------------------
 Klip, MediaMTX'in sürekli kaydettiği fMP4 segmentlerinden **kesilip
 kopyalanıyor**, yeniden kodlanmıyor (`codec_context` aynen taşınıyor).
@@ -21,7 +21,7 @@ Bu fark 20 kameralı bir sistemde belirleyici. Alarm patlamasında
 (bir olayda birden çok kamera alarm verir) yeniden kodlama, tam da
 sistemin en meşgul olduğu anda CPU'yu tüketirdi.
 
-⚠ KAYIT VARSAYILAN OLARAK KAPALI
+Kayıt varsayılan olarak kapalı
 --------------------------------
 Kaynak videolar sonsuz döngüde oynadığı için sürekli kayıt **~14 GB/saat**
 yazıyor (ölçüldü; ilk tahmin 3 kat düşüktü). Bu yüzden:
@@ -34,7 +34,7 @@ Kayıt kapalıyken bu modül **sessizce klip üretmiyor** ve bu bir hata
 değil: alarm yine kaydediliyor, yalnızca `klip_anahtar` boş kalıyor.
 Diski doldurmamak için alarmı kaybetmek, yanlış takas olurdu.
 
-⚠ ANAHTAR KARE (KEYFRAME) SINIRI — kaçınılmaz ve dürüstçe raporlanacak
+Anahtar kare (keyframe) sınırı — kaçınılmaz ve raporda açıkça belirtiliyor
 ----------------------------------------------------------------------
 Remux, video akışını çözmediği için kesim ancak bir anahtar karede
 başlayabilir. H.264'te anahtar kare aralığı tipik 1-2 saniye; yani
@@ -57,7 +57,7 @@ from sentinel.logging import get_logger
 
 log = get_logger(__name__)
 
-# Olay ANI etrafındaki pencere. Öncesi sonrasından uzun: operatörün
+# Olay anı etrafındaki pencere. Öncesi sonrasından uzun: operatörün
 # asıl merak ettiği "ne oldu da bu duruma gelindi", olayın kendisi
 # değil. Tırmanma skorunun anlamı da burada — olay öncesi saniyeler.
 ONCE_S = 10.0
@@ -79,8 +79,8 @@ class Segment:
 def _segmentleri_listele(kok: Path, camera: str) -> list[Segment]:
     """Bir kameranın kayıt segmentlerini zamana göre sıralı döndürür.
 
-    ⚠ Dosya ADINDAN zaman okunuyor, `mtime`'dan değil. `mtime` dosyanın
-    SON YAZILDIĞI an — yani segmentin BİTİŞİ, başlangıcı değil. Aradaki
+    Dosya adından zaman okunuyor, `mtime`'dan değil. `mtime` dosyanın
+    son yazıldığı an — yani segmentin bitişi, başlangıcı değil. Aradaki
     60 saniyelik fark, kesilen klibi bir segment kaydırırdı.
     """
     dizin = kok / camera
@@ -95,7 +95,7 @@ def _segmentleri_listele(kok: Path, camera: str) -> list[Segment]:
         segmentler.append(
             Segment(
                 yol=yol,
-                # ⚠⚠ 10.09.2026 — BU SATIR ÜÇ HAFTADIR YANLIŞTI (P-83)
+                # 10.09.2026 — bu satır ÜÇ haftadır yanlıştı (P-83)
                 #
                 # Eskiden `.astimezone()` çağrılıyordu ve üstündeki yorum
                 # *"MediaMTX yerel saatle yazıyor"* diyordu. **Yazmıyor.**
@@ -104,13 +104,13 @@ def _segmentleri_listele(kok: Path, camera: str) -> list[Segment]:
                 # adları UTC.
                 #
                 # `datetime(...)` naif bir zaman üretir; `.astimezone()`
-                # onu YEREL sanıp +03:00 iliştiriyordu. Sonuç: her segment
+                # onu yerel sanıp +03:00 iliştiriyordu. Sonuç: her segment
                 # 3 saat geçmişte görünüyor, olay penceresini hiçbir
                 # segment kapsamıyor, `klip_cikar` her seferinde `None`
-                # dönüyordu. `data/clips` 30.08'den beri bu yüzden BOŞTU
+                # dönüyordu. `data/clips` 30.08'den beri bu yüzden boştu
                 # — zincir hiç çalışmadı.
                 #
-                # ⭐ Varsayım YAZILIYDI ama DOĞRULANMAMIŞTI. Doğrulaması
+                # Varsayım yazılıydı ama doğrulanmamıştı. Doğrulaması
                 # tek komut: `docker exec sentinel-mediamtx date`.
                 baslangic=datetime(
                     int(yil), int(ay), int(gun), int(sa), int(dk), int(sn), int(mikro),
@@ -126,7 +126,7 @@ def _kapsayan_segmentler(
 ) -> list[Segment]:
     """[bas, bit] aralığına dokunan segmentleri seçer.
 
-    ⚠ Bir segmentin BİTİŞİ, bir SONRAKİNİN başlangıcıdır. Süre bilgisi
+    Bir segmentin bitişi, bir sonrakinin başlangıcıdır. Süre bilgisi
     dosya adında yok ve her segmenti açıp okumak pahalı; komşudan
     çıkarmak hem doğru hem bedava. Son segment için üst sınır olarak
     yapılandırılmış segment süresi + pay kullanılıyor.
@@ -154,7 +154,7 @@ def klip_cikar(
 ) -> Path | None:
     """Olay anının etrafından bir klip keser. Başarısızsa `None`.
 
-    ⚠ İSTİSNA FIRLATMIYOR. Çağıranı alarm worker'ının döngüsü; klip
+    İstisna fırlatmıyor. Çağıranı alarm worker'ının döngüsü; klip
     üretilemediği için alarm yazımının durması, çözdüğü sorundan büyük
     bir sorun olurdu. Kanıt olmayan bir alarm hâlâ bir alarmdır.
     """
@@ -170,23 +170,23 @@ def klip_cikar(
     segmentler = _segmentleri_listele(kayit_koku, camera)
     if not segmentler:
         # Kayıt kapalı ya da bu kamera için henüz segment yok.
-        # ⚠ Uyarı DEĞİL bilgi: varsayılan yapılandırmada beklenen durum.
+        # Uyarı değil bilgi: varsayılan yapılandırmada beklenen durum.
         log.debug("kayit_segmenti_yok", camera=camera)
         return None
 
     kapsayan = _kapsayan_segmentler(segmentler, bas, bit)
     if not kapsayan:
-        # ⚠⚠ SAAT DİLİMİ TUZAĞINI SESSİZ OLMAKTAN ÇIKAR (P-83)
+        # Saat dilimi tuzağını sessiz olmaktan çıkar (P-83)
         #
-        # Bu dal üç hafta boyunca HER ÇAĞRIDA çalıştı ve kimse fark
+        # Bu dal üç hafta boyunca her çağrıda çalıştı ve kimse fark
         # etmedi: mesajı "segment donmuş olabilir" diyordu, yani
         # tamamen olağan bir durumu işaret ediyordu. Gerçek sebep ise
         # segment adlarının UTC olması ve kodun yerel saat sanmasıydı.
         #
-        # ⭐ Ders: bir hata dalının MESAJI, o dalın gerçekten neden
+        # Ders: bir hata dalının mesajı, o dalın gerçekten neden
         # çalıştığını söyleyemiyorsa, hata sessizdir. Artık en yeni
         # segment ile olay anı arasındaki fark ölçülüyor ve tam saat
-        # katlarına denk geliyorsa saat dilimi şüphesi AÇIKÇA
+        # katlarına denk geliyorsa saat dilimi şüphesi açıkça
         # yazılıyor.
         fark_s = (bas - segmentler[-1].baslangic).total_seconds()
         saat_katina_yakin = abs(fark_s) > 1800 and abs(
@@ -222,7 +222,7 @@ def klip_cikar(
                     if video is None:
                         continue
                     if akis_cikti is None:
-                        # ⚠ REMUX: kodek bağlamı OLDUĞU GİBİ taşınıyor.
+                        # Remux: kodek bağlamı olduğu gibi taşınıyor.
                         # `add_stream(template=...)` çözme/kodlama
                         # yapmadan aynı bit akışını kabul eden bir çıkış
                         # akışı kuruyor.
@@ -240,7 +240,7 @@ def klip_cikar(
                             continue
                         if an > bit:
                             break
-                        # ⚠ İlk paket ANAHTAR KARE olmalı, yoksa oynatıcı
+                        # İlk paket anahtar kare olmalı, yoksa oynatıcı
                         # bozuk kareyle başlar. Anahtar kare gelene kadar
                         # atlanıyor — kesimin 1-2 sn kayabilmesinin sebebi
                         # bu (modül başlığı).
@@ -259,7 +259,7 @@ def klip_cikar(
         return None
 
     if yazilan == 0:
-        # ⚠ Boş dosya BIRAKILMIYOR. Diskte 0 baytlık bir klip, "klip
+        # Boş dosya bırakılmıyor. Diskte 0 baytlık bir klip, "klip
         # var ama bozuk" izlenimi verir ve hata ayıklamayı zorlaştırır.
         hedef.unlink(missing_ok=True)
         log.info("klip_bos_kaldi", camera=camera, sebep="anahtar kare bulunamadi")
@@ -278,7 +278,7 @@ def klip_cikar(
 def klip_anahtari(camera: str, olay_ts: float, tur: str) -> str:
     """Nesne deposu anahtarı — tarihe göre bölümlenmiş.
 
-    ⚠ Düz bir dizine on binlerce dosya koymak hem listeleme hem silme
+    Düz bir dizine on binlerce dosya koymak hem listeleme hem silme
     tarafında sorun çıkarır. Tarih öneki, "şu günün kliplerini sil"
     işlemini tek önek taramasına indiriyor.
     """

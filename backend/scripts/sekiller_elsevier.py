@@ -1,34 +1,34 @@
 """Makale ve staj raporu şekillerini Elsevier sanat eseri kurallarına göre çizer.
 
-⚠ NEDEN YENİDEN ÇİZİLDİ (13.09.2026)
+Neden yeniden çizildi (13.09.2026)
 Danışman geri bildirimi: "grafiklerin daha iyi olması lazım ... Elsevier
 formatına uygun biçimde çizdir". Eski şekiller (docs/report/diagrams/*.svg)
 bir mühendislik panosu gibiydi: şeklin içine gömülü başlık, uzun açıklama
-paragrafları, iç kayıt numaraları (P-66), dosya yolları, tarihler, BÜYÜK
-HARF vurgular. Dergi şeklinde bunların hepsi başlığa ve metne aittir;
+paragrafları, iç kayıt numaraları (P-66), dosya yolları, tarihler, büyük
+harf vurgular. Dergi şeklinde bunların hepsi başlığa ve metne aittir;
 şekilde yalnızca mekanizma ve ölçülen değerler kalır.
 
 Uygulanan kurallar (Elsevier "Artwork and media instructions"):
   · Boyut fiziksel ölçüde: çift sütun genişliği 190 mm
-  · Yazı tipi Arial; YERLEŞTİRİLDİĞİ boyutta en küçük 7 punto
+  · Yazı tipi Arial; yerleştirildiği boyutta en küçük 7 punto
     (190 mm tasarım, 17 cm yerleşim → 8 × 0,895 = 7,16 pt)
   · Çizgi kalınlığı 0,6 punto (Elsevier alt sınırı 0,25 pt)
-  · Şeklin içinde başlık YOK; başlık şekil altyazısında
+  · Şeklin içinde başlık yok; başlık şekil altyazısında
   · Çok panelli şekilde (a), (b) etiketleri
   · Gri tonlu: renkli baskı olmadan da okunur
   · Çıktı: vektör PDF (yazı tipleri gömülü) + 600 dpi TIFF ve PNG
 
-⚠ SAYILAR ELLE KOPYALANMIYOR
+Sayılar elle kopyalanmıyor
 Çubuk grafiğin değerleri doğrudan ölçüm çıktısından okunuyor
 (benchmarks/asama_kirilimi_*.json). Kutulardaki değerler makalede
 doğrulanmış değerlerle aynıdır.
 
-⚠ TAŞMA DENETİMİ OTOMATİK
+Taşma denetimi otomatik
 Eski diyagram testi "taşma kontrolü" diyordu ama yalnızca sayfa kenarına
 bakıyordu; bir etiketin başka bir kutunun altında kalmasını göremiyordu.
 Burada her şekil kaydedilmeden önce: (1) her metin kendi kutusunun içinde
 mi, (2) hiçbir iki metin üst üste biniyor mu, (3) hiçbir metin şeklin
-dışına taşıyor mu — ölçülür. Biri bozuksa betik HATA verir, dosya yazmaz.
+dışına taşıyor mu — ölçülür. Biri bozuksa betik hata verir, dosya yazmaz.
 
 Kullanım:
     uv run --with matplotlib python scripts/sekiller_elsevier.py
@@ -57,11 +57,11 @@ OLCUM = KOK / "benchmarks"
 MM = 1 / 25.4                       # inç
 GENISLIK = 190.0                    # Elsevier çift sütun, mm
 CIZGI = 0.6                         # punto
-# ⚠ Şekiller 190 mm tasarlanıyor ama belgelere METİN GENİŞLİĞİNDE
+# Şekiller 190 mm tasarlanıyor ama belgelere metin genişliğinde
 # yerleştiriliyor: makalede 18 cm, staj raporunda 17 cm. Yerleşimde
 # ölçek 170/190 = 0,895 oluyor; 7 punto tasarlanan yazı 6,3 puntoya
 # düşüp Elsevier'in 7 punto alt sınırının altına iniyordu. Bu yüzden
-# tasarım puntosu, EN DAR yerleşimde bile 7 puntonun üstünde kalacak
+# tasarım puntosu, en dar yerleşimde bile 7 puntonun üstünde kalacak
 # şekilde 8 seçildi ve etkin punto kaydederken hesaplanıp yazdırılıyor.
 EN_DAR_YERLESIM_MM = 170.0
 ALT_SINIR_PUNTO = 7.0
@@ -89,7 +89,7 @@ mpl.rcParams.update({
 })
 
 
-# ─── Metinler: şekillerde görünen HER sözcük burada, dil başına ───────────
+# ─── Metinler: şekillerde görünen her sözcük burada, dil başına ───────────
 METIN = {
     "tr": {
         "kamera": ("Kamera çiftliği", ["20 video + web kamerası", "MediaMTX, RTSP",
@@ -254,9 +254,9 @@ def _tuval(yukseklik_mm: float) -> Tuval:
 
 
 def kutu_yuksekligi(satir_sayisi: int, baslik_punto: float = PUNTO_BASLIK) -> float:
-    """Kutunun İÇERİKTEN hesaplanan yüksekliği, mm.
+    """Kutunun içerikten hesaplanan yüksekliği, mm.
 
-    ⚠ İlk sürümde yükseklikler sabit verilmişti ve kutuların altında
+    İlk sürümde yükseklikler sabit verilmişti ve kutuların altında
     içerikten bağımsız boşluk kalıyordu.
     """
     return IC + baslik_punto * PT_MM * 1.45 + satir_sayisi * SATIR_MM + IC
@@ -265,7 +265,7 @@ def kutu_yuksekligi(satir_sayisi: int, baslik_punto: float = PUNTO_BASLIK) -> fl
 def _kutu(t: Tuval, x: float, y: float, g: float, h: float | None, baslik: str,
           satirlar: list[str], vurgu: bool = False, kesik: bool = False,
           baslik_punto: float = PUNTO_BASLIK) -> tuple[float, float, float, float]:
-    """Sol üstten dolan kutu. (x, y) SOL ALT köşe, mm. h=None → içerikten."""
+    """Sol üstten dolan kutu. (x, y) sol alt köşe, mm. h=None → içerikten."""
     if h is None:
         h = kutu_yuksekligi(len(satirlar), baslik_punto)
     t.ax.add_patch(Rectangle((x, y), g, h, linewidth=CIZGI,
@@ -344,9 +344,9 @@ def _denetle(t: Tuval, ad: str) -> list[str]:
     1. Her metin şeklin içinde.
     2. Kutu içi metin kendi kutusunun içinde.
     3. İki metin üst üste binmiyor.
-    4. ⚠ SONRADAN EKLENDİ: serbest etiket hiçbir kutunun üstüne binmiyor
+    4. Sonradan eklendi: serbest etiket hiçbir kutunun üstüne binmiyor
        ve hiçbir ok/çizgi hiçbir metnin üstünden geçmiyor. İlk sürümde
-       bu iki kontrol YOKTU; denetim "temiz" dediği hâlde ok etiketleri
+       bu iki kontrol yoktu; denetim "temiz" dediği hâlde ok etiketleri
        kutu kenarlarının üstündeydi — ancak şekle bakınca görüldü.
     """
     t.fig.canvas.draw()
@@ -443,7 +443,7 @@ def sekil_veri_akisi(dil: str) -> None:
     orta_ust = orta_y + orta_h
 
     # üst sıra: kamera → alım (RTSP), çıkarım → analitik (JSON)
-    # ⚠ alım → çıkarım DOĞRUDAN ok yok: veri yolu Valkey + paylaşımlı
+    # alım → çıkarım doğrudan ok yok: veri yolu Valkey + paylaşımlı
     # bellek üzerinden; doğrudan ok çizmek yanlış bir yol gösterirdi.
     ok_y = ust_y + ust_h - 8.0
     for i, anahtar in ((0, "k_rtsp"), (2, "k_json")):
@@ -483,7 +483,7 @@ def sekil_veri_akisi(dil: str) -> None:
     _ok(t, [(sut[2], alt_ok), (sut[1] + g, alt_ok)])
     _etiket(t, sut[1] + g + ara / 2, alt_ok + 0.8, tx["k_https"])
 
-    # Uçtan uca gecikmenin KAPSAMI: kameradan çıkarım sonucuna kadar.
+    # Uçtan uca gecikmenin kapsamı: kameradan çıkarım sonucuna kadar.
     # Ayraç bunu yazıyla değil geometriyle gösteriyor (analitik dışarıda).
     x_bas, x_son = sut[0], sut[2] + g
     _cizgi(t, [x_bas, x_bas, x_son, x_son],

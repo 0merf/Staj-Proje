@@ -102,7 +102,7 @@ def publish(device: int, fps: int, width: int, height: int, url: str) -> int:
     stream.options = {
         "preset": "ultrafast",
         "tune": "zerolatency",
-        # ⚠ B-frame KAPALI — WebRTC desteklemiyor (problems.md P-08)
+        # B-frame kapalı — WebRTC desteklemiyor (problems.md P-08)
         "bf": "0",
         # 1 saniyelik GOP. 2 saniye olduğunda WebRTC ilk anahtar kareyi
         # 2 sn bekliyordu; gecikme hissi buradan geliyordu.
@@ -132,7 +132,7 @@ def publish(device: int, fps: int, width: int, height: int, url: str) -> int:
             # Geriden gelme (lag) önleme: kodlama bir kareden uzun sürdüyse
             # sürücünün tamponunda kareler birikmiştir. Onları çöz(me)den
             # atıyoruz — `grab()` kareyi alır ama decode etmez, çok ucuz.
-            # Amaç her zaman EN GÜNCEL kareyi yayınlamak.
+            # Amaç her zaman en güncel kareyi yayınlamak.
             if time.monotonic() > next_frame_at + interval:
                 drained = 0
                 while time.monotonic() > next_frame_at + interval and drained < 5:

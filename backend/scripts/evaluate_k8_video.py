@@ -1,20 +1,20 @@
-"""K8 — ERKEN UYARI AVANSI, kesilmemiş tek video üzerinde.
+"""K8 — erken uyarı avansı, kesilmemiş tek video üzerinde.
 
-⭐ PROJENİN ÖZGÜN KATKISI — ve neden ancak ŞİMDİ ölçülebiliyor
+Projenin özgün katkısı — ve neden ancak şimdi ölçülebiliyor
 --------------------------------------------------------------
-K8 kriteri (PLAN §1.4): *"sistem olayı ≥2 saniye ÖNCE haber vermeli."*
+K8 kriteri: *"sistem olayı ≥2 saniye önce haber vermeli."*
 
 İlk deneme RWF-2000 üzerindeydi ve **ölçülemedi.** 20 klip elle
 etiketlendi ve sebep sayıyla ortaya çıktı:
 
-    kavga başlangıcı:  min 0.23 sn · MEDYAN 0.58 sn · max 3.07 sn
+    kavga başlangıcı:  min 0.23 sn · medyan 0.58 sn · max 3.07 sn
 
-RWF klipleri olayın etrafından KIRPILMIŞ; olay öncesi bağlam yok.
+RWF klipleri olayın etrafından kırpılmış; olay öncesi bağlam yok.
 Bizim özellik penceremiz 3 saniye — sistem penceresini dolduramadan
 kavga başlamış oluyor. *"Kaç saniye önce"* sorusu o veri setinde
 **tanımsız.**
 
-⚠ Bu, alanın kıyaslama setine yönelik veriye dayalı bir eleştiri ve
+Bu, alanın kıyaslama setine yönelik veriye dayalı bir eleştiri ve
 raporda böyle yer alacak: **şiddet tespiti literatürünün en yaygın
 kıyaslama seti, o literatürün örtük olarak iddia ettiği "erken uyarı"
 özelliğini ölçemez.**
@@ -22,7 +22,7 @@ kıyaslama seti, o literatürün örtük olarak iddia ettiği "erken uyarı"
 Bu betik UBI-Fights'tan alınan **kesilmemiş** bir gözetim videosuyla
 çalışıyor (cam-15).
 
-⚠⚠ VERİ SETİNİN ETİKETİ OLAYIN BAŞLANGICINI VERMİYOR (07.09.2026)
+Veri setinin etiketi olayın başlangıcını vermiyor (07.09.2026)
 ------------------------------------------------------------------
 UBI-Fights, F_74 için üç "şiddet penceresi" veriyor:
 
@@ -32,19 +32,19 @@ UBI-Fights, F_74 için üç "şiddet penceresi" veriyor:
 yazıldı. **Videoya bakılınca bu yanlış çıktı:**
 
    32.0s  normal — yürüyen insanlar
-   33.6s  ⬅ açık saldırgan duruş, kollar açılmış
+   33.6s  ← açık saldırgan duruş, kollar açılmış
    34.4s  hamle
-   36.8s  ⬅ YERDE YATAN KİŞİ
+   36.8s  ← yerde yatan kişi
    38.4s  yerdekine müdahale
 
-Fiziksel çatışma **~32.8 sn**'de başlıyor; etiket ~25 saniye GEÇ.
+Fiziksel çatışma **~32.8 sn**'de başlıyor; etiket ~25 saniye geç.
 
-⭐ Geç bir başlangıç etiketi erken uyarı ölçümünü SİSTEMATİK OLARAK
-ŞİŞİRİR. 37.8 sn'deki bir alarm, 58.0'a göre "+20.2 sn ERKEN"
-görünür; 32.8'e göre "4.8 sn GEÇ"tir. **Aynı sayı, etikete göre
+Geç bir başlangıç etiketi erken uyarı ölçümünü sistematik olarak
+şişirir. 37.8 sn'deki bir alarm, 58.0'a göre "+20.2 sn erken"
+görünür; 32.8'e göre "4.8 sn geç"tir. **Aynı sayı, etikete göre
 başarı ya da başarısızlık okunur.**
 
-⚠ Veri setinin etiketi yanlış değil — kendi tanımına (şiddet
+Veri setinin etiketi yanlış değil — kendi tanımına (şiddet
 pencereleri) göre doğru. Yanlış olan, onu başka bir sorunun
 ("olay ne zaman başladı") cevabı sanmaktı.
 
@@ -52,32 +52,32 @@ Bu yüzden varsayılan yer gerçeği `cam-15.gorsel.json` (elle görsel
 doğrulama). Veri setinin etiketi `--etiket veriseti` ile korunuyor;
 ikisinin farkı raporlanacak bir bulgu.
 
-⚠⚠ KAMERA SABİT DEĞİL — bu video elde tutulan bir telefonla çekilmiş.
+Kamera sabit değil — bu video elde tutulan bir telefonla çekilmiş.
 Boru hattımız sabit kamera varsayıyor (`botsort.py`: `gmc_method="none"`,
 `with_reid=False`). Kamera hareketi tüm kutulara sahte hız ekler; bu
 videodaki hız temelli her özellik o yanlılığı taşıyor.
 
-⭐ Aynı videoda hem AVANS hem YANLIŞ ALARM ölçülebiliyor — ikisi
+Aynı videoda hem avans hem yanlış alarm ölçülebiliyor — ikisi
 birbirinden ayrılamaz ve tek başına avans raporlamak yanıltıcıdır.
 
 İki skorlayıcı karşılaştırılıyor
 --------------------------------
-    KURAL   — `aggression.py` tırmanma skoru (elle ağırlıklı)
-    MODEL   — LightGBM, KAYAN PENCERE ile çevrimiçi uygulanıyor
+    Kural   — `aggression.py` tırmanma skoru (elle ağırlıklı)
+    model   — LightGBM, kayan pencere ile çevrimiçi uygulanıyor
 
-⚠ MODEL KLİP SINIFLANDIRICISI OLARAK EĞİTİLDİ, BURADA ÇEVRİMİÇİ
-KULLANILIYOR. Eğitimde 5 saniyelik klibin tamamından özet çıkarılmıştı;
-burada her karede SON 5 SANİYENİN özeti çıkarılıp modele veriliyor.
+Model klip sınıflandırıcısı olarak eğitildi, burada çevrimiçi
+kullanılıyor. Eğitimde 5 saniyelik klibin tamamından özet çıkarılmıştı;
+burada her karede son 5 saniyenin özeti çıkarılıp modele veriliyor.
 Pencere uzunluğu kasten aynı — farklı olsaydı model eğitildiğinden
 başka bir dağılımla beslenirdi.
 
-⚠ ÜÇ SEGMENT VAR, ÜÇÜ AYNI DEĞİL
-Yalnızca BİRİNCİ segment gerçek bir "başlangıç": öncesinde 58 saniye
+ÜÇ segment var, üçü aynı değil
+Yalnızca birinci segment gerçek bir "başlangıç": öncesinde 58 saniye
 kavgasız bağlam var. İkinci ve üçüncü segmentlerden önce skor zaten
 yükselmiş olabilir; oradan "avans" hesaplamak kendi kuyruğunu ölçmek
-olurdu. Bu yüzden birinci segment AYRI raporlanıyor.
+olurdu. Bu yüzden birinci segment ayrı raporlanıyor.
 
-⚠ ÖLÇÜM KOŞULU: boru hattı KAPALI (GPU paylaşılmamalı).
+Ölçüm koşulu: boru hattı kapalı (GPU paylaşılmamalı).
 
 Kullanım
 --------
@@ -106,14 +106,14 @@ VIDEOLAR = PROJECT_ROOT / "data" / "videos"
 ETIKETLER = PROJECT_ROOT / "data" / "annotations"
 MODEL_DOSYASI = PROJECT_ROOT / "models" / "saldirganlik_lgbm.txt"
 
-# ⚠ Eğitimdeki klip uzunluğuyla AYNI (RWF klipleri 5 sn). Model o
+# Eğitimdeki klip uzunluğuyla aynı (RWF klipleri 5 sn). Model o
 # uzunluktaki özetlerle eğitildi; başka bir pencere, eğitildiğinden
 # farklı bir dağılım demek.
 PENCERE_S = 5.0
 
-# ⚠ ÖZELLİK ADLARI EĞİTİM BETİĞİNDEN İÇE AKTARILIYOR, KOPYALANMIYOR.
+# Özellik adları eğitim betiğinden içe aktarılıyor, kopyalanmıyor.
 # Kopyalasaydık iki liste zamanla ayrışır ve model eğitildiğinden
-# BAŞKA sütunlarla beslenirdi — hata sessiz olurdu (skor üretilir,
+# başka sütunlarla beslenirdi — hata sessiz olurdu (skor üretilir,
 # yalnızca yanlış olur). Aynı tuzak `analytics/ifade.py` etiket
 # kümesinde de var ve orada bir testle korunuyor.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -123,23 +123,23 @@ from train_aggression import BILESENLER, HAM_ALANLAR  # noqa: E402
 ESIKLER = (0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.40, 0.50, 0.60, 0.70,
            0.80, 0.85, 0.90, 0.95)
 
-# ⚠⚠ GÖREV DÖNGÜSÜ KISITI — bu olmadan K8 ANLAMSIZ
+# Görev döngüsü kısıtı — bu olmadan K8 anlamsız
 #
 # İlk sürüm yalnızca "saatlik ayrık alarm sayısı"na bakıyordu ve
 # şu sonucu üretti:
 #
-#     eşik 0.05 → S1 avans +56.9 sn, alarm 29.5/saat  ✅ "TUTUYOR"
+#     eşik 0.05 → S1 avans +56.9 sn, alarm 29.5/saat  "tutuyor"
 #
 # Sayılar doğruydu, çıkarım saçmaydı: video 160 saniye, kavga 58.
 # saniyede başlıyor. +56.9 sn avans, skorun 1.1. saniyede eşiği
 # geçtiği anlamına geliyor — yani dedektör **baştan sona açık.**
 # Normal dönemin %99.1'inde eşiğin üstünde.
 #
-# ⚠ Ayrık alarm sayısı bunu GİZLİYOR: skor hiç düşmezse 0→1 geçişi
+# Ayrık alarm sayısı bunu gizliyor: skor hiç düşmezse 0→1 geçişi
 # de olmuyor, sayaç "az alarm" diyor. Sürekli bağıran bir alarm ile
 # hiç bağırmayan bir alarm aynı derecede işe yaramazdır.
 #
-# ⭐ Doğru ölçüt GÖREV DÖNGÜSÜ: normal dönemin yüzde kaçında eşik
+# Doğru ölçüt görev döngüsü: normal dönemin yüzde kaçında eşik
 # aşılıyor. %10 üstü bir dedektör "erken uyardı" diyemez — zaten
 # hep uyarıyordur.
 #
@@ -148,25 +148,25 @@ ESIKLER = (0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.40, 0.50, 0.60, 0.70,
 # riskini (sistemi umursamamaya başlama) doğrudan besler.
 AZAMI_GOREV_DONGUSU = 0.10
 
-# ⚠⚠ GEÇERLİLİK KONTROLÜ — avanstan ÖNCE sorulması gereken soru
+# Geçerlilik kontrolü — avanstan önce sorulması gereken soru
 #
-# İlk iki sürüm de yanlış "✅ TUTUYOR" verdi. İkincisi şunu ölçtü:
+# İlk iki sürüm de yanlış "tutuyor" verdi. İkincisi şunu ölçtü:
 # *"skor olaydan önce eşiği geçti mi?"* — ve geçmişti (+19.8 sn).
 #
-# Ama sorulmayan soru şuydu: **skor olaya TEPKİ VERİYOR MU?**
+# Ama sorulmayan soru şuydu: **skor olaya tepki veriyor MU?**
 # Dönem bazında bakınca cevap hayır çıktı:
 #
-#     dönem                KURAL p50   MODEL p50
+#     dönem                kural p50   model p50
 #     NORMAL-1 (0-38s)       0.066       0.400
 #     KAVGA-2  (64-73s)      0.080       0.424
-#     KAVGA-3  (97-112s)     0.078       0.313   ⬅ en düşük
-#     NORMAL-2 (112-160s)    0.087       0.421   ⬅ kavgadan yüksek
+#     KAVGA-3  (97-112s)     0.078       0.313   ← en düşük
+#     NORMAL-2 (112-160s)    0.087       0.421   ← kavgadan yüksek
 #
-# Skor kavgada normalden yüksek DEĞİL. O hâlde "olaydan önce eşiği
+# Skor kavgada normalden yüksek değil. O hâlde "olaydan önce eşiği
 # geçti" bir öngörü değil, olaydan önce denk gelmiş bir yanlış
 # pozitiftir.
 #
-# ⭐ Bir dedektörün "erken uyardığı" ancak olayı normalden AYIRT
+# Bir dedektörün "erken uyardığı" ancak olayı normalden ayırt
 # ettiği gösterildikten sonra söylenebilir. Ayırt etmiyorsa geçiş
 # anı tesadüftür ve avans sayısı anlamsızdır.
 #
@@ -174,95 +174,95 @@ AZAMI_GOREV_DONGUSU = 0.10
 # belirgin biçimde (×1.2) aşmalı.
 ASGARI_AYIRT_ORANI = 1.2
 
-# ⚠⚠⚠ ÜÇÜNCÜ DÜZELTME — geçerlilik kontrolünün KENDİSİ bozuktu (P-49)
+# Üçüncü düzeltme — geçerlilik kontrolünün kendisi bozuktu (P-49)
 #
 # Yukarıdaki kontrol "kavga segmentleri" ile "geri kalan her şeyi"
-# kıyaslıyordu. Ama yer gerçeği segmentleri yalnızca FİZİKSEL DARBELERİ
+# kıyaslıyordu. Ama yer gerçeği segmentleri yalnızca fiziksel darbeleri
 # işaretliyor (segment 1 = 1.7 saniye). Kavgaya giden tartışma,
 # yaklaşma, itişme — hepsi "normal" havuzuna düşüyordu.
 #
-# ⭐ Bu, bir ERKEN UYARI dedektörünü tam da erken uyardığı için
+# Bu, bir erken uyarı dedektörünü tam da erken uyardığı için
 # cezalandırır: olaydan önce yükselen skor, "normal"i yükseltir ve
 # oran 1'in altına iner. Ölçüt, ölçtüğü şeyi imkânsız kılıyordu.
 #
 # Ölçülen (cam-15, iki ayrı model, aynı desen):
 #
 #     dönem                model p50
-#     NORMAL (uzak)          0.348
-#     TIRMANMA (-20 sn)      0.733   ⬅ EN YÜKSEK
-#     KAVGA (darbeler)       0.331   ⬅ EN DÜŞÜK
+#     normal (uzak)          0.348
+#     tırmanma (-20 sn)      0.733   ← en yüksek
+#     kavga (darbeler)       0.331   ← en düşük
 #
-# ⚠ Ve bu bir kalabalık artefaktı DEĞİL — kişi sayısı eşleştirilmiş
+# Ve bu bir kalabalık artefaktı değil — kişi sayısı eşleştirilmiş
 # kontrolde tırmanma her kuşakta normalin üstünde kaldı:
 #
-#     kişi/kare   NORMAL   TIRMANMA   KAVGA
+#     kişi/kare   normal   tırmanma   kavga
 #      1-4         0.329     0.848      —
 #      5           0.315     0.839    0.326
 #      6           0.249     0.576    0.388
 #      7-8         0.447     0.512    0.291
 #
-# ⚠ Kalabalık arttıkça ayrım zayıflıyor (2.6× → 1.14×): raporlanacak
-# bir ÇALIŞMA SINIRI, gizlenecek bir kusur değil.
+# Kalabalık arttıkça ayrım zayıflıyor (2.6× → 1.14×): raporlanacak
+# bir çalışma sınırı, gizlenecek bir kusur değil.
 #
-# ⚠ Skorun darbe anında DÜŞMESİ de raporlanıyor: model temasa gelişi
+# Skorun darbe anında düşmesi de raporlanıyor: model temasa gelişi
 # öğrenmiş, temasın kendisini değil. RWF'nin 5 sn'lik kliplerinde
 # yaklaşma payı darbelerden büyük — beklenebilir bir sonuç.
-# ⚠ İLK DEĞER 20.0 SANİYEYDİ VE BU VİDEODA ÖLÇÜMÜ ÇÖKERTTİ.
+# İlk değer 20.0 saniyeydi ve bu videoda ölçümü çökertti.
 #
 # cam-15'in (F_45) olay öncesi bağlamı 23.5 saniye. 20 saniyelik bir
-# tırmanma penceresi o bağlamın TAMAMINI yutuyor: "uzak normal"
+# tırmanma penceresi o bağlamın tamamını yutuyor: "uzak normal"
 # havuzunda 10 örnek kalıyor, medyanı 0.000 çıkıyor ve ayırt etme
-# oranı 64 MİLYON gibi anlamsız bir sayıya fırlıyor.
+# oranı 64 milyon gibi anlamsız bir sayıya fırlıyor.
 #
-# ⭐ Doğru büyüklük K8 hedefinden türetiliyor: hedef ≥2 saniye avans.
+# Doğru büyüklük K8 hedefinden türetiliyor: hedef ≥2 saniye avans.
 # Bir dedektöre "erken uyardı" kredisi vermek için makul üst sınır
 # hedefin 3 katı. Bundan daha erken bir ateşleme erken uyarı değil,
 # olaydan bağımsız bir yanlış pozitiftir — ve tam bu ayrım P-49'da
 # atlanmıştı.
 #
-# ⚠ Ayrıca mevcut bağlamın 1/3'üyle sınırlanıyor: pencere bağlamı
+# Ayrıca mevcut bağlamın 1/3'üyle sınırlanıyor: pencere bağlamı
 # yutarsa kıyaslanacak normal kalmaz.
 TIRMANMA_PENCERESI_S = 6.0
 
-# ⚠⚠ ISINMA — ölçüm dışı bırakılan ilk saniyeler
+# Isınma — ölçüm dışı bırakılan ilk saniyeler
 #
 # Özellik penceresi PENCERE_S = 5 sn. Videonun ilk saniyelerinde bu
-# pencere DOLU DEĞİL: model, eğitildiğinden çok daha az örnekten
+# pencere dolu değil: model, eğitildiğinden çok daha az örnekten
 # hesaplanmış bir özetle besleniyor ve çıktısı anlamsız.
 #
 # Bu, uydurma bir kısıt değil — somut bir hata üretti. Görsel yer
 # gerçeğiyle ilk koşuda şu çıktı:
 #
-#     eşik 0.80 → "S1 avans +31.7 sn"  ✅ görünüyordu
+#     eşik 0.80 → "S1 avans +31.7 sn"  görünüyordu
 #
 # Olay 32.8 sn'de başlıyor; +31.7 avans, skorun **1.1. saniyede**
 # eşiği geçtiği anlamına geliyor. Yani "erken uyarı" diye raporlanacak
 # olan şey, pencere dolmadan üretilmiş bir çöp skordu.
 #
-# ⭐ Aynı hata canlı sistemde de biliniyor ve orada zaten uygulanıyor
+# Aynı hata canlı sistemde de biliniyor ve orada zaten uygulanıyor
 # (P-28: ilk 90 sn atılıyor). Ölçüm betiği o dersi almamıştı.
 ISINMA_S = PENCERE_S + 1.0
 
-# ⚠⚠⚠ DÖRDÜNCÜ DÜZELTME — "tespit" ile "ERKEN uyarı" ayrı şeyler
+# Dördüncü düzeltme — "tespit" ile "erken uyarı" ayrı şeyler
 #
 # Yukarıdaki geçerlilik kontrolü olay penceresini (tırmanma + kavga)
 # tek havuz sayıyor. O hâlde kavga sırasındaki güçlü sinyal, olay
-# ÖNCESİ hiçbir sinyal olmasa bile havuzu yukarı çeker ve ölçüt
-# "✅ ayırt ediyor" der. Sonra tek bir sivri uç "avans" diye okunur.
+# öncesi hiçbir sinyal olmasa bile havuzu yukarı çeker ve ölçüt
+# "ayırt ediyor" der. Sonra tek bir sivri uç "avans" diye okunur.
 #
 # Görsel yer gerçeğiyle ölçüldü (cam-15):
 #
-#     dönem                  n    MODEL p50
+#     dönem                  n    model p50
 #     normal (0-32.8 sn)    36      0.351
-#     tırmanma (-20 sn)     56      0.207   ⬅ NORMALDEN DÜŞÜK
-#     kavga (32.8-75)      117      0.819   ⬅ güçlü
+#     tırmanma (-20 sn)     56      0.207   ← normalden düşük
+#     kavga (32.8-75)      117      0.819   ← güçlü
 #
-# Model kavgayı normalden 2.3× ayırıyor — bu iyi bir TESPİT.
-# Ama olay öncesinde skoru normalin altında; ortada ERKEN UYARI YOK.
+# Model kavgayı normalden 2.3× ayırıyor — bu iyi bir tespit.
+# Ama olay öncesinde skoru normalin altında; ortada erken uyarı yok.
 # Eşik 0.50'de görünen "+15.2 sn avans", tırmanma medyanı 0.207 iken
 # oluşmuş tek bir sivri uçtur.
 #
-# ⭐ Bu yüzden avans iddiası ayrı bir ön koşula bağlandı: olay ÖNCESİ
+# Bu yüzden avans iddiası ayrı bir ön koşula bağlandı: olay öncesi
 # pencerenin medyanı, normalin medyanını aşmalı. Aşmıyorsa dedektör
 # "olayı tespit ediyor ama önceden haber vermiyor" diye raporlanır —
 # ki bu da geçerli ve raporlanabilir bir sonuçtur.
@@ -283,9 +283,9 @@ def _skor_serileri(
 
     Dönen: `[{"ts": .., "kural": .., "model": ..}, ...]`
 
-    ⚠ `train_aggression.py · _klip_ozellikleri` ile AYNI özellik
-    hesabı — tek fark, orada klibin TAMAMI özetleniyordu, burada
-    KAYAN PENCERE özetleniyor. Hesap ayrışırsa model eğitildiğinden
+    `train_aggression.py · _klip_ozellikleri` ile aynı özellik
+    hesabı — tek fark, orada klibin tamamı özetleniyordu, burada
+    kayan pencere özetleniyor. Hesap ayrışırsa model eğitildiğinden
     başka bir şeyle beslenir ve hata sessiz olur.
     """
     import cv2
@@ -309,7 +309,7 @@ def _skor_serileri(
 
     # Kayan pencereler — (ts, değer sözlüğü)
     pencere_seri: deque[tuple[float, dict[str, float]]] = deque()
-    # ⚠ KARE BAZLI — her eleman (ts, o karedeki kişilerin listesi).
+    # Kare bazlı — her eleman (ts, o karedeki kişilerin listesi).
     # Düz havuz olsaydı "aynı karedeki diğerlerine göre" sorusu
     # sorulamazdı (P-49 aykırılık özelliği).
     pencere_ham: deque[tuple[float, list[dict[str, float]]]] = deque()
@@ -347,9 +347,9 @@ def _skor_serileri(
             ciftler = pair.kamera_ciftleri(depo.kamera_pencereleri(kamera))
             skorlar = skorlayici.degerlendir(kamera, kisiler, ciftler, ts)
 
-            # ─── TANI: takip sürekliliği ve özellik erişilebilirliği ───
+            # ─── Tanı: takip sürekliliği ve özellik erişilebilirliği ───
             # Hipotez: kavga = yoğun örtüşme → kimlik kopuyor → pencere
-            # sıfırlanıyor → tam da kavga edenler EN AZ zamansal veri
+            # sıfırlanıyor → tam da kavga edenler en az zamansal veri
             # üretiyor. Doğruysa sorun modelde değil algıda.
             tani_ornek = [k.ornek_sayisi for k in kisiler if k.track_id >= 0]
             tani_zamansal = [
@@ -403,10 +403,10 @@ def _skor_serileri(
                     ozet[f"ham_{alan}_azami"] = d[-1]
                     ozet[f"ham_{alan}_p75"] = _p(d, 0.75)
                     ozet[f"ham_{alan}_medyan"] = statistics.median(d)
-            # ⭐ AYKIRILIK — eğitimle BİREBİR aynı hesap (P-49).
+            # Aykırılık — eğitimle birebir aynı hesap (P-49).
             # `train_aggression.py · _klip_ozellikleri` ile aynı formül:
             # kare içinde max − medyan, sonra pencere boyunca özetle.
-            # ⚠ İkisi ayrışırsa hata SESSİZ olur: model var olmayan bir
+            # İkisi ayrışırsa hata sessiz olur: model var olmayan bir
             # dağılımdan sütun okur ve skor sessizce bozulur.
             for alan in HAM_ALANLAR:
                 ayk: list[float] = []
@@ -424,7 +424,7 @@ def _skor_serileri(
                     ozet[f"ayk_{alan}_p75"] = _p(a_s, 0.75)
                     ozet[f"ayk_{alan}_medyan"] = statistics.median(a_s)
                     ozet[f"sahne_{alan}_medyan"] = statistics.median(med_l)
-            # ⚠ Eksik alan `NaN` — eğitimle AYNI kural.
+            # Eksik alan `NaN` — eğitimle aynı kural.
             x = np.array([[ozet.get(c, float("nan")) for c in sutunlar]])
             model_skor = float(booster.predict(x)[0])
 
@@ -435,11 +435,11 @@ def _skor_serileri(
                 float(statistics.median(tani_ornek)) if tani_ornek else 0.0)
             satir_c["zamansal_oran"] = (
                 statistics.fmean(tani_zamansal) if tani_zamansal else 0.0)
-            # ⭐ KARAR VERİCİ SAYI: ham özelliğin kendisi ayırt ediyor mu?
+            # Karar verici sayı: ham özelliğin kendisi ayırt ediyor mu?
             satir_c["ham_bilek_p75"] = max(tani_bilek) if tani_bilek else 0.0
-            # ⭐ SAHNE-GÖRELİ AYKIRILIK (P-49 düzeltmesi)
+            # sahne-göreli aykırılık (P-49 düzeltmesi)
             # `max` kalabalıkla birlikte tanımı gereği büyüyor. Kavganın
-            # işareti "biri hızlı" değil, "biri ÇEVRESİNDEKİLERE GÖRE
+            # işareti "biri hızlı" değil, "biri çevresindekilere göre
             # hızlı". Aynı karedeki medyanı çıkarmak kalabalık etkisini
             # götürüyor — payda değil, fark alınıyor: ölçü birimi
             # (gövde/sn) korunuyor.
@@ -463,9 +463,9 @@ def _avans_olc(
 ) -> dict[str, Any]:
     """Her olay için avans (olay başlangıcı − ilk eşik geçişi).
 
-    ⚠ GEÇİŞ, OLAYDAN ÖNCEKİ SESSİZ DÖNEMDE ARANIYOR
-    Bir segment için avans, o segmentten ÖNCE ve bir önceki segmentin
-    BİTİŞİNDEN SONRA aranan ilk eşik geçişidir. Aksi hâlde bir önceki
+    Geçiş, olaydan önceki sessiz dönemde aranıyor
+    Bir segment için avans, o segmentten önce ve bir önceki segmentin
+    bitişinden sonra aranan ilk eşik geçişidir. Aksi hâlde bir önceki
     kavganın kuyruğu "erken uyarı" sayılırdı — sistem hâlâ bağırıyor
     olduğu için değil, yeni olayı öngördüğü için değil.
     """
@@ -485,7 +485,7 @@ def _avans_olc(
             "segment": i + 1,
             "olay_bas": round(bas, 2),
             "gecis": round(gecis, 2) if gecis is not None else None,
-            # Pozitif = ÖNCE uyardı · Negatif = GEÇ kaldı · None = kaçırdı
+            # Pozitif = önce uyardı · Negatif = geç kaldı · None = kaçırdı
             "avans_s": round(bas - gecis, 2) if gecis is not None else None,
             "temiz_baslangic": i == 0,
         })
@@ -499,13 +499,13 @@ def _yanlis_alarm(
 ) -> dict[str, float]:
     """Normal dönemlerde eşiği aşan sürenin oranı ve saatlik alarm hızı.
 
-    ⚠ Kavga segmentleri ve etraflarındaki 2 sn TAMPON hariç tutuluyor:
+    Kavga segmentleri ve etraflarındaki 2 sn tampon hariç tutuluyor:
     olayın hemen bitişindeki sönme kuyruğu "yanlış alarm" değildir.
 
-    ⚠⚠ `dogru_normal` verilirse yanlış alarm YALNIZCA orada sayılır.
+    `dogru_normal` verilirse yanlış alarm yalnızca orada sayılır.
     Görsel olarak normal olduğu doğrulanmamış bir aralıkta "yanlış
-    alarm" saymak, alarmın yanlış olduğunu VARSAYMAK demektir — K7'de
-    aynı hata yapılmış ve düzeltilmişti (CLAUDE.md: *"11.69 bir alarm
+    alarm" saymak, alarmın yanlış olduğunu varsaymak demektir — K7'de
+    aynı hata yapılmış ve düzeltilmişti (proje notlarım: *"11.69 bir alarm
     oranı, yanlış alarm oranı değil"*).
     """
     tampon = 2.0
@@ -522,7 +522,7 @@ def _yanlis_alarm(
     if not normal:
         return {"normal_ornek": 0, "asan_oran": 0.0, "alarm_saatte": 0.0}
     asan = sum(1 for s in normal if s[alan] >= esik)
-    # Ayrık alarm SAYISI (art arda aşan kareler tek alarm sayılır)
+    # Ayrık alarm sayısı (art arda aşan kareler tek alarm sayılır)
     olay = 0
     onceki = False
     for s in normal:
@@ -551,21 +551,21 @@ def main() -> int:
     args = ap.parse_args()
 
     video = VIDEOLAR / f"{args.kamera}.mp4"
-    # ⚠⚠ VARSAYILAN 'gorsel' — ÇÜNKÜ VERİ SETİNİN ETİKETİ OLAYIN
-    # BAŞLANGICINI VERMİYOR.
+    # Varsayılan 'gorsel' — çünkü veri setinin etiketi olayın
+    # başlangıcını vermiyor.
     #
     # UBI-Fights, F_74 için üç "şiddet penceresi" işaretliyor; ilki
     # 57.967 sn'de başlıyor. Videoya bakıldığında fiziksel çatışma
     # 32.8-33.6 sn'de başlıyor (33.6 saldırgan duruş, 36.8 yerde kişi).
-    # Etiket ~25 saniye GEÇ.
+    # Etiket ~25 saniye geç.
     #
-    # ⭐ Geç bir başlangıç etiketi, erken uyarı ölçümünü SİSTEMATİK
-    # OLARAK ŞİŞİRİR: 37.8 sn'deki bir alarm 58.0'a göre "+20.2 sn
+    # Geç bir başlangıç etiketi, erken uyarı ölçümünü sistematik
+    # olarak şişirir: 37.8 sn'deki bir alarm 58.0'a göre "+20.2 sn
     # erken" görünür — oysa olay 33 sn'de başlamıştır ve alarm 4.8 sn
-    # GEÇ kalmıştır. Aynı sayı, etikete göre "başarı" ya da
+    # geç kalmıştır. Aynı sayı, etikete göre "başarı" ya da
     # "başarısızlık" okunur.
     #
-    # ⚠ Veri setinin etiketi YANLIŞ DEĞİL: kendi tanımına (şiddet
+    # Veri setinin etiketi yanlış değil: kendi tanımına (şiddet
     # pencereleri) göre doğru. Yanlış olan, onu başka bir sorunun
     # (başlangıç ne zaman) cevabı sanmaktı.
     truth = ETIKETLER / (f"{args.kamera}.gorsel.json" if args.etiket == "gorsel"
@@ -583,7 +583,7 @@ def main() -> int:
     yg = json.loads(truth.read_text(encoding="utf-8"))
     segmentler = [(float(s["start_s"]), float(s["end_s"])) for s in yg["segments"]]
     sure = float(yg.get("sure_s", 0)) or max(e for _b, e in segmentler)
-    # ⚠ DOĞRULANMIŞ NORMAL — varsa, normal havuzu YALNIZCA burası.
+    # Doğrulanmış normal — varsa, normal havuzu yalnızca burası.
     #
     # Bu videonun 75-160 sn'si olay sonrası kalabalık: ne normal
     # olduğu ne olmadığı doğrulanabildi (veri seti 96.9-112'yi hâlâ
@@ -630,8 +630,8 @@ def main() -> int:
         video, dedektor=dedektor, poz=poz, ornek_fps=args.fps,
         imgsz=args.imgsz, sutunlar=sutunlar, booster=booster,
     )
-    # ⚠ ISINMA KIRPMASI — pencere dolmadan üretilen skorlar atılıyor.
-    # ⚠ Bu, dönem tablolarından ÖNCE yapılmalı. İlk sürümde sonra
+    # Isınma kırpması — pencere dolmadan üretilen skorlar atılıyor.
+    # Bu, dönem tablolarından önce yapılmalı. İlk sürümde sonra
     # yapılıyordu: tablolar kırpılmamış seriyi, karar kırpılmış seriyi
     # gösteriyordu — aynı raporun iki farklı veriye bakması.
     onceki_n = len(seri)
@@ -639,14 +639,14 @@ def main() -> int:
     print(f"{onceki_n} örnek · {time.time() - t0:.0f} sn · ısınma: ilk "
           f"{ISINMA_S:.0f} sn atıldı ({onceki_n - len(seri)} örnek)\n")
 
-    # ─── GEÇERLİLİK: skor olaya tepki veriyor mu ───
+    # ─── Geçerlilik: skor olaya tepki veriyor mu ───
     def _donem(ts: float) -> str:
         if any(b <= ts <= e for b, e in segmentler):
             return "kavga"
         if any(b - tirmanma_s <= ts < b for b, e in segmentler):
             return "tirmanma"
         if dogru_normal:
-            # Doğrulanmış normal listesi varsa dışı ÖLÇÜM DIŞI.
+            # Doğrulanmış normal listesi varsa dışı ölçüm dışı.
             return ("normal" if any(a <= ts <= b for a, b in dogru_normal)
                     else "haric")
         return "normal"
@@ -666,7 +666,7 @@ def main() -> int:
               f"{statistics.median(s['model'] for s in g):>10.3f}")
     print()
 
-    # ⭐ KALABALIK ESLEŞTİRİLMİŞ KONTROL — tırmanma sinyali gerçek mi,
+    # Kalabalık esleştirilmiş kontrol — tırmanma sinyali gerçek mi,
     # yoksa o pencerede tesadüfen az kişi mi var?
     print("═══ KİŞİ SAYISI EŞLEŞTİRİLMİŞ KONTROL (model p50) ═══")
     print(f"{'kişi/kare':<12} {'normal':>12} {'tırmanma':>12} {'kavga':>12}")
@@ -681,13 +681,13 @@ def main() -> int:
         print(f"{f'{lo}-{hi}':<12} {hucre[0]:>12} {hucre[1]:>12} {hucre[2]:>12}")
     print()
 
-    # ⚠ ISINMA KIRPMASI — pencere dolmadan üretilen skorlar atılıyor.
+    # Isınma kırpması — pencere dolmadan üretilen skorlar atılıyor.
     onceki_n = len(seri)
     seri = [s for s in seri if s["ts"] >= ISINMA_S]
     print(f"⚠ ısınma: ilk {ISINMA_S:.0f} sn atıldı "
           f"({onceki_n - len(seri)} örnek) — özellik penceresi dolmamıştı\n")
 
-    # ─── TANI TABLOSU — başarısızlığın nerede olduğunu söyler ───
+    # ─── Tanı tablosu — başarısızlığın nerede olduğunu söyler ───
     def _dm(alan: str, kavgada: bool) -> float:
         x = [s[alan] for s in seri if alan in s
              and any(b <= s["ts"] <= e for b, e in segmentler) == kavgada]
@@ -735,7 +735,7 @@ def main() -> int:
     for alan, etiket in (("kural", "KURAL (tırmanma skoru)"),
                          ("model", "MODEL (LightGBM, kayan pencere)")):
         print(f"═══ {etiket} ═══")
-        # ⚠ Segment sayısı yer gerçeğine göre değişiyor (görsel etikette
+        # Segment sayısı yer gerçeğine göre değişiyor (görsel etikette
         # 1, veri seti etiketinde 3) — başlık sabit yazılamaz.
         seg_bas = " ".join(f"{f'S{i}':>8}" for i in range(2, len(segmentler) + 1))
         print(f"{'eşik':>6} {'S1 avans':>10} {seg_bas} "
@@ -754,13 +754,13 @@ def main() -> int:
         sonuc[alan] = satirlar
         print()
 
-    # ─── K8 kararı — YALNIZCA birinci segment ───
+    # ─── K8 kararı — yalnızca birinci segment ───
     print("⭐ K8 HEDEFİ: ilk olayda avans ≥ 2.0 sn")
     print("   ⚠ yalnızca SEGMENT 1 sayılıyor — tek 'temiz başlangıç' o.\n")
     karar: dict[str, Any] = {}
     for alan, etiket in (("kural", "KURAL"), ("model", "MODEL")):
-        # ⚠ GEÇERLİLİK ÖN KOŞUL: ayırt etmeyen bir skorun avansı
-        # ölçülmez. Bu kontrol olmadan iki kez yanlış "✅" verildi.
+        # Geçerlilik ÖN koşul: ayırt etmeyen bir skorun avansı
+        # ölçülmez. Bu kontrol olmadan iki kez yanlış "tutuyor" sonucu verildi.
         if not gecerli[alan]:
             print(f"  {etiket:<6} ❌ TUTMUYOR — skor kavgayı normalden ayırt "
                   f"etmiyor (oran {ayirt[alan]['oran']:.2f} < {ASGARI_AYIRT_ORANI})")
@@ -768,7 +768,7 @@ def main() -> int:
             karar[alan] = {"tutuyor": False, "sebep": "ayırt etmiyor",
                            "ayirt": ayirt[alan]}
             continue
-        # ⭐ ERKEN UYARI ÖN KOŞULU — tespit ≠ önceden haber verme.
+        # Erken uyarı ÖN koşulu — tespit ≠ önceden haber verme.
         t_p50 = _donem_medyan(alan, ("tirmanma",))
         n_p50 = _donem_medyan(alan, ("normal",))
         erken_oran = t_p50 / max(n_p50, 1e-9)
@@ -778,14 +778,14 @@ def main() -> int:
             print(f"         olay öncesi {tirmanma_s:.1f} sn medyanı "
                   f"{t_p50:.3f} · normal medyanı {n_p50:.3f} "
                   f"(oran {erken_oran:.2f} < {ASGARI_ERKEN_ORANI})")
-            # ─── TESPİT GECİKMESİ ───
-            # ⚠ Görev döngüsü kısıtı (%10) BURADA YETMİYOR. Bu videoda
+            # ─── Tespit gecikmesi ───
+            # Görev döngüsü kısıtı (%10) burada yetmiyor. Bu videoda
             # eşik 0.40 kısıtı geçiyor (%6.9) ama oradaki "+16.6 sn
             # avans" tek bir sivri uçtan geliyor — tırmanma medyanı
             # 0.207 iken eşik 0.40. Görev döngüsü "ne kadar sık"
             # sorusunu yanıtlıyor, "bu geçiş anlamlı mı"yı değil.
             #
-            # ⭐ Bu yüzden gecikme, doğrulanmış normalde HİÇ yanlış
+            # Bu yüzden gecikme, doğrulanmış normalde hiç yanlış
             # alarm üretmeyen eşiklerden okunuyor. Böyle bir eşik yoksa
             # gecikme raporlanmıyor — uydurulmuyor.
             temiz = [
@@ -817,15 +817,15 @@ def main() -> int:
         uygun = [
             s for s in sonuc[alan]
             if (v := s["segmentler"][0]["avans_s"]) is not None and v >= 2.0
-            # ⚠ GÖREV DÖNGÜSÜ KISITI: sürekli açık bir dedektör
+            # Görev döngüsü kısıtı: sürekli açık bir dedektör
             # "erken uyardı" sayılmaz (gerekçe modül başında).
             and s["yanlis_alarm"]["asan_oran"] <= AZAMI_GOREV_DONGUSU
         ]
         if uygun:
-            # ⚠ Aralarından en DÜŞÜK yanlış alarmlı seçiliyor, en yüksek
+            # Aralarından en düşük yanlış alarmlı seçiliyor, en yüksek
             # avanslı değil: eşiği düşürerek avansı büyütmek her zaman
             # mümkün ve o bir keşif değil, aritmetik.
-            # ⚠ En düşük görev döngülü seçiliyor, en yüksek avanslı DEĞİL:
+            # En düşük görev döngülü seçiliyor, en yüksek avanslı değil:
             # eşiği düşürerek avansı büyütmek her zaman mümkün ve bu bir
             # keşif değil, aritmetik.
             en = min(uygun, key=lambda s: s["yanlis_alarm"]["asan_oran"])
@@ -837,7 +837,7 @@ def main() -> int:
                            "gorev_dongusu": en["yanlis_alarm"]["asan_oran"],
                            "yanlis_alarm_saatte": en["yanlis_alarm"]["alarm_saatte"]}
         else:
-            # Neden tutmadığını AYIRT ET: avans mı yetersiz, görev
+            # Neden tutmadığını ayırt ET: avans mı yetersiz, görev
             # döngüsü mü fazla? İkisi çok farklı arızalar.
             sessiz = [s for s in sonuc[alan]
                       if s["yanlis_alarm"]["asan_oran"] <= AZAMI_GOREV_DONGUSU]

@@ -1,22 +1,22 @@
-"""İSKELET TEŞHİSİ — bilek sinyali neden sıfır?
+"""İskelet teşhisi — bilek sinyali neden sıfır?
 
 Sorun
 -----
 Kaskad deneyi (`evaluate_kaskad.py`) şunu gösterdi: RWF-2000 kavga
-kliplerinin **%52'sinde `bilek` özelliği tam SIFIR** — oysa aynı
+kliplerinin **%52'sinde `bilek` özelliği tam sıfır** — oysa aynı
 kliplerde `yakinlik` normal (0.411 vs 0.442).
 
-    yakinlik, durus  → KUTUDAN türüyor      → çalışıyor
-    bilek, enerji    → İSKELETTEN türüyor   → ölü
+    yakinlik, durus  → kutudan türüyor      → çalışıyor
+    bilek, enerji    → iskeletten türüyor   → ölü
 
 Yani kural kapısı "kavga var mı" diye değil, farkında olmadan
 **"poz tahmini başarılı oldu mu"** diye soruyor.
 
-⚠ BU BİR BULGU DEĞİL, BİR ARIZA — ve teşhis edilmeden çözülemez.
+Bu bir bulgu değil, bir arıza — ve teşhis edilmeden çözülemez.
 
 Dört hipotez, dört farklı çözüm
 -------------------------------
-**H1 · ÖRNEKLEME SEYREKLİĞİ**
+**H1 · örnekleme seyrekliği**
 4 FPS'te örnekliyoruz; 5 saniyelik klipten ~20 kare alıyoruz, videoda
 ~150 kare var. **Karelerin %87'sini hiç görmüyoruz.** Bilek hızı hızlı
 bir büyüklük; iki örnek arası 250 ms iken bir yumruk tamamen araya
@@ -24,20 +24,20 @@ düşebilir.
 → Çözüm: örnekleme hızını artır (gerçek zamanlı hatta pahalı, tek
   kamera modunda bedava).
 
-**H2 · POZ MODELİ TIKANMADA BAŞARISIZ**
+**H2 · poz modeli tıkanmada başarısız**
 Kavga sırasında bedenler iç içe geçiyor; YOLO26-pose kırpıntı tabanlı
 çalışıyor ve kırpıntının içinde iki kişi varsa eklemleri karıştırıyor
 ya da hiç bulmuyor.
 → Çözüm: daha büyük poz modeli, daha büyük kırpıntı çözünürlüğü,
   ya da güven eşiğini düşürmek.
 
-**H3 · KIRPINTI ÇÖZÜNÜRLÜĞÜ DÜŞÜK**
+**H3 · kırpıntı çözünürlüğü düşük**
 Kırpıntılar 192 px'e ölçekleniyor (`pose_crop_size`). Uzaktaki küçük
 bir kişinin kırpıntısı zaten 40 px ise, 192'ye büyütmek bilgi
 üretmiyor — bulanık piksel üretiyor.
 → Çözüm: kırpıntı boyutunu artır (VRAM bol: 415 MB / 8 GB kullanılıyor).
 
-**H4 · GÜVEN EŞİĞİ FAZLA SIKI**
+**H4 · güven eşiği fazla sıkı**
 `pose_conf_threshold = 0.25`. Hareket bulanıklığı olan bir bilek
 0.20 güvenle bulunmuş olabilir ve eleniyor.
 → Çözüm: eşiği düşür — ama gürültü artar, ölçmek şart.
@@ -48,7 +48,7 @@ Aynı klipleri farklı yapılandırmalarla geçirip **poz başarı oranını**
 ve **bilek sinyalinin sıfır olma oranını** ölçüyor. Hangi hipotezin
 doğru olduğunu tahmin etmiyor — ayrıştırıyor.
 
-⚠ ÖLÇÜM KOŞULU: boru hattı KAPALI (GPU paylaşılmamalı).
+Ölçüm koşulu: boru hattı kapalı (GPU paylaşılmamalı).
 
 Kullanım
 --------
@@ -76,12 +76,12 @@ RWF = PROJECT_ROOT / "data" / "datasets" / "RWF-2000" / "val"
 
 TOHUM = 42
 
-# ⚠ COCO-17 iskeletinde bilek indeksleri. `analytics/features/skeleton.py`
-# ile AYNI olmak zorunda — ayrışırsa yanlış eklem ölçülür ve hata
-# SESSİZ olur (sayı üretilir, sadece başka bir eklemin sayısı).
+# COCO-17 iskeletinde bilek indeksleri. `analytics/features/skeleton.py`
+# ile aynı olmak zorunda — ayrışırsa yanlış eklem ölçülür ve hata
+# sessiz olur (sayı üretilir, sadece başka bir eklemin sayısı).
 SOL_BILEK, SAG_BILEK = 9, 10
 
-# Denenecek yapılandırmalar. Her biri BİR hipotezi sınıyor.
+# Denenecek yapılandırmalar. Her biri bir hipotezi sınıyor.
 YAPILANDIRMALAR: tuple[dict[str, Any], ...] = (
     {"ad": "TABAN (üretim)", "fps": 4.0, "kirpinti": 192, "conf": 0.25},
     {"ad": "H1 · sık örnekleme", "fps": 15.0, "kirpinti": 192, "conf": 0.25},
@@ -132,7 +132,7 @@ def _klip_olc(
                     continue
                 iskelet_var += 1
                 kp = p.keypoints
-                # ⚠ Bileğin GÖRÜNÜR olması ayrı bir koşul: iskelet
+                # Bileğin görünür olması ayrı bir koşul: iskelet
                 # bulunmuş olabilir ama bilek eklemi düşük güvenle
                 # gelmiş ve kullanılamaz olabilir. `bilek` özelliğinin
                 # sıfır olmasının iki ayrı sebebi var ve bu betik
@@ -175,9 +175,9 @@ def main() -> int:
     )
     dedektor.warmup(1)
 
-    # ⚠ Kavga VE normal klipler birlikte ölçülüyor. Yalnızca kavgaya
+    # Kavga ve normal klipler birlikte ölçülüyor. Yalnızca kavgaya
     # bakmak, "poz zaten her yerde başarısız" ihtimalini gizlerdi —
-    # asıl soru poz başarısının kavgada NORMALDEN düşük olup olmadığı.
+    # asıl soru poz başarısının kavgada normalden düşük olup olmadığı.
     kumeler: dict[str, list[Path]] = {}
     for sinif in ("fight", "nonfight"):
         k = sorted((RWF / sinif).glob("*.avi"))
@@ -213,8 +213,8 @@ def main() -> int:
             n = len(klipler)
             satir[sinif] = {
                 "klip": n,
-                # ⚠ İSKELET ORANI = iskelet çıkan tespit / toplam tespit.
-                # Payda TESPİT, kare değil: bir karede 3 kişi varsa 3
+                # İskelet oranı = iskelet çıkan tespit / toplam tespit.
+                # Payda tespit, kare değil: bir karede 3 kişi varsa 3
                 # poz denemesi yapılıyor ve her biri ayrı başarılı ya da
                 # başarısız oluyor.
                 "iskelet_orani": round(top["iskelet_var"] / max(top["tespit"], 1), 4),

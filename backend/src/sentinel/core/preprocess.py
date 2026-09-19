@@ -15,7 +15,7 @@ kopyalama). GPU bu sırada %0-5 kullanımda boş oturuyordu.
 
 Üçü de **aynı tespitleri** veriyor; kazanç doğruluk bedeli olmadan geliyor.
 
-⚠ Kazancın nerede oluştuğu kritik: hazırlık maliyeti (letterbox 1.49 ms +
+Kazancın nerede oluştuğu kritik: hazırlık maliyeti (letterbox 1.49 ms +
 tensöre çevirme 1.94 ms) *çıkarım worker'ında* ödenirse net kazanç sıfır
 olur (3.87 + 3.43 ≈ 6.8 ≈ A). Kazanç ancak hazırlık **20 kamera iş
 parçacığına dağıtılırsa** doğuyor.
@@ -24,7 +24,7 @@ Peki tek süreçte 20 iş parçacığı GIL yüzünden sıraya girmez mi? Girmez
 `cv2.resize` C kodudur ve çalışırken **GIL'i bırakır**. Yani letterbox
 işinin neredeyse tamamı GIL dışında, gerçekten paralel geçer. (Alım
 katmanının süreç değil iş parçacığı kullanmasının gerekçesi de bu —
-bkz. `ingest/worker.py` modül başlığı.) Çıkarım worker'ı ise TEK
+bkz. `ingest/worker.py` modül başlığı.) Çıkarım worker'ı ise tek
 süreçtir; aynı işi orada yapmak seri kalırdı.
 
 Neden BGR saklıyoruz, RGB değil
@@ -34,14 +34,14 @@ OpenCV ile işliyor ve OpenCV BGR bekliyor. Kanal çevirme GPU'da neredeyse
 bedava (`flip`), CPU'da ise her kare için ek maliyet. Bu yüzden paylaşımlı
 bellekte BGR duruyor, RGB'ye GPU'da geçiliyor.
 
-Neden 640×640 saklamak yeterli — kalite DÜŞMÜYOR
+Neden 640×640 saklamak yeterli — kalite düşmüyor
 ------------------------------------------------
 Endişe şuydu: orijinal 1280×720 saklanmazsa poz kırpıntıları düşük
 çözünürlükten alınır ve iskelet kalitesi düşer. Ölçüm tersini gösterdi:
 
     kırpıntı kaynağı      genel başarı
     orijinal 1280×720        %90.7
-    640 letterbox            %94.2   ← daha İYİ
+    640 letterbox            %94.2   ← daha iyi
 
 Sebep sinyal işleme: 1280'den doğrudan 192'ye inmek örtüşmeye (aliasing)
 yol açar. 1280 → 640 → 192 iki kademeli inişte 640 adımı ön filtre görevi
@@ -105,7 +105,7 @@ class Letterbox:
     def to_source_length(self, value: float) -> float:
         """Uzunluk/hız gibi ölçek bağımlı bir büyüklüğü kaynak uzayına taşır.
 
-        Dolgu payı eklenmez: hız bir FARK olduğu için sabit kayma
+        Dolgu payı eklenmez: hız bir fark olduğu için sabit kayma
         sadeleşir, yalnızca ölçek kalır.
         """
         return value / self.scale
@@ -135,7 +135,7 @@ class Letterbox:
 
 
 def letterbox(image: np.ndarray, size: int = INPUT_SIZE) -> tuple[np.ndarray, Letterbox]:
-    """Kareyi EN-BOY ORANINI KORUYARAK kare tuvale yerleştirir.
+    """Kareyi en-boy oranını koruyarak kare tuvale yerleştirir.
 
     Neden sıkıştırma değil dolgulama: oranı bozmak modelin gördüğü
     insan şeklini bozar. Bu ders poz kademesinde pahalıya öğrenildi —

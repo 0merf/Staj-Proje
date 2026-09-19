@@ -1,7 +1,7 @@
-"""KADEME 2b — yüz tespiti ve yüz ifadesi sınıflandırma.
+"""Kademe 2b — yüz tespiti ve yüz ifadesi sınıflandırma.
 
-⚠ Bilimsel dürüstlük notu ve tasarım gerekçeleri: `base.py` başlığı.
-   Kısaca: bu modül "duygu okumaz", yüz ifadesi SINIFLANDIRIR ve tek
+Bilimsel uyarı ve tasarım gerekçeleri: `base.py` başlığı.
+   Kısaca: bu modül "duygu okumaz", yüz ifadesi sınıflandırır ve tek
    başına asla alarm üretmez.
 """
 

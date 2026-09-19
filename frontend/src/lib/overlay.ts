@@ -1,18 +1,18 @@
 /**
- * Overlay geometrisi — kutu/iskelet çiziminin SAF matematiği.
+ * Overlay geometrisi — kutu/iskelet çiziminin saf matematiği.
  *
- * ⚠⚠ NEDEN AYRI BİR MODÜL
+ * Neden ayrı bir modül
  * Bu hesaplar `CameraTile.tsx` içine gömülüydü ve test edilemiyordu.
  * Hakem denetimi (docs/report/denetim-hakem.md §4.1) bunu işaretledi:
  *
  *   > 215 arka uç testine karşı 1 ön yüz test dosyası. Canvas/overlay
  *   > çizimi test edilmiyor — oysa P-14 ve P-26 tam oradan çıkmıştı.
  *
- * P-14 ve P-26'nın ikisi de KOORDİNAT hatasıydı:
+ * P-14 ve P-26'nın ikisi de koordinat hatasıydı:
  *   P-14 — poz kırpıntısı kareye sıkıştırılıyordu, iskelet kayıyordu
  *   P-26 — kutular kaynak çözünürlükle görüntü alanı arasında ölçeksizdi
  *
- * ⭐ Aynı hata sınıfı arka uçta da tekrarlandı (P-39: tespitler 640×640
+ * Aynı hata sınıfı arka uçta da tekrarlandı (P-39: tespitler 640×640
  * letterbox uzayında, ızgara 640×360 kaynak uzayında — konumlar 140 px
  * kaymıştı ve AUC 0.483 göstermişti). Koordinat uzayı karışıklığı bu
  * projenin en pahalı hata türü; saf fonksiyona çıkarılıp kilitleniyor.
@@ -41,10 +41,10 @@ export const HAREKET_ESIGI = 15
 /**
  * Kaynak kare boyutundan canvas boyutuna ölçek.
  *
- * ⚠ Kameralar farklı çözünürlükte (1280×720, 960×720, 900×720). Sabit
+ * Kameralar farklı çözünürlükte (1280×720, 960×720, 900×720). Sabit
  * bir varsayım yanlış çizime yol açar — P-26 tam olarak buydu.
  *
- * ⚠ Sıfır/negatif/NaN girdide varsayılana düşülüyor: bozuk bir kare
+ * Sıfır/negatif/NaN girdide varsayılana düşülüyor: bozuk bir kare
  * meta verisi yüzünden `Infinity` ölçek üretip tüm overlay'i ekrandan
  * atmaktansa, kutuları biraz yanlış yerde çizmek yeğdir.
  */
@@ -62,7 +62,7 @@ export function olcek(
 /**
  * `[x1, y1, x2, y2]` kutusunu görüntü alanına ölçekler.
  *
- * ⚠ Ters kutu (x2 < x1) gelirse genişlik NEGATİF olurdu ve
+ * Ters kutu (x2 < x1) gelirse genişlik negatif olurdu ve
  * `strokeRect` sessizce ters çizerdi. Normalleştiriliyor.
  */
 export function kutuyuOlcekle(
@@ -83,7 +83,7 @@ export function kutuyuOlcekle(
 /**
  * Hız vektöründen "hareketli mi" kararı.
  *
- * ⚠ Hız YOKSA `false` — "bilinmiyor" ile "duruyor" ayrımı burada
+ * Hız yoksa `false` — "bilinmiyor" ile "duruyor" ayrımı burada
  * bilinçli olarak kayboluyor: renk seçimi ikili bir karar ve üçüncü
  * bir renk operatöre bilgi değil gürültü olurdu.
  */
@@ -96,8 +96,8 @@ export function hareketli(v?: readonly number[] | null): boolean {
 /**
  * Kutu etiketi.
  *
- * ⚠ Kimliksiz kutu = takipçi henüz onaylamadı (P-13). Etikette kimlik
- * YOK ama kutu çiziliyor — gizlemek yanlış olurdu, kişi orada.
+ * Kimliksiz kutu = takipçi henüz onaylamadı (P-13). Etikette kimlik
+ * yok ama kutu çiziliyor — gizlemek yanlış olurdu, kişi orada.
  */
 export function kutuEtiketi(id: number | undefined, conf: number): string {
   const yuzde = `${(conf * 100).toFixed(0)}%`

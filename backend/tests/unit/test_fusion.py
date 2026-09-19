@@ -1,6 +1,6 @@
-"""Füzyon katmanı — beş sinyalin birleştirilmesi (PLAN §6.6).
+"""Füzyon katmanı — beş sinyalin birleştirilmesi.
 
-⚠ FÜZYONUN KENDİNE ÖZGÜ HATA BİÇİMİ
+Füzyonun kendine özgü hata biçimi
 -----------------------------------
 Diğer modüllerde hata "yanlış cevap" biçiminde çıkar. Füzyonda hata
 **karmaşıklığın karşılığını vermemesi** biçiminde çıkar: skor üretilir,
@@ -9,7 +9,7 @@ katman bir şey eklemiyor, yalnızca bir katman ekliyor.
 
 Bu yüzden testler iki şeye bakıyor:
   · ağırlıklı toplam doğru mu hesaplanıyor (mekanik)
-  · BİRLEŞTİRME gerçekten fark yaratıyor mu (amaç)
+  · birleştirme gerçekten fark yaratıyor mu (amaç)
 """
 
 from __future__ import annotations
@@ -22,10 +22,10 @@ from sentinel.analytics.fusion import RiskFuzyonu, Sinyaller
 
 class TestAgirlikliToplam:
     def test_agirliklar_PLAN_ile_ayni_ve_toplami_bir(self) -> None:
-        """⚠ Ağırlıkların toplamı 1.00 olmalı.
+        """Ağırlıkların toplamı 1.00 olmalı.
 
         Olmasaydı risk skoru 0-1 aralığından çıkar ve eşikler anlamsız
-        hâle gelirdi. Ayrıca değerler PLAN §6.6'daki başlangıç
+        hâle gelirdi. Ayrıca değerler proje planındaki başlangıç
         ağırlıklarıyla birebir aynı — koddan sapan bir ağırlık, planla
         gerçek arasındaki ilk çatlak olurdu (mimari kural 0).
         """
@@ -59,12 +59,12 @@ class TestAgirlikliToplam:
 
 
 class TestBirlestirme:
-    """⚠ Füzyonun VARLIK SEBEBİ bu sınıfta sınanıyor."""
+    """Füzyonun varlık sebebi bu sınıfta sınanıyor."""
 
     def _oturt(self, f: RiskFuzyonu, s: Sinyaller, *, tur: int = 12) -> float:
         """EMA oturana kadar besler, son riski döndürür.
 
-        ⚠ Tek çağrı yetmiyor: EMA_ALFA=0.4 ile ilk çağrıda ham değerin
+        Tek çağrı yetmiyor: EMA_ALFA=0.4 ile ilk çağrıda ham değerin
         yalnızca %40'ı görünür. Bu tuzağa `test_aggression` ve
         `test_rules` içinde birer kez düşüldü; zamansal yumuşatması
         olan bir sistemi tek adımda test etmek, sistemi test etmemek.
@@ -77,7 +77,7 @@ class TestBirlestirme:
         return risk
 
     def test_TEK_GUCLU_sinyal_esigi_ASMIYOR(self) -> None:
-        """⚠ En kritik test — füzyonun neden var olduğu.
+        """En kritik test — füzyonun neden var olduğu.
 
         Katman A tek başına 0.9 diyorsa bu hâlâ istatistiksel bir
         sapma. Füzyonda 0.25 × 0.9 = 0.225 eder ve uyarı eşiğini
@@ -90,7 +90,7 @@ class TestBirlestirme:
     def test_IKI_ORTA_sinyal_esigi_ASIYOR(self) -> None:
         """İkisi de tek başına yetersiz, birlikte anlamlı.
 
-        "3σ hızlı" tek başına gürültü; "3σ hızlı VE yanındakine hızla
+        "3σ hızlı" tek başına gürültü; "3σ hızlı ve yanındakine hızla
         yaklaşıyor" bir olaydır.
         """
         risk = self._oturt(RiskFuzyonu(), Sinyaller(anomali=0.7, saldirganlik=0.5))

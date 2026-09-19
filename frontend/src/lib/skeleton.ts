@@ -1,12 +1,12 @@
 /** COCO-17 iskelet tanımı.
  *
- * Keypoint sırası backend'deki KEYPOINT_NAMES ile AYNI olmak zorunda
+ * Keypoint sırası backend'deki KEYPOINT_NAMES ile aynı olmak zorunda
  * (backend: inference/detector/base.py). Sıra kayarsa iskelet sessizce
  * saçmalar — kollar bacağa bağlanır.
  *
  * Kemikler renk gruplarına ayrıldı ki operatör bir bakışta hangi uzvun
  * nerede olduğunu görsün. Kollar turuncu: saldırganlık modülünün
- * baktığı yer orası (bilek hızı, kol açısı — PLAN.md §6.5.2).
+ * baktığı yer orası (bilek hızı, kol açısı).
  */
 export const KP_CONF_MIN = 0.3
 

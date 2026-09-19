@@ -1,4 +1,4 @@
-"""Saldırgan davranışın ERKEN tespiti — PLAN.md §6.5.
+"""Saldırgan davranışın erken tespiti.
 
 Projenin özgün katkısı burası
 -----------------------------
@@ -10,7 +10,7 @@ kavga var" der.
 Gözetim sisteminde bunun operasyonel değeri sınırlıdır. Kavga bitmişse
 haber vermek geç kalmaktır. Asıl soru şudur:
 
-    **Kaç saniye ÖNCE söyleyebiliyoruz?**
+    **Kaç saniye önce söyleyebiliyoruz?**
 
 Bu yüzden çıktı bir sınıf değil, **sürekli bir tırmanma skoru.** Skor
 zamanla yükselir; eşiği aştığı an ile olayın gerçekten başladığı an
@@ -24,9 +24,9 @@ noktasının zaman serisiyle çalışmaktır (ST-GCN ailesi). İskelet
 koordinatları neredeyse sıfır hesaplama yüküyle işlenir.
 
 İkinci fayda **yanlılık**: iskelet ten renginden, kıyafetten ve
-görünüşten bağımsızdır (PLAN §12.2).
+görünüşten bağımsızdır.
 
-⚠ NEDEN ÖNCE KURAL TABANLI SKOR, SONRA MODEL
+Neden önce kural tabanlı skor, sonra model
 ---------------------------------------------
 Bu dosya **açıklanabilir, ağırlıklı bir skor** hesaplıyor — eğitilmiş
 bir model değil. Üç sebep:
@@ -35,19 +35,19 @@ bir model değil. Üç sebep:
    ayakta.
 2. **Açıklanabilir.** "Skor 0.72 çünkü bilek hızı 3.1, mesafe 0.4 gövde,
    karşılıklı bakıyorlar." Operatör sebebi görmezse alarmı kapatır.
-3. **Model için TABAN ÇİZGİSİ.** RWF-2000 üzerinde eğitilecek LightGBM/
+3. **Model için taban çizgisi.** RWF-2000 üzerinde eğitilecek LightGBM/
    GRU'nun bu skoru geçip geçmediği ölçülebilir. Geçmiyorsa modelin
    kendisi sorgulanır — "model kullandık" demek başarı değildir.
 
 Model geldiğinde bu skor kaybolmayacak: füzyona ikinci bir sinyal olarak
-girecek (PLAN §6.6).
+girecek.
 
-⚠ KESİN OLARAK YAPMADIĞIMIZ ŞEY
+Kesin olarak yapmadığımız şey
 --------------------------------
 Bu modül **kavga tespit etmiyor**, "kavgaya benzeyen fiziksel örüntü"
 skoru üretiyor. İkisi aynı şey değil: iki kişinin şakalaşması, dans
 etmesi, spor yapması aynı örüntüyü verebilir. Sistem karar vermez,
-**dikkat yönlendirir** (PLAN §12.3).
+**dikkat yönlendirir**.
 """
 
 from __future__ import annotations
@@ -58,10 +58,10 @@ from sentinel.analytics.features.pair import YAKIN_MESAFE, CiftOzellikleri
 from sentinel.analytics.features.person import KisiOzellikleri
 
 # ══════════════════════════════════════════════════════════════
-#  Eşikler — ÖLÇÜLEN normal davranış dağılımından türetilir
+#  Eşikler — ölçülen normal davranış dağılımından türetilir
 # ══════════════════════════════════════════════════════════════
 #
-# ⚠ 26.08.2026 — ÖLÜ BÖLGE EKLENDİ, SEBEBİ ÖLÇÜM
+# 26.08.2026 — ölü bölge eklendi, sebebi ölçüm
 #
 # İlk sürümde her bileşen `deger / doyum` ile 0-1'e eşleniyordu. Bunun
 # sessiz bir sonucu vardı: **sıfır noktası yoktu.** Hiçbir şey yapmayan
@@ -71,14 +71,14 @@ from sentinel.analytics.features.person import KisiOzellikleri
 # `benchmarks/features_20260826-175748.json` — 20 kamera, 200 sn,
 # 40 bin özellik vektörü (kavganın olmadığı sahneler dâhil):
 #
-#     ÖZELLİK              p50     p90     p99   eski doyum
+#     Özellik              p50     p90     p99   eski doyum
 #     bilek_hizi_azami    0.87    1.80    4.01     3.0
 #     bilek_sarsintisi    0.54    1.39    3.24     2.0
 #     hareket_enerjisi    0.45    0.85    1.39     1.5
 #     govde_hizi          0.30    0.66    0.94       —
 #
 # Normal davranışın p90'ı doyumun %56-69'unda. Yani sıradan bir yaya
-# bileşenlerin çoğunu YARIDAN FAZLA dolduruyor. Toplama girdiğinde:
+# bileşenlerin çoğunu yarıdan fazla dolduruyor. Toplama girdiğinde:
 #
 #     bilek 0.66×0.25 + enerji 0.41×0.15 + duruş 0.25×0.10
 #     + yakınlık 0.38×0.30 + yaklaşma 1.00×0.20  =  0.563
@@ -86,13 +86,13 @@ from sentinel.analytics.features.person import KisiOzellikleri
 # 0.563 > 0.55 → yan yana geçen iki yabancı "uyarı" veriyordu. Ölçülen
 # yanlış alarm hızı **26.4/kamera-saat**, hedef ≤3 (K7).
 #
-# ⚠ Ayrıca DOYUM_YAKLASMA = 1.0 yanlıştı ve yorumu ölçümle çelişiyordu:
+# Ayrıca DOYUM_YAKLASMA = 1.0 yanlıştı ve yorumu ölçümle çelişiyordu:
 # "bu hızda yaklaşmak koşarak gelmektir" yazıyordu, oysa gövde hızı
-# p99 = 0.94 — iki kişi NORMAL yürüyüşle karşılıklı gelince kapanma
+# p99 = 0.94 — iki kişi normal yürüyüşle karşılıklı gelince kapanma
 # hızı zaten 1.0'ı aşıyor. Bileşen sürekli doygundu.
 #
 # Çözüm: her bileşene **taban** kondu. Taban = ölçülen normal p90.
-# Bileşen tabanın altında SIFIR üretir, tabandan doyuma doğrusal çıkar:
+# Bileşen tabanın altında sıfır üretir, tabandan doyuma doğrusal çıkar:
 #
 #     bilesen = clamp((deger − taban) / (doyum − taban), 0, 1)
 #
@@ -105,17 +105,17 @@ from sentinel.analytics.features.person import KisiOzellikleri
 class Esikler:
     """Tırmanma skorunun tüm ayarlanabilir sayıları.
 
-    ⚠ NEDEN SABİT DEĞİL DE NESNE
+    Neden sabit değil de nesne
     Bu sayılar modül sabiti olduğu sürece "değiştir–çalıştır–bak"
     dışında bir kalibrasyon yolu yoktu: aynı veri üzerinde iki farklı
-    ayarı YAN YANA koşturmak imkânsızdı. `scripts/calibrate_aggression.py`
+    ayarı yan yana koşturmak imkânsızdı. `scripts/calibrate_aggression.py`
     tam olarak bunu yapıyor — tek akıştan besleyip N ayarı aynı anda
     skorluyor. Ölçüm zemini ortak olmadan iki sayı kıyaslanamaz (P-17).
     """
 
-    # ─── Bileşen ağırlıkları (PLAN §6.5.3) ───
+    # ─── Bileşen ağırlıkları ───
     #
-    # ⚠ AĞIRLIKLAR GEREKÇELİ, KEYFİ DEĞİL
+    # Ağırlıklar gerekçeli, keyfi değil
     # En yüksek ağırlık yakınlık + karşılıklılık birleşiminde: kavganın
     # olmazsa olmaz ön koşulu iki kişinin birbirine yakın ve dönük
     # olması. Hızlı bilek tek başına egzersizdir.
@@ -130,35 +130,35 @@ class Esikler:
 
     # ─── Ölü bölge tabanları (ölçülen normal p90) ───
     #
-    # ⚠⚠ 07.09.2026 — YENİDEN KALİBRE EDİLDİ (P-47/P-48)
+    # 07.09.2026 — yeniden kalibre edildi (P-47/P-48)
     #
-    # Eski değerler `bilek_hizi_azami` (pencere AZAMİSİ) için ölçülmüştü.
+    # Eski değerler `bilek_hizi_azami` (pencere azamisi) için ölçülmüştü.
     # Modül artık p75 okuyor (P-47: `azami` eklem gürültüsünü ölçüyordu,
     # AUC 0.558 → p75 ile 0.677). Farklı bir büyüklüğü eski büyüklüğün
     # eşiğiyle bantlamak, ölçtüğünden başka bir şeyin istatistiğini
     # kullanmak olurdu.
     #
-    # Yeni değerler `kalibre_rwf.py --ciftlik` ile ÇİFTLİK videolarından
+    # Yeni değerler `kalibre_rwf.py --ciftlik` ile çiftlik videolarından
     # ölçüldü (18 kamera, cam-16/17 hariç — onlar kasten olay içeriyor;
     # 37 862 örnek, canlı analiz hızında 2.75 FPS):
     #
-    #     büyüklük              p50     p90    ESKİ    YENİ
+    #     büyüklük              p50     p90    eski    yeni
     #     bilek_hizi_p75       0.556   1.529   1.80    1.53
     #     bilek_sarsintisi_p75 0.274   1.259   1.40    1.26
     #     hareket_enerjisi     0.528   1.209   0.85    1.21
     #
-    # ⚠ FİZİKSEL MAKULİYET SINIRI UYGULANDI (8.0 gövde/sn üstü atıldı)
+    # Fiziksel makuliyet sınırı uygulandı (8.0 gövde/sn üstü atıldı)
     # Sınırsız ölçümde p99 = 24.2 çıkıyordu. Bir boksörün yumruğu ~9 m/s
     # ≈ 5.3 gövde/sn; 24.2 hareket değil eklem hatası. Sınır olmadan
     # doyum p99'dan türetiliyordu ve 36.3 gibi anlamsız bir değer
     # veriyordu — bileşen hiçbir zaman 1.0'a varamazdı.
     #
-    # ⭐ Atılan oran bir BULGU: iskeletten türeyen ölçümlerin
+    # Atılan oran bir bulgu: iskeletten türeyen ölçümlerin
     # **%4-6'sı fiziksel olarak imkânsız.** Poz tahmini gürültüsünün
     # doğrudan ölçüsü ve raporda bu şekilde yer alacak.
     #
-    # ⚠ HÂLÂ ÇİFTLİK GENELİ TEK TABAN — mimari kural 7 ("her kameranın
-    # normali ayrı öğrenilir") saldırganlık modülünde TAM uygulanmış
+    # Hâlâ çiftlik geneli tek taban — mimari kural 7 ("her kameranın
+    # normali ayrı öğrenilir") saldırganlık modülünde tam uygulanmış
     # değil. Katman A kamera başına profil tutuyor, bu modül tutmuyor.
     # `kalibre_rwf.py` kamera başına koşturulabilir; bağlanması açık iş.
     taban_bilek_hiz: float = 1.529
@@ -166,32 +166,32 @@ class Esikler:
     taban_enerji: float = 1.209
     taban_yaklasma: float = 1.00
 
-    # ⚠⚠ 08.09.2026 — UYARLANABİLİR TABAN KALDIRILDI
+    # 08.09.2026 — uyarlanabilir taban kaldırıldı
     #
     # P-52'de kamera başına uyarlanabilir bir ölü bölge tabanı
     # eklenmişti (kameranın kendi p90'ı, çiftlik p50-p90×1.5 arasına
     # sıkıştırılmış). Gerekçesi mimari kural 7'ydi ve makuldü.
     #
-    # ⭐ AMA ÖLÇÜLDÜ VE HİÇBİR FAYDASI ÇIKMADI:
+    # Ama ölçüldü ve hiçbir faydası çıkmadı:
     #     etkin taban  1.529 → 1.438
     #     cam-15 ayrım  1.01 → 1.01     (değişmedi)
     #     RWF AUC      0.633 → 0.633    (değişmedi)
     #
     # Sebebi de anlaşıldı: kameranın p90'ı olay sonrası kalabalığı da
-    # içeriyor. Doğru taban "bu kameranın NORMALİNİN p90'ı" olmalı ama
+    # içeriyor. Doğru taban "bu kameranın normalinin p90'ı" olmalı ama
     # normali ayırmak için zaten bir dedektöre ihtiyaç var — döngüsel.
     #
     # Hakem denetimi (§5.1) bunu haklı olarak eleştirdi: *"faydası
     # ölçülemeyen bir soyutlama, bakım borcudur."* Kaldırıldı.
     # Aynı gerekçeyle P-51'in "seyirci referansı" da kaldırıldı.
     #
-    # ⚠ Bulgu SİLİNMEDİ, problems.md · P-52'de duruyor. Kaldırılan şey
+    # Bulgu silinmedi, problems.md · P-52'de duruyor. Kaldırılan şey
     # kod, öğrenilen şey değil.
 
     # ─── Doyum noktaları (bu değerde bileşen 1.0) ───
     # Normalin p99'unun biraz üstü: p99 hâlâ normal davranıştır,
     # doyum ancak onu aşan hareket için ayrılmalı.
-    # ⚠ 07.09.2026 — doyum artık p90 × 2.0 (p99 DEĞİL).
+    # 07.09.2026 — doyum artık p90 × 2.0 (p99 değil).
     # p99, fiziksel sınır uygulandıktan sonra bile uzun kuyruklu:
     # gürültünün bir kısmı 8.0 sınırının altında kalıyor. p90 sağlam
     # bir üst çeyrek göstergesi ve "normalin belirgin üstü" tanımını
@@ -205,15 +205,15 @@ class Esikler:
     # Girme eşiği çıkma eşiğinden yüksek: skor sınırda salınırsa
     # alarm açılıp kapanmasın.
     #
-    # ⚠ 26.08.2026 — ESKİ DEĞERLER (0.35/0.55/0.75) ARTIK GEÇERSİZDİ
+    # 26.08.2026 — eski değerler (0.35/0.55/0.75) artık geçersizdi
     # Ölü bölge ve etkileşim kapısı skorun ölçeğini değiştirdi. Aynı
     # eşikleri bırakmak modülü tümden susturmak olurdu: RWF kavga
     # kliplerinin skor medyanı 0.089, eski uyarı eşiği 0.55.
     #
-    # ⚠ Ölçek değişince eşik de değişmeli — yoksa "yanlış alarmı
+    # Ölçek değişince eşik de değişmeli — yoksa "yanlış alarmı
     # düşürdüm" diye rapor edilen şey aslında sağırlıktır.
     #
-    # Yeni değerler İKİ ölçümden birlikte türetildi:
+    # Yeni değerler iki ölçümden birlikte türetildi:
     #
     #   canlı çiftlik, normal kameralar (aggression_calib_20260826-180807)
     #     skor p50 = 0.053 · p99 = 0.189
@@ -221,26 +221,26 @@ class Esikler:
     #     kavga p50 = 0.089 · p75 = 0.137 · p90 = 0.189
     #     normal p50 = 0.063 · p90 = 0.170
     #
-    # ⚠ İKİ DAĞILIM İÇ İÇE GEÇMİŞ. AUC = 0.629. Bu bir ayar sorunu
+    # İki dağılım İÇ içe geçmiş. AUC = 0.629. Bu bir ayar sorunu
     # değil, skorun kendi sınırı: eşik nereye konursa konsun
     #
     #     eşik 0.05 → kavganın %78'i yakalanır, normalin %53'ü yanar
     #     eşik 0.15 → kavganın %20'si,          normalin %20'si
     #     eşik 0.19 → kavganın  %8'i,           normalin  %3'ü
     #
-    # 0.15'te yakalama oranı yanlış pozitif oranına EŞİT — yani şans
+    # 0.15'te yakalama oranı yanlış pozitif oranına eşit — yani şans
     # seviyesi. Kural tabanlı skor tek başına K5'i (F1 ≥ 0.85)
     # taşıyamaz; ölçülen en iyi F1 = 0.712.
     #
-    # SEÇİM: sessizlik tarafı. Gerekçe operasyonel —
+    # Seçim: sessizlik tarafı. Gerekçe operasyonel —
     #   · Çiftlikte kavga içeriği neredeyse yok; duyarlı eşik
-    #     pratikte SADECE yanlış alarm üretir (K7 ≤3/kamera-saat).
+    #     pratikte sadece yanlış alarm üretir (K7 ≤3/kamera-saat).
     #   · Alarmı kapatan operatör, hiç alarmı olmayan operatörden
     #     kötüdür: sistem varmış gibi görünür ama yoktur.
-    #   · Duyarlılık eğitilmiş modelin işi (PLAN §6.5.5, Gün 17-18).
-    #     Bu skor onun TABAN ÇİZGİSİ — geçmesi gereken sayı 0.712.
+    # · Duyarlılık eğitilmiş modelin işi (Gün 17-18).
+    #     Bu skor onun taban çizgisi — geçmesi gereken sayı 0.712.
     #
-    # ⚠ `dikkat` YAYINLANMIYOR (worker.py · _tirmanma_yayinla), yalnızca
+    # `dikkat` yayınlanmıyor (worker.py · _tirmanma_yayinla), yalnızca
     # skor geçmişine giriyor. Bu yüzden duyarlı tutulabiliyor: K8 (erken
     # uyarı avansı) ölçümü tüm geçmişi kullanacak, bildirim kapısı ayrı.
     esik_dikkat_gir: float = 0.12   # RWF kavgasının ~%30'u — ölçüm için
@@ -251,7 +251,7 @@ class Esikler:
     esik_alarm_cik: float = 0.20
 
     # Zamansal yumuşatma (üstel hareketli ortalama).
-    # ⚠ Düşük değer = kararlı ama geç. 0.4 seçildi çünkü ERKEN UYARI
+    # Düşük değer = kararlı ama geç. 0.4 seçildi çünkü erken uyarı
     # hedefimiz var: fazla yumuşatmak avansı doğrudan yer.
     ema_alfa: float = 0.4
 
@@ -263,12 +263,12 @@ class Esikler:
     # Açıkken skor `etkilesim × şiddet` olarak çarpılır; etkileşim =
     # max(yakınlık, yaklaşma). Kapalıyken saf ağırlıklı toplam.
     #
-    # ⚠ Gerekçesi modülün kendi tanımında: "saldırganlık tanımı gereği
-    # ETKİLEŞİMLİDİR". Toplamsal yapı bunu söylüyor ama uygulamıyordu —
+    # Gerekçesi modülün kendi tanımında: "saldırganlık tanımı gereği
+    # etkileşimlidir". Toplamsal yapı bunu söylüyor ama uygulamıyordu —
     # yalnız koşan biri bilek + enerji + duruştan skor toplayabiliyordu.
     # Çarpımsal kapı iddiayı koda geçirir.
     #
-    # ⚠ Kapı YAKINLIK DEĞİL, max(yakınlık, yaklaşma): salt yakınlığa
+    # Kapı yakınlık değil, max(yakınlık, yaklaşma): salt yakınlığa
     # bağlamak erken uyarıyı öldürürdü — birbirine koşan iki kişi henüz
     # yakın değildir, projenin özgün katkısı tam olarak o anı yakalamak.
     etkilesim_kapisi: bool = True
@@ -300,7 +300,7 @@ ASGARI_TAMLIK = VARSAYILAN.asgari_tamlik
 def _bant(deger: float | None, taban: float, doyum: float) -> float:
     """Değeri [taban, doyum] aralığından 0-1'e eşler.
 
-    Tabanın altı SIFIR — "normal davranış kanıt değildir" ilkesi.
+    Tabanın altı sıfır — "normal davranış kanıt değildir" ilkesi.
     None de sıfır: eksik bilgi kanıt sayılamaz (person.py modül başlığı).
     """
     if deger is None or doyum <= taban:
@@ -316,8 +316,8 @@ class TirmanmaSkoru:
     skor: float
     seviye: str  # sakin | dikkat | uyari | alarm
     bilesenler: dict[str, float]
-    # Skorun yükselme hızı (birim/saniye). ⚠ ERKEN UYARININ ÖZÜ:
-    # yüksek ama SABİT bir skor süregelen bir durumdur; YÜKSELEN skor
+    # Skorun yükselme hızı (birim/saniye). Erken uyarının özü:
+    # yüksek ama sabit bir skor süregelen bir durumdur; yükselen skor
     # tırmanmadır. Alarm eşiğine varmadan önce haber verebilmenin tek
     # yolu bu türevi izlemek.
     egim: float
@@ -362,7 +362,7 @@ class TirmanmaSkorlayici:
     ) -> list[TirmanmaSkoru]:
         """Bir kameranın bir anını değerlendirir.
 
-        ⚠ HER KİŞİ İÇİN EN TEHLİKELİ ÇİFTİ SEÇİLİYOR
+        Her kişi için en tehlikeli çifti seçiliyor
         Bir kişi aynı anda birden çok kişiye yakın olabilir (kalabalık).
         Skorunu tüm çiftlerin ortalamasından hesaplamak, tehlikeli tek
         bir etkileşimi kalabalığın içinde sulandırırdı. Tehlike
@@ -400,23 +400,23 @@ class TirmanmaSkorlayici:
         b: dict[str, float] = {}
 
         # ── 1. Yakınlık + karşılıklılık (en ağır bileşen) ──
-        # ⚠ Çift YOKSA bu bileşen sıfır — ve bu kritik.
+        # Çift yoksa bu bileşen sıfır — ve bu kritik.
         # Yalnız bir kişinin hızlı bilek hareketi egzersizdir.
         # Saldırganlık tanımı gereği etkileşimlidir.
         if cift is not None and cift.en_yakin_mesafe is not None:
             yakinlik = max(0.0, 1.0 - cift.en_yakin_mesafe / (YAKIN_MESAFE * 2))
             bakis = cift.karsilikli_bakis if cift.karsilikli_bakis is not None else 0.0
-            # ⚠ BAKIŞ ÇARPAN DEĞİL, GÜÇLENDİRİCİ — test ortaya çıkardı
+            # Bakış çarpan değil, güçlendirici — test ortaya çıkardı
             # İlk sürüm `yakinlik * bakis` idi. Sorun: 2B iskeletten
             # yönelim her zaman çıkarılamıyor. Kameraya cepheden bakan
             # iki kişinin omuz hattı yatay olur ve dik vektör düşey
             # çıkar; yani "birbirine dönük mü" sorusu cevapsız kalır ve
-            # çarpım YAKINLIĞI DA SIFIRLAR.
+            # çarpım yakınlığı da sıfırlar.
             #
             # Sonuç: burun buruna duran iki kişi, sırf açı hesaplanamadı
             # diye "yakınlık yok" sayılıyordu.
             #
-            # Doğrusu: yakın olmak TEK BAŞINA anlamlıdır (Hall'un
+            # Doğrusu: yakın olmak tek başına anlamlıdır (Hall'un
             # kişisel alan mesafesi), karşılıklılık onu güçlendirir.
             # Taban 0.5, karşılıklıysa 1.0'a çıkıyor.
             b["yakinlik"] = yakinlik * (0.5 + 0.5 * bakis)
@@ -425,19 +425,19 @@ class TirmanmaSkorlayici:
 
         # ── 2. Bilek dinamiği ──
         e = self._e
-        # ⚠⚠ 07.09.2026 — `azami` YERİNE p75 (P-47)
+        # 07.09.2026 — `azami` yerine p75 (P-47)
         #
-        # `bilek_hizi_azami` pencere içindeki AZAMİ hızdı ve ölçüldü ki
+        # `bilek_hizi_azami` pencere içindeki azami hızdı ve ölçüldü ki
         # o azami, hareketi değil **eklem tahmini hatasını** örnekliyor:
         # RWF-2000'de kavga/normal ayırt etme gücü AUC 0.558 (şans
         # seviyesi). Aynı seriden p75 alınca 0.677 — tek bir
         # toplulaştırma değişikliğiyle +0.120.
         #
-        # ⚠ `... or kisi.bilek_hizi_azami` YEDEĞİ BİLİNÇLİ:
+        # `... or kisi.bilek_hizi_azami` yedeği bilinçli:
         # p75 alanı yalnızca yeni özellik çıkarımından geliyor. Eski
         # bir kayıt (kaydedilmiş profil, tekrar oynatılan ölçüm)
         # okunursa alan `None` olur ve modül sessizce susardı. Yedek,
-        # o durumda ESKİ davranışa dönüyor — daha kötü ama sağır değil.
+        # o durumda eski davranışa dönüyor — daha kötü ama sağır değil.
         hiz = _bant(
             kisi.bilek_hizi_p75 if kisi.bilek_hizi_p75 is not None
             else kisi.bilek_hizi_azami,
@@ -449,12 +449,12 @@ class TirmanmaSkorlayici:
             e.taban_bilek_sarsinti, e.doyum_bilek_sarsinti,
         )
         # Sarsıntı hızdan daha ayırt edici: kontrollü bir hareket düzgün
-        # hızlanır, vuruş ANİ sıçrar. Bu yüzden daha ağır.
+        # hızlanır, vuruş ani sıçrar. Bu yüzden daha ağır.
         b["bilek"] = 0.4 * hiz + 0.6 * sarsinti
 
-        # ── 3. Yaklaşma (ERKEN sinyal) ──
+        # ── 3. Yaklaşma (erken sinyal) ──
         # Negatif yaklaşma hızı = yaklaşıyor. Kavga, iki kişinin
-        # birbirine yaklaşmasıyla BAŞLAR — alarm eşiğine varmadan önce
+        # birbirine yaklaşmasıyla başlar — alarm eşiğine varmadan önce
         # görebileceğimiz ilk şey bu.
         if cift is not None and cift.yaklasma_hizi is not None:
             b["yaklasma"] = _bant(
@@ -466,7 +466,7 @@ class TirmanmaSkorlayici:
         # ── 4. Enerji + senkron ──
         enerji = _bant(kisi.hareket_enerjisi, e.taban_enerji, e.doyum_enerji)
         senkron = (cift.senkron_enerji or 0.0) if cift is not None else 0.0
-        # ⚠ Senkron TEK BAŞINA kullanılmıyor, enerjiyle ÇARPILIYOR.
+        # Senkron tek başına kullanılmıyor, enerjiyle çarpılıyor.
         # Yan yana yürüyen iki kişinin hareketleri de korelasyonludur
         # ama enerjileri düşüktür. Yüksek korelasyon ancak yüksek
         # enerjiyle birlikte kavga işaretidir.
@@ -504,7 +504,7 @@ class TirmanmaSkorlayici:
         # Yalnızca son 5 saniye tutuluyor — eğim bundan hesaplanıyor
         durum.gecmis = [(t, s) for t, s in durum.gecmis if simdi - t <= 5.0]
 
-        # ── Eğim: tırmanma HIZI ──
+        # ── Eğim: tırmanma hızı ──
         egim_deger = 0.0
         if len(durum.gecmis) >= 2:
             dt = durum.gecmis[-1][0] - durum.gecmis[0][0]
@@ -528,18 +528,18 @@ class TirmanmaSkorlayici:
         )
 
     def _seviye(self, skor: float, mevcut: str) -> str:
-        """Histerezisli seviye kararı (PLAN §6.5.3).
+        """Histerezisli seviye kararı.
 
-        ⚠ HİSTEREZİS YALNIZCA AŞAĞI YÖNDE — test bunu ortaya çıkardı
+        Histerezis yalnızca aşağı yönde — test bunu ortaya çıkardı
         İlk sürüm merdiven gibiydi: "sakin"den yalnızca "dikkat"e
         çıkılabiliyordu, oradan "uyarı"ya, oradan "alarm"a. Yani skor
         bir anda 0.9'a fırlasa bile alarm seviyesine ulaşmak ÜÇ
         değerlendirme turu alıyordu — 4 FPS'te 750 ms gecikme.
 
         Bu, tam da ölçmeye çalıştığımız şeyi yer: **erken uyarı
-        avansı** (K8). Sistemin varlık sebebi olayı ERKEN söylemek.
+        avansı** (K8). Sistemin varlık sebebi olayı erken söylemek.
 
-        Doğrusu yangın alarmı mantığı: **duman varsa ANINDA öt, duman
+        Doğrusu yangın alarmı mantığı: **duman varsa anında öt, duman
         dağılınca bir süre daha ötmeye devam et.** Yukarı çıkarken
         histerezis yok, aşağı inerken var. Titremeyi önleyen zaten
         aşağı yöndeki gecikme.

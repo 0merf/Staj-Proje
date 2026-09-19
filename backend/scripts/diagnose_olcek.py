@@ -1,6 +1,6 @@
-"""Ölçek tanısı — normalize özelliğin ÇÖZÜNÜRLÜK TABANI (P-49).
+"""Ölçek tanısı — normalize özelliğin çözünürlük tabanı (P-49).
 
-⭐ NEDEN BU BETİK YAZILDI
+Neden bu betik yazıldı
 ------------------------
 K8, cam-15 (UBI-Fights) üzerinde tutmadı. Sıradaki üç şüpheli tek tek
 elendi (`evaluate_k8_video.py · ALGI TANISI`):
@@ -8,12 +8,12 @@ elendi (`evaluate_k8_video.py · ALGI TANISI`):
     tespit     : kavgada 6.5 kişi/kare, %96.7 poz başarısı  → sağlam
     takip      : iz ömrü kavgada 7.5 örnek (normalde 7.0)   → kopmuyor
     zamansal   : kişilerin %100'ünde bilek hızı hesaplandı  → veri var
-    ⭐ ham özellik: kavga 1.152 · normal 1.192 · oran 0.97   → SİNYAL YOK
+    ham özellik: kavga 1.152 · normal 1.192 · oran 0.97   → sinyal yok
 
 Yani modele giren sayının kendisi kavgayı normalden ayırmıyor. Model
 suçlanamaz: bozuk bir model değil, **bilgisiz bir girdi** var.
 
-⚠ ŞÜPHE: gövde boyuna normalizasyonun gizli maliyeti
+Şüphe: gövde boyuna normalizasyonun gizli maliyeti
 ----------------------------------------------------
 Bütün hız özellikleri **gövde/saniye** cinsinden (person.py başlığı).
 Bu, uzaklık farkını yok etmek için doğru bir tercih — ama bedava değil:
@@ -26,19 +26,19 @@ normalize uzayda **büyür**:
 
     gürültü_tabanı ≈ (eklem_hatası_px · √2 / Δt) / govde_boyu_px
 
-⭐ Sonuç: özelliğin bir **geçerlilik alt sınırı** var. Kişi belirli bir
+Sonuç: özelliğin bir **geçerlilik alt sınırı** var. Kişi belirli bir
 piksel boyunun altına inince gürültü tabanı sinyalin üstüne çıkar ve
 özellik ayırt etme gücünü yitirir — model ne kadar iyi olursa olsun.
 
 Bu betik o şüpheyi tek bir karşılaştırmayla sınıyor:
 
-    EĞİTİM alanı (RWF-2000) kişi boyu   ⟷   UYGULAMA alanı (cam-15)
+    Eğitim alanı (RWF-2000) kişi boyu   ⟷   uygulama alanı (cam-15)
 
 Eğer cam-15'teki kişiler belirgin biçimde küçükse, mekanizma doğrulanmış
 olur ve düzeltme model değiştirmek değil **çalışma alanını ilan etmek**
 olur (bkz. `ASGARI_KISI_PX`).
 
-⚠ ÖLÇÜM AYNI UZAYDA YAPILIYOR
+Ölçüm aynı uzayda yapılıyor
 -----------------------------
 İki taraf da 640 letterbox uzayında ölçülüyor — `evaluate_k8_video.py`
 ile birebir aynı ön işleme. Farklı uzaylarda ölçmek bu projede daha önce
@@ -128,7 +128,7 @@ def main() -> int:
     )
     dedektor.warmup(1)
 
-    # ─── EĞİTİM ALANI: RWF-2000 ───
+    # ─── Eğitim alanı: RWF-2000 ───
     havuz = sorted((RWF / "val").rglob("*.avi")) or sorted(RWF.rglob("*.avi"))
     if not havuz:
         print(f"HATA: RWF klibi bulunamadı ({RWF})")
@@ -144,7 +144,7 @@ def main() -> int:
         if i % 10 == 0:
             print(f"  {i}/{len(secilen)}")
 
-    # ─── UYGULAMA ALANI: cam-15 ───
+    # ─── Uygulama alanı: cam-15 ───
     video = VIDEOLAR / f"{args.kamera}.mp4"
     if not video.exists():
         print(f"HATA: {video} yok")

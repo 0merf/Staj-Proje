@@ -1,24 +1,24 @@
-"""KATMAN A neden susuyor? — profilin içine bakan tanı betiği.
+"""Katman A neden susuyor? — profilin içine bakan tanı betiği.
 
 Neden bu betik
 --------------
 K6 ölçümü dört kez koşturuldu ve Katman A her seferinde neredeyse hiç
 skor üretmedi: sıfırdan farklı oran %5.3 → **%2.8** (daha fazla veriyle
-DAHA AZ). AUC 0.493, yani tam şans seviyesi.
+daha AZ). AUC 0.493, yani tam şans seviyesi.
 
 Üç hipotez denendi ve üçü de yanlış çıktı:
   1. "Profil hazır değil"      → hazır (16 751 gözlem)
   2. "Yeterli veri yok"        → 7× veriyle sonuç değişmedi
   3. "Isıtma yanlış ölçekte"   → aşağıda sınanıyor
 
-Tahmin etmeyi bırakıp profilin İÇİNE bakmak gerekiyor. Bu betik üç
+Tahmin etmeyi bırakıp profilin içine bakmak gerekiyor. Bu betik üç
 soruyu cevaplıyor:
 
   · Kaç hücre hız istatistiği yapacak kadar (≥30) gözlem gördü?
   · O hücrelerde ölçülen sapma ne kadar?
-  · Test verisindeki hızlar profilin öğrendiği hızlarla aynı ÖLÇEKTE mi?
+  · Test verisindeki hızlar profilin öğrendiği hızlarla aynı ölçekte mi?
 
-⚠ ÜÇÜNCÜ SORU KRİTİK ve benim kendi eklediğim bir risk
+Üçüncü soru kritik ve benim kendi eklediğim bir risk
 Yalın ısıtma yolu hızı `kutu yüksekliği` ile normalize ediyor;
 değerlendirme yolu `özellik penceresi` üzerinden `govde_boyu()`
 kullanıyor (iskelet varsa omuz-kalça × 3). İkisi farklı ölçekteyse
@@ -102,14 +102,14 @@ def main() -> int:
             f"  hücre sapması    : p50 {statistics.median(sapmalar):.3f} · "
             f"taban {normalcy.TABAN_SAPMA_HIZ}"
         )
-        # ⚠ Sapma tabandan küçükse z-skor tabana bölünüyor demektir.
+        # Sapma tabandan küçükse z-skor tabana bölünüyor demektir.
         taban_alti = sum(1 for s in sapmalar if s < normalcy.TABAN_SAPMA_HIZ)
         print(
             f"  sapması tabandan küçük: {taban_alti}/{len(sapmalar)} "
             f"(%{taban_alti / len(sapmalar) * 100:.0f}) — bunlarda z, tabana bölünüyor"
         )
 
-    # ─── 3. ÖLÇEK KARŞILAŞTIRMASI — asıl şüpheli ───
+    # ─── 3. Ölçek karşılaştırması — asıl şüpheli ───
     print("\nÖLÇEK DENETİMİ — ısıtma ile değerlendirme aynı birimde mi?")
     test = sorted((AVENUE / "testing_videos").glob("*.avi"))[:2]
     kareler = []

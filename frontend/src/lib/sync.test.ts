@@ -1,17 +1,17 @@
 /** Kutu/video hizalaması — zaman ekseni testleri.
  *
- * ⚠ NEDEN BU DOSYA ÖNCELİKLİ
+ * Neden bu dosya öncelikli
  * --------------------------
  * Burada üç ayrı AN var ve karıştırmak doğrudan hataya götürüyor:
  *
- *     yakalanma : karenin kameradan alındığı an   ← GERÇEK zaman ekseni
+ *     yakalanma : karenin kameradan alındığı an   ← gerçek zaman ekseni
  *     varış     : sonucun tarayıcıya ulaştığı an  (yakalanma + gecikme)
  *     şimdi     : ekrana çizdiğimiz an
  *
- * P-26'da bu üçü karıştırıldı ve İKİ ayrı hata çıktı: kaydırıcı ters
+ * P-26'da bu üçü karıştırıldı ve iki ayrı hata çıktı: kaydırıcı ters
  * yöne çalışıyordu, tampon varış anına göre indeksleniyordu. Kullanıcı
  * "bazen yetişiyor bazen yetişemiyor" diye bildirdi; sebebi gözle
- * görülemezdi çünkü kutular DOĞRU görünüyordu, sadece yanlış andaydı.
+ * görülemezdi çünkü kutular doğru görünüyordu, sadece yanlış andaydı.
  *
  * Bu testler o iki hatanın gerilemesini ve kod incelemesinde bulunan
  * üçüncü hatayı (negatif oran) kilitliyor.
@@ -33,7 +33,7 @@ function det(
   return { bbox: [x, y, x + 50, y + 100], conf: 0.9, cls: 0, id, v, kp }
 }
 
-/** Belirli bir YAKALANMA anına ait sonuç üretir.
+/** Belirli bir yakalanma anına ait sonuç üretir.
  *
  * `rx` (varış) = yakalanma + gecikme. Testler yakalanma anını
  * doğrudan verebilsin diye ters hesaplanıyor.
@@ -70,14 +70,14 @@ describe('captureTime', () => {
     expect(captureTime(s)).toBe(1200) // rx olduğu gibi
   })
 
-  it('⚠ P-26: DALGALANAN gecikme kareler arası GERÇEK mesafeyi bozmuyor', () => {
+  it('P-26: dalgalanan gecikme kareler arası gerçek mesafeyi bozmuyor', () => {
     // İkisi de 250 ms arayla yakalandı ama gecikmeleri çok farklı.
     // Varış anına göre hesaplayan kod bunları 50 ms arayla sanıyordu
     // ve kişiyi 5 kat hızlı görüp kutuyu fırlatıyordu.
     const a = sonuc(1000, 400, []) // varış 1400
     const b = sonuc(1250, 200, []) // varış 1450
 
-    expect(b.rx - a.rx).toBe(50) // varış farkı YANILTICI
+    expect(b.rx - a.rx).toBe(50) // varış farkı yanıltıcı
     expect(captureTime(b) - captureTime(a)).toBe(250) // gerçek fark
   })
 })
@@ -105,7 +105,7 @@ describe('frameAt — ileri tahmin', () => {
     expect(f.detections[0].bbox[0]).toBe(100)
   })
 
-  it('hız vektörüyle İLERİ taşıyor', () => {
+  it('hız vektörüyle ileri taşıyor', () => {
     // 500 ms sonrası, 40 px/sn yatay hız → +20 px
     const buffer = [sonuc(1000, 0, [det(1, 100, 100, [40, 0])])]
     const f = frameAt(buffer, 1500, 0)!
@@ -121,8 +121,8 @@ describe('frameAt — ileri tahmin', () => {
     expect(f.detections[0].bbox[0]).toBe(100)
   })
 
-  it('⚠ tahmin ÜST SINIRDA kesiliyor — uzun mesafede donuk göstermek daha dürüst', () => {
-    // Hız vektörü DOĞRUSAL bir tahmin. Kişi dönerse, durursa ya da
+  it('tahmin üst sınırda kesiliyor — uzun mesafede donuk göstermek daha doğru', () => {
+    // Hız vektörü doğrusal bir tahmin. Kişi dönerse, durursa ya da
     // hızlanırsa tahmin bozulur; 700 ms'ten sonra kutu yanlış yerde olur.
     const buffer = [sonuc(1000, 0, [det(1, 100, 100, [100, 0])])]
 
@@ -130,7 +130,7 @@ describe('frameAt — ileri tahmin', () => {
     const cokIleri = frameAt(buffer, 5000, 0)! // 4 saniye
 
     expect(sinirda.detections[0].bbox[0]).toBeCloseTo(170, 5)
-    // Üst sınır aşıldığında kutu 700 ms'lik konumda DONUYOR
+    // Üst sınır aşıldığında kutu 700 ms'lik konumda donuyor
     expect(cokIleri.detections[0].bbox[0]).toBeCloseTo(170, 5)
   })
 
@@ -141,7 +141,7 @@ describe('frameAt — ileri tahmin', () => {
 
     expect(f.detections[0].kp![0][0]).toBeCloseTo(130, 5) // 110 + 20
     expect(f.detections[0].kp![0][1]).toBeCloseTo(130, 5) // 120 + 10
-    expect(f.detections[0].kp![0][2]).toBe(0.9) // güven DEĞİŞMEZ
+    expect(f.detections[0].kp![0][2]).toBe(0.9) // güven değişmez
   })
 })
 
@@ -164,7 +164,7 @@ describe('frameAt — ara değerleme', () => {
     expect(f.detections[0].bbox[1]).toBeCloseTo(150, 5)
   })
 
-  it('kimliği eşleşmeyen tespit KAYBOLMUYOR', () => {
+  it('kimliği eşleşmeyen tespit kaybolmuyor', () => {
     // Kimliksiz tespit = takipçi henüz onaylamadı (P-13). Gizlemek
     // yanlış olurdu: kişi orada, sadece kimliği bir sonraki karede
     // gelecek.
@@ -179,9 +179,9 @@ describe('frameAt — ara değerleme', () => {
     expect(f.detections.some((d) => d.id === undefined)).toBe(true)
   })
 
-  it('⚠ güveni DÜŞÜK keypoint ara değerlenmiyor', () => {
+  it('güveni düşük keypoint ara değerlenmiyor', () => {
     // Görünmeyen bir uzvu "yolda" göstermek, olmayan bir duruşu varmış
-    // gibi göstermektir (PLAN.md §6.2).
+    // gibi göstermektir.
     const oncekiKp: [number, number, number][] = [[100, 100, 0.1]]
     const sonrakiKp: [number, number, number][] = [[200, 200, 0.9]]
     const b = [
@@ -190,21 +190,21 @@ describe('frameAt — ara değerleme', () => {
     ]
     const f = frameAt(b, 1375, 250)!
 
-    // Harmanlansaydı 150 olurdu; güven düşük olduğu için SON değer alınıyor
+    // Harmanlansaydı 150 olurdu; güven düşük olduğu için son değer alınıyor
     expect(f.detections[0].kp![0][0]).toBe(200)
   })
 
-  it('⚠ B3 GERİLEMESİ: hedef tamponun tamamından eskiyse kutu GERİYE FIRLAMIYOR', () => {
+  it('B3 gerilemesi: hedef tamponun tamamından eskiyse kutu geriye fırlamıyor', () => {
     // Kod incelemesinde bulunan hata: hedef en eski sonuçtan da eskiyse
     // döngü hiçbir aralık bulamıyor, `before = buffer[0]` kalıyor ve
-    // oran NEGATİF çıkıyordu. `blend` kutuyu iki gerçek nokta arasında
-    // değil, hareketin TERS yönünde fırlatıyordu.
+    // oran negatif çıkıyordu. `blend` kutuyu iki gerçek nokta arasında
+    // değil, hareketin ters yönünde fırlatıyordu.
     //
     // Ulaşılabilir: analiz durur/yavaşlarsa ve video tamponu yüksekse.
     const f = frameAt(buffer, 1100, 5000)! // hedef 1100-5000 = çok geçmiş
 
     const x = f.detections[0].bbox[0]
-    // Kutu iki gerçek konum ARASINDA kalmalı (100 ile 200)
+    // Kutu iki gerçek konum arasında kalmalı (100 ile 200)
     expect(x).toBeGreaterThanOrEqual(100)
     expect(x).toBeLessThanOrEqual(200)
   })
@@ -216,7 +216,7 @@ describe('frameAt — ara değerleme', () => {
     expect(f.mode).toBe('predicted')
   })
 
-  it('kaynak kare boyutu SON sonuçtan alınıyor', () => {
+  it('kaynak kare boyutu son sonuçtan alınıyor', () => {
     // Kameralar farklı çözünürlükte olabilir; tarayıcı ölçekleme için
     // buna muhtaç.
     const f = frameAt(buffer, 1375, 250)!

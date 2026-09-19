@@ -1,15 +1,15 @@
 """Model maliyeti — canlıdaki gecikme artışının sebebi bu mu? (P-57)
 
-⚠⚠ NEDEN
+Neden
 --------
 Model üretime alındıktan sonra canlı ölçüm şunu gösterdi:
 
-    ölçüt              model YOKKEN   model VARKEN     fark
+    ölçüt              model yokken   model varken     fark
     gecikme p50 (ms)         205            450       +245
     gecikme p95 (ms)         463            739       +276
     analiz FPS/kamera       2.75           1.66      −1.09
 
-⭐ Ve bu, daha önce yazdığım bir sayıyla ÇELİŞİYOR. Kaskad analizinde
+Ve bu, daha önce yazdığım bir sayıyla çelişiyor. Kaskad analizinde
 şöyle demiştim:
 
     "LightGBM çıkarımı kare başına 0.0004 ms; toplam 11.10 ms'nin
@@ -20,20 +20,20 @@ O sayı **doğruydu ama eksikti**: yalnızca `booster.predict()` çağrısını
 
     1. her karede her kişinin ham özelliklerini toplamak
     2. 5 saniyelik pencereyi budamak
-    3. ⭐ pencereyi ÖZETLEMEK — 10 ham alan × (azami/p75/medyan)
+    3. pencereyi özetlemek — 10 ham alan × (azami/p75/medyan)
        + 10 alan × (aykırılık azami/p75/medyan + sahne medyanı)
        = her çağrıda ~70 sıralama/medyan işlemi
     4. sonra predict
 
-⚠ Ve bu, kamera başına HER KAREDE yapılıyor: 20 kamera × ~2.75 FPS
+Ve bu, kamera başına her karede yapılıyor: 20 kamera × ~2.75 FPS
 = saniyede 55 kez.
 
-> ⭐ Bir bileşenin maliyetini ölçerken "hangi çağrı" değil "hangi İŞ"
+> Bir bileşenin maliyetini ölçerken "hangi çağrı" değil "hangi İŞ"
 > sorulmalı. `predict` ucuz; onu beslemek pahalı.
 
-BU BETİK NE YAPIYOR
+Bu betik NE yapıyor
 -------------------
-Gerçekçi pencereler kurup üç aşamayı AYRI AYRI ölçüyor:
+Gerçekçi pencereler kurup üç aşamayı ayrı ayrı ölçüyor:
 
     besle()        — kare verisini pencereye ekleme
     pencere_ozeti()— özet çıkarma (şüpheli asıl maliyet)
@@ -41,8 +41,8 @@ Gerçekçi pencereler kurup üç aşamayı AYRI AYRI ölçüyor:
 
 Sonra 20 kamera × canlı FPS'e çevirip bütçe içindeki payını veriyor.
 
-⚠ Ölçüm CPU'da; boru hattı koşarken çalıştırılırsa CPU paylaşılır ve
-sayılar şişer. Boru hattı KAPALIYKEN koşturulmalı.
+Ölçüm CPU'da; boru hattı koşarken çalıştırılırsa CPU paylaşılır ve
+sayılar şişer. Boru hattı kapalıyken koşturulmalı.
 
 Kullanım:
     uv run python scripts/benchmark_model_maliyeti.py
@@ -137,15 +137,15 @@ def main() -> int:
     print(f"tekrar : {args.tekrar}\n")
 
     # ─── 1. besle() ───
-    # ⚠⚠ İLK SÜRÜM BURADA KENDİ ÖLÇÜMÜNÜ BOZDU (P-57)
+    # İlk sürüm burada kendi ölçümünü bozdu (P-57)
     #
     # `besle()` 800 kez çağrılıyordu ve zaman damgaları 1 µs aralıklıydı
     # — yani `_buda()` hiçbir şeyi atmıyordu ve pencere 14 kareden
     # **814 kareye** şişiyordu. Sonraki adım `pencere_ozeti`yi o şişmiş
     # pencerede ölçüyordu ve 24.8 ms veriyordu.
     #
-    # ⭐ Yani "modelin maliyeti" diye raporlanan sayı, gerçek üretim
-    # koşulunun 58 KATI bir pencerede ölçülmüştü. Ölçüm aracının kendi
+    # Yani "modelin maliyeti" diye raporlanan sayı, gerçek üretim
+    # koşulunun 58 katı bir pencerede ölçülmüştü. Ölçüm aracının kendi
     # yan etkisiyle ölçtüğü şeyi bozması — bu projede beşinci kez.
     #
     # Düzeltme: zaman damgası gerçek kare aralığıyla ilerliyor, böylece

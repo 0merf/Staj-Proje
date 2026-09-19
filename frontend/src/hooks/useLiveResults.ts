@@ -1,6 +1,6 @@
 /** WebSocket kanalı — analiz sonuçlarını dinler.
  *
- * ⚠ Gelen mesajlar React state'ine YAZILMIYOR. Saniyede ~60 mesaj
+ * Gelen mesajlar React state'ine yazılmıyor. Saniyede ~60 mesaj
  * geliyor; her biri için render tetiklemek 20 kutucukta arayüzü
  * dizlerine düşürürdü. Mesajlar React dışındaki tampona yazılıyor
  * (`store.ts::buffers`), çizim döngüsü oradan okuyor.
@@ -35,16 +35,16 @@ export function useLiveResults() {
       socket.onmessage = (event) => {
         const message = JSON.parse(event.data) as FrameResult | Alert
 
-        // ⚠ ALARM ÖNCE — ve abonelikten BAĞIMSIZ.
+        // Alarm önce — ve abonelikten bağımsız.
         // Kare mesajları yalnızca abone kameralardan gelir; alarm ise
         // kutucuk kapalı olsa bile gelir. Operatör cam-03'ü açmamışsa
-        // bile orada biri düştüyse bunu GÖRMELİ.
+        // bile orada biri düştüyse bunu görmeli.
         if (message.type === 'alert') {
           pushAlert({ ...message, rx: performance.now() })
           return
         }
         if (message.type !== 'frame') return
-        // rx: tarayıcının KENDİ saati. Sunucunun ts'i monotoniktir,
+        // rx: tarayıcının kendi saati. Sunucunun ts'i monotoniktir,
         // Date.now() ile karşılaştırılamaz — hizalama bu yüzden
         // varış anına dayanıyor.
         pushResult({ ...message, rx: performance.now() })
@@ -58,9 +58,9 @@ export function useLiveResults() {
       socket.onerror = () => socket?.close()
     }
 
-    // ⚠ Panelde AÇIK olan kutucukları sunucuya bildiriyoruz.
+    // Panelde açık olan kutucukları sunucuya bildiriyoruz.
     // Alım katmanı bu listeye bakıp izlenen kameralara daha yüksek
-    // örnekleme hızı ayırıyor (PLAN.md §5.2). Bildirmezsek 20 kamera
+    // örnekleme hızı ayırıyor. Bildirmezsek 20 kamera
     // eşit hızda analiz edilir ve bütçenin çoğu kimsenin bakmadığı
     // kameralara gider.
     //

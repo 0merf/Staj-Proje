@@ -1,13 +1,13 @@
 """YOLO26-pose ile kırpıntı tabanlı (top-down) poz tahmini.
 
-⚠ LİSANS: Ultralytics **AGPL-3.0**. `PoseEstimator` protokolü arkasında
+Lisans: Ultralytics **AGPL-3.0**. `PoseEstimator` protokolü arkasında
    durduğu için RTMPose (Apache-2.0) geçişi tek sınıf değişimidir.
 
 Boru hattı
 ----------
     tespit kutusu
       → %15 dolgu ile kırp
-      → EN-BOY ORANI KORUNARAK 192×192'ye letterbox
+      → en-boy oranı korunarak 192×192'ye letterbox
       → tüm kameraların tüm kırpıntıları tek havuzda, 64'lük batch'ler
       → YOLO26-pose
       → keypoint'leri kaynak karenin piksel uzayına geri taşı
@@ -19,7 +19,7 @@ sürüm kırpıntıyı doğrudan kareye sıkıştırıyordu; kırpıntıların y
 %47'sinden iskelet çıkıyordu ve başarısızlık küçük kutularda
 yoğunlaşıyordu, yani "çözünürlük sınırı" gibi görünüyordu.
 
-Gerçek sebep en-boy oranıydı: uzaktaki bir kişi İNCE ve UZUN bir kutu
+Gerçek sebep en-boy oranıydı: uzaktaki bir kişi ince ve uzun bir kutu
 verir (örn. 40×130 px). Kareye sıkıştırmak onu en çok bozan işlemdir —
 model artık insan şekli görmez. Oran korununca:
 
@@ -52,15 +52,15 @@ log = get_logger(__name__)
 #
 # İzole ölçüm kırpıntı başına maliyeti şöyle verdi: batch 8 → 2.84 ms,
 # 16 → 1.80 ms, 32 → 1.30 ms. Buradan 32 seçilmişti. Ama boru hattında
-# 32 YANLIŞ çıktı:
+# 32 yanlış çıktı:
 #
-#   8 kare × ~4.4 kişi ≈ 35 kırpıntı  →  32 + 3  →  İKİ GPU çağrısı
+#   8 kare × ~4.4 kişi ≈ 35 kırpıntı  →  32 + 3  →  iki GPU çağrısı
 #
 # 3 kırpıntılık kuyruk çağrısı, 32'lik çağrıyla neredeyse aynı sabit
-# maliyeti ödetiyor. Sınırı 64'e çıkarıp tipik yükü TEK çağrıya sığdırmak
+# maliyeti ödetiyor. Sınırı 64'e çıkarıp tipik yükü tek çağrıya sığdırmak
 # poz maliyetini 12.5 → 9.1 ms/kare düşürdü (%27).
 #
-# Ders: doğru batch boyutu modelin değil, ÜRETİLEN İŞ MİKTARININ
+# Ders: doğru batch boyutu modelin değil, üretilen İŞ miktarının
 # fonksiyonudur. İzole ölçüm bunu gösteremez.
 CROP_BATCH = 64
 
@@ -214,13 +214,13 @@ class YoloPoseEstimator:
         frames: list[np.ndarray],
         detections: list[list[Detection]],
     ) -> tuple[list[_CropRef], list[tuple[int, int, int, int]]]:
-        """GPU yolu için kutuları toplar — piksel KOPYALAMADAN.
+        """GPU yolu için kutuları toplar — piksel kopyalamadan.
 
         CPU yolundan tek farkı burada hiçbir görüntü verisine
         dokunulmaması: yalnızca koordinat aritmetiği yapılıyor, asıl
         kesme işi `_gpu_crops` içinde tek çağrıda oluyor.
 
-        `_CropRef` alanları KARE bölgeye göre dolduruluyor ki
+        `_CropRef` alanları kare bölgeye göre dolduruluyor ki
         `_to_frame_space` değişmeden çalışsın:
             origin = kare bölgenin sol üst köşesi
             scale  = crop_size / kare kenarı
@@ -311,32 +311,32 @@ class YoloPoseEstimator:
         refs: list[_CropRef],
         boxes: list[tuple[int, int, int, int]],
     ) -> Any:
-        """Tüm kırpıntıları TEK GPU çağrısında hazırlar.
+        """Tüm kırpıntıları tek GPU çağrısında hazırlar.
 
-        ⚠ NEDEN — poz bütçenin %59'uydu ve GPU boşta oturuyordu
+        Neden — poz bütçenin %59'uydu ve GPU boşta oturuyordu
         -------------------------------------------------------
         CPU yolunda kırpıntı başına iki maliyet vardı:
           1. Bizim `cv2.resize` + gri tuval ayırma/kopyalama
-          2. Ultralytics'in KENDİ ön işlemesi (numpy listesi verilince
+          2. Ultralytics'in kendi ön işlemesi (numpy listesi verilince
              yeniden boyutlandırma, BGR→RGB, eksen değiştirme,
              normalizasyon, GPU'ya kopyalama)
         Kare başına 4-12 kişi × 20 kamera olduğu için bu, ölçülen
         bütçenin en büyük kalemiydi (99.8 ms/kare).
 
-        Bu, Gün 8'de TESPİT için yapılan hamlenin (P-18) poz karşılığı.
+        Bu, Gün 8'de tespit için yapılan hamlenin (P-18) poz karşılığı.
         Fark şu: orada iş 20 alım thread'ine dağıtılmıştı, burada
         tamamen GPU'ya taşınıyor — çünkü çıkarım worker'ı tek süreç ve
         aynı işi orada thread'lemek seri kalırdı.
 
-        NASIL — tek `grid_sample` çağrısı
+        Nasıl — tek `grid_sample` çağrısı
         ---------------------------------
         Kırpıntı başına ayrı `interpolate` çağırmak N kere çekirdek
         başlatma maliyeti öderdi (35+ kırpıntı tipik). Bunun yerine her
         kırpıntı için bir afin dönüşüm kurulup **hepsi tek çağrıda**
         örnekleniyor.
 
-        ⚠ EN-BOY ORANI KORUNUYOR — ama farklı bir yolla
-        Kaynak bölge, kutunun uzun kenarı kadar bir KARE olarak alınıyor
+        en-boy oranı korunuyor — ama farklı bir yolla
+        Kaynak bölge, kutunun uzun kenarı kadar bir kare olarak alınıyor
         (kutu merkezinde). Yani dolgu gri değil, çevredeki gerçek
         görüntü. P-14'te öğrenilen şey "kareye sıkıştırma"nın yasak
         olduğuydu (%88 yerine %47); oran burada da korunuyor.
@@ -350,7 +350,7 @@ class YoloPoseEstimator:
 
         size = self._crop_size
         # Kareleri tek seferde GPU'ya al. Aynı kare birden çok kırpıntıya
-        # kaynaklık ettiği için kare başına TEK yükleme yapılıyor.
+        # kaynaklık ettiği için kare başına tek yükleme yapılıyor.
         benzersiz = sorted({r.frame_index for r in refs})
         yer = {fi: i for i, fi in enumerate(benzersiz)}
         yigin = np.stack([frames[fi] for fi in benzersiz])  # (F,H,W,3) BGR
@@ -379,7 +379,7 @@ class YoloPoseEstimator:
             [yer[r.frame_index] for r in refs], device=self._device, dtype=torch.long
         )
 
-        # ⚠ `size` LİSTE olmalı, demet değil — PyTorch'un imzası öyle
+        # `size` liste olmalı, demet değil — PyTorch'un imzası öyle
         # (`list[int]`). Çalışma zamanında demet de kabul ediliyor, bu
         # yüzden hata hiç görünmemişti; yalnızca mypy yakaladı. Küçük
         # ama gerçek bir sözleşme ihlali: bugün çalışan bir uyumluluk
@@ -425,7 +425,7 @@ class YoloPoseEstimator:
         ))
 
     def _extract(self, result: Any) -> np.ndarray | None:
-        """Kırpıntıdaki HEDEF kişinin keypoint'lerini seçer.
+        """Kırpıntıdaki hedef kişinin keypoint'lerini seçer.
 
         Kırpıntı, dolgu yüzünden komşu bir kişiyi de içerebilir. Hedef,
         kırpıntının merkezine en yakın olandır: kırpıntıyı zaten hedefin

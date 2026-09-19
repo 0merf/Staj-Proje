@@ -1,14 +1,14 @@
 """Üretim özellik hesabı ⟷ eğitim özellik hesabı kilidi (P-56).
 
-⭐⭐ BU TESTİN VARLIK SEBEBİ
+Bu testin varlık sebebi
 --------------------------
 `analytics/model.py · pencere_ozeti()` ile
 `scripts/train_aggression.py · _klip_ozellikleri()` **aynı** özet
 vektörünü üretmek zorunda. Ayrışırlarsa model, eğitildiğinden farklı
-bir dağılımla beslenir ve hata **SESSİZ** olur: skor üretilir, boru
+bir dağılımla beslenir ve hata **sessiz** olur: skor üretilir, boru
 hattı çalışır, yalnızca sonuç yanlıştır.
 
-⚠ Bu, projenin en pahalı hata türü. Aynı desen daha önce iki kez
+Bu, projenin en pahalı hata türü. Aynı desen daha önce iki kez
 yakalandı:
   * P-39 — koordinat uzayı ayrışması, AUC 0.483 gösterdi
   * `evaluate_k8_video.py` — özellik adlarını kopyalamak yerine
@@ -50,7 +50,7 @@ def _egitim_ozeti(
 ) -> dict[str, float]:
     """`train_aggression.py · _klip_ozellikleri` özet bloğunun ikizi.
 
-    ⚠ KASTEN BAĞIMSIZ YAZILDI. `pencere_ozeti`yi çağırsaydı test
+    Kasten bağımsız yazıldı. `pencere_ozeti`yi çağırsaydı test
     hiçbir şey doğrulamazdı — iki uygulamanın aynı sonucu vermesi
     ancak ikisi ayrı yazılırsa anlamlı.
     """
@@ -115,7 +115,7 @@ def _ornek_pencere() -> tuple[list[dict[str, float]], list[list[dict[str, float]
 
 
 def test_uretim_ve_egitim_ozeti_AYNI_vektoru_uretiyor() -> None:
-    """⭐ Kilit: iki bağımsız uygulama aynı girdide aynı çıktıyı vermeli."""
+    """Kilit: iki bağımsız uygulama aynı girdide aynı çıktıyı vermeli."""
     bilesen, ham = _ornek_pencere()
     uretim = pencere_ozeti(bilesen, ham)
     egitim = _egitim_ozeti(bilesen, ham)
@@ -145,7 +145,7 @@ def test_bos_pencere_bos_ozet_veriyor() -> None:
 
 
 def test_eksik_ham_alan_SIFIR_DEGIL_yok_sayiliyor() -> None:
-    """⚠ Eksik ≠ sıfır. Eksik alan özete HİÇ girmemeli.
+    """Eksik ≠ sıfır. Eksik alan özete hiç girmemeli.
 
     Sıfır yazmak modele "bu pencerede hareket yoktu" öğretirdi; oysa
     gerçek durum "ölçemedik" (person.py modül başlığı). LightGBM
@@ -167,7 +167,7 @@ class TestIzPaylari:
         assert 0.5 < paylar[2] < 1.0
 
     def test_hicbir_iz_SIFIRLANMIYOR(self) -> None:
-        """⚠ Kural düz çıkabiliyor; sıfırlamak gerçek olayı kaçırtır."""
+        """Kural düz çıkabiliyor; sıfırlamak gerçek olayı kaçırtır."""
         paylar = iz_paylari([_SahteSkor(1, 1.0), _SahteSkor(2, 0.0)])
         assert paylar[2] >= 0.5
 
@@ -181,7 +181,7 @@ class TestIzPaylari:
 
 class TestModelYuklemesi:
     def test_model_dosyasi_yoksa_SESSIZCE_devre_disi(self, tmp_path) -> None:
-        """⚠ Eksik bağımlılık boru hattını DURDURMAMALI.
+        """Eksik bağımlılık boru hattını durdurmamalı.
 
         Model yoksa füzyon eski kural skoruna döner. İstisna fırlatmak,
         20 kameralı bir gözetim sistemini bir dosya yüzünden komple

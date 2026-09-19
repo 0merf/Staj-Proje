@@ -1,4 +1,4 @@
-"""Parti doldurmanın gerçek etkisi — DÖNÜŞÜMLÜ A/B.
+"""Parti doldurmanın gerçek etkisi — dönüşümlü A/B.
 
 Neden bu betik
 --------------
@@ -10,7 +10,7 @@ yalnızca %47'si 7-8 aralığında.
 `--batch-fill-ms` bunu düzeltmeyi deniyor: parti hedefe ulaşana ya da
 süre dolana kadar kare topluyor. Bedeli gecikme, kazancı verim.
 
-⚠ NEDEN "ÖNCE KAPALI ÖLÇ, SONRA AÇIK ÖLÇ" YETMİYOR
+Neden "önce kapalı ölç, sonra açık ölç" yetmiyor
 --------------------------------------------------
 İlk denemede tam bunu yaptım ve sonuç **+%32 verim** çıktı. Sayı fazla
 iyiydi ve iki ölçüm arka arkaya alınmıştı — yani aradaki fark ayardan
@@ -26,7 +26,7 @@ Eşleştirilmiş karşılaştırma, ortak yönlü sürüklenmeyi (termal kısıt
 disk önbelleğinin ısınması, videoların döngü fazı) iki tarafa da eşit
 dağıtıyor.
 
-⚠ GECİKME DE ÖLÇÜLÜYOR
+Gecikme de ölçülüyor
 ----------------------
 Parti doldurmak tanımı gereği bekleme ekliyor. "Verim arttı" tek başına
 kabul kriteri değil: K3 uçtan uca gecikme için ≤1500 ms diyor. Verimi
@@ -59,7 +59,7 @@ BACKEND = PROJECT_ROOT / "backend"
 BENCHMARKS = PROJECT_ROOT / "benchmarks"
 METRIK = "http://127.0.0.1:9110/metrics"
 
-# ⚠ Tam yol: kısmi ad `PATH`e bağlıdır ve ölçüm betiği hangi kabuktan
+# Tam yol: kısmi ad `PATH`e bağlıdır ve ölçüm betiği hangi kabuktan
 # çağrıldığına göre farklı davranmamalı.
 PWSH = R"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
 
@@ -96,13 +96,13 @@ def _ayristir(metin: str) -> dict[str, float]:
 def _worker_yeniden_baslat(fill_ms: int) -> None:
     """Çıkarım worker'ını verilen ayarla yeniden başlatır.
 
-    ⚠ Yalnızca ÇIKARIM worker'ı yeniden başlıyor. Alım worker'ı
+    Yalnızca çıkarım worker'ı yeniden başlıyor. Alım worker'ı
     paylaşımlı bellek havuzunun sahibi; onu kapatmak havuzu yok eder ve
     ölçüm sıfırlanır (`start_all.ps1` sıra notu).
     """
-    # ⚠ S603/S607 bastırıldı: komut tamamen sabit, dışarıdan gelen tek
+    # S603/S607 bastırıldı: komut tamamen sabit, dışarıdan gelen tek
     # değer `fill_ms` ve o da `int` — kabuk enjeksiyonu yolu yok.
-    # Bu bir ÖLÇÜM betiği, üretim yolu değil (mimari kural: shell'e
+    # Bu bir ölçüm betiği, üretim yolu değil (mimari kural: shell'e
     # çıkmamak `PyAV` seçiminin gerekçesiydi; orada kullanıcı girdisi
     # vardı, burada yok).
     subprocess.run(  # noqa: S603
@@ -150,7 +150,7 @@ def _blok_olc(fill_ms: int, isinma: float, pencere: float) -> dict[str, float]:
     _worker_yeniden_baslat(fill_ms)
     if not _hazir_bekle():
         raise RuntimeError(f"worker açılmadı (fill={fill_ms})")
-    # ⚠ P-28: ısınma ~90 sn sürüyor. Bu payı atmadan alınan her sayı
+    # P-28: ısınma ~90 sn sürüyor. Bu payı atmadan alınan her sayı
     # kötümser çıkar ve iki blok farklı kadar ısınmışsa kıyas bozulur.
     time.sleep(isinma)
     a = _ayristir(_metrikleri_al())

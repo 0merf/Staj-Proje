@@ -18,11 +18,11 @@ sistem 3 saniyelik özellik penceresini dolduramadan olay bitiyor.
 UBI-Fights **kesilmemiş** gözetim videoları veriyor: olay öncesi
 bağlam var, dolayısıyla "kaç saniye önce" sorusu sorulabiliyor.
 
-## ⚠ Bu veri setiyle ilgili ÖLÇÜLEN sınırlar
+## Bu veri setiyle ilgili ölçülen sınırlar
 
 Bkz. `docs/report/problems.md` · P-50 ve P-51.
 
-1. **Etiketler olayın BAŞLANGICINI vermiyor.** Veri seti "şiddet
+1. **Etiketler olayın başlangıcını vermiyor.** Veri seti "şiddet
    pencereleri" işaretliyor. `F_74_1_2_0_0`'da ilk etiket 57.97 sn,
    fiziksel çatışma ~32.8 sn'de başlıyor — **25 saniye sapma**.
    Erken uyarı ölçümü bu farkı doğrudan avans sanır.

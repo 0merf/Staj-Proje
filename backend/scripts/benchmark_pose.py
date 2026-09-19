@@ -1,27 +1,27 @@
-"""KADEME 2a — poz tahmininin maliyetini ve DOĞRULUĞUNU ölçer.
+"""Kademe 2a — poz tahmininin maliyetini ve doğruluğunu ölçer.
 
-Cevaplanan soru (PLAN.md §5, §6.2 · CLAUDE.md Gün 7):
-    "İskeleti tespitle AYNI modelden mi almalıyız (yolo26s-pose, tek geçiş)
+Cevaplanan soru (Gün 7):
+    "İskeleti tespitle aynı modelden mi almalıyız (yolo26s-pose, tek geçiş)
      yoksa tespit + ayrı bir poz kademesi mi (kişi kırpıntısı başına)?"
 
 Ölçüm üç bölümdür — üçü de karara girer
 ---------------------------------------
 A) **Hız (tam kare).** Aynı karelerde detect ve pose ağırlıkları, batch
    boyutuna göre ms/kare.
-B) **Doğruluk (tam kare).** İki model aynı karelerde KAÇ kişi buluyor ve
+B) **Doğruluk (tam kare).** İki model aynı karelerde kaç kişi buluyor ve
    bulduklarının kutu boyutu dağılımı nasıl? Bu bölüm ölçüme sonradan
    eklendi: A'nın ilk koşusunda poz modelinin belirgin şekilde daha az
    kişi bulduğu görüldü ve hız karşılaştırması tek başına anlamsızlaştı.
 C) **Top-down maliyeti.** Kişi kırpıntılarını poz modeline vermenin
    kırpıntı başına maliyeti — iki kademeli tasarımın gerçek fiyatı.
-   PLAN.md §2.3 bunu ~1 ms/kişi diye VARSAYMIŞTI; burada ölçülüyor.
+   Proje planı bunu ~1 ms/kişi diye varsaymıştı; burada ölçülüyor.
 
-⚠ ÖLÇÜM DÜZENEĞİ NOTLARI
+Ölçüm düzeneği notları
 ------------------------
 1. Kareler **yerel dosyadan** okunur, RTSP'den değil. RTSP gerçek zamanlı
    25 FPS ile sınırlıdır; oradan ölçmek modelin kapasitesini değil akışın
    hız sınırını ölçer (docs/report/problems.md · P-07).
-2. Kareler ölçümden ÖNCE belleğe alınır; ölçülen süre saf GPU çıkarımıdır.
+2. Kareler ölçümden önce belleğe alınır; ölçülen süre saf GPU çıkarımıdır.
 3. **Ortalama değil p50 raporlanır.** İlk koşan model CUDA bellek havuzunu
    büyütür ve tek seferlik 100+ ms'lik sıçramalar ortalamayı çarpıtır;
    bu, modelin değil ölçüm sırasının özelliğidir. p50 dolu batch'in gerçek
@@ -68,14 +68,14 @@ DEFAULT_BATCHES = [1, 2, 4, 8, 16]
 # meselesi mi, yoksa modelin gerçekten göremediği bir şey mi?
 CONF_SWEEP = [0.35, 0.25, 0.15, 0.05]
 
-# Ölçülen gerçek üretim hızı (CLAUDE.md §6, 20 kamera). Bütçe
+# Ölçülen gerçek üretim hızı (proje notlarım, 20 kamera). Bütçe
 # projeksiyonları teorik 80 kare/sn yerine buna dayandırılıyor.
 MEASURED_FRAMES_PER_SECOND = 52.0
 
 # Her batch boyutu için ölçümden önce atılacak tur sayısı.
 WARMUP_BATCHES = 3
 
-# Kişi kırpıntısı ön işleme (PLAN.md §6.2)
+# Kişi kırpıntısı ön işleme
 CROP_PADDING = 0.15
 CROP_SIZES = [192, 256]
 
@@ -276,7 +276,7 @@ def run_recall(
     half: bool,
     device: str,
 ) -> dict[str, Any]:
-    """İki modelin AYNI karelerde kaç kişi bulduğunu karşılaştırır.
+    """İki modelin aynı karelerde kaç kişi bulduğunu karşılaştırır.
 
     Hız karşılaştırması ancak iki model aynı işi yapıyorsa anlamlıdır.
     Bu bölüm o varsayımı sınar.
@@ -356,15 +356,15 @@ def run_recall(
 
 
 def letterbox(crop: np.ndarray, size: int) -> np.ndarray:
-    """Kırpıntıyı EN-BOY ORANINI KORUYARAK kareye dolgular.
+    """Kırpıntıyı en-boy oranını koruyarak kareye dolgular.
 
-    ⚠ Burası ölçülerek öğrenildi (docs/report/problems.md · P-14).
+    Burası ölçülerek öğrenildi (docs/report/problems.md · P-14).
     İlk sürüm kırpıntıyı doğrudan `cv2.resize(c, (size, size))` ile
     kareye sıkıştırıyordu. Sonuç: kırpıntıların yalnızca %47'sinden
     iskelet çıkıyordu ve başarısızlık küçük kutularda yoğunlaşıyordu —
     "çözünürlük sınırı" gibi görünüyordu.
 
-    Gerçek sebep en-boy oranıydı: uzaktaki bir kişi İNCE ve UZUN bir
+    Gerçek sebep en-boy oranıydı: uzaktaki bir kişi ince ve uzun bir
     kutu verir (örn. 40×130). Kareye sıkıştırmak onu en çok bozan
     işlemdir; model artık insan şekli görmez. Oran korunduğunda küçük
     kutularda başarı %18 → %94'e çıktı, genel oran %47 → %88.
@@ -413,7 +413,7 @@ def run_topdown(
 ) -> dict[str, Any]:
     """İki kademeli tasarımın gerçek maliyetini ölçer.
 
-    PLAN.md §2.3 bunu ~1 ms/kişi diye varsaymıştı. Varsayım ölçülüyor.
+    Proje planı bunu ~1 ms/kişi diye varsaymıştı. Varsayım ölçülüyor.
     """
     print("\n> TOP-DOWN — kişi kırpıntısı başına poz maliyeti")
 
@@ -465,7 +465,7 @@ def run_topdown(
                     out = pose.detect(chunk)
                     sync()
                     per_crop_ms.append((time.perf_counter() - started) / crop_batch * 1000.0)
-                    # KIRPINTI başına sayıyoruz, tespit başına değil: bir
+                    # Kırpıntı başına sayıyoruz, tespit başına değil: bir
                     # kırpıntı komşu kişiyi de içerebilir ve oran %100'ü aşardı.
                     with_skeleton += sum(
                         1 for r in out if any(d.keypoints is not None for d in r)
@@ -651,7 +651,7 @@ def main() -> int:
                 f"   = {ts['detect_ms']:.2f} tespit + {ts['pose_crops_ms']:.2f} poz"
             )
             print(f"    {ts['config']}")
-            print(f"    PLAN.md §2.3 tahmini : {ts['plan_estimate_ms']:6.2f} ms/kare")
+            print(f"    plan tahmini        : {ts['plan_estimate_ms']:6.2f} ms/kare")
         print()
         print(f"  20 kamerada GPU yükü ({g['frames_per_second']:.0f} kare/sn):")
         print(f"    sadece tespit        : %{g['detect_only']:.1f}")

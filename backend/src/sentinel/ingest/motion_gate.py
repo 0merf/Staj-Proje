@@ -1,4 +1,4 @@
-"""KADEME 0 — hareket filtresi.
+"""Kademe 0 — hareket filtresi.
 
 Mimarinin en kritik parçası. 20 kamerayı tek GPU'da döndürebilmemizin
 sebebi bu: gerçek gözetim görüntüsünde karelerin büyük bölümünde hiçbir

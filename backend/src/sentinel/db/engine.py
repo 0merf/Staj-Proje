@@ -1,12 +1,12 @@
 """Veritabanı bağlantı havuzu.
 
-⚠ NEDEN TEK BİR MOTOR, MODÜL SEVİYESİNDE
+Neden tek bir motor, modül seviyesinde
 SQLAlchemy `AsyncEngine` kendi bağlantı havuzunu tutuyor. Her istekte
 yeni motor kurmak, her istekte yeni bir havuz açmak demek — bağlantı
 sayısı süreç ömrü boyunca birikir ve PostgreSQL `too many connections`
 ile reddetmeye başlar.
 
-⚠ NEDEN `NullPool` DEĞİL
+Neden `NullPool` değil
 Worker'lar uzun ömürlü ve saniyede birkaç kez yazıyor; her yazımda TCP
 + TLS + kimlik doğrulama turu atmak, yazılan verinin kendisinden pahalı
 olurdu.
@@ -31,7 +31,7 @@ def motor() -> AsyncEngine:
         ayarlar = get_settings()
         _motor = create_async_engine(
             ayarlar.effective_database_url,
-            # ⚠ Havuz küçük tutuluyor: bu süreçlerin hiçbiri veritabanı
+            # Havuz küçük tutuluyor: bu süreçlerin hiçbiri veritabanı
             # ağırlıklı değil. Analytics worker saniyede birkaç satır
             # yazıyor, API sorguları seyrek. Büyük havuz boşuna bağlantı
             # tutar ve aynı makinedeki `teknofest_postgres` ile birlikte

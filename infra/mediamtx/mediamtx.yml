@@ -4,22 +4,22 @@
 #  İki iş yapar:
 #   1) Video dosyalarından 20 sahte RTSP kamerası üretir
 #   2) Tarayıcıya WHEP/WebRTC ile düşük gecikmeli yayın verir
-#      → YENİDEN KODLAMA YAPMAZ, sadece kapsayıcı değiştirir.
-#        (NVENC oturum limiti + GPU tasarrufu — PLAN.md §3.3)
+#      → yeniden kodlama yapmaz, sadece kapsayıcı değiştirir.
+# (NVENC oturum limiti + GPU tasarrufu)
 # ══════════════════════════════════════════════════════════════
 
 logLevel: info
 logDestinations: [stdout]
 
-# ─── KİMLİK DOĞRULAMA ─────────────────────────────────────────
-# MediaMTX v1.x varsayılan olarak api/metrics erişimini KAPALI tutar
+# ─── Kimlik doğrulama ─────────────────────────────────────────
+# MediaMTX v1.x varsayılan olarak api/metrics erişimini kapalı tutar
 # (iyi bir güvenlik varsayılanı). Yönetim erişimini yalnızca yerel
 # ağlara açıyoruz — dış dünyaya asla.
 #
-# ⚠ 30.08.2026 — `ips: []` (HERKESE AÇIK) KAPATILDI
+# 30.08.2026 — `ips: []` (herkese açık) kapatıldı
 #
 # API'ye kimlik doğrulama eklenirken şu fark edildi: video API'den
-# GEÇMİYOR. Tarayıcı WHEP ile doğrudan MediaMTX'e (8889) bağlanıyor —
+# geçmiyor. Tarayıcı WHEP ile doğrudan MediaMTX'e (8889) bağlanıyor —
 # yani meta veriyi (kamera listesi, alarmlar) korurken **asıl hassas
 # şeyi, görüntünün kendisini** korumasız bırakmıştık.
 #
@@ -27,7 +27,7 @@ logDestinations: [stdout]
 # klasik hatası: koruma, kolay korunan yere değil değerli olana
 # konur.
 #
-# ⚠ BU TAM BİR ÇÖZÜM DEĞİL, DÜRÜSTÇE YAZILIYOR
+# Bu tam bir çözüm değil, burada açıkça belirtiyorum
 # IP kısıtı kimlik doğrulaması değildir: aynı makinedeki ya da aynı
 # yerel ağdaki herkes hâlâ izleyebilir. Tam çözüm MediaMTX'in
 # `authHTTPAddress` özelliğiyle her okuma isteğini bizim API'mize
@@ -35,10 +35,10 @@ logDestinations: [stdout]
 # ve sorgu dizeleri sunucu günlüklerine, vekil kayıtlarına ve tarayıcı
 # geçmişine düşüyor.
 #
-# Doğru mimari çözüm Caddy'yi TEK GİRİŞ NOKTASI yapmak (PLAN §10):
+# Doğru mimari çözüm Caddy'yi tek giriş noktası yapmak:
 # hem API hem WHEP onun arkasından geçer ve kimlik tek yerde
-# doğrulanır. Bu iş açık; o gelene kadar IP kısıtı bir DERİNLİKLİ
-# SAVUNMA katmanı — port yanlışlıkla dışa açılırsa internetten
+# doğrulanır. Bu iş açık; o gelene kadar IP kısıtı bir derinlikli
+# savunma katmanı — port yanlışlıkla dışa açılırsa internetten
 # okunamıyor.
 authInternalUsers:
   # Yayın ve izleme: yalnızca yerel makine ve özel ağlar.
@@ -51,18 +51,18 @@ authInternalUsers:
       - action: read
       - action: playback
 
-  # Yönetim API'si ve metrikler: SADECE localhost + Docker özel ağları
+  # Yönetim API'si ve metrikler: sadece localhost + Docker özel ağları
   - user: any
     ips: ["127.0.0.1/32", "::1/128", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
     permissions:
       - action: api
       - action: metrics
 
-# ─── YÖNETİM API'Sİ ───────────────────────────────────────────
+# ─── Yönetim API'si ───────────────────────────────────────────
 api: yes
 apiAddress: :9997
 
-# ─── PROMETHEUS METRİKLERİ ────────────────────────────────────
+# ─── PROMETHEUS metrikleri ────────────────────────────────────
 metrics: yes
 metricsAddress: :9998
 
@@ -75,15 +75,15 @@ webrtc: yes
 webrtcAddress: :8889
 webrtcLocalUDPAddress: :8189
 
-# ─── KULLANILMAYAN PROTOKOLLER — kapalı (saldırı yüzeyi azaltma) ──
+# ─── Kullanılmayan protokoller — kapalı (saldırı yüzeyi azaltma) ──
 hls: no
 rtmp: no
 srt: no
 
 # ══════════════════════════════════════════════════════════════
-#  SÜREKLİ KAYIT — OLAY KLİBİNİN KAYNAĞI
+#  Sürekli kayıt — olay klibinin kaynağı
 #
-#  Neden buraya konuldu (PLAN.md §4.1 halka tamponu yerine)
+# Neden buraya konuldu (halka tamponu yerine)
 #  --------------------------------------------------------
 #  Alarm 14:32:07'de çalıyorsa operatör 14:31:57'den itibaren görmek
 #  zorunda — tırmanmanın kendisi o 10 saniyede ve projenin tüm iddiası
@@ -94,46 +94,46 @@ srt: no
 #  Elenen iki alternatif:
 #   · RAM'de halka tamponu (orijinal tasarım):
 #     20 kamera × 30 sn × 4 FPS × 2.76 MB ≈ 6.6 GB RAM. Olmaz.
-#     JPEG'lersek 240 MB'a iner ama kodlama maliyeti ZATEN DARBOĞAZ
+#     JPEG'lersek 240 MB'a iner ama kodlama maliyeti zaten darboğaz
 #     olan CPU'ya biner ve klip 4 FPS kesik olur.
 #   · shm'deki 640×640 letterbox karelerden: klip kare formatta, gri
 #     dolgulu, 640 px, 4 FPS olur. Delil değeri yok.
 #
-#  Seçilen yol her iki alternatiften de UCUZ:
-#   · MediaMTX H.264 paketlerini YENİDEN KODLAMADAN diske muxluyor —
+#  Seçilen yol her iki alternatiften de ucuz:
+#   · MediaMTX H.264 paketlerini yeniden kodlamadan diske muxluyor —
 #     CPU maliyeti ~sıfır (bu zaten MediaMTX'i seçme gerekçelerinden
 #     biriydi, yukarıdaki başlığa bakınız)
 #   · Klip `ffmpeg -c copy` ile kesiliyor — o da yeniden kodlamıyor
-#   · Çözünürlük 720p TAM, kare hızı 25 FPS — kanıt niteliğinde
-#   · KADEME 3 (video aksiyon doğrulayıcı) 3 sn'lik klibi de buradan
+#   · Çözünürlük 720p tam, kare hızı 25 FPS — kanıt niteliğinde
+#   · kademe 3 (video aksiyon doğrulayıcı) 3 sn'lik klibi de buradan
 #     alacak; onun da kaynağı yoktu
 #
-#  Disk bütçesi — ÖLÇÜLDÜ (18.08.2026): ~14 GB/saat (20 kamera).
+#  Disk bütçesi — ölçüldü (18.08.2026): ~14 GB/saat (20 kamera).
 #  `recordDeleteAfter: 1h` ile ~14 GB'ta döner.
 #
-#  ⚠ ÜÇ KATMANLI DİSK KORUMASI — kaynak videolar SONSUZ döngüde
+#  ÜÇ katmanlı disk koruması — kaynak videolar sonsuz döngüde
 #  yayınlandığı için kayıt kendiliğinden durmaz:
-#    1. Kayıt varsayılan KAPALI  → `MEDIAMTX_RECORD=yes` ile açılır
+#    1. Kayıt varsayılan kapalı  → `MEDIAMTX_RECORD=yes` ile açılır
 #    2. Çalışırken 1 saatte döner → `recordDeleteAfter`
 #    3. Kapanışta temizlenir      → `stop_all.ps1`
-#  (2) yalnızca MediaMTX ÇALIŞIRKEN işler; konteyner durunca kalan
+#  (2) yalnızca MediaMTX çalışırken işler; konteyner durunca kalan
 #  dosyalar diskte öylece kalır. (3) tam olarak o boşluğu kapatıyor.
 #
-#  KVKK saklama süresi (PLAN §12.1: klipler 30 gün) bu HAM kayıtlara
-#  değil, alarm anında kesilip Garage'a yüklenen KLİPLERE uygulanır —
+# KVKK saklama süresi (klipler 30 gün) bu ham kayıtlara
+#  değil, alarm anında kesilip data/clips altına yazılan kliplere uygulanır —
 #  ham kayıt yalnızca kesim penceresi kadar tutuluyor.
 # ══════════════════════════════════════════════════════════════
 
-# ─── VARSAYILAN YOL AYARLARI ──────────────────────────────────
+# ─── Varsayılan yol ayarları ──────────────────────────────────
 pathDefaults:
   # Kaynak yalnızca birisi bağlandığında başlar (CPU tasarrufu)
   runOnDemandRestart: yes
   runOnDemandStartTimeout: 20s
   runOnDemandCloseAfter: 30s
 
-  # ⚠⚠ KAYIT VARSAYILAN OLARAK KAPALI — bilinçli
+  # Kayıt varsayılan olarak kapalı — bilinçli
   #
-  # Kaynak videolar SONSUZ DÖNGÜDE yayınlanıyor (`-stream_loop -1`),
+  # Kaynak videolar sonsuz döngüde yayınlanıyor (`-stream_loop -1`),
   # yani sistem açık kaldığı sürece kayıt da durmadan büyür. Ölçülen
   # hız ~14 GB/saat. Klip/alarm zinciri üzerinde çalışmadığımız her
   # gün bu tamamen israf: Gün 19'a kadar kimse klip kesmiyor.
@@ -154,27 +154,27 @@ pathDefaults:
 
   # ─── Kayıt parametreleri (kayıt açıksa geçerli) ───
   recordPath: /recordings/%path/%Y-%m-%d_%H-%M-%S-%f
-  # fmp4: parçalı MP4. Seçilme sebebi, kayıt DEVAM EDERKEN okunabilir
+  # fmp4: parçalı MP4. Seçilme sebebi, kayıt devam ederken okunabilir
   # olması — klasik MP4'te indeks (moov atomu) dosya kapanınca yazılır,
-  # yani en TAZE segment (alarm anındaki segment!) okunamazdı.
+  # yani en taze segment (alarm anındaki segment!) okunamazdı.
   recordFormat: fmp4
   recordPartDuration: 1s
   # 60 sn'lik segment: alarm penceresi (olay öncesi 10 sn + sonrası
   # 10 sn) çoğunlukla tek segmente düşer, en kötü ihtimalle ikiye.
   # Daha kısa segment = daha çok dosya + daha çok kesim birleştirme.
   recordSegmentDuration: 60s
-  # ⚠ 1 SAAT — ölçümle belirlendi, tahminle değil.
+  # 1 saat — ölçümle belirlendi, tahminle değil.
   # İlk değer 6h yazılmıştı; dayanağı "20 kamera × 1.5 Mbps ≈ 4.5 GB/saat"
-  # TAHMİNİYDİ. ÖLÇÜM (18.08.2026, cam-09 ve cam-12, gerçek 60 sn'lik
+  # tahminiydi. Ölçüm (18.08.2026, cam-09 ve cam-12, gerçek 60 sn'lik
   # segmentler): segment başına 9.4-13.5 MB → kamera başına ~700 MB/saat
   # → 20 kamerada ~14 GB/saat. Tahmin 3 kat düşüktü.
-  #   6h saklama = ~84 GB   ·   1h saklama = ~14 GB  ⬅ seçilen
+  #   6h saklama = ~84 GB   ·   1h saklama = ~14 GB  ← seçilen
   # 1 saat fazlasıyla yeterli: klip penceresi olay öncesi/sonrası 10'ar
   # saniye, alarm motoru saniyeler içinde tepki veriyor ve kesilen klip
-  # zaten Garage'a yükleniyor. Ham kayıt yalnızca "kesim yapılana kadar"
+  # zaten data/clips altına yazılıyor. Ham kayıt yalnızca "kesim yapılana kadar"
   # tutulmalı; arşiv görevi kliplerin.
   #
-  # ⚠ Bu temizlik YALNIZCA MediaMTX ÇALIŞIRKEN işler. Konteyner
+  # Bu temizlik yalnızca MediaMTX çalışırken işler. Konteyner
   # durunca kalan dosyalar diskte öylece kalır — o yüzden
   # `stop_all.ps1` kapanışta ayrıca siliyor.
   recordDeleteAfter: 1h
@@ -182,11 +182,11 @@ pathDefaults:
 paths:
 
   # ══════════════════════════════════════════════════════════
-  #  SENTETİK TEST KAMERALARI — video dosyası GEREKTİRMEZ
+  #  Sentetik test kameraları — video dosyası gerektirmez
   #  Amaç: veri setleri inmeden boru hattını test edebilmek
   # ══════════════════════════════════════════════════════════
 
-  # Hareketli desen — Kademe 0 hareket filtresi bunu GEÇİRMELİ
+  # Hareketli desen — Kademe 0 hareket filtresi bunu geçirmeli
   cam-test-motion:
     runOnDemand: >
       ffmpeg -re -f lavfi -i testsrc2=size=1280x720:rate=25
@@ -194,7 +194,7 @@ paths:
       -pix_fmt yuv420p -g 50 -an
       -rtsp_transport tcp -f rtsp rtsp://127.0.0.1:$RTSP_PORT/$MTX_PATH
 
-    # Sentetik test deseni — HİÇBİR koşulda kaydedilmez.
+    # Sentetik test deseni — hiçbir koşulda kaydedilmez.
     # `pathDefaults` ortam değişkeniyle açılsa bile burası kilitli:
     # bunlar boru hattı testi için var, delil için değil.
     record: no
@@ -207,13 +207,13 @@ paths:
       -pix_fmt yuv420p -g 50 -an
       -rtsp_transport tcp -f rtsp rtsp://127.0.0.1:$RTSP_PORT/$MTX_PATH
 
-    # Sentetik test deseni — HİÇBİR koşulda kaydedilmez.
+    # Sentetik test deseni — hiçbir koşulda kaydedilmez.
     # `pathDefaults` ortam değişkeniyle açılsa bile burası kilitli:
     # bunlar boru hattı testi için var, delil için değil.
     record: no
 
-  # Tamamen durağan — Kademe 0 hareket filtresi bunu ~%100 ELEMELİ
-  # (PLAN.md §5.1 doğrulaması: filtre gerçekten yük düşürüyor mu?)
+  # Tamamen durağan — Kademe 0 hareket filtresi bunu ~%100 elemeli
+  # (doğrulaması: filtre gerçekten yük düşürüyor mu?)
   cam-test-static:
     runOnDemand: >
       ffmpeg -re -f lavfi -i color=c=gray:size=1280x720:rate=25
@@ -221,18 +221,18 @@ paths:
       -pix_fmt yuv420p -g 50 -an
       -rtsp_transport tcp -f rtsp rtsp://127.0.0.1:$RTSP_PORT/$MTX_PATH
 
-    # Sentetik test deseni — HİÇBİR koşulda kaydedilmez.
+    # Sentetik test deseni — hiçbir koşulda kaydedilmez.
     # `pathDefaults` ortam değişkeniyle açılsa bile burası kilitli:
     # bunlar boru hattı testi için var, delil için değil.
     record: no
 
   # ══════════════════════════════════════════════════════════
-  #  KAMERA ÇİFTLİĞİ — data/videos/cam-NN.mp4 dosyalarından
+  #  Kamera çiftliği — data/videos/cam-NN.mp4 dosyalarından
   #
   #  Regex ile 20 yol tek tanımda: cam-01 … cam-20
   #  Dosya adı yol adıyla eşleşmeli:  cam-07  →  /videos/cam-07.mp4
   #
-  #  -c copy    : yeniden kodlama YOK (CPU tasarrufu — 20 akış × encode
+  #  -c copy    : yeniden kodlama yok (CPU tasarrufu — 20 akış × encode
   #               olsaydı CPU'yu decode'a bırakmazdık)
   #  -stream_loop -1 : sonsuz döngü
   #  -fflags +genpts : döngüde zaman damgası kopukluğunu önler
@@ -244,18 +244,18 @@ paths:
       -c copy -an
       -rtsp_transport tcp -f rtsp rtsp://127.0.0.1:$RTSP_PORT/$MTX_PATH
 
-    # ─── OLAY KLİBİ KAYNAĞI ───
-    # Kayıt ayarları BİLEREK burada tekrarlanmıyor; `pathDefaults`'tan
+    # ─── Olay klibi kaynağı ───
+    # Kayıt ayarları bilerek burada tekrarlanmıyor; `pathDefaults`'tan
     # miras alınıyor. Sebep: tek bir `MEDIAMTX_RECORD` ortam değişkeni
     # 20 kameranın hepsini birden yönetsin. Burada `record: yes`
     # yazsaydık ortam değişkeni bu satır tarafından ezilir ve kaydı
     # kapatmak imkânsızlaşırdı.
 
   # ══════════════════════════════════════════════════════════
-  #  KAMERA 21 — laptop webcam (canlı demo)
+  #  Kamera 21 — laptop webcam (canlı demo)
   #  Windows'ta çalıştığı için host tarafından yayınlanır:
   #    scripts/publish_webcam.ps1
-  #  Bu yol sadece yayını KABUL eder (runOnDemand yok).
+  #  Bu yol sadece yayını kabul eder (runOnDemand yok).
   # ══════════════════════════════════════════════════════════
   cam-21-live:
     # Yayın bekleniyor — kaynak tanımlanmadı (publisher push edecek)
@@ -265,9 +265,9 @@ paths:
     # alarm tetiklenirse klibi gösterebilmek gerekiyor — sunumun can
     # alıcı anı tam olarak bu.
     #
-    # ⚠ KVKK: bu GERÇEK bir kişinin görüntüsü, diğer 20 kameradan farkı
+    # KVKK: bu gerçek bir kişinin görüntüsü, diğer 20 kameradan farkı
     # bu. Üç koruma birlikte çalışıyor:
-    #   · kayıt varsayılan KAPALI (MEDIAMTX_RECORD=yes gerekiyor)
+    #   · kayıt varsayılan kapalı (MEDIAMTX_RECORD=yes gerekiyor)
     #   · açıksa 1 saat sonra kendiliğinden siliniyor
     #   · `stop_all.ps1` kapanışta ayrıca temizliyor
     # Ayrıca `PRIVACY_BLUR_DEFAULT=true` panelde yüzü bulanıklaştırıyor

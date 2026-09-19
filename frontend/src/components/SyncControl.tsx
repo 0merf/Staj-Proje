@@ -1,24 +1,24 @@
 /** Video tamponu kontrolü — kutu hizalamasının kalbi.
  *
- * NEDEN VİDEOYU GECİKTİRİYORUZ
+ * Neden videoyu geciktiriyoruz
  * ----------------------------
  * Analiz sonucu ~200-450 ms eski; video canlı. Kutuyu nereye çizeceğiz?
  *
- * İlk yaklaşımımız kişinin ŞU AN nerede olduğunu hız vektöründen
+ * İlk yaklaşımımız kişinin şu AN nerede olduğunu hız vektöründen
  * tahmin etmekti (ekstrapolasyon). İnsan yavaşlar/döner/durur, tahmin
- * tutmaz, ve bir sonraki gerçek sonuç kutuyu SIÇRATARAK doğru yere
- * çeker — kullanıcının bildirdiği "takılma" buydu.
+ * tutmaz, ve bir sonraki gerçek sonuç kutuyu sıçratarak doğru yere
+ * çeker — panelde gördüğüm "takılma" buydu.
  *
  * Çok oyunculu oyun ağ literatürünün yerleşik çözümü tersini söylüyor
- * (LITERATUR.md §T): **tahmin etme, görüntüyü geciktir.** Video analiz
- * kadar geriden gelirse, ekranda gösterilen an için elimizde İKİ gerçek
+ *: **tahmin etme, görüntüyü geciktir.** Video analiz
+ * kadar geriden gelirse, ekranda gösterilen an için elimizde iki gerçek
  * ölçüm olur ve aradaki konum hesaplanır — tahmin edilmez.
  *
  * Tarayıcının bunun için hazır bir düğmesi var: `jitterBufferTarget`
  * (Chrome'da `playoutDelayHint`). "Bu videoyu N ms tamponla" diyoruz.
  *
  * Bedeli tazelik. Gözetimde kabul edilebilir: operatör için kutunun
- * DOĞRU YERDE olması, yarım saniye daha taze olmasından önemli —
+ * doğru yerde olması, yarım saniye daha taze olmasından önemli —
  * üstelik alarm ayrı kanaldan gecikmesiz geliyor.
  */
 import { useStore } from '../store'
@@ -56,17 +56,16 @@ export function SyncControl() {
         <span className="w-16 font-mono text-xs text-ink">{buffer} ms</span>
       </div>
 
-      {/* ⚠⚠ SABİT GENİŞLİKLER — süs değil, kullanılabilirlik düzeltmesi
+      {/* sabit genişlikler — süs değil, kullanılabilirlik düzeltmesi
           (10.09).
 
           Buradaki üç değer de sürekli değişiyor: `video —` → `video
           512ms`, `tahmin` → `ara değerleme`, ve öneri düğmesi gelip
           gidiyor. Genişlikleri içeriğe bağlı olduğu için üst şeridin
-          TAMAMI her saniye sağa sola kayıyordu; kullanıcının bildirdiği
-          şikâyet buydu ("o yazı dönüşünce soldaki butonlar sağa
-          kayıyor").
+          tamamı her saniye sağa sola kayıyordu; fark ettiğim sorun buydu
+          (yazı değiştikçe soldaki butonlar sağa kayıyordu).
 
-          Çözüm bir yerleşim düzeltmesi: her değişken alana EN UZUN
+          Çözüm bir yerleşim düzeltmesi: her değişken alana en uzun
           içeriğine yetecek sabit bir yer ayrılıyor. Düğme yokken de
           yeri korunuyor (`invisible`, `hidden` değil — `hidden`
           yerleşimden çıkarır ve kaymayı geri getirirdi). */}

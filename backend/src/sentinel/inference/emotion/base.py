@@ -1,6 +1,6 @@
-"""KADEME 2b — yüz tespiti ve yüz ifadesi sınıflandırma.
+"""Kademe 2b — yüz tespiti ve yüz ifadesi sınıflandırma.
 
-⚠ ÖNCE BİLİMSEL DÜRÜSTLÜK NOTU (PLAN.md §6.3)
+Önce bilimsel bir uyarı
 ----------------------------------------------
 Bu modülün adı bilinçli olarak **"duygu tanıma" değil, "yüz ifadesi
 sınıflandırma"**. Fark önemli:
@@ -19,21 +19,21 @@ açılı, düşük çözünürlüklü ve çoğu zaman hiç görünmüyor.
 Bu yüzden tasarım kararları:
 
 · Her çıktı bir **kalite skoru** taşır (yüz boyutu, bulanıklık).
-· **"Yüz yeterince net değil"** ayrı ve NORMAL bir sonuçtur.
+· **"Yüz yeterince net değil"** ayrı ve normal bir sonuçtur.
 · Bu modül **tek başına asla alarm üretmez**; yalnızca tırmanma
-  skoruna düşük ağırlıkla katkı verir (0.10 — PLAN.md §6.6).
+  skoruna düşük ağırlıkla katkı verir (0.10).
 · Yüz görüntüsü **saklanmaz** (KVKK m.6 biyometrik veri; config.py
   içinde `store_face_crops` doğrulayıcısıyla kod düzeyinde yasaklı).
 
 Neden yine de var: literatürde saldırganlık tırmanmasının bileşenleri
 arasında yüz ifadesi sayılıyor ve şartname "duygu analizi" istiyor.
-Doğru yaklaşım, yeteneği sunup **sınırlarını dürüstçe raporlamaktır.**
+Doğru yaklaşım, yeteneği sunup **sınırlarını açıkça raporlamaktır.**
 
-KADEME 2b nerede duruyor
+Kademe 2b nerede duruyor
 ------------------------
     Kademe 1  : tespit           → her hareketli karede
     Kademe 2a : poz (iskelet)    → tespit edilen her kişide
-    Kademe 2b : yüz + ifade      → SEYREK (aşağıya bakınız)
+    Kademe 2b : yüz + ifade      → seyrek (aşağıya bakınız)
 
 Seyrek olması zorunlu. Kapı iki kademeli:
 
@@ -41,7 +41,7 @@ Seyrek olması zorunlu. Kapı iki kademeli:
   2. Bu iz için son sınıflandırmadan bu yana yeterli süre geçti mi
      (duygu 100 ms'de değişmez; 2 saniyede bir yeterli)
 
-⚠ MALİYET — ölçüldü, önceki rakam YANLIŞTI
+Maliyet — ölçüldü, önceki rakam yanlıştı
 ------------------------------------------
 Bu dosyada uzun süre *"CPU'da yüz başına ~58 ms"* yazıyordu ve
 `ExpressionStage`'in tüm bütçe tasarımı ona dayanıyordu. **Yanlıştı.**
@@ -55,14 +55,14 @@ Yani gerçek maliyet **~8 kat düşük.** Eski rakam muhtemelen ısınma
 karesi ölçüme dahil edilerek ya da 20 kameralık boru hattı koşarken
 alınmıştı (aynı tuzak: problems.md · P-22, P-28).
 
-⚠ GPU KAZANDIRMIYOR — ve sebebi önemli
+GPU kazandırmıyor — ve sebebi önemli
 --------------------------------------
 CUDA sağlayıcısı artık yükleniyor (P-30: iki onnxruntime paketi aynı
 dizini paylaşıp birbirini eziyormuş). Ama ölçüm gösterdi ki kazanç yok:
 `cuda 7.51` / `cpu 7.41` ms — CPU marjinal olarak daha hızlı.
 
 Sebep ölçekte görünüyor: 1 yüz 7.25 ms, 8 yüz 60.06 ms → **8.28× tam
-doğrusal.** `emotiefflib.predict_emotions(liste)` toplu çağrı YAPMIYOR,
+doğrusal.** `emotiefflib.predict_emotions(liste)` toplu çağrı yapmıyor,
 içeride tek tek döngüye sokuyor. Model küçük (16 MB `enet_b0`) ve her
 çağrının sabit maliyeti baskın olduğu için GPU'nun paralelliği hiç
 devreye girmiyor.
@@ -72,7 +72,7 @@ Gerçek kazanç ONNX oturumunu doğrudan `(N,3,224,224)` tensörle
 aynısı. Bu P-15'in aynı ailesi: doğru soru "hangi cihaz hızlı" değil,
 "iş kaç çağrıya bölünüyor". Gün 16'ya bırakıldı.
 
-Maliyet 8 kat düşük çıksa da seyreltme KALDIRILMADI: kapı zaten bedava
+Maliyet 8 kat düşük çıksa da seyreltme kaldırılmadı: kapı zaten bedava
 çalışıyor ve bütçe koruması, kalabalık bir kameranın tek başına çıkarım
 döngüsünü bloklamasını engelliyor.
 """
@@ -99,7 +99,7 @@ EXPRESSION_TR = {
 }
 
 # Bu boyutun altındaki yüzlerde sınıflandırma yapılmaz.
-# PLAN.md §6.3: yüz kutusu ≥ 60×60 piksel. Altında model girdisi
+# Proje planı: yüz kutusu ≥ 60×60 piksel. Altında model girdisi
 # (224×224) neredeyse tamamen büyütmeden ibaret olur ve çıktı gürültüdür.
 MIN_FACE_PX = 60
 
@@ -114,7 +114,7 @@ MIN_SHARPNESS = 25.0
 
 @dataclass(frozen=True, slots=True)
 class FaceBox:
-    """Kişi kutusu içinde bulunmuş bir yüz. Koordinatlar KAYNAK karede."""
+    """Kişi kutusu içinde bulunmuş bir yüz. Koordinatlar kaynak karede."""
 
     x1: float
     y1: float
@@ -135,9 +135,9 @@ class FaceBox:
 class ExpressionResult:
     """Bir yüzün ifade sınıflandırması.
 
-    ⚠ `label` bir DUYGU İDDİASI DEĞİL, bir görüntü benzerlik etiketidir.
+    `label` bir duygu iddiası değil, bir görüntü benzerlik etiketidir.
     Panelde ve raporda "üzgün görünüyor" diye sunulur, "üzgün" diye
-    değil — aradaki fark bilimsel dürüstlüktür (modül başlığı).
+    değil — aradaki fark bilimsel doğruluktur (modül başlığı).
     """
 
     label: str
@@ -152,33 +152,33 @@ class ExpressionResult:
     def usable(self) -> bool:
         """Bu sonuç operatöre gösterilecek kadar güvenilir mi?
 
-        ⚠⚠ 10.09.2026 — GÜVEN EŞİĞİ 0.40 → 0.55 (P-73)
+        10.09.2026 — güven eşiği 0.40 → 0.55 (P-73)
 
-        Kullanıcı canlı panelde açıkça gülümseyen bir yüzün
-        "şaşkınlık" etiketlendiğini gördü ve sordu: *"yanlış
-        etiketliyorsa neden yapıyoruz ki?"*
+        Canlı panelde açıkça gülümseyen bir yüzün "şaşkınlık" diye
+        etiketlendiğini gördüm. Yanlış etiketliyorsa bu kademenin bir
+        anlamı yok.
 
-        cam-20'den 12 yüz kırpıntısı çıkarılıp ELLE (görsel olarak)
-        değerlendirildi:
+        cam-20'den 12 yüz kırpıntısı çıkarıp elle (görsel olarak)
+        değerlendirdim:
 
-            güven   model etiketi   görsel değerlendirme
-            0.98    Happiness       ✅ gülümsüyor
-            0.88    Fear            ✅ endişeli, kaşlar çatık
-            0.79    Happiness       ✅ gülümsüyor
-            0.59    Neutral         ✅ nötr, konuşuyor
-            0.57    Happiness       ✅ gülüyor
-            0.48    Surprise        ❌ nötr bir yüz
-            0.43    Contempt        ❌ nötr bir yüz
+            güven   model etiketi   görsel değerlendirme     sonuç
+            0.98    Happiness       gülümsüyor               doğru
+            0.88    Fear            endişeli, kaşlar çatık   doğru
+            0.79    Happiness       gülümsüyor               doğru
+            0.59    Neutral         nötr, konuşuyor          doğru
+            0.57    Happiness       gülüyor                  doğru
+            0.48    Surprise        nötr bir yüz             yanlış
+            0.43    Contempt        nötr bir yüz             yanlış
 
-        ⭐ Ayrım keskin: **0.55 üstü doğru, 0.50 altı yanlış.** Eski
+        Ayrım keskin: **0.55 üstü doğru, 0.50 altı yanlış.** Eski
         eşik (0.40) tam da hatalı bandı geçiriyordu.
 
-        ⚠ ÖLÇÜMÜN SINIRI DÜRÜSTÇE: n=12, TEK değerlendirici (ben) ve
+        Ölçümün sınırı: n=12, tek değerlendirici (ben) ve
         yer gerçeği yok. Bu bir doğruluk ölçümü değil, eşik seçimi için
         bir gözlem. Gerçek doğruluk ancak etiketli bir yüz ifadesi veri
         setiyle ölçülebilir ve o kapsam dışı bırakıldı.
 
-        ⚠ Bedeli: daha az etiket gösterilecek. Bu KABUL EDİLEN bir
+        Bedeli: daha az etiket gösterilecek. Bu kabul edilen bir
         bedel — gözetim sisteminde yanlış bir duygu etiketi,
         etiket olmamasından kötüdür.
         """

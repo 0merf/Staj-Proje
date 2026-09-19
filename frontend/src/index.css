@@ -13,19 +13,19 @@
   --color-bad: oklch(0.65 0.20 25);
 }
 
-/* ─── AÇIK TEMA (10.09.2026) ───────────────────────────────────
-   Kullanıcı isteği: *"bir açık tema bir de koyu tema seçeneği
-   eklesene. ben koyu tema sevmedim ama belki koyu tema seven vardır."*
+/* ─── Açık tema (10.09.2026) ───────────────────────────────────
+   Açık ve koyu tema seçeneği var. Ben açık temayı tercih ediyorum ama
+   koyu temayı seven kullanıcılar için ikisini de sundum.
 
-   ⚠ RENKLERİ SADECE TERS ÇEVİRMEK YETMEZ — ve en sık yapılan hata bu.
-   Zemin ile metin ters çevrilebilir, ama DURUM RENKLERİ (ok/warn/bad)
+   Renkleri sadece ters çevirmek yetmez — ve en sık yapılan hata bu.
+   Zemin ile metin ters çevrilebilir, ama durum renkleri (ok/warn/bad)
    çevrilemez: koyu temadaki `ok` açık bir yeşil (L=0.72) ve beyaz
    zeminde neredeyse görünmez. Açık temada aynı renkler L=0.50
    civarına indiriliyor ki kontrast korunsun.
 
-   ⚠ Bunlar `@theme` içine DEĞİL, ayrı bir seçiciye yazılıyor:
-   `@theme` bloğu Tailwind'in yardımcı sınıflarını ÜRETİYOR (bg-bg,
-   text-ink…), bu blok ise yalnızca değişkenin DEĞERİNİ değiştiriyor.
+   Bunlar `@theme` içine değil, ayrı bir seçiciye yazılıyor:
+   `@theme` bloğu Tailwind'in yardımcı sınıflarını üretiyor (bg-bg,
+   text-ink…), bu blok ise yalnızca değişkenin değerini değiştiriyor.
    Yardımcı sınıflar `var(--color-…)` okuduğu için tema anında
    uygulanıyor, yeniden derleme gerekmiyor. */
 :root[data-tema="acik"] {

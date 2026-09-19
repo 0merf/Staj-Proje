@@ -1,6 +1,6 @@
 """Takipçi parametrelerinin kimlik kararlılığına etkisini ölçer.
 
-Cevaplanan soru (PLAN.md §6.1 · CLAUDE.md Gün 12):
+Cevaplanan soru (Gün 12):
     "İzlerin %20'si tek kare yaşayıp ölüyor. Sebep eşleştirme
      parametreleri mi, yoksa sahnenin kendisi mi?"
 
@@ -8,7 +8,7 @@ Neden kontrollü deney şart
 --------------------------
 Canlı sistemde parametre değiştirip bakmak yanıltıcı: sahne değişiyor,
 kalabalık değişiyor, kare hızı değişiyor. Aynı tespit dizisini farklı
-ayarlarla aynı takipçiden geçirmek tek dürüst karşılaştırmadır.
+ayarlarla aynı takipçiden geçirmek tek adil karşılaştırmadır.
 
 Bu yüzden burada tespitler **bir kez** çıkarılıp belleğe alınıyor,
 sonra her ayar aynı diziyi işliyor. Tek değişen parametre.
@@ -20,9 +20,9 @@ sonra her ayar aynı diziyi işliyor. Tek değişen parametre.
 · tek kare yaşayan iz  — az olması iyi
 · kare başına iz       — sahnedeki kişi sayısına yakın olmalı
 
-⚠ Gerçek referans (ground truth) YOK, dolayısıyla bu bir "doğruluk"
+Gerçek referans (ground truth) yok, dolayısıyla bu bir "doğruluk"
 ölçümü değil **tutarlılık** ölçümüdür. Gerçek ID-switch sayısı için
-MOT17 gerekir (PLAN.md §7.2) — Faz 5'e bırakıldı.
+MOT17 gerekir — Faz 5'e bırakıldı.
 
 Kullanım
 --------
@@ -70,7 +70,7 @@ def collect_detections(
         for index, frame in enumerate(container.decode(stream)):
             if index % SAMPLE_EVERY:
                 continue
-            # Canlı sistemle AYNI ön işleme — letterbox 640.
+            # Canlı sistemle aynı ön işleme — letterbox 640.
             # Farklı verirsek tespitler de farklı olur ve ölçüm
             # takipçiyi değil ön işlemeyi kıyaslamış olur.
             prepared, _ = preprocess.letterbox(frame.to_ndarray(format="bgr24"))
@@ -124,7 +124,7 @@ def run_tracker(
             sum(1 for v in lifetimes if v > 21) / len(lifetimes) * 100, 1
         ),
         "tracks_per_frame": round(statistics.fmean(per_frame), 2),
-        # ⚠ GİZLİ BEDEL: kimlik alan tespitlerin oranı.
+        # Gizli bedel: kimlik alan tespitlerin oranı.
         # Parametreleri sıkılaştırmak parçalanmayı düşürebilir ama
         # tespitlerin bir kısmı hiç kimlik alamaz — o kişiler zamansal
         # analizin dışında kalır. Yalnızca parçalanmaya bakmak yanıltıcı.
@@ -152,13 +152,13 @@ def main() -> int:
     total = sum(len(d) for d in detections)
     print(f"{len(detections)} kare · {total} tespit · kare başına {total / len(detections):.1f}\n")
 
-    # Tek değişkenli taramalar: her seferinde YALNIZCA bir parametre değişiyor.
+    # Tek değişkenli taramalar: her seferinde yalnızca bir parametre değişiyor.
     scenarios: list[tuple[str, dict[str, Any]]] = [
-        # ⚠ match_thresh bir MESAFE eşiğidir, benzerlik değil.
+        # match_thresh bir mesafe eşiğidir, benzerlik değil.
         # Ultralytics maliyeti `1 - IoU` diye hesaplıyor ve eşleşmeyi
         # `maliyet < eşik` ise kabul ediyor. Yani:
-        #     match_thresh 0.9  →  IoU > 0.1 yeterli  →  GEVŞEK
-        #     match_thresh 0.6  →  IoU > 0.4 gerekli  →  SIKI
+        #     match_thresh 0.9  →  IoU > 0.1 yeterli  →  gevşek
+        #     match_thresh 0.6  →  IoU > 0.4 gerekli  →  sıkı
         # İlk koşuda etiketleri ters yazmıştım; kaynak koda bakınca
         # düzeldi. Sezgiye ters bir isimlendirme, dikkat.
         ("varsayılan (match 0.8 → IoU>0.2)", {}),

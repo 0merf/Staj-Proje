@@ -1,13 +1,13 @@
-"""Yüz ifadesi → risk sinyali eşlemesi (PLAN §6.3, §6.6 · w4 = 0.10).
+"""Yüz ifadesi → risk sinyali eşlemesi (w4 = 0.10).
 
-⚠ NEDEN BU DOSYA VAR — ve neden 03.09.2026'ya kadar YOKTU
+Neden bu dosya var — ve neden 03.09.2026'ya kadar yoktu
 ---------------------------------------------------------
-KADEME 2b (yüz tespiti + ifade sınıflandırma) Gün 13'te yazıldı,
+Kademe 2b (yüz tespiti + ifade sınıflandırma) Gün 13'te yazıldı,
 Gün 14'te boru hattına bağlandı ve çalışıyor. Sonuç `Track.expression`
 alanına yazılıyor, oradan WebSocket'e gidiyor ve **panelde görünüyor.**
 
 Ama analitik zincire hiç girmiyordu. `analytics/worker.py` füzyon
-sinyallerini kurarken `ifade=0.0` diye SABİT yazıyordu.
+sinyallerini kurarken `ifade=0.0` diye sabit yazıyordu.
 
 Daha kötüsü, iki ayrı yerde şu iddia yazılıydı:
 
@@ -19,38 +19,38 @@ mesajdaki `expr` alanını hiç okumuyordu. Yüzler 60 pikselden büyük
 olsaydı bile skor füzyona ulaşmazdı. İddia ölçülmemişti — kimse
 "peki beslenirse gerçekten akar mı" diye bakmamıştı.
 
-⚠ Bu, şartname açısından önemli bir boşluktu: **"duygu analizi"
+Bu, şartname açısından önemli bir boşluktu: **"duygu analizi"
 şartnamedeki üç yetenekten biri** ve sistemin kararına hiç
 katılmıyordu. Ekrana çıkmak ile karara girmek aynı şey değil.
 
-Neden ifade DÜŞÜK ağırlıklı ve neden yine de var
+Neden ifade düşük ağırlıklı ve neden yine de var
 ------------------------------------------------
-PLAN §6.3'ün bilimsel dürüstlük notu: yüz hareketleriyle içsel duygu
+Proje planının bilimsel uyarısı: yüz hareketleriyle içsel duygu
 arasında güvenilir, kültürler arası tutarlı bir eşleme bulunmadığı
-gösterilmiştir (Barrett vd., 2019 · LITERATUR §2.4). Gözetim
+gösterilmiştir (Barrett vd., 2019). Gözetim
 görüntüsünde yüzler ayrıca küçük, açılı ve bulanık.
 
 Bu yüzden modül:
   · "duygu okuma" değil **"yüz ifadesi sınıflandırma"** olarak anılıyor
-  · tek başına ASLA alarm üretmiyor (füzyon ağırlığı 0.10)
+  · tek başına asla alarm üretmiyor (füzyon ağırlığı 0.10)
   · her çıktı bir **güven** ve bir **kalite** skoru taşıyor
-  · "yüz yeterince net değil" ayrı bir durum ve sık görülmesi NORMAL
+  · "yüz yeterince net değil" ayrı bir durum ve sık görülmesi normal
 
-⚠ SKOR GÜVEN VE KALİTEYLE ÇARPILIYOR — bu bir süsleme değil
+Skor güven ve kaliteyle çarpılıyor — bu bir süsleme değil
 Model her girdiye bir etiket verir; girdinin anlamlı olup olmadığını
 söylemez. 20×20 bulanık bir lekeye "öfke" demesi teknik olarak bir
 çıktıdır ama bilgi değildir (`emotion/base.py · face_quality`).
 Çarpım, o ayrımı skora taşıyor: düşük kaliteli bir "öfke" füzyona
 neredeyse hiç katkı vermiyor, yüksek kaliteli bir "öfke" veriyor.
 
-⚠ EŞLEME AHLÂKİ DEĞİL, DAVRANIŞSAL
+Eşleme ahlâki değil, davranışsal
 "Öfke = kötü insan" demiyoruz. Diyoruz ki: kavga tırmanışının
 görüntüsel işaretlerinden biri öfke ifadesidir ve **başka sinyallerle
 birlikte** dikkat çekmeye değer. Tek başına hiçbir şey ifade etmiyor —
 füzyonun katkı eşiği (0.15) ve "en az iki sinyal" kuralı bunu yapısal
 olarak garanti ediyor.
 
-⚠ KORKU DA SAYILIYOR — ve sebebi mağdur tarafı
+Korku da sayılıyor — ve sebebi mağdur tarafı
 Saldırganlık iki taraflı bir olay. Öfkeli bir yüzün yanındaki korkmuş
 yüz, olayın kendisi kadar bilgi verir. Yalnızca öfkeye bakmak,
 tırmanmanın yarısını görmek olurdu.
@@ -62,12 +62,12 @@ from collections import defaultdict, deque
 from typing import Any
 
 # Etiket → temel risk katkısı (0-1). Anahtarlar `emotion/base.py`
-# içindeki `EXPRESSION_TR` ile AYNI olmak zorunda — model çıktısı
+# içindeki `EXPRESSION_TR` ile aynı olmak zorunda — model çıktısı
 # İngilizce anahtarla geliyor ve sessiz bir yazım hatası tüm sinyali
 # sıfırlar (eşleşmeyen etiket 0.0 döner, hiçbir hata vermez).
 #
-# ⚠ Değerler ÖLÇÜLMÜŞ DEĞİL, gerekçelendirilmiş başlangıç değerleri.
-# PLAN §6.6 ağırlıkların "Faz 5'te doğrulama setinde optimize
+# Değerler ölçülmüş değil, gerekçelendirilmiş başlangıç değerleri.
+# Proje planı, ağırlıkların "Faz 5'te doğrulama setinde optimize
 # edileceğini" söylüyor; bu tablo da o kapsamda. Raporda "başlangıç
 # değeri, optimize edilmedi" diye yazılacak — ölçülmüş gibi
 # sunulmayacak.
@@ -83,14 +83,14 @@ IFADE_RISK: dict[str, float] = {
 }
 
 # Bu kalitenin altındaki sınıflandırma hiç dikkate alınmıyor.
-# ⚠ Çarpımla söndürmek YETMİYOR: kalite 0.15 olan bir "öfke" çarpımdan
+# Çarpımla söndürmek yetmiyor: kalite 0.15 olan bir "öfke" çarpımdan
 # 0.15 çıkar ve füzyonun katkı eşiği de 0.15. Yani gürültü tam sınırda
 # "katkıda bulunan sinyal" sayılabilirdi ve "en az iki sinyal" kuralını
 # gürültüyle doldurmak, o kuralın varlık sebebini ortadan kaldırırdı.
 ASGARI_KALITE = 0.35
 
-# ⚠ Aynı iz için son N sınıflandırmanın ortalaması (PLAN §6.3).
-# KADEME 2b iz başına ~2 saniyede bir çalışıyor, yani 5 örnek ~10
+# Aynı iz için son N sınıflandırmanın ortalaması.
+# Kademe 2b iz başına ~2 saniyede bir çalışıyor, yani 5 örnek ~10
 # saniyelik bir pencere. Tek bir kareye dayanan ifade kararı, yüzün
 # o anki açısına ve hareket bulanıklığına aşırı duyarlı.
 PENCERE = 5
@@ -106,8 +106,8 @@ def ham_skor(expr: Any) -> float:
     `expr`, mesajdaki `detections[i]["expr"]` alanı:
         {"label": "Anger", "tr": "öfke", "conf": 0.82, "q": 0.61}
 
-    ⚠ Alan yoksa 0.0 dönüyor ve bu SIK GÖRÜLECEK — normaldir.
-    KADEME 2b seyrek çalışıyor (bütçe) ve yüzlerin çoğu eşiğin
+    Alan yoksa 0.0 dönüyor ve bu sık görülecek — normaldir.
+    Kademe 2b seyrek çalışıyor (bütçe) ve yüzlerin çoğu eşiğin
     altında. "İfade yok" bir arıza değil, beklenen durum.
     """
     if not isinstance(expr, dict):
@@ -126,15 +126,15 @@ def ham_skor(expr: Any) -> float:
 class IfadeSinyali:
     """İz başına ifade riskini yumuşatarak tutar.
 
-    ⚠ NEDEN DURUM TUTULUYOR — ve neden bu bir "hatırlama" değil
-    KADEME 2b her karede çalışmıyor; bir izin ifadesi 2 saniyede bir
+    Neden durum tutuluyor — ve neden bu bir "hatırlama" değil
+    kademe 2b her karede çalışmıyor; bir izin ifadesi 2 saniyede bir
     güncelleniyor. Durum tutulmasaydı, sinyal karelerin %95'inde 0.0,
     %5'inde tam değer olurdu — füzyonun EMA'sı bunu zaten söndürürdü
     ama "iki sinyal aynı anda" kuralı neredeyse hiç sağlanmazdı, çünkü
     ifade yalnızca o tek karede varlık gösterirdi.
 
     Son değer, yeni bir sınıflandırma gelene ya da iz kaybolana kadar
-    geçerli sayılıyor. Duygu 100 ms'de değişmez (PLAN §6.3) — bu bir
+    geçerli sayılıyor. Duygu 100 ms'de değişmez — bu bir
     varsayım değil, modülün tasarım gerekçesinin ta kendisi.
     """
 
@@ -150,10 +150,10 @@ class IfadeSinyali:
     ) -> dict[int, float]:
         """Kareyi işler, iz kimliği → ifade risk skoru döndürür.
 
-        ⚠ YALNIZCA YENİ SINIFLANDIRMA GELİNCE GEÇMİŞE EKLENİYOR.
+        Yalnızca yeni sınıflandırma gelince geçmişe ekleniyor.
         Her karede 0.0 eklemek, iki gerçek örneğin arasını sıfırlarla
         doldurup ortalamayı yapay olarak düşürürdü — ölçülen şey ifade
-        değil, KADEME 2b'nin çalışma sıklığı olurdu.
+        değil, kademe 2b'nin çalışma sıklığı olurdu.
         """
         for d in tespitler:
             track_id = d.get("id")

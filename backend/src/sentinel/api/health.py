@@ -51,9 +51,9 @@ class ServiceStatus:
 
 
 class ServiceUnhealthyError(RuntimeError):
-    """Servis CEVAP VERİYOR ama işlevsel değil.
+    """Servis cevap veriyor ama işlevsel değil.
 
-    ⚠ Bu ayrım pahalıya öğrenildi (docs/report/problems.md · P-22).
+    Bu ayrım pahalıya öğrenildi (docs/report/problems.md · P-22).
     Bir servisin "ayakta" olması ile "işini yapıyor" olması aynı şey
     değildir. MediaMTX'in yönetim API'si cevap veriyordu, konteyner
     "healthy" görünüyordu, panel yeşildi — ama hiçbir kamera yayında
@@ -152,7 +152,7 @@ async def _probe_mediamtx() -> tuple[str | None, str | None, dict[str, Any]]:
         ]
     }
 
-    # ⚠ SIFIR KAMERA YAYINDA İSE SAĞLIKLI DEĞİLİZ.
+    # Sıfır kamera yayında ise sağlıklı değiliz.
     # MediaMTX ayakta ve API cevap veriyor olabilir; ama tek bir yol
     # bile `ready` değilse sisteme kare girmiyor demektir. Bunu
     # "sağlıklı" saymak, panelin yeşil görünürken sistemin boş

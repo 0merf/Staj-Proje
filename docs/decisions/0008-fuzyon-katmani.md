@@ -1,9 +1,9 @@
 # ADR-0008 · Füzyon katmanı: gözlem doğrudan konuşur, ipucu ancak toplulukta
 
-**Durum:** kabul edildi — ⚠ **GEREKÇESİ DEĞİŞTİ** (05.09.2026)
+**Durum:** kabul edildi — **gerekçesi değişti** (05.09.2026)
 **Tarih:** 01.09.2026 · **Güncellendi:** 05.09.2026
 
-> ⭐ **ÖZET:** Karar ayakta, ama dayanağı K6'dan K7'ye taşındı.
+> **Özet:** Karar ayakta, ama dayanağı K6'dan K7'ye taşındı.
 > Füzyonun gerekçesi **ayırt etme gücü (AUC) değil, gürültü
 > bastırma.** Ölçüm aşağıda; tam anlatım `problems.md` · P-41.
 
@@ -39,7 +39,7 @@ gereği "daha önce görülmemiş"), açıklanabilirlik kayboluyor ve
 operatöre *"model öyle dedi"* demek zorunda kalıyoruz — K7'nin asıl
 riski tam da operatörün sisteme güvenini kaybetmesi.
 
-**C · Ağırlıklı toplam + histerezis, AMA fiziksel gözlemler muaf**
+**C · Ağırlıklı toplam + histerezis, ama fiziksel gözlemler muaf**
 
 ## Karar
 
@@ -53,14 +53,14 @@ FÜZYONA GİREN (istatistiksel ipucu, tek başına yetersiz)
   Katman A olağandışılık · oyalanma · saldırganlık(uyarı) · ifade
 ```
 
-> ⭐ **Kural: gözlem doğrudan konuşur, ipucu ancak toplulukta konuşur.**
+> **Kural: gözlem doğrudan konuşur, ipucu ancak toplulukta konuşur.**
 
-⚠ **Füzyon her sinyali YUTMAZ ve bu ayrım hayati.** Bir düşme, başka
+**Füzyon her sinyali yutmaz ve bu ayrım hayati.** Bir düşme, başka
 hiçbir sinyal olmasa bile alarmdır. Onu ağırlıklı toplamın içinde
 eritmek, tıbbi acil olabilecek bir olayı *"diğer göstergeler sakin"*
 diye bastırmak olurdu.
 
-Ağırlıklar PLAN §6.6'dan aynen alındı (toplam 1.00):
+Ağırlıklar proje planından aynen alındı (toplam 1.00):
 
 ```
 saldırganlık 0.40   ← en spesifik sinyal
@@ -97,14 +97,14 @@ CUHK Avenue, 9 etiketli test klibi, 1439 kare
 | saldırganlık | 0.465 |
 | kural | 0.4996 |
 
-⚠ **Dürüstlük notu — `kural` bileşeni Avenue'da hiç ateşlemiyor.**
+**Not — `kural` bileşeni Avenue'da hiç ateşlemiyor.**
 Avenue'nun anomalileri çanta fırlatma, bisiklet, ters yön; bizim boru
 hattımız yalnızca **insan** tespit ediyor. K6'yı taşıyan neredeyse
-tümüyle Katman A. Kapsamın dürüst sınırı budur.
+tümüyle Katman A. Kapsamın sınırı budur.
 
 ---
 
-## ⚠⚠ AÇIK SORU (03.09.2026) — bu ADR'nin merkezî iddiası HENÜZ KANITLANMADI
+## Açık soru (03.09.2026) — bu ADR'nin merkezî iddiası henüz kanıtlanmadı
 
 Yukarıdaki tablo şu çıkarıma dayanak yapılmıştı:
 
@@ -143,21 +143,21 @@ füzyon ≈ katman_a_ema  → kazandıran YUMUŞATMA; bu veri setinde
                           füzyon katmanı karşılığını vermiyor
 ```
 
-## ⭐ ÖLÇÜM SONUCU (05.09.2026) — ikinci şık çıktı
+## Ölçüm sonucu (05.09.2026) — ikinci şık çıktı
 
 `benchmarks/k6_20260905-112405.json`:
 
 ```
 katman_a (ham)          : 0.789
-katman_a + EMA (kontrol): 0.860   ⬅ tek sinyal, füzyonla aynı yumuşatma
+katman_a + EMA (kontrol): 0.860   ← tek sinyal, füzyonla aynı yumuşatma
 füzyon (5 sinyal + EMA) : 0.867
-fark (füzyon − kontrol) : +0.007   ⬅ gürültü içinde
+fark (füzyon − kontrol) : +0.007   ← gürültü içinde
 ```
 
 **Kazancın %91'i yumuşatmadan, %9'u birleştirmeden.** "Birleştirme
 kazandırıyor" iddiası bu veri setinde **desteklenmiyor.**
 
-### Karar neden yine de AYAKTA
+### Karar neden yine de ayakta
 
 **1 · Bu veri setinde birleştirilecek bir şey yoktu.** Beş sinyalden
 dördü ölü: `kural` AUC tam 0.500 (Avenue'nun anomalileri çanta
@@ -171,9 +171,9 @@ sinyal" kuralı yanlış alarmı **26.4 → 0.00/kamera-saat** düşürdü.
 Yani füzyonun işi ayırt etme gücünü artırmak değil, **zayıf
 sinyallerin tek başına alarm üretmesini engellemek** — ve bu, bu
 belgenin "Bağlam" bölümünde zaten böyle yazılıydı. Yanlış olan karar
-değil, kararı savunmak için seçilen ÖLÇÜTTÜ.
+değil, kararı savunmak için seçilen ölçüttü.
 
-### ⚠ Ders
+### Ders
 
 Bu ADR bir kararı doğru gerekçeyle aldı, sonra **yanlış bir sayıyla
 savundu.** K6 (ayırt etme gücü) füzyonun çözdüğü problemi ölçmüyor;

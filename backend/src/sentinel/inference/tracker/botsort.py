@@ -48,7 +48,7 @@ log = get_logger(__name__)
 # Bu kadar az karede görülüp terk edilen iz "parça" (fragment) sayılır.
 # Gerçek bir kişi kadrajda kalır; 1-3 karelik izler ya yanlış pozitiftir
 # ya da aynı kişinin kimliğini kaybedip yenisini almasıdır. İkincisi
-# tam olarak ölçmek istediğimiz şey (PLAN.md §6.1).
+# tam olarak ölçmek istediğimiz şey.
 SHORT_TRACK_FRAMES = 3
 
 
@@ -74,11 +74,11 @@ def default_args(
         # Bizde tespit ~3 FPS olduğu için 30 kare ≈ 10 saniye eder —
         # bir kişinin ağacın arkasından geçmesine fazlasıyla yeter.
         track_buffer=track_buffer,
-        # ⚠ match_thresh bir MESAFE eşiğidir, benzerlik DEĞİL.
+        # match_thresh bir mesafe eşiğidir, benzerlik değil.
         # Ultralytics maliyeti `1 - IoU` diye hesaplayıp eşleşmeyi
         # `maliyet < eşik` ise kabul ediyor:
-        #     0.9 → IoU > 0.1 yeterli → GEVŞEK
-        #     0.6 → IoU > 0.4 gerekli → SIKI
+        #     0.9 → IoU > 0.1 yeterli → gevşek
+        #     0.6 → IoU > 0.4 gerekli → sıkı
         # İsimlendirme sezgiye ters; ilk ölçümde etiketleri ters
         # yazmıştım (bkz. problems.md · P-27).
         #
@@ -94,22 +94,22 @@ def default_args(
         match_thresh=match_thresh,
         fuse_score=fuse_score,
         # ─── Kapatılanlar ve gerekçeleri ───
-        # Kameralarımız SABİT. Kamera hareketi telafisi her karede
+        # Kameralarımız sabit. Kamera hareketi telafisi her karede
         # global hizalama hesaplar; sabit kamerada bedava maliyet.
         #
-        # ⚠ 07.09.2026 — VARSAYIM ÖLÇÜLDÜ VE KAMERA ÇİFTLİĞİ İÇİN
-        # DOĞRU, TEST VERİSİ İÇİN DEĞİLDİ (P-51).
+        # 07.09.2026 — varsayım ölçüldü ve kamera çiftliği için
+        # doğru, test verisi için değildi (P-51).
         # cam-15'e konan UBI-Fights videosu (F_74) elde tutulan bir
         # telefonla çekilmişti: kayma medyanı %0.197, p90 %1.023.
-        # Yani sistem kendi varsayımının DIŞINDA test ediliyordu ve
+        # Yani sistem kendi varsayımının dışında test ediliyordu ve
         # hız temelli tüm özellikler sahte kamera hızı taşıyordu.
         # 216 video tarandı (`bul_sabit_kamera.py`), 35'i hem sabit
         # hem tek sahne çıktı; cam-15 sabit bir CCTV videosuyla
         # (F_45, kayma %0.000) değiştirildi.
-        # ⚠ HAREKETLİ KAMERA DESTEĞİ HÂLÂ YOK — kapsam dışı, gerekçesi
+        # Hareketli kamera desteği hâlâ yok — kapsam dışı, gerekçesi
         # bu: çiftliğin 20 kamerası da sabit.
         gmc_method="none",
-        # ⚠⚠ 07.09.2026 — ESKİ GEREKÇE YANLIŞTI, DÜZELTİLDİ (P-51)
+        # 07.09.2026 — eski gerekçe yanlıştı, düzeltildi (P-51)
         #
         # Burada şu yazıyordu:
         #     "ReID ayrı bir sinir ağı çalıştırır. 20 kamerada GPU
@@ -118,21 +118,21 @@ def default_args(
         # Son cümle gerekçenin kendisini çürütüyordu: ölçülmemişti.
         # Ölçülünce ortaya çıkan şey daha temel:
         #
-        # ⭐ `with_reid` bu boru hattında ETKİSİZ BİR BAYRAK.
+        # `with_reid` bu boru hattında etkisiz bir bayrak.
         # Aşağıdaki `update()` takipçiyi `img=None` ile çağırıyor.
         # ReID kişi kırpıntısından gömme vektörü çıkarır; görüntü
-        # verilmezse kodlayıcı oluşur ama HİÇ ÇAĞRILMAZ. Ölçüm de
+        # verilmezse kodlayıcı oluşur ama hiç çağrılmaz. Ölçüm de
         # bunu doğruladı: açık/kapalı fark +0.025 ms (gürültü).
         #
-        # ⭐⭐ Gerçek sebep maliyet değil MİMARİ: takipçi arayüzü
+        # Gerçek sebep maliyet değil mimari: takipçi arayüzü
         # piksel almıyor — mimari kural 1'in (ham kare kuyruktan
         # geçmez) doğrudan sonucu. ReID'i açmak bir bayrak değişikliği
         # değil, kare referansını takip katmanına taşımaktır; maliyeti
         # ancak ondan sonra ölçülebilir.
         #
-        # ⚠ Bunun bedeli var ve raporda yazılacak: kişi 10 saniyeden
+        # Bunun bedeli var ve raporda yazılacak: kişi 10 saniyeden
         # (track_buffer) uzun kaybolursa ya da kalabalıkta başka
-        # yerden çıkarsa YENİ KİMLİK alır. Kimlik sürekliliği yalnızca
+        # yerden çıkarsa yeni kimlik alır. Kimlik sürekliliği yalnızca
         # hareket tahminine dayanıyor.
         with_reid=False,
         proximity_thresh=0.5,
@@ -153,7 +153,7 @@ class BotSortTracker:
         self._trackers: dict[str, Any] = {}
         self._history: dict[str, dict[int, _History]] = {}
         self._total_tracks = 0
-        # ⚠ "ID switch" DEĞİL, kısa ömürlü iz sayacı. Gerçek ID switch
+        # "ID switch" değil, kısa ömürlü iz sayacı. Gerçek ID switch
         # ölçmek referans (ground truth) ister; bu bir vekil (proxy).
         # Adın ölçtüğü şeyi söylemesi için yeniden adlandırıldı.
         self._short_tracks = 0
@@ -173,7 +173,7 @@ class BotSortTracker:
     ) -> list[Track]:
         tracker = self._trackers.get(camera)
         if tracker is None:
-            # ⚠ Ultralytics 8.4'te BOTSORT yalnızca `args` alıyor; eski
+            # Ultralytics 8.4'te BOTSORT yalnızca `args` alıyor; eski
             #   sürümlerdeki `frame_rate` kwarg'ı kaldırılmış. Kare hızı
             #   bilgisi `track_buffer` üzerinden dolaylı veriliyor.
             tracker = self._cls(self._args)
@@ -231,13 +231,13 @@ class BotSortTracker:
                 )
             )
 
-        # ─── ONAYLANMAMIŞ TESPİTLERİ KAYBETME ────────────────
+        # ─── Onaylanmamış tespitleri kaybetme ────────────────
         # BoT-SORT yeni bir izi hemen çıktı vermez: iz "onaylanmış"
-        # sayılması için İKİNCİ bir karede tekrar eşleşmesi gerekir.
+        # sayılması için ikinci bir karede tekrar eşleşmesi gerekir.
         # Tespit ~3 FPS olduğu için bu ~330 ms gecikme demek; kısa süre
         # görünen kişiler ise hiç görünmez.
         #
-        # Bu kabul edilemez: takip, tespiti ZENGİNLEŞTİRMELİ, filtrelememeli.
+        # Bu kabul edilemez: takip, tespiti zenginleştirmeli, filtrelememeli.
         # Eşleşmemiş tespitleri kimliksiz (id=None) olarak geçiriyoruz.
         # Kutu anında görünüyor, kimlik bir sonraki karede geliyor.
         # (docs/report/problems.md · P-13)
@@ -268,9 +268,9 @@ class BotSortTracker:
             "total_tracks": self._total_tracks,
             "active_tracks": sum(len(h) for h in self._history.values()),
             "unconfirmed_passthrough": self._unconfirmed,
-            # Kimlik kararlılığı (PLAN.md §6.1). "Biten izlerin yüzde
+            # Kimlik kararlılığı. "Biten izlerin yüzde
             # kaçı kısa ömürlüydü" — düşük olması iyi.
-            # ⚠ Bu bir VEKİL ölçüdür, ID switch değil (bkz. metrics.py).
+            # Bu bir vekil ölçüdür, ID switch değil (bkz. metrics.py).
             "finished_tracks": finished,
             "short_lived_tracks": self._short_tracks,
             "fragmentation_rate": round(self._short_tracks / finished, 3) if finished else 0.0,
@@ -329,10 +329,10 @@ class BotSortTracker:
     def _prune(self, camera: str, history: dict[int, _History], now: float) -> None:
         """Gerçekten biten izlerin geçmişini temizler ve ömrünü kaydeder.
 
-        ⚠ Bu fonksiyonun ilk hâli, o karede çıktı vermeyen HER izin
+        Bu fonksiyonun ilk hâli, o karede çıktı vermeyen her izin
         geçmişini siliyordu. Yanlıştı: BoT-SORT kısa süre kapanan
         (occluded) bir izi çıktı vermez ama `track_buffer` boyunca
-        hafızasında tutar ve kişi göründüğünde AYNI kimlikle geri verir.
+        hafızasında tutar ve kişi göründüğünde aynı kimlikle geri verir.
         Biz ise geçmişi çoktan silmiş oluyorduk — hız sıfırlanıyor, yaş
         baştan başlıyordu.
 

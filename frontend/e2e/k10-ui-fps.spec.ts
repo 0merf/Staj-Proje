@@ -2,11 +2,11 @@ import { test } from '@playwright/test'
 import { writeFileSync, mkdirSync } from 'node:fs'
 
 /**
- * K10 — UI AKICILIĞI (hedef ≥30 FPS, 20 kutucuk açıkken)
+ * K10 — UI akıcılığı (hedef ≥30 FPS, 20 kutucuk açıkken)
  *
- * ⭐ NEDEN BU ÖLÇÜM ZOR VE NEDEN BÖYLE YAPILIYOR
+ * Neden bu ölçüm zor ve neden böyle yapılıyor
  * ----------------------------------------------
- * PLAN §1.4 "20 kutucukta ≥30 FPS" diyor ama **hangi FPS** olduğunu
+ * Proje planı "20 kutucukta ≥30 FPS" diyor ama **hangi FPS** olduğunu
  * söylemiyor. Üç ayrı şey var ve karıştırmak ölçümü anlamsız kılar:
  *
  *   1. **Çizim (paint) hızı** — tarayıcı arayüzü saniyede kaç kez
@@ -14,14 +14,14 @@ import { writeFileSync, mkdirSync } from 'node:fs'
  *      60 Hz ise tavanı 60'tır.
  *   2. **Video çözme hızı** — 20 H.264 akışı saniyede kaç kare
  *      çözülüyor. `getVideoPlaybackQuality().totalVideoFrames` farkı.
- *   3. **Düşen kare** — çözülüp EKRANA BASILAMAYAN kareler.
+ *   3. **Düşen kare** — çözülüp ekrana basılamayan kareler.
  *      `droppedVideoFrames`. Asıl "akıcı mı" göstergesi bu.
  *
- * ⚠ Yalnızca (1)'e bakmak yanıltıcı olurdu: arayüz 60 FPS çizerken
+ * Yalnızca (1)'e bakmak yanıltıcı olurdu: arayüz 60 FPS çizerken
  * videolar 5 FPS'te takılıyor olabilir ve kullanıcı "akmıyor" der.
  * Üçü birden raporlanıyor.
  *
- * ⚠ BEKLENEN SONUÇ KÖTÜ VE BU BİR KOD HATASI DEĞİL
+ * Beklenen sonuç kötü ve bu bir kod hatası değil
  * Tarayıcı 20 H.264 akışını **CPU'da** çözüyor (P-24: panel açıkken
  * boru hattı verimi yarıya düşüyor). Bu bir donanım/tarayıcı sınırı.
  * Sonuç ne çıkarsa çıksın olduğu gibi raporlanacak.
@@ -58,11 +58,11 @@ test('K10 — 20 kutucuk açıkken UI akıcılığı', async ({ page }) => {
     await page.waitForTimeout(1000)
   }
 
-  // ─── ⭐ KONTROL SERİSİ: HİÇ kamera açmadan çizim hızı ───
+  // ─── Kontrol serisi: hiç kamera açmadan çizim hızı ───
   //
-  // ⚠ BU OLMADAN ÖLÇÜM ANLAMSIZ. Başsız (headless) tarayıcı
+  // Bu olmadan ölçüm anlamsız. Başsız (headless) tarayıcı
   // `requestAnimationFrame` hızını sabitleyebiliyor. Yüklü durumda
-  // "30.0 FPS" görmek, tarayıcının TAVANI 30 olduğu için de olabilir —
+  // "30.0 FPS" görmek, tarayıcının tavanı 30 olduğu için de olabilir —
   // o zaman sayı bizim uygulamamız hakkında hiçbir şey söylemez.
   //
   // Kontrol tavanın nerede olduğunu söylüyor. P-41'in dersi: iki
@@ -82,7 +82,7 @@ test('K10 — 20 kutucuk açıkken UI akıcılığı', async ({ page }) => {
   })
   console.log(`\nKONTROL (0 kamera açık) çizim FPS: ${kontrolFps.toFixed(1)}`)
 
-  // ─── TÜM kameraları aç ───
+  // ─── Tüm kameraları aç ───
   const sayi = await hazirlar.count()
   for (let i = 0; i < sayi; i++) {
     await hazirlar.nth(i).getByRole('button', { name: 'izle', exact: true }).click()

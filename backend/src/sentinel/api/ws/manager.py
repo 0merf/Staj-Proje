@@ -6,12 +6,12 @@ Mimarideki yeri
 abone WebSocket istemcilerine dağıtır. Her istemcinin kendi Valkey
 bağlantısını açması israf olurdu: 10 operatör = 10 okuyucu = 10 kat yük.
 
-⚠ VİDEO BU KANALDAN GEÇMEZ
+Video bu kanaldan geçmez
 --------------------------
 Buradan yalnızca **meta veri** gider: kutular, iskelet noktaları, risk
 skorları (~1-3 KB/mesaj). Video WHEP/WebRTC ile ayrı gelir, kutuları
 tarayıcı canvas'ta çizer. Sunucuda videoya çizim yapmak NVENC oturum
-limitine takılır ve GPU'yu tüketir (PLAN.md §9.2).
+limitine takılır ve GPU'yu tüketir.
 
 Geri basınç
 -----------
@@ -59,7 +59,7 @@ class Client:
     websocket: WebSocket
     # Bağlantıyı açan kullanıcı — G14 (kullanıcı başına bağlantı
     # sınırı) bu alan olmadan uygulanamıyordu.
-    # ⚠ Varsayılanı boş: eski çağrılar ve testler kırılmasın diye.
+    # Varsayılanı boş: eski çağrılar ve testler kırılmasın diye.
     # Boş kullanıcı sınıra takılmıyor — sınır ancak kimlik bilinirse
     # anlamlı, ve kimlik doğrulaması zaten bağlantının ön koşulu
     # (api/ws/live.py). Boş değer pratikte yalnızca testlerde oluşur.
@@ -81,7 +81,7 @@ class Client:
     def offer(self, payload: str) -> None:
         """Mesajı kuyruğa koyar; doluysa en eskiyi atar.
 
-        ⚠ Burada `await queue.put()` KULLANILMAZ. Yavaş bir istemci
+        Burada `await queue.put()` kullanılmaz. Yavaş bir istemci
         yayıncıyı bekletirse tüm diğer istemciler de gecikir.
         """
         try:
@@ -132,7 +132,7 @@ class ResultBroadcaster:
     def kullanici_baglanti_sayisi(self, kullanici: str) -> int:
         """Bir kullanıcının açık bağlantı sayısı (G14).
 
-        ⚠ Sayım KULLANICI adına göre, IP'ye göre değil. IP tabanlı
+        Sayım kullanıcı adına göre, IP'ye göre değil. IP tabanlı
         sınır kurumsal bir ağda tüm binayı tek kullanıcı sayardı;
         kullanıcı tabanlı sınır ise çalınmış bir hesapla açılan
         onlarca dinleme kanalını engelliyor — korunmak istenen şey bu.
@@ -164,7 +164,7 @@ class ResultBroadcaster:
     async def _pump(self) -> None:
         """Akışı okuyup istemcilere dağıtan sonsuz döngü.
 
-        ⚠ İKİ AKIŞ, TEK OKUYUCU
+        İki akış, tek okuyucu
         `inference.results` (kutular, saniyede onlarca) ve
         `analytics.events` (anomaliler, seyrek) aynı `XREAD` çağrısında
         okunuyor. Ayrı iki döngü kurmak iki bağlantı, iki bekleme ve
@@ -194,14 +194,14 @@ class ResultBroadcaster:
             if not response:
                 continue
 
-            # ⚠ `Any`'ye düşürülüyor: `redis-py`'nin `xread` dönüş tipi
+            # `Any`'ye düşürülüyor: `redis-py`'nin `xread` dönüş tipi
             # `decode_responses` ayarına göre değişen çok kollu bir
             # birleşim ve statik olarak daraltılamıyor. Tipi burada
             # zorlamak okunmayan bir `cast` yığını üretirdi; yapı zaten
             # açılırken doğrulanıyor ve bozuk mesaj yakalanıyor.
             girdiler: Any = response
             for stream_name, entries in girdiler:
-                # ⚠ Hangi akıştan geldiğini AYIRMAK şart: ikisinin
+                # Hangi akıştan geldiğini ayırmak şart: ikisinin
                 # mesaj biçimi ve son-okunan imleci farklı. Karışırsa
                 # anomali "kare" gibi gönderilir ve panel onu çizmeye
                 # çalışır.
@@ -225,7 +225,7 @@ class ResultBroadcaster:
             captured_at = float(fields.get("ts", 0.0))
             data = json.loads(fields.get("data", "{}"))
 
-            # ⚠ `lat` BURADA YENİDEN HESAPLANIYOR
+            # `lat` burada yeniden hesaplanıyor
             # Çıkarım worker'ı `lat`'ı kendi publish anında yazıyordu,
             # yani ölçüm "yakalanma → çıkarım sonucu yazıldı" arasını
             # kapsıyordu. İçermediği kısım: Valkey'e yazma, buraya
@@ -233,7 +233,7 @@ class ResultBroadcaster:
             #
             # Tarayıcı bu değerle `yakalanma ≈ varış − lat` hesabı
             # yapıyor (frontend/src/lib/sync.ts). Eksik ölçülen gecikme,
-            # yakalanma anını olduğundan GEÇ gösteriyor ve kutular
+            # yakalanma anını olduğundan geç gösteriyor ve kutular
             # sistematik olarak biraz ileri kayıyordu.
             #
             # Yayın anında ölçmek kalan payı da kapsıyor. Geriye yalnızca
@@ -264,11 +264,11 @@ class ResultBroadcaster:
     def _dispatch_alert(self, fields: dict[str, str]) -> None:
         """Anomaliyi abone istemcilere `alert` olarak gönderir.
 
-        ⚠ Anomali ABONELİK FİLTRESİNE TAKILMAZ.
+        Anomali abonelik filtresine takılmaz.
         Kare mesajları yalnızca abone olunan kameralara gider (panelde
         20 kutucuk için 20 akış boşuna taşınmasın). Ama alarm başkadır:
-        operatör cam-03'ü açmamışsa bile orada biri düştüyse BUNU
-        GÖRMELİ. Gözetim sisteminin varlık sebebi tam olarak bu —
+        operatör cam-03'ü açmamışsa bile orada biri düştüyse bunu
+        görmeli. Gözetim sisteminin varlık sebebi tam olarak bu —
         kimsenin bakmadığı kamerada olanı bildirmek.
         """
         camera = fields.get("cam", "")

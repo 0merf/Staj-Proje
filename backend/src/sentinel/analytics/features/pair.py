@@ -1,4 +1,4 @@
-"""Çift bazlı özellikler — PLAN.md §6.5.2.
+"""Çift bazlı özellikler.
 
 Neden çift, neden tek kişi yetmiyor
 -----------------------------------
@@ -8,14 +8,14 @@ biri de, spor yapan biri de yüksek bilek hızı üretir.
 
 Ayırt eden şey **etkileşim**:
 
-    hızlı bilek + KİMSE YOK          → egzersiz, oyun, el sallama
-    hızlı bilek + BİRİ ÇOK YAKIN     → temas ihtimali
-    hızlı bilek + yakın + KARŞILIKLI → kavga örüntüsü
+    hızlı bilek + kimse yok          → egzersiz, oyun, el sallama
+    hızlı bilek + biri çok yakın     → temas ihtimali
+    hızlı bilek + yakın + karşılıklı → kavga örüntüsü
 
 Bu dosya o farkı ölçen sayıları üretiyor. Kişi bazlı özellikler
 (`person.py`) "ne yapıyor" der; çift bazlı özellikler "kiminle" der.
 
-⚠ MESAFE ZEMİN DÜZLEMİNDEN ÖLÇÜLÜYOR
+Mesafe zemin düzleminden ölçülüyor
 ------------------------------------
 İki kişinin yakınlığı **ayak noktaları** arasından hesaplanıyor, kutu
 merkezlerinden değil. Sebep perspektif: kameraya yakın duran uzun bir
@@ -23,14 +23,14 @@ kişi ile arkasındaki kısa bir kişinin kutu merkezleri üst üste
 gelebilir, oysa aralarında metrelerce mesafe vardır. Ayak noktası
 zeminde olduğu için bu yanılgıyı büyük ölçüde önlüyor.
 
-⚠ ÖLÇEK NORMALİZASYONU BURADA DA ZORUNLU
+Ölçek normalizasyonu burada da zorunlu
 ----------------------------------------
 Mesafe **gövde boyuna** bölünüyor. Kameraya 3 metredeki iki kişi
 arasındaki 100 piksel ile 20 metredeki 100 piksel çok farklı gerçek
 mesafelere karşılık gelir. Birim: "gövde boyu" — yani `1.0` kabaca bir
 insan boyu kadar uzaklık demek.
 
-⚠ KOMBİNATORİK PATLAMA — ve neden sınırlıyoruz
+Kombinatorik patlama — ve neden sınırlıyoruz
 ----------------------------------------------
 N kişi arasında N·(N−1)/2 çift var. cam-09'da 17 kişi görüldü →
 136 çift. Kalabalık bir sahnede bu hızla büyür ve çoğu çift birbirinden
@@ -52,7 +52,7 @@ from sentinel.analytics.features.window import IzPenceresi
 
 # Bu mesafeden uzak çiftler hiç hesaplanmıyor (gövde boyu birimi).
 # 4.0 ≈ 7 metre; iki kişi arasında temas ihtimali için fazlasıyla geniş.
-# Daha dar tutmak yaklaşma AŞAMASINI kaçırırdı — tırmanma tam da
+# Daha dar tutmak yaklaşma aşamasını kaçırırdı — tırmanma tam da
 # yaklaşırken başlıyor.
 MAX_ILGI_MESAFE = 4.0
 
@@ -72,7 +72,7 @@ class CiftOzellikleri:
     # ─── Mesafe (birim: gövde boyu) ───
     mesafe: float | None = None
     en_yakin_mesafe: float | None = None
-    # Negatif = YAKLAŞIYOR. Tırmanmanın en erken sinyali.
+    # Negatif = yaklaşıyor. Tırmanmanın en erken sinyali.
     yaklasma_hizi: float | None = None
 
     # ─── Yönelim ───
@@ -96,9 +96,9 @@ class CiftOzellikleri:
 def _ortak_zamanlar(
     a: IzPenceresi, b: IzPenceresi, tolerans_s: float = 0.2
 ) -> list[tuple[float, np.ndarray, np.ndarray, float]]:
-    """İki izin AYNI ANLARDAKİ örneklerini eşler.
+    """İki izin aynı anlardaki örneklerini eşler.
 
-    ⚠ NEDEN EŞLEME GEREKİYOR
+    Neden eşleme gerekiyor
     İki iz aynı kameradan gelse bile örnekleri birebir aynı anlara denk
     gelmiyor: takipçi bir kişiyi bir karede kaybedip sonrakinde
     bulabiliyor. Farklı anlardaki iki konumu karşılaştırmak, aradaki
@@ -133,7 +133,7 @@ def _bakis_skoru(kp_a: np.ndarray | None, kp_b: np.ndarray | None,
     Her biri için: baktığı yön ile diğerine giden yön arasındaki açı.
     İkisi de karşısındakine dönükse 1.0'a yaklaşır.
 
-    ⚠ Omuz yönü bilinmiyorsa (sırtı dönük, omuzlar görünmüyor) None
+    Omuz yönü bilinmiyorsa (sırtı dönük, omuzlar görünmüyor) None
     dönüyor — uydurulmuyor. Yanlış bir "karşılıklı bakıyor" sinyali
     doğrudan sahte kavga alarmı üretir.
     """
@@ -153,7 +153,7 @@ def _bakis_skoru(kp_a: np.ndarray | None, kp_b: np.ndarray | None,
     # nokta çarpımı: 1 = tam dönük, -1 = tam ters
     a_bakiyor = float(np.dot(yon_a, ab_birim))
     b_bakiyor = float(np.dot(yon_b, -ab_birim))
-    # [-1,1] → [0,1] ve ikisinin çarpımı: BİRİ bakmıyorsa skor düşer
+    # [-1,1] → [0,1] ve ikisinin çarpımı: biri bakmıyorsa skor düşer
     return float(max(0.0, a_bakiyor) * max(0.0, b_bakiyor))
 
 
@@ -176,7 +176,7 @@ def cikar(a: IzPenceresi, b: IzPenceresi) -> CiftOzellikleri | None:
     if not mesafeler:
         return None
 
-    # ⚠ İLGİ KAPISI: uzak çift hiç hesaplanmıyor
+    # İlgi kapısı: uzak çift hiç hesaplanmıyor
     if min(mesafeler) > MAX_ILGI_MESAFE:
         return None
 
@@ -186,7 +186,7 @@ def cikar(a: IzPenceresi, b: IzPenceresi) -> CiftOzellikleri | None:
         mesafe=mesafeler[-1],
         en_yakin_mesafe=min(mesafeler),
         ornek_sayisi=len(ortak),
-        # Çiftin tamlığı iki pencerenin ORTAK örnek sayısına bağlı —
+        # Çiftin tamlığı iki pencerenin ortak örnek sayısına bağlı —
         # tek tek pencereler dolu olsa bile örtüşmeleri az olabilir.
         tamlik=min(a.tamlik, b.tamlik, len(ortak) / 12.0),
     )
@@ -195,7 +195,7 @@ def cikar(a: IzPenceresi, b: IzPenceresi) -> CiftOzellikleri | None:
     if len(ortak) >= 2:
         dt = ortak[-1][0] - ortak[0][0]
         if dt > 1e-6:
-            # Negatif = yaklaşıyor. Tırmanmanın EN ERKEN sinyali:
+            # Negatif = yaklaşıyor. Tırmanmanın en erken sinyali:
             # kavga, iki kişi birbirine yaklaşarak başlar.
             ozellik.yaklasma_hizi = (mesafeler[-1] - mesafeler[0]) / dt
 
@@ -213,9 +213,9 @@ def cikar(a: IzPenceresi, b: IzPenceresi) -> CiftOzellikleri | None:
         )
 
     # ─── Senkron enerji ───
-    # ⚠ Kavgada hareketler birbirine TEPKİ verir: biri vurur, diğeri
+    # Kavgada hareketler birbirine tepki verir: biri vurur, diğeri
     # çekilir. Yani hareket enerjileri eşzamanlı yükselir. Yan yana
-    # yürüyen iki kişide de korelasyon vardır ama enerji DÜŞÜKTÜR;
+    # yürüyen iki kişide de korelasyon vardır ama enerji düşüktür;
     # bu yüzden korelasyon tek başına değil, enerjiyle çarpılarak
     # kullanılıyor (aşağıdaki skorlayıcıda).
     ozellik.senkron_enerji = _senkron(a, b, ortak)
@@ -260,7 +260,7 @@ def kamera_ciftleri(
 ) -> list[CiftOzellikleri]:
     """Bir kameradaki tüm anlamlı çiftleri üretir.
 
-    ⚠ ÜST SINIR VAR — kombinatorik patlama koruması
+    Üst sınır var — kombinatorik patlama koruması
     17 kişilik bir sahnede 136 çift var. `cikar` uzak çiftleri zaten
     eliyor ama kalabalık bir anda yine de çok sayıda yakın çift olabilir.
     Sınır, en yakın çiftlere öncelik vererek uygulanıyor: tehlike

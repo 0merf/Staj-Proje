@@ -1,6 +1,6 @@
-"""ReID maliyeti — ÖLÇÜLMEMİŞ BİR GEREKÇEYİ ÖLÇER (P-51).
+"""ReID maliyeti — ölçülmemiş bir gerekçeyi ölçer (P-51).
 
-⚠ NEDEN BU BETİK VAR
+Neden bu betik var
 --------------------
 `botsort.py` şunu yazıyor ve Gün 1'den beri yazıyordu:
 
@@ -15,12 +15,12 @@ değerlendirilecek"** = henüz ölçülmedi. Yani "GPU bütçesini aşar"
 bir ölçüm değil, bir tahmindi — ve kullanıcıya ölçülmüş gibi
 aktarıldı.
 
-⭐ Bu, projede ikinci kez oldu (ilki: "onların modeli 20 kamerada
+Bu, projede ikinci kez oldu (ilki: "onların modeli 20 kamerada
 gerçek zamanlı koşamaz" iddiası, ölçülmeden söylenmiş ve
-kaldırılmıştı). Tekrarlanan bir hata dikkatsizlik değil, YÖNTEM
+kaldırılmıştı). Tekrarlanan bir hata dikkatsizlik değil, yöntem
 eksikliğidir — ve raporun tezi tam olarak budur.
 
-NE ÖLÇÜLÜYOR
+NE ölçülüyor
 ------------
 Aynı video, aynı tespitler, iki takipçi ayarı:
 
@@ -28,10 +28,10 @@ Aynı video, aynı tespitler, iki takipçi ayarı:
     with_reid=True    (görünüm eşleştirme açık)
 
 Ölçülen: takip adımının kare başına süresi ve VRAM. Tespit ve poz
-maliyeti İKİSİNDE DE AYNI ve dışarıda tutuluyor — kıyaslanması
+maliyeti ikisinde de aynı ve dışarıda tutuluyor — kıyaslanması
 gereken şey yalnızca takipçinin farkı.
 
-⚠⚠⚠ BU ÖLÇÜM İLK KOŞUDA GEÇERSİZ ÇIKTI — VE SEBEBİ ASIL BULGU
+Bu ölçüm ilk koşuda geçersiz çıktı — ve sebebi asıl bulgu
 --------------------------------------------------------------
 İlk koşu şunu verdi:
 
@@ -42,9 +42,9 @@ gereken şey yalnızca takipçinin farkı.
 ucuz olamaz; şüphelenip takipçinin içine bakıldı:
 
     botsort.py · update():
-        raw = tracker.update(batch, img=None)   ⬅ GÖRÜNTÜ VERİLMİYOR
+        raw = tracker.update(batch, img=None)   ← görüntü verilmiyor
 
-⭐ ReID görünüm eşleştirmesi yapar: kişi kırpıntısını alıp gömme
+ReID görünüm eşleştirmesi yapar: kişi kırpıntısını alıp gömme
 vektörü çıkarır. **Görüntü verilmezse çalışamaz.** `with_reid=True`
 bayrağı bir kodlayıcı nesnesi oluşturuyor (`encoder=function`) ama
 o kodlayıcı hiç çağrılmıyor.
@@ -52,7 +52,7 @@ o kodlayıcı hiç çağrılmıyor.
 Yani ölçüm, kapalı ReID ile kapalı ReID'i kıyaslamış oldu. +0.025 ms
 ReID'in maliyeti değil, ölçüm gürültüsü.
 
-⭐⭐ ASIL BULGU: `with_reid` bayrağı bu boru hattında **ETKİSİZ**.
+Asıl bulgu: `with_reid` bayrağı bu boru hattında **etkisiz**.
 Ve koddaki gerekçe ("20 kamerada GPU bütçesini aşar") yalnızca
 ölçülmemiş değil, **yanlış sebebi** gösteriyordu. Gerçek sebep
 mimari: takipçi arayüzü piksel almıyor — ki bu mimari kural 1'in
@@ -62,8 +62,8 @@ ReID'i açmak bir bayrak değişikliği değil, **mimari değişikliktir**:
 takipçiye kare referansı taşınmalı. Maliyeti ancak ondan sonra
 ölçülebilir.
 
-⚠ 20 KAMERAYA ÇEVİRME
-Tek kameradaki fark ölçülüp 20 ile çarpılıyor. Bu bir ÜST SINIR
+20 kameraya çevirme
+Tek kameradaki fark ölçülüp 20 ile çarpılıyor. Bu bir üst sınır
 tahmini: gerçekte tek GPU worker'ı partili çalışıyor ve ReID de
 partilenebilir. Rapor bunu böyle söylemeli — ölçüm tek kamerada,
 çıkarım 20 kameraya.
@@ -150,8 +150,8 @@ def _kos(kareler: list[Any], *, reid: bool, imgsz: int) -> dict[str, Any] | None
 def _reid_gercekten_calisiyor() -> bool:
     """`with_reid=True` gerçekten görünüm eşleştirmesi yapıyor mu?
 
-    ⚠ Bayrağın açık olması yetmez. ReID kişi kırpıntısından gömme
-    vektörü çıkarır; bunun için KAREYE ihtiyacı vardır. Boru hattımız
+    Bayrağın açık olması yetmez. ReID kişi kırpıntısından gömme
+    vektörü çıkarır; bunun için kareye ihtiyacı vardır. Boru hattımız
     takipçiye kare vermiyor (`tracker.update(batch, img=None)`), o
     yüzden kodlayıcı oluşuyor ama hiç çağrılmıyor.
     """
@@ -186,8 +186,8 @@ def main() -> int:
     )
     dedektor.warmup(1)
 
-    # ⚠ TESPİTLER BİR KEZ ÜRETİLİP SAKLANIYOR.
-    # İki takipçi ayarı AYNI girdiyi görmeli; yeniden tespit etmek
+    # Tespitler bir kez üretilip saklanıyor.
+    # İki takipçi ayarı aynı girdiyi görmeli; yeniden tespit etmek
     # ölçüme model gürültüsü karıştırırdı (P-17'nin dersi: iki koşuyu
     # kıyaslarken tek değişken değişmeli).
     print(f"{args.kamera} · tespitler çıkarılıyor ({args.kare} kare)…")
@@ -208,7 +208,7 @@ def main() -> int:
     print(f"  {len(kareler)} kare · ortalama "
           f"{statistics.fmean(len(d) for _t, d in kareler):.1f} tespit/kare\n")
 
-    # ⭐ ÖNCE GEÇERLİLİK: ReID gerçekten koşuyor mu?
+    # Önce geçerlilik: ReID gerçekten koşuyor mu?
     # Bu kontrol olmadan ölçüm "kapalı ⟷ kapalı" kıyaslar ve
     # "ReID bedava" diye yanlış okunur.
     reid_calisiyor = _reid_gercekten_calisiyor()

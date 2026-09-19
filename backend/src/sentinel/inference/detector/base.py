@@ -15,7 +15,7 @@ Toplu (batch) arayüz
 `detect()` tek kare değil **kare listesi** alır. Sebebi mimaridir:
 20 kameradan gelen kareler tek batch'te GPU'ya verilir. GPU çekirdek
 başlatma gecikmesi kare başına değil batch başına ödenir; verim
-kat kat artar (PLAN.md §4.2).
+kat kat artar.
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ from typing import Protocol, runtime_checkable
 import numpy as np
 
 # COCO insan sınıfı. Yalnızca insan tespit ediyoruz — araba, köpek vb.
-# kapsam dışı (PLAN.md §1.3).
+# kapsam dışı.
 PERSON_CLASS_ID = 0
 
 # COCO-17 keypoint sırası (YOLO-pose çıktısı bu düzendedir)

@@ -1,16 +1,15 @@
-# Bağımsız Hakem Denetimi — SENTINEL
+# Hakem Gözüyle Öz Denetim — SENTINEL
 
-> **Bu belge kasten acımasızdır.** Kullanıcının isteği: *"projeye
-> bağımsız bir jüri, bir hakem, bu alanda uzman bir mühendismiş gibi
-> incele ve eleştir."*
->
-> Yazan: projeyi geliştiren asistan. Bu bir çıkar çatışmasıdır ve
-> okuyucu bunu bilerek okumalı — kendi işini denetleyen biri, en
-> rahatsız edici bulguyu bulmakta en isteksiz olandır. Aşağıdaki her
-> madde **kod ya da ölçüm kanıtına** dayandırılmıştır; dayanmayanlar
-> "kanıt yok" diye işaretlenmiştir.
+> Bu belgeyi projeye bu alanda uzman, bağımsız bir hakem gibi bakmak
+> için yazdım ve bilerek sert tuttum. Kendi işini denetleyen biri en
+> rahatsız edici bulguyu bulmakta en isteksiz kişidir; bu yüzden her
+> maddeyi **kod ya da ölçüm kanıtına** dayandırdım, dayanmayanları
+> "kanıt yok" diye işaretledim.
 >
 > Tarih: 08.09.2026 · Denetlenen sürüm: `6cefa65`
+>
+> Bu bir anlık görüntü. Buradaki eksiklerin çoğunu sonraki günlerde
+> kapattım; hangisinin ne olduğu en sondaki §10'da.
 
 ---
 
@@ -29,7 +28,7 @@ seviyesinin belirgin üstünde.
 
 ---
 
-## 1. 🔴 ÖLÜMCÜL — Manşet yetenek üretimde YOK
+## 1. Ölümcül — Manşet yetenek üretimde yok
 
 ### 1.1 Hiçbir öğrenilmiş model canlı boru hattında değil
 
@@ -56,10 +55,10 @@ Canlı analiz worker'ı yalnızca şunları kullanıyor:
 **Hakem yorumu:** *"F1 = 0.889 elde ettik"* cümlesi, o modeli
 çalıştırmayan bir sistemin raporunda **yanıltıcıdır.** Doğru ifade:
 *"çevrim dışı değerlendirmede F1 = 0.889 ölçüldü; model üretim boru
-hattına entegre EDİLMEDİ."* Bu ayrım yapılmazsa makale reddedilir,
+hattına entegre edilmedi."* Bu ayrım yapılmazsa makale reddedilir,
 staj raporu ise gerçeği yanlış beyan eder.
 
-### 1.2 🔴 Canlı saldırganlık dedektörü SUSUYOR
+### 1.2 Canlı saldırganlık dedektörü susuyor
 
 Füzyondaki en yüksek ağırlık saldırganlıkta:
 
@@ -86,26 +85,26 @@ skorun %90'ı bilgi taşımıyor. Gerçek kavga videosunda ayırt etme oranı
 şimdi başka türlü okunuyor: **dedektör susturularak elde edilmiş.**
 Sıfır yanlış alarm, sıfır alarm demekse bu bir başarı değil.
 
-⚠ Bu üç bulgu birlikte şu anlama geliyor: **şartnamenin üç YZ
+Bu üç bulgu birlikte şu anlama geliyor: **şartnamenin üç YZ
 görevinden biri — "saldırgan davranışın erken tespiti" — üretimde
 işlevsel değil.**
 
 ---
 
-## 2. 🔴 Başarı kriterleri — dürüst tablo
+## 2. Başarı kriterleri
 
 | # | Kriter | Durum | Hakem notu |
 |---|---|---|---|
 | K1 | ≥20 kamera | ✅ 20/20 | Ama **dosyadan** besleniyor, gerçek IP kamera yok |
-| K2 | ≥4 FPS/kam | 🟡 2.75 | Hedefin %69'u |
+| K2 | ≥4 FPS/kam | 2.75 | Hedefin %69'u |
 | K3 | ≤1500 ms | ✅ p95 463 ms | Sağlam |
-| K4 | 2 sa çökmesiz | ✅ | ⚠ Gün 18 düzeltmelerinin ÇOĞUNU içermiyor |
-| K5 | F1 ≥0.85 | ✅ 0.889 | ⚠ **Üretimde değil** (§1.1) |
-| K6 | AUC ≥0.75 | ✅ 0.867 | ⚠ Kazancın %91'i EMA'dan (P-41) |
-| K7 | ≤3 yanlış alarm | 🟡 | **Yanlış alarm oranı DEĞİL** — yer gerçeği yok |
-| K8 | ≥2 sn avans | ❌ | Tespit olaydan **+2.2 sn SONRA**; n=1 video |
-| K9 | Güvenlik %100 | 🟡 17/19 | TLS yok, kamera bazlı yetki yok |
-| K10 | ≥30 FPS UI | ⬜ | **Hiç ölçülmedi** |
+| K4 | 2 sa çökmesiz | ✅ | Gün 18 düzeltmelerinin çoğunu içermiyor |
+| K5 | F1 ≥0.85 | ✅ 0.889 | **Üretimde değil** (§1.1) |
+| K6 | AUC ≥0.75 | ✅ 0.867 | Kazancın %91'i EMA'dan (P-41) |
+| K7 | ≤3 yanlış alarm | | **Yanlış alarm oranı değil** — yer gerçeği yok |
+| K8 | ≥2 sn avans | ❌ | Tespit olaydan **+2.2 sn sonra**; n=1 video |
+| K9 | Güvenlik %100 | 17/19 | TLS yok, kamera bazlı yetki yok |
+| K10 | ≥30 FPS UI | | **Hiç ölçülmedi** |
 
 **Hakem yorumu:** 10 kriterin **3'ü tam geçiyor** (K1 kısmen, K3, K4).
 K5 ve K6 kâğıt üstünde geçiyor ama şartlı. K8 açıkça başarısız. K10
@@ -114,7 +113,7 @@ K5 ve K6 kâğıt üstünde geçiyor ama şartlı. K8 açıkça başarısız. K1
 
 ---
 
-## 3. 🟠 METODOLOJİK ZAYIFLIKLAR
+## 3. Metodolojik zayıflıklar
 
 ### 3.1 K8 tek videoya dayanıyor (n = 1)
 
@@ -141,7 +140,7 @@ tamamı değil?** 96 klipte %95 güven aralıkları geniş; nitekim Mod A/B
 farkı (+0.030) için aralık **[−0.001, +0.067]** çıktı — sıfırı kıl
 payı içeriyor.
 
-⚠ Ve **birleşim sonucu (0.968) hiç bootstrap'lenmedi.** Mod A/B için
+Ve **birleşim sonucu (0.968) hiç bootstrap'lenmedi.** Mod A/B için
 yapılan istatistiksel titizlik, projenin en güçlü iddiasına
 uygulanmadı. Bu tutarsızlık.
 
@@ -177,12 +176,12 @@ gün/gece, hafta içi/sonu, mevsim değişir. **Bu hiç sınanmadı.**
 
 ---
 
-## 4. 🟠 MÜHENDİSLİK BORÇLARI
+## 4. Mühendislik borçları
 
 | # | Borç | Kanıt |
 |---|---|---|
 | 4.1 | **Ön yüz pratikte test edilmiyor** | 215 arka uç testine karşı **1 ön yüz test dosyası** (`sync.test.ts`), yalnızca zaman ekseni matematiği. Canvas/overlay çizimi test edilmiyor — oysa P-14 ve P-26 tam oradan çıkmıştı |
-| 4.2 | **Uçtan uca test yok** | Playwright PLAN §14.1'de var, hiç kurulmadı. Sistemin "çalıştığı" elle doğrulanıyor |
+| 4.2 | **Uçtan uca test yok** | Playwright proje planında var, hiç kurulmadı. Sistemin "çalıştığı" elle doğrulanıyor |
 | 4.3 | **ESLint kurulu değil** | Kalite kapısı yok; `npm run lint` kaldırıldı |
 | 4.4 | **Klip zinciri gerçek kayıtla denenmedi** | `data/clips/` boş. Kod + 12 test var, **hiç gerçek video kesilmedi** |
 | 4.5 | **TLS yok** | G18 hiç kurulmadı. Video akışı IP kısıtıyla korunuyor, kimlik doğrulamayla değil |
@@ -191,7 +190,7 @@ gün/gece, hafta içi/sonu, mevsim değişir. **Bu hiç sınanmadı.**
 
 ---
 
-## 5. 🟡 TUTARSIZLIKLAR VE YARIM KALMIŞLAR
+## 5. Tutarsızlıklar ve yarım kalmışlar
 
 ### 5.1 Uyarlanabilir taban eklendi ama işe yaramadı — yine de duruyor
 
@@ -209,7 +208,7 @@ P-52 sorunu teşhis etti, çözmedi. Ağırlık araması dejenere çıktı
 (durus 1.00), F1 düştü, uygulanmadı. Sonuç: **projenin en yüksek
 ağırlıklı sinyali bilinerek çalışmaz hâlde bırakıldı.**
 
-Bu dürüst bir karar ama raporda **açıkça** yazılmalı, yoksa okuyucu
+Bu bilinçli bir karar ama raporda **açıkça** yazılmalı, yoksa okuyucu
 "füzyon 5 sinyali birleştiriyor" cümlesini okuyup bunların çalıştığını
 sanar.
 
@@ -229,9 +228,9 @@ bu tablo hiçbir zaman var olmamış bir sürümü tarif ediyor.
 
 ---
 
-## 6. 🟢 GERÇEKTEN İYİ OLANLAR
+## 6. Gerçekten iyi olanlar
 
-Dürüst bir hakem güçlü yanları da yazar:
+Güçlü yanları da yazmak gerekiyor:
 
 1. **56 problem kaydı ve çürütülmüş varsayımlar.** Bu, staj
    projelerinde neredeyse hiç görülmez ve makalenin asıl katkısı.
@@ -250,7 +249,7 @@ Dürüst bir hakem güçlü yanları da yazar:
 
 ---
 
-## 7. HAKEMİN SORACAĞI SORULAR (rapordan önce cevaplanmalı)
+## 7. Hakemin soracağı sorular (rapordan önce cevaplanmalı)
 
 1. *"F1 = 0.889 diyorsunuz; bu modeli çalıştıran kod nerede?"*
 2. *"Saldırganlık füzyonda 0.40 ağırlıkta ama K7'de sıfır alarm
@@ -266,7 +265,7 @@ Dürüst bir hakem güçlü yanları da yazar:
 
 ---
 
-## 8. RAPORA GİRMEDEN ÖNCE YAPILMASI GEREKENLER
+## 8. Rapora girmeden önce yapılması gerekenler
 
 ### Zorunlu (yapılmazsa rapor yanlış beyan olur)
 
@@ -305,3 +304,24 @@ Dürüst bir hakem güçlü yanları da yazar:
 > **Öneri:** makale, ölçüm metodolojisi ve birleşim bulgusu üzerine
 > kurulsun; "çalışan 20 kameralı sistem" iddiası ikincil ve şartlı
 > sunulsun.
+
+---
+
+## 10. Sonrasında ne oldu
+
+| Bulgu | Durum | Kayıt |
+|---|---|---|
+| §1.1 Öğrenilmiş model üretimde yok | Üretime aldım; sonra yanlış modelin yüklü olduğunu bulup düzelttim | P-56, P-63 |
+| §1.2 Saldırganlık sinyali susuyor | Model yoluyla yeniden canlandı | P-56 |
+| §3.1 K8 tek videoya dayanıyor | RWF-2000 üzerinde yeniden ölçtüm: hedef tutmadı (−1.10 sn), ölçütün tavanı da hedefin altında | P-84 |
+| §3.3 Birleşime bootstrap yapılmadı | Yaptım: anlamlı ama %95 GA alt sınırı kıl payı | P-64 |
+| §4.1 Ön yüz testi yok | 44 Vitest testi | — |
+| §4.2 Uçtan uca test yok | Playwright kuruldu | — |
+| §4.3 ESLint yok | Kuruldu, ilk koşuda üç gerçek kusur buldu | — |
+| §4.4 Klip zinciri denenmedi | Gerçek kayıtla uçtan uca doğruladım | P-83 |
+| §4.5 TLS yok | Caddy ile tek giriş noktası ve TLS kuruldu | P-76, P-86 |
+| §4.6 Kamera bazlı yetki yok | Bilerek kapsam dışı bıraktım | — |
+| §4.7 Rapor malzemesi eksik | 6 ekran görüntüsü, 2 mimari diyagram | — |
+| K7 yanlış alarm oranı değil | Alarmları elle etiketledim: kesinlik 0.895 (19 bağımsız olay) | P-68, P-85 |
+| K10 ölçülmedi | Ölçtüm: medyan 30.00 FPS | P-75, P-87 |
+| §5.3 Duygu analizinin etkisi ölçülmedi | Önce üretimde hiç çalışmadığını buldum, düzelttim | P-59 |

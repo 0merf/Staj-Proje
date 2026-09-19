@@ -1,6 +1,6 @@
-"""Kural yolu tanısı — skor neden her dönemde SABİT? (P-52)
+"""Kural yolu tanısı — skor neden her dönemde sabit? (P-52)
 
-⭐ NEDEN BU BETİK
+Neden bu betik
 ----------------
 K8 ölçümlerinde kural yolu iki farklı videoda da kavgayı normalden
 ayırt etmedi:
@@ -13,17 +13,17 @@ Ve skor her dönemde neredeyse aynı çıkıyor:
     normal 0.064 · tırmanma 0.059 · kavga 0.067
 
 Bir skorun kavgada normalle aynı olması "kavgayı göremiyor" demek
-değil zorunlu olarak — skor SABİT de olabilir, yani hiçbir şeye tepki
+değil zorunlu olarak — skor sabit de olabilir, yani hiçbir şeye tepki
 vermiyor olabilir. İkisi farklı arızalar ve farklı çözümleri var:
 
     "görüyor ama ayıramıyor"  → eşik/ağırlık sorunu
-    "hiç tepki vermiyor"      → bileşenler ÖLÜ, eşik değiştirmek boşuna
+    "hiç tepki vermiyor"      → bileşenler ölü, eşik değiştirmek boşuna
 
 Bu betik hangisi olduğunu söyler: skoru beş bileşenine ayırıp her
 birinin dönem bazında dağılımını, ham girdisini ve ölü bölge tabanını
 yan yana basar.
 
-⚠ ÖLÇÜM DEĞİL TANI
+Ölçüm değil tanı
 ------------------
 Buradan çıkan sayılar bir başarı ölçütü değil; hangi kutunun boş
 olduğunu gösteren bir röntgen. Karar `evaluate_k8_video.py`de veriliyor.
@@ -142,10 +142,10 @@ def _seri(
                         v = getattr(hedef, alan, None)
                         if v is not None:
                             satir[f"ham_{alan}"] = float(v)
-            # ⭐ SAHNEDEKİ AZAMİ — "kural doğru kişiyi mi seçiyor?"
+            # Sahnedeki azami — "kural doğru kişiyi mi seçiyor?"
             # `en riskli kişi` toplam skora göre seçiliyor ve o skorun
             # en ağır bileşeni `yakinlik` (0.30). Yakınlık dar bir
-            # mekânda doyuma ulaşıyorsa, seçilen kişi EN YAKIN olan
+            # mekânda doyuma ulaşıyorsa, seçilen kişi en yakın olan
             # oluyor — en hareketli olan değil.
             hepsi = [
                 k.bilek_hizi_p75 for k in kisiler
@@ -164,7 +164,7 @@ def _seri(
         kare_no += 1
 
     cap.release()
-    # ⚠ ETKİN TABANI DÖNDÜR — tahmin etmeyelim. Uyarlanabilir taban
+    # Etkin tabanı döndür — tahmin etmeyelim. Uyarlanabilir taban
     # (P-52) kameranın kendi dağılımından türüyor; hangi değere
     # oturduğunu görmeden "işe yaradı/yaramadı" denemez.
     etkin = {
@@ -215,7 +215,7 @@ def main() -> int:
         return statistics.median(v) if v else None
 
     def _oran(alan: str, d: str) -> float:
-        """O dönemde bileşenin SIFIR OLMADIĞI karelerin oranı."""
+        """O dönemde bileşenin sıfır olmadığı karelerin oranı."""
         v = [s.get(alan, 0.0) for s in seri if _donem(s["ts"]) == d]
         return sum(1 for x in v if x > 1e-9) / len(v) if v else 0.0
 

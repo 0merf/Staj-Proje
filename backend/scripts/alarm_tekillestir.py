@@ -1,18 +1,18 @@
-"""Alarmları DÖNGÜDEKİ KONUMA göre tekilleştirip kesinliği yeniden hesaplar.
+"""Alarmları döngüdeki konuma göre tekilleştirip kesinliği yeniden hesaplar.
 
-⚠⚠ NEDEN GEREKLİ — HAM ALARM SAYISI SİSTEMİ ÖLÇMÜYOR (P-77 / P-79)
+Neden gerekli — ham alarm sayısı sistemi ölçmüyor (P-77 / P-79)
 -------------------------------------------------------------------
 Kaynak videolar sonsuz döngüde yayınlanıyor. cam-16'nın videosu **5
-saniye**: içindeki TEK düşme olayı saatte ~720 kez yeniden alarm
+saniye**: içindeki tek düşme olayı saatte ~720 kez yeniden alarm
 üretiyor. Yani ham alarm sayısı sistemin davranışını değil, **test
 videolarının uzunluk dağılımını** ölçüyor.
 
 Tekilleştirme ölçütü: `(kamera, tür, döngüdeki konum)`. Konum
 `video_pts % video_süresi` ile bulunuyor — `video_pts` yayın başından
-beri BİRİKİMLİ olduğu için doğrudan dosya içi konum değildir (P-77).
+beri birikimli olduğu için doğrudan dosya içi konum değildir (P-77).
 Birbirine `TOLERANS` saniyeden yakın olanlar aynı olay sayılıyor.
 
-⚠ GÜVEN ARALIĞI WILSON YÖNTEMİYLE
+Güven aralığı WILSON yöntemiyle
 n küçük (≈19) ve oran uçta (≈0.9) olduğunda normal yaklaşım **1'i
 aşan** bir üst sınır verir — yani imkânsız bir değer raporlanır.
 Wilson skor aralığı bu aralıkta sınırların içinde kalır.
@@ -84,7 +84,7 @@ def main() -> int:
         print("❌ Etiketlenmiş satır yok.")
         return 1
 
-    # ⚠ Süresi bilinmeyen kamera tekilleştirilemez ve bunu SESSİZCE
+    # Süresi bilinmeyen kamera tekilleştirilemez ve bunu sessizce
     # geçmek, ham sayıyı "bağımsız" diye raporlamak olurdu.
     sure_yok: set[str] = set()
     bagimsiz: list[tuple[str, str, float, int]] = []

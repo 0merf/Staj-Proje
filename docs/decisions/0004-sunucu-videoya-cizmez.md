@@ -36,7 +36,7 @@ Kutular videodan geride kalıyor ve operatör bunu "kutular kaymış"
 diye görüyor.
 
 Denenen ve **reddedilen** çözüm: kutuları ileri **tahmin** etmek
-(ekstrapolasyon). Oyun ağı literatürü (LITERATUR §T) bunun yedek plan
+(ekstrapolasyon). Oyun ağı literatürü bunun yedek plan
 olduğunu söylüyor — doğru yöntem **videoyu geciktirip ara değerleme**
 yapmak. `jitterBufferTarget` ile video bilerek geciktiriliyor ve
 kutular iki gerçek tespit arasında ara değerleniyor.

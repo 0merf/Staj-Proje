@@ -35,7 +35,7 @@ KADEME 2b yüz + ifade — yalnızca yeterince büyük
           kutulara, 3 kademeli kapı                 0.01 ms/kare
 ```
 
-⚠ **Kademe 0 opsiyonel değil.** Onsuz 20 kamera dönmüyor.
+**Kademe 0 opsiyonel değil.** Onsuz 20 kamera dönmüyor.
 
 ## Sonuçlar
 
@@ -59,8 +59,8 @@ kademe olmaları doğru karardı (P-07 döneminin bulgusu).
 |---|---|
 | Kademe 0 filtre maliyeti | 1.5 ms/kare (4.8'den optimize, P-06) |
 | Kademe 0 geçiş oranı | kameraya göre %15-60 |
-| KADEME 2b kapı maliyeti | 0.01 ms/kare — 2700 aday, 0 sınıflandırma |
+| Kademe 2b kapı maliyeti | 0.01 ms/kare — 2700 aday, 0 sınıflandırma |
 | 20 kamerada toplam | 55 kare/sn analiz, GPU %0-5 kullanım |
 
-⚠ Son satır ilginç ve bir kez yanlış okundu: GPU'nun boş görünmesi
+Son satır ilginç ve bir kez yanlış okundu: GPU'nun boş görünmesi
 ileri geçişin ucuz olduğu anlamına gelmiyordu (bkz. ADR-0006).

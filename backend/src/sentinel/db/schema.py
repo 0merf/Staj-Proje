@@ -1,4 +1,4 @@
-"""Olay tablosu ve TimescaleDB kurulumu — PLAN.md §8.
+"""Olay tablosu ve TimescaleDB kurulumu.
 
 Neden bu dosya var
 ------------------
@@ -17,7 +17,7 @@ Bu tablonun üç özelliği var ve üçü de zaman serisi:
    değişmez.
 2. **Sorgular hep zaman aralıklı.** "Son 24 saatte cam-09'da neler
    oldu" — hiçbir zaman "tüm tarihte" sorulmuyor.
-3. **Eski veri değerini yitiriyor** ama ÖZETİ yitirmiyor. Üç ay
+3. **Eski veri değerini yitiriyor** ama özeti yitirmiyor. Üç ay
    önceki tek bir alarmın ayrıntısı gereksiz; "üç ay önce günde kaç
    alarm vardı" değerli.
 
@@ -29,21 +29,21 @@ TimescaleDB üçü için de hazır makine veriyor:
     saklama politikası   → eski ham satırlar otomatik siliniyor,
                           özet kalıyor
 
-⚠ SÜREKLİ TOPLULAŞTIRMA K7'NİN TA KENDİSİ
+Sürekli toplulaştırma K7'nin TA kendisi
 K7 kriteri "kamera-saat başına yanlış alarm ≤3" diyor ve bugüne kadar
 her ölçümde elle bir betik yazıp Valkey akışını dinledik. `olay_saatlik`
 görünümü tam olarak bu sayıyı **sürekli** üretiyor: kriter artık bir
 ölçüm koşusunun değil, sistemin normal çıktısının parçası.
 
-⚠ NEDEN AYRI BİR "kanit" JSONB SÜTUNU
+Neden ayrı bir "kanit" JSONB sütunu
 Her anomali türünün kanıtı farklı: düşmede en-boy oranı ve eğim,
 saldırganlıkta bileşen skorları, Katman A'da sigma sapması. Bunları
 ayrı sütunlara açmak, her yeni kural için şema değişikliği demekti.
-JSONB, alarmın NEDEN verildiğini kaybetmeden şemayı sabit tutuyor —
+JSONB, alarmın neden verildiğini kaybetmeden şemayı sabit tutuyor —
 ve operatöre gösterilen açıklama da buradan geliyor.
 
-⚠ NEDEN ALEMBIC DEĞİL DE DÜZ SQL
-Alembic bağımlılığı kurulu ama tek tablolu bir şema için otomatik
+Neden Alembic değil de düz SQL
+Tek tablolu bir şema için Alembic'in otomatik
 revizyon üretimi, kazandırdığından fazla makine getiriyor. Daha
 önemlisi: hypertable ve sürekli toplulaştırma Alembic'in bilmediği
 TimescaleDB çağrıları; hepsi elle SQL olarak yazılacaktı zaten.
@@ -60,8 +60,8 @@ from sentinel.logging import get_logger
 log = get_logger(__name__)
 
 # Ham olay satırları bu süre sonra siliniyor; saatlik özet kalıyor.
-# ⚠ Staj/demo için 30 gün. Gerçek bir kurulumda bu sayı hukuki
-# saklama yükümlülüğüne göre belirlenir (PLAN §12.4 KVKK notu):
+# Staj/demo için 30 gün. Gerçek bir kurulumda bu sayı hukuki
+# saklama yükümlülüğüne göre belirlenir (KVKK notu):
 # gözetim kayıtları için tipik sınır 30-60 gün ve "gerektiğinden uzun
 # saklamamak" bir yükümlülük, tercih değil.
 SAKLAMA_GUN = 30
@@ -71,10 +71,10 @@ SAKLAMA_GUN = 30
 # 1 gün makul.
 DILIM_ARALIGI = "1 day"
 
-# ⚠ İFADELER AYRI AYRI TUTULUYOR, TEK METİN + `split(";")` DEĞİL
+# İfadeler ayrı ayrı tutuluyor, tek metin + `split(";")` değil
 #
 # İlk sürüm şemayı tek bir metin olarak yazıp `;` ile bölüyordu ve
-# `syntax error at end of input` veriyordu. Sebep: SQL YORUMUNUN İÇİNDE
+# `syntax error at end of input` veriyordu. Sebep: SQL yorumunun içinde
 # noktalı virgül vardı ("...daha az güvenilirdir; operatör bunu
 # görmeli"). Naif bölme, ifadeyi yorumun ortasından kesti.
 #
@@ -83,7 +83,7 @@ DILIM_ARALIGI = "1 day"
 # okunaklı — her ifade kendi gerekçesiyle yan yana duruyor.
 SEMA: tuple[str, ...] = (
     # Olay tablosu.
-    #   kanit  : alarmın NEDEN verildiği (JSONB). Bu sütun boşsa alarm
+    #   kanit  : alarmın neden verildiği (JSONB). Bu sütun boşsa alarm
     #            bir iddiadır, doluysa bir gözlemdir. Türden türe
     #            değiştiği için ayrı sütunlara açılmadı — her yeni kural
     #            şema değişikliği gerektirirdi.
@@ -104,7 +104,7 @@ SEMA: tuple[str, ...] = (
         klip_anahtar TEXT
     )
     """,
-    # ⚠ Hypertable'a çevirme İDEMPOTENT olmak zorunda: bu fonksiyon her
+    # Hypertable'a çevirme idempotent olmak zorunda: bu fonksiyon her
     # açılışta çağrılıyor ve ikinci çağrıda sessizce geçmeli.
     """
     SELECT create_hypertable(
@@ -114,13 +114,13 @@ SEMA: tuple[str, ...] = (
     )
     """,
     # Operatörün gerçek sorgusu: "şu kamerada, şu aralıkta, ne oldu".
-    # ⚠ Sütun sırası önemli: eşitlik (camera) önce, aralık (ts) sonra.
+    # Sütun sırası önemli: eşitlik (camera) önce, aralık (ts) sonra.
     # Aralık koşulu başta olsaydı eşitlik kısmı indeksten yararlanamazdı.
     "CREATE INDEX IF NOT EXISTS olaylar_kamera_ts ON olaylar (camera, ts DESC)",
     "CREATE INDEX IF NOT EXISTS olaylar_tur_ts ON olaylar (tur, ts DESC)",
 )
 
-# ⚠ K7 KRİTERİ ARTIK SÜREKLİ ÖLÇÜLÜYOR
+# K7 kriteri artık sürekli ölçülüyor
 # Bu görünüm arka planda güncelleniyor; "kamera-saat başına alarm"
 # sayısı elle betik koşmadan sorgulanabiliyor.
 SUREKLI_TOPLULASTIRMA = """
@@ -139,7 +139,7 @@ GROUP BY saat, camera, tur, ciddiyet
 WITH NO DATA;
 """
 
-# ⚠ `end_offset` SIFIR DEĞİL: en son saat hâlâ dolmakta olduğu için
+# `end_offset` sıfır değil: en son saat hâlâ dolmakta olduğu için
 # özetlenmemeli, yoksa yarım saatlik veriyle tam saat gibi görünür.
 YENILEME_POLITIKASI = """
 SELECT add_continuous_aggregate_policy(
@@ -151,7 +151,7 @@ SELECT add_continuous_aggregate_policy(
 );
 """
 
-# ⚠ GERÇEK ZAMANLI TOPLULAŞTIRMA AÇILIYOR — ve sebebi bir hataydı
+# Gerçek zamanlı toplulaştırma açılıyor — ve sebebi bir hataydı
 #
 # İlk sürüm varsayılan `materialized_only = true` ile kuruldu ve
 # `/api/v1/events/ozet?saat=1` **boş** dönüyordu. Sebep sessizdi:
@@ -165,11 +165,11 @@ SELECT add_continuous_aggregate_policy(
 # "bakmadım" aynı görünüyorsa, sistem sessizce yanıltıyor demektir.
 #
 # `materialized_only = false` ile görünüm, materyalize edilmiş eski
-# veriyi ham tablodan gelen TAZE veriyle birleştiriyor. TimescaleDB'de
+# veriyi ham tablodan gelen taze veriyle birleştiriyor. TimescaleDB'de
 # bu özellik tam olarak bu senaryo için var.
 #
-# ⚠ ALTER ayrıca çağrılıyor: `CREATE ... IF NOT EXISTS` var olan bir
-# görünümü DEĞİŞTİRMEZ. Önceki sürümle kurulmuş bir veritabanı
+# ALTER ayrıca çağrılıyor: `CREATE ... IF NOT EXISTS` var olan bir
+# görünümü değiştirmez. Önceki sürümle kurulmuş bir veritabanı
 # yükseltilirken bu satır olmasa hata sessizce kalıcı olurdu.
 GERCEK_ZAMANLI = """
 ALTER MATERIALIZED VIEW olay_saatlik
@@ -186,17 +186,17 @@ SELECT add_retention_policy(
 async def semayi_kur(baglanti: AsyncConnection) -> None:
     """Tabloyu, hypertable'ı, özet görünümü ve politikaları kurar.
 
-    ⚠ HER AÇILIŞTA ÇAĞRILIYOR ve idempotent olmak ZORUNDA. Şemayı elle
+    Her açılışta çağrılıyor ve idempotent olmak zorunda. Şemayı elle
     kurmayı gerektiren bir sistem, bir bileşen yeniden başladığında
     sessizce çalışmaz duruma gelir.
 
-    ⚠ TimescaleDB eklentisi yoksa tablo yine kuruluyor, yalnızca
+    TimescaleDB eklentisi yoksa tablo yine kuruluyor, yalnızca
     zaman serisi özellikleri atlanıyor. Sistem düz PostgreSQL'de de
     ayakta kalmalı — eklenti bir optimizasyon, bir ön koşul değil.
     """
     await baglanti.execute(text("CREATE EXTENSION IF NOT EXISTS timescaledb"))
 
-    # ⚠ `.format()` DEĞİL `.replace()`
+    # `.format()` değil `.replace()`
     # SQL metni `'{}'::jsonb` içeriyor ve `.format()` onu bir yer tutucu
     # sanıp `IndexError` fırlatıyor. SQL'de süslü parantez sık geçtiği
     # için bu şablonlarda `format` genel olarak yanlış araç.
@@ -211,7 +211,7 @@ async def semayi_kur(baglanti: AsyncConnection) -> None:
             text(SAKLAMA_POLITIKASI.replace("{gun}", str(SAKLAMA_GUN)))
         )
     except Exception as exc:
-        # ⚠ Özet görünüm ve politikalar OLMAZSA OLMAZ değil: olaylar
+        # Özet görünüm ve politikalar olmazsa olmaz değil: olaylar
         # yine kaydediliyor, yalnızca saatlik özet ve otomatik temizlik
         # yok. Bunun için sistemi durdurmak orantısız olurdu.
         log.warning(

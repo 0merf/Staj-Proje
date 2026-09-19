@@ -1,8 +1,8 @@
-"""KATMAN A — kamera başına normal davranış profili (PLAN.md §6.4).
+"""Katman A — kamera başına normal davranış profili.
 
 Mimari kural 7'nin uygulaması
 -----------------------------
-    "Her kameranın normali AYRI öğrenilir.
+    "Her kameranın normali ayrı öğrenilir.
      Koridorda koşmak anomali, spor salonunda değil."
 
 Katman B (rules.py) fizikle tanımlanabilen olayları yakalar: düşme,
@@ -22,7 +22,7 @@ Kare, 32×18'lik bir ızgaraya bölünüyor ve her hücre için:
 
 Artı kamera geneli için kişi sayısı dağılımı.
 
-⚠ NEDEN IZGARA, NEDEN HAM KOORDİNAT DEĞİL
+Neden ızgara, neden ham koordinat değil
 -----------------------------------------
 Ham piksel koordinatı ile öğrenmek iki şeyi birden bozar:
   · **Genelleme yok.** (412, 380) noktasında hiç kimse görülmediyse
@@ -33,7 +33,7 @@ Ham piksel koordinatı ile öğrenmek iki şeyi birden bozar:
 32×18 = 576 hücre, kare başına ~40×40 piksel. Bir insan gövdesi
 kabaca bir hücre kaplıyor — doğal bir çözünürlük.
 
-⚠ NEDEN WELFORD
+Neden WELFORD
 ---------------
 Ortalama ve varyans **çevrimiçi** hesaplanıyor: tüm gözlemleri saklamak
 20 kamera × 576 hücre × saatlerce veri demekti. Welford algoritması tek
@@ -42,14 +42,14 @@ geçişte, sayısal olarak kararlı biçimde ikisini birden veriyor.
 Naif yol (`Σx²/n − (Σx/n)²`) büyük sayılarda katastrofik iptal
 (catastrophic cancellation) üretir ve varyans **negatif** çıkabilir.
 
-⚠ NEDEN KALICILIK
+Neden kalıcılık
 -----------------
 Profil diske yazılmazsa her yeniden başlatmada sistem **kör** olur:
 öğrenme sıfırlanır ve saatlerce hiçbir şeyi olağandışı sayamaz. Gözetim
 sisteminde bu kabul edilemez — bakım için yapılan bir yeniden başlatma
 sistemi savunmasız bırakmamalı.
 
-⚠ SINIRLAMA — dürüstçe raporlanacak
+Sınırlama — raporda açıkça belirtiliyor
 -----------------------------------
 Profil "gördüğünü normal sayar". Öğrenme penceresinde gerçek bir olay
 olduysa onu da normal öğrenir (kirlenme / poisoning). Üretimde çözümü
@@ -76,12 +76,12 @@ IZGARA_Y = 18
 # hareketini tarif etmek için yeterli, 16 kova gürültüyü böler.
 YON_KOVA = 8
 
-# Bir hücre bu kadar gözlem görmeden o hücre hakkında karar VERİLMEZ.
+# Bir hücre bu kadar gözlem görmeden o hücre hakkında karar verilmez.
 # Tek gözlemden "burada hız normalde 0.4'tür" demek istatistik değil
 # tahmin olur.
 HUCRE_ASGARI_ORNEK = 30
 
-# Kamera profili bu kadar örnek görmeden HİÇBİR skor üretmez.
+# Kamera profili bu kadar örnek görmeden hiçbir skor üretmez.
 # Soğuk başlangıçta her şey "olağandışı" görünür — henüz normal
 # öğrenilmemiştir. Bu koruma olmadan sistem açılışta alarm yağdırır.
 PROFIL_ASGARI_ORNEK = 2000
@@ -92,7 +92,7 @@ SIGMA_ESIK = 3.0
 
 # ─── Ayırt edilebilirlik tabanları (z-skorun bölemeyeceği en küçük sapma) ───
 #
-# ⚠ Bunlar istatistik değil ÖLÇÜM HASSASİYETİ sayıları. Bir hücrede
+# Bunlar istatistik değil ölçüm hassasiyeti sayıları. Bir hücrede
 # gözlenen sapma bu değerin altındaysa, "değişkenlik yok" demiyoruz —
 # "değişkenliği ölçemiyoruz" diyoruz (bkz. `_Welford.z_skor`).
 #
@@ -143,7 +143,7 @@ class _Welford:
     def z_skor(self, x: float, taban_sapma: float = 1e-3) -> float:
         """Bu değer ortalamadan kaç standart sapma uzakta?
 
-        ⚠ `taban_sapma` MATEMATİKSEL DEĞİL FİZİKSEL BİR TABAN
+        `taban_sapma` matematiksel değil fiziksel bir taban
         ---------------------------------------------------
         Önceki sürüm sabit `1e-3` kullanıyordu; amacı yalnızca sıfıra
         bölmeyi engellemekti. Ama bu, ölçüm gürültüsünü istatistiksel
@@ -169,8 +169,8 @@ class _Welford:
         z-skor bunun altına inemez. Sapma tabanı, "bu iki değeri
         birbirinden ayırt edemeyiz" sınırıdır.
 
-        ⚠ Varsayılan hâlâ 1e-3: bu fonksiyon genel amaçlı, tabanı bilen
-        taraf ÇAĞIRAN. Sessizce bir fizik varsayımı gömmek, sorunun
+        Varsayılan hâlâ 1e-3: bu fonksiyon genel amaçlı, tabanı bilen
+        taraf çağıran. Sessizce bir fizik varsayımı gömmek, sorunun
         kendisiydi.
         """
         if self.n < 2:
@@ -198,14 +198,14 @@ class KameraNormali:
     hiz: dict[tuple[int, int], _Welford] = field(default_factory=dict)
     # Hücre başına yön histogramı
     yon: dict[tuple[int, int], np.ndarray] = field(default_factory=dict)
-    # ⚠ Hücre başına DURAĞAN gözlem sayısı — PLAN §6.4 "oyalanma süresi"
+    # Hücre başına durağan gözlem sayısı (proje planındaki "oyalanma süresi")
     #
-    # NEDEN: "45 saniyedir aynı yerde duruyor" tek başına anomali
-    # DEĞİLDİR. Bankta oturan, vitrine bakan, otobüs bekleyen insan da
-    # aynı ölçüyü verir. Anomali olan, insanların normalde DURMADIĞI
+    # Neden: "45 saniyedir aynı yerde duruyor" tek başına anomali
+    # değildir. Bankta oturan, vitrine bakan, otobüs bekleyen insan da
+    # aynı ölçüyü verir. Anomali olan, insanların normalde durmadığı
     # bir yerde durmaktır.
     #
-    # Süre dağılımı yerine ORAN tutuluyor: bu hücredeki gözlemlerin
+    # Süre dağılımı yerine oran tutuluyor: bu hücredeki gözlemlerin
     # yüzde kaçı durağandı. Daha ucuz (tek sayaç), daha sağlam (izin
     # ne zaman başlayıp bittiğini bilmek gerekmiyor) ve sorulan soruyu
     # doğrudan cevaplıyor: "burada durulur mu?"
@@ -231,7 +231,7 @@ class KameraNormali:
     ) -> None:
         """Tek bir kişi gözlemini profile işler.
 
-        ⚠ Ayak noktası kullanılıyor, kutu merkezi değil. Kişi kameraya
+        Ayak noktası kullanılıyor, kutu merkezi değil. Kişi kameraya
         yaklaştıkça kutu büyür ve merkez yukarı kayar; ayak noktası
         zemin düzleminde kalır. Mekânsal profil zemine ait olmalı.
         """
@@ -262,7 +262,7 @@ class KameraNormali:
     def hazir(self) -> bool:
         """Profil karar verecek kadar öğrendi mi?
 
-        ⚠ Bu kontrol olmadan sistem AÇILIŞTA alarm yağdırır: hiçbir şey
+        Bu kontrol olmadan sistem açılışta alarm yağdırır: hiçbir şey
         öğrenilmemişken her gözlem "hiç görülmemiş" olur.
         """
         return self.toplam_ornek >= PROFIL_ASGARI_ORNEK
@@ -280,9 +280,9 @@ class KameraNormali:
 
         Dönen: (0-1 skor, kanıt sözlüğü)
 
-        ⚠ Üç bağımsız sinyalin EN YÜKSEĞİ alınıyor, ortalaması değil.
+        Üç bağımsız sinyalin en yükseği alınıyor, ortalaması değil.
         Ortalama alsaydık "doğru yerde, doğru yönde ama üç kat hızlı"
-        bir kişi sulanıp kaybolurdu. Anomali doğası gereği TEK bir
+        bir kişi sulanıp kaybolurdu. Anomali doğası gereği tek bir
         boyutta sıra dışılıktır.
         """
         if not self.hazir:
@@ -315,7 +315,7 @@ class KameraNormali:
                 kanit["bolge_normal_hiz"] = round(w.ortalama, 3)
 
         # ── 3. Yön: bu hücrede bu yöne gidilir mi? ──
-        # "Ters yön" kuralı (PLAN §6.4) burada doğal olarak çıkıyor:
+        # "Ters yön" kuralı burada doğal olarak çıkıyor:
         # koridorda herkes bir yöne gidiyorsa ters yön nadir kovadır.
         h = self.yon.get((hy, hx))
         if yon_rad is not None and h is not None and int(h.sum()) >= HUCRE_ASGARI_ORNEK:
@@ -335,7 +335,7 @@ class KameraNormali:
         """Bu hücrede durmak olağan mı? → durağan gözlem oranı (0-1).
 
         `None` dönerse "bilmiyoruz": ya profil hazır değil ya da hücre
-        yeterince gözlem görmemiş. ⚠ Çağıran taraf `None`'ı "olağan
+        yeterince gözlem görmemiş. Çağıran taraf `None`'ı "olağan
         değil" saymamalı — eksik bilgi kanıt değildir.
 
         Yorum:
@@ -397,7 +397,7 @@ class KameraNormali:
     def from_dict(cls, d: dict[str, Any]) -> KameraNormali:
         """Diskten yüklenen sözlükten profil kurar.
 
-        ⚠ `Any` bilinçli: JSON çözümlemesinin çıktısı iç içe ve
+        `Any` bilinçli: JSON çözümlemesinin çıktısı iç içe ve
         heterojen (liste, sözlük, sayı). `object` ile yazıp her erişimde
         daraltma yapmak, okunmayan bir `cast` yığını üretiyordu.
         Yapı zaten `_yukle` içinde try/except ile korunuyor — bozuk
@@ -408,7 +408,7 @@ class KameraNormali:
         p.guncelleme = float(d.get("guncelleme", time.time()))
         p.ziyaret = np.asarray(d["ziyaret"], dtype=np.int64)
         p.kisi_sayisi = _Welford.from_dict(d["kisi_sayisi"])
-        # ⚠ Eski profillerde bu alan yok — sıfırdan öğrenilir, profilin
+        # Eski profillerde bu alan yok — sıfırdan öğrenilir, profilin
         # geri kalanı korunur. Şema değişikliği yüzünden saatlerce
         # öğrenilmiş bir profili çöpe atmak kabul edilemez.
         duragan = d.get("duraganlik")
@@ -426,7 +426,7 @@ class KameraNormali:
 class NormalProfilDeposu:
     """Kamera profillerini tutar ve diske yazar.
 
-    ⚠ Profil kaybı = sistem körlüğü. Yeniden başlatmada profil
+    Profil kaybı = sistem körlüğü. Yeniden başlatmada profil
     yüklenmezse öğrenme sıfırlanır ve sistem saatlerce hiçbir şeyi
     olağandışı sayamaz. Bakım için yapılan bir restart, gözetim
     sistemini savunmasız bırakmamalı.

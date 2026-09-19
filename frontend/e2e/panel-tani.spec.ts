@@ -1,18 +1,18 @@
 import { expect, test } from '@playwright/test'
 
 /**
- * PANEL TANI — gözle değil ÖLÇEREK kontrol.
+ * Panel tanı — gözle değil ölçerek kontrol.
  *
- * ⭐ NEDEN AYRI BİR DOSYA
+ * Neden ayrı bir dosya
  * ----------------------
  * `panel.spec.ts` "çalışıyor mu" diye soruyor (geçer/kalır). Bu dosya
- * "sessizce bozuk bir şey var mı" diye soruyor ve BULGULARI RAPORLUYOR.
+ * "sessizce bozuk bir şey var mı" diye soruyor ve bulguları raporluyor.
  *
- * Sebep: kullanıcı canlı panelde cam-15'in **siyah kaldığını** gördü.
+ * Sebep: canlı panelde cam-15'in **siyah kaldığını** gördüm.
  * Arka uç tarafı temizdi (kamera hazır, 4.15 FPS, MediaMTX ready) —
  * yani sorun tarayıcıda ve hiçbir sunucu metriği onu göstermiyor.
  *
- * ⚠ Bir kutucuğun çizilmesi videonun geldiğini GÖSTERMEZ. Tek
+ * Bir kutucuğun çizilmesi videonun geldiğini göstermez. Tek
  * gözlemlenebilir kanıt `video.videoWidth > 0` ve `readyState >= 2`.
  */
 
@@ -27,25 +27,25 @@ async function girisYap(page: import('@playwright/test').Page) {
   await expect(page.getByTestId('kamera-izgarasi')).toBeVisible()
 }
 
-test('konsol hatası ve başarısız istek YOK — tüm sayfalar gezilerek', async ({
+test('konsol hatası ve başarısız istek yok — tüm sayfalar gezilerek', async ({
   page,
 }) => {
   const konsolHatalari: string[] = []
   const basarisizIstekler: string[] = []
 
   /**
-   * ⚠ İKİ HATA BEKLENEN VE GEREKÇELİ — gizlenmiyor, TANIMLANIYOR
+   * İki hata beklenen ve gerekçeli — gizlenmiyor, tanımlanıyor
    *
    * 1. `401 /api/v1/auth/ben` — uygulama açılışta "oturumum var mı"
-   *    diye soruyor. Giriş yapılmadan önce 401 DOĞRU cevaptır;
+   *    diye soruyor. Giriş yapılmadan önce 401 doğru cevaptır;
    *    bastırmak, gerçek bir yetki hatasını da gizlerdi.
    *
    * 2. `404 /<cam>/whep/<oturum>` — kutucuk kapanırken WHEP oturumu
    *    DELETE ediliyor; MediaMTX oturumu çoktan temizlemiş olabiliyor.
    *    Zararsız bir yarış durumu.
    *
-   * Bunları beyaz listeye almak, "konsol temiz" demenin dürüst yolu:
-   * beklenmeyen HER hata hâlâ testi düşürüyor.
+   * Bunları beyaz listeye almak, "konsol temiz" demenin doğru yolu:
+   * beklenmeyen her hata hâlâ testi düşürüyor.
    */
   const beklenen = (metin: string) =>
     metin.includes('/api/v1/auth/ben') || /\/whep\/[0-9a-f-]{8,}/.test(metin)
@@ -63,7 +63,7 @@ test('konsol hatası ve başarısız istek YOK — tüm sayfalar gezilerek', asy
   })
   page.on('pageerror', (e) => konsolHatalari.push(`pageerror: ${e.message}`))
   page.on('requestfailed', (r) => {
-    // ⚠ WebRTC/WHEP oturumu kapanırken iptal edilen istekler normal.
+    // WebRTC/WHEP oturumu kapanırken iptal edilen istekler normal.
     const sebep = r.failure()?.errorText ?? ''
     if (sebep.includes('ERR_ABORTED')) return
     basarisizIstekler.push(`${r.method()} ${r.url()} — ${sebep}`)
@@ -74,9 +74,9 @@ test('konsol hatası ve başarısız istek YOK — tüm sayfalar gezilerek', asy
 
   await girisYap(page)
 
-  // Üç sayfanın da açıldığını doğrula — CLAUDE.md "zaman çizelgesi ve
-  // kamera detayı YOK" diyordu, panelde VARLAR (belge bayat).
-  // ⚠ `exact: true` şart: "Izgara" hem sekme düğmesinde hem de
+  // Üç sayfanın da açıldığını doğrula — proje notlarım "zaman çizelgesi ve
+  // kamera detayı yok" diyordu, panelde varlar (belge bayat).
+  // `exact: true` şart: "Izgara" hem sekme düğmesinde hem de
   // "← ızgaraya dön" düğmesinde geçiyor.
   for (const ad of ['Zaman Çizelgesi', 'Kamera Detayı', 'Izgara']) {
     await page.getByRole('button', { name: ad, exact: true }).click()
@@ -96,7 +96,7 @@ test('konsol hatası ve başarısız istek YOK — tüm sayfalar gezilerek', asy
   expect(basarisizIstekler, 'başarısız istek var').toHaveLength(0)
 })
 
-test('⭐ AÇILAN HER KAMERADA VİDEO GERÇEKTEN GELİYOR MU (siyah ekran avı)', async ({
+test('Açılan her kamerada video gerçekten geliyor MU (siyah ekran avı)', async ({
   page,
 }) => {
   test.setTimeout(180_000)
@@ -106,7 +106,7 @@ test('⭐ AÇILAN HER KAMERADA VİDEO GERÇEKTEN GELİYOR MU (siyah ekran avı)'
   await expect.poll(() => hazirlar.count(), { timeout: 30_000 }).toBeGreaterThan(0)
 
   const toplam = await hazirlar.count()
-  // ⚠ TÜM hazır kameralar taranıyor: kullanıcı cam-15'in siyah
+  // Tüm hazır kameralar taranıyor: kullanıcı cam-15'in siyah
   // kaldığını bildirdi ve ilk 8'de o yoktu.
   const denenecek = toplam
   const siyah: string[] = []

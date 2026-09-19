@@ -1,6 +1,6 @@
 """Boru hattında süre nereye gidiyor — CPU mu, GPU mu?
 
-Neden bu ölçüm ÖNCE yapılıyor
+Neden bu ölçüm önce yapılıyor
 -----------------------------
 Boru hattı paralelleştirmesinin tüm iddiası şu: aşamalar seri
 çalıştığı için toplam süre `CPU + GPU`, oysa örtüştürülürse
@@ -22,7 +22,7 @@ GPU süresini göremez — yalnızca çağrının kuyruğa girme süresini ölç
 
     t0 = perf_counter()
     cikti = model(x)          # hemen döner, GPU hâlâ çalışıyor
-    t1 = perf_counter()       # ← GPU süresi buraya YANSIMAZ
+    t1 = perf_counter()       # ← GPU süresi buraya yansımaz
 
 `torch.cuda.synchronize()` GPU işi bitene kadar bekler. İki ölçümün
 farkı gerçek GPU süresini verir.
@@ -62,8 +62,8 @@ from sentinel.inference.worker import build_detector, build_pose_estimator  # no
 def kareler_yukle(kameralar: list[str], adet: int) -> list[np.ndarray]:
     """Gerçek kamera karelerini model uzayında hazırlar.
 
-    ⚠ Sentetik gürültü KULLANILMIYOR. Poz kademesinin maliyeti kadrajdaki
-    KİŞİ SAYISINA bağlı; rastgele piksellerde kişi bulunmaz ve poz
+    Sentetik gürültü kullanılmıyor. Poz kademesinin maliyeti kadrajdaki
+    kişi sayısına bağlı; rastgele piksellerde kişi bulunmaz ve poz
     neredeyse bedava görünür. Ölçüm gerçek yükü yansıtmalı (P-15 dersi:
     izole ölçüm bileşenin kendi eğrisini verir, sistemdeki davranışını
     vermez).
@@ -122,7 +122,7 @@ def olc(
     for t in range(tur):
         grup = [kareler[(t * batch + i) % len(kareler)] for i in range(batch)]
 
-        # ── TESPİT ──
+        # ── Tespit ──
         torch.cuda.synchronize()
         t0 = time.perf_counter()
         sonuclar = dedektor.detect(grup)
@@ -134,7 +134,7 @@ def olc(
         olcumler["tespit_toplam"].append((t_bitti - t0) * 1000.0)
         kisi_sayilari.append(sum(len(s) for s in sonuclar))
 
-        # ── POZ ──
+        # ── Poz ──
         torch.cuda.synchronize()
         t0 = time.perf_counter()
         poz.estimate(grup, sonuclar)
@@ -145,7 +145,7 @@ def olc(
         olcumler["poz_cagri"].append((t_cagri - t0) * 1000.0)
         olcumler["poz_toplam"].append((t_bitti - t0) * 1000.0)
 
-        # ── TAKİP (saf CPU) ──
+        # ── Takip (saf CPU) ──
         t0 = time.perf_counter()
         for i, tespitler in enumerate(sonuclar):
             takipci.update(f"cam-{i % 20 + 1:02d}", tespitler, time.time())
@@ -161,7 +161,7 @@ def olc(
     takip = p50("takip")
 
     # `synchronize` sonrası ölçülen süre GPU'nun bitmesini de kapsıyor.
-    # Çağrının kendisi döndükten sonra kalan kısım = SAF GPU beklemesi.
+    # Çağrının kendisi döndükten sonra kalan kısım = saf GPU beklemesi.
     tespit_gpu = max(0.0, tespit_toplam - p50("tespit_cagri"))
     poz_gpu = max(0.0, poz_toplam - p50("poz_cagri"))
 

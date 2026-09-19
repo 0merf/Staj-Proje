@@ -4,7 +4,7 @@
     docker compose up -d valkey
     uv run pytest tests/integration -q
 
-⚠ NEDEN ENTEGRASYON, SAHTE (mock) DEĞİL
+Neden entegrasyon, sahte (mock) değil
 ---------------------------------------
 Buradaki davranışların tamamı **Valkey'in kendi semantiğinden** doğuyor:
 tüketici grubunun akış silinince kaybolması, `LPOP`'un atomikliği,
@@ -40,7 +40,7 @@ pytestmark = pytest.mark.integration
 
 @pytest.fixture
 def client() -> Redis:
-    """Valkey bağlantısı. Ayakta değilse test atlanır, KIRMIZI olmaz."""
+    """Valkey bağlantısı. Ayakta değilse test atlanır, kırmızı olmaz."""
     try:
         c = connect()
         c.ping()
@@ -80,7 +80,7 @@ def _mesaj(camera: str = "cam-01", sequence: int = 1) -> FrameMessage:
 
 
 def test_mesaj_alanlari_kayipsiz_gidip_geliyor(stream: FrameStream) -> None:
-    """Valkey Stream alanları DÜZ STRING olmak zorunda.
+    """Valkey Stream alanları düz STRING olmak zorunda.
 
     Tip dönüşümü bozulursa hata sessizdir: `float("0.5")` çalışır ama
     yanlış alan adı `KeyError` yerine varsayılan değer döndürebilir ve
@@ -106,24 +106,24 @@ def test_mesaj_alanlari_kayipsiz_gidip_geliyor(stream: FrameStream) -> None:
 
 
 # ══════════════════════════════════════════════════════════════
-#  P-20 GERİLEMESİ — hata izolasyonu
+#  P-20 gerilemesi — hata izolasyonu
 # ══════════════════════════════════════════════════════════════
 
 
 def test_P20_GERILEMESI_akis_silinince_tuketici_COKMUYOR(stream: FrameStream) -> None:
-    """⚠ Alım worker'ını yeniden başlatmak çıkarım worker'ını öldürüyordu.
+    """Alım worker'ını yeniden başlatmak çıkarım worker'ını öldürüyordu.
 
-    İki DOĞRU kararın çarpışması:
-      1. Havuz sahibi açılışta akışı SİLMEK ZORUNDA (P-10) — yoksa eski
+    İki doğru kararın çarpışması:
+      1. Havuz sahibi açılışta akışı silmek zorunda (P-10) — yoksa eski
          mesajlardaki geçersiz slot referansları havuzu bozar.
       2. Çıkarım worker'ı akıştan tüketici grubuyla okuyor.
 
-    Valkey'de akışı silmek TÜKETİCİ GRUPLARINI DA siler. Yani (1) her
+    Valkey'de akışı silmek tüketici gruplarını da siler. Yani (1) her
     yapıldığında (2) ayaklarının altındaki zemini kaybediyordu ve
     `NOGROUP` ile çöküyordu.
 
-    Bir bileşenin NORMAL yeniden başlaması diğerini düşürmemeli
-    (PLAN.md §4.2 hata izolasyonu).
+    Bir bileşenin normal yeniden başlaması diğerini düşürmemeli
+    (hata izolasyonu).
     """
     stream.ensure_group("inference")
     stream.publish(_mesaj())
@@ -132,7 +132,7 @@ def test_P20_GERILEMESI_akis_silinince_tuketici_COKMUYOR(stream: FrameStream) ->
     # Alım worker'ının açılışta yaptığı şey: akışı sıfırla
     stream.reset()
 
-    # ⚠ Kritik an: burada eskiden `NOGROUP` fırlıyor ve worker çöküyordu
+    # Kritik an: burada eskiden `NOGROUP` fırlıyor ve worker çöküyordu
     ilk = list(stream.consume("inference", "w1", count=8, block_ms=200))
     assert ilk == [], "grup kaybolduğunda boş dönmeli, patlamamalı"
 
@@ -150,14 +150,14 @@ def test_grup_iki_kez_kurulunca_hata_vermiyor(stream: FrameStream) -> None:
 
 
 def test_grup_akisin_BASINDAN_basliyor(stream: FrameStream) -> None:
-    """⚠ `start_id="0"` bilinçli, varsayılan `"$"` kilitlenmeye yol açar.
+    """`start_id="0"` bilinçli, varsayılan `"$"` kilitlenmeye yol açar.
 
-    `"$"` yalnızca YENİ mesajları verir. Akışta bekleyen kareler hiç
+    `"$"` yalnızca yeni mesajları verir. Akışta bekleyen kareler hiç
     okunmaz → slotları geri verilmez → üretici boş slot bulamaz →
     sistem durur (P-10).
     """
     stream.publish(_mesaj(sequence=7))
-    stream.ensure_group("sonradan")  # grup mesajdan SONRA kuruluyor
+    stream.ensure_group("sonradan")  # grup mesajdan sonra kuruluyor
 
     gelen = list(stream.consume("sonradan", "c", count=8, block_ms=500))
     assert len(gelen) == 1, "gruptan önce yazılmış mesaj da okunmalı"
@@ -201,7 +201,7 @@ def test_slot_bitince_None_donuyor_bu_bir_HATA_DEGIL(client: Redis) -> None:
     """Boş slot yoksa `acquire()` None döner — geri basınç sinyali.
 
     Bu tasarımın bedava getirdiği şey: tüketici yavaşlarsa üretici
-    kareyi ATAR. Sınırsız kuyruk yerine kontrollü kare kaybı.
+    kareyi atar. Sınırsız kuyruk yerine kontrollü kare kaybı.
     """
     key = f"test.slots.{uuid.uuid4().hex[:8]}"
     havuz = SlotAllocator(client, slot_count=3, key=key)
@@ -213,7 +213,7 @@ def test_slot_bitince_None_donuyor_bu_bir_HATA_DEGIL(client: Redis) -> None:
         assert sorted(x for x in alinan if x is not None) == [0, 1, 2]
         assert havuz.available == 0
 
-        # ⚠ Havuz boş — hata değil, geri basınç
+        # Havuz boş — hata değil, geri basınç
         assert havuz.acquire() is None
 
         havuz.release_many([s for s in alinan if s is not None])
@@ -240,7 +240,7 @@ def test_ayni_slot_iki_kez_dagitilmiyor(client: Redis) -> None:
 
 
 def test_iki_panel_birbirinin_listesini_EZMIYOR(client: Redis) -> None:
-    """⚠ Kod incelemesinde bulunan hata (B6).
+    """Kod incelemesinde bulunan hata (B6).
 
     Önceki sürüm tek global anahtar kullanıp her yazmada `DELETE`
     yapıyordu: iki panel açıkken ikincinin `watching` mesajı
@@ -277,9 +277,9 @@ def test_oturum_kendi_listesini_guncelleyebiliyor(client: Redis) -> None:
 def test_bos_liste_yazinca_oturum_temizleniyor(client: Redis) -> None:
     """Panel tüm kutucukları kapatınca kamera taban hıza dönmeli.
 
-    ⚠ KENDİ ANAHTARINA bakıyor, birleşime DEĞİL.
+    Kendi anahtarına bakıyor, birleşime değil.
     İlk sürüm `get_watched_cameras()` (tüm oturumların birleşimi) ile
-    kontrol ediyordu ve sistem CANLIYKEN kırılıyordu: açık bir panel
+    kontrol ediyordu ve sistem canlıyken kırılıyordu: açık bir panel
     aynı kamerayı izliyorsa birleşimde o kamera duruyor ve test haklı
     olarak başarısız oluyor.
 

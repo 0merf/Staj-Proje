@@ -4,7 +4,7 @@ Sorumluluğu
 -----------
 Atanan kameraları RTSP'den okur, Kademe 0 hareket filtresinden geçirir,
 geçen kareleri paylaşımlı belleğe yazar ve Valkey'e **yalnızca meta veri**
-yayınlar. Ham kare asla kuyruktan geçmez (PLAN.md §4.2).
+yayınlar. Ham kare asla kuyruktan geçmez.
 
 Neden iş parçacığı (thread), süreç (process) değil
 --------------------------------------------------
@@ -59,13 +59,13 @@ log = get_logger(__name__)
 _shutdown = threading.Event()
 
 # Uyarlanabilir FPS'te "gerçek hareket" sayılan kararlar.
-# REFRESH kasten DIŞARIDA: o, hareketsiz duran birini kaybetmemek için
+# REFRESH kasten dışarıda: o, hareketsiz duran birini kaybetmemek için
 # 5 saniyede bir yapılan periyodik yoklamadır. Hareket sayılsaydı hiçbir
 # kamera boşta moduna geçemezdi.
 _MOTION_REASONS = frozenset({GateReason.MOTION, GateReason.WARMUP})
 
 # Tüketici kapasitesinin ne kadarı hedeflensin.
-# Tam kapasiteyi hedeflemek kuyruğu DOLU tutar ve dolu kuyruk dengede
+# Tam kapasiteyi hedeflemek kuyruğu dolu tutar ve dolu kuyruk dengede
 # bile gecikme üretir (P-25'in ana dersi). %15 pay bırakmak kuyruğun
 # boşalmasını sağlıyor: üretim tüketimin biraz altında kalınca birikim
 # eriyor ve gecikme kuyruk beklemesi yerine yalnızca işleme süresi olur.
@@ -129,7 +129,7 @@ class CameraTask:
         self._url = rtsp_url(settings.mediamtx_host, settings.mediamtx_rtsp_port, camera)
         # Uyarlanabilir FPS durumu: açılışta hareket varmış say, yoksa
         # sistem daha ilk kareden boşta moduna düşerdi.
-        # ⚠ Duvar saati: `frame.timestamp` ile karşılaştırılıyor ve o
+        # Duvar saati: `frame.timestamp` ile karşılaştırılıyor ve o
         # da duvar saati (bkz. ingest/decoder.py · DecodedFrame).
         # Karıştırmak `idle_for` değerini anlamsız yapardı.
         self._last_motion_at = time.time()
@@ -137,7 +137,7 @@ class CameraTask:
         # Worker düzenli günceller (IngestWorker.refresh_watched).
         self.watched = False
         self.watched_fps = 0.0
-        # Tüketici kapasitesinden gelen kamera başına TAVAN hız.
+        # Tüketici kapasitesinden gelen kamera başına tavan hız.
         # None = kapasite bilinmiyor (çıkarım worker'ı yok), tabana düş.
         self.capacity_fps: float | None = None
 
@@ -168,7 +168,7 @@ class CameraTask:
                     return
 
                 now = time.perf_counter()
-                # ⚠ Bu ARALIK, çözme süresi DEĞİL (P-60). Metriğin eski adı
+                # Bu aralık, çözme süresi değil (P-60). Metriğin eski adı
                 # `decode_duration`'dı ve adı yalan söylüyordu; asıl çözme
                 # ve BGR maliyeti artık `decoder.py` içinde CPU zamanıyla
                 # ölçülüyor. Aralık yine de yararlı: örnekleme temposunun
@@ -187,26 +187,26 @@ class CameraTask:
     def _adapt_rate(self, decoder: RtspDecoder, now: float) -> None:
         """Kamerada uzun süredir hareket yoksa örnekleme hızını düşürür.
 
-        PLAN.md §5.2. Mantık basit: hareketsiz bir kameradan 4 FPS
+        Mantık basit: hareketsiz bir kameradan 4 FPS
         örneklemek boşa iş — kareler zaten Kademe 0'da eleniyor ama
         renk dönüşümü maliyeti çoktan ödenmiş oluyor. Ölçüm bunu
         doğruluyor: cam-06 örneklenen karelerin **%94'ünü** eliyordu.
 
-        ⚠ REFRESH kararı hareket SAYILMAZ. Hareket filtresi 5 saniyede
+        REFRESH kararı hareket sayılmaz. Hareket filtresi 5 saniyede
         bir zorunlu "yenileme karesi" geçirir (hareketsiz duran birini
         kaybetmemek için). Bunu hareket sayarsak hiçbir kamera asla
         boşta moduna geçemezdi — sessiz bir hata olurdu.
 
-        Hareket dönünce hız ANINDA tam değere çıkar: geç kalmak
+        Hareket dönünce hız anında tam değere çıkar: geç kalmak
         olayın başlangıcını kaçırmak demektir, asıl önemsediğimiz an
         tam da o.
         """
         if not settings.adaptive_fps_enabled:
             return
 
-        # ⚠ KAPASİTE TAVANI HER ŞEYİN ÜSTÜNDE
-        # Hareket ve "operatör bakıyor" sinyalleri bütçenin NASIL
-        # dağıtılacağını söyler; kapasite bütçenin NE KADAR olduğunu.
+        # Kapasite tavanı her şeyin üstünde
+        # Hareket ve "operatör bakıyor" sinyalleri bütçenin nasıl
+        # dağıtılacağını söyler; kapasite bütçenin NE kadar olduğunu.
         # Sırayı ters çevirirsek (önce hareket, sonra tavan) izlenen bir
         # kamera 10 FPS isteyip tüketici 6 kare/sn'deyken sistemi yine
         # boğardı — tam da düzeltmeye çalıştığımız şey.
@@ -219,7 +219,7 @@ class CameraTask:
             # kamerada donuk kutu görmemeli.
             target = float(settings.target_fps if self.watched else settings.target_fps_idle)
         elif self.watched:
-            # ⚠ OPERATÖRÜN BAKTIĞI KAMERAYA ÖNCELİK (PLAN.md §5.2)
+            # Operatörün baktığı kameraya öncelik
             # Panelde 7 kutucuk açıkken 20 kamerayı eşit hızda analiz
             # etmek bütçeyi kimsenin bakmadığı yere harcamaktı.
             # Açık kameralar daha sık analiz edilince ekrandaki kutular
@@ -270,12 +270,12 @@ class CameraTask:
             return
 
         try:
-            # ─── MODEL GİRDİSİ HAZIRLIĞI ────────────────────
-            # Kare paylaşımlı belleğe HAM değil, model uzayında yazılır
-            # (640×640 letterbox). Bu iş bilinçli olarak BURADA yapılıyor:
+            # ─── Model girdisi hazırlığı ────────────────────
+            # Kare paylaşımlı belleğe ham değil, model uzayında yazılır
+            # (640×640 letterbox). Bu iş bilinçli olarak burada yapılıyor:
             # burası 20 kamera iş parçacığına dağılıyor ve `cv2.resize`
             # GIL'i bıraktığı için gerçekten paralel koşuyor. Aynı işi
-            # TEK süreç olan çıkarım worker'ında yapmak seri kalır ve
+            # tek süreç olan çıkarım worker'ında yapmak seri kalır ve
             # hiçbir şey kazandırmaz (ölçüldü: net kazanç ~0).
             # Ölçüm ve gerekçe: core/preprocess.py modül başlığı.
             prepared, box = preprocess.letterbox(image)
@@ -321,11 +321,11 @@ class IngestWorker:
         self._target_fps = target_fps if target_fps is not None else float(settings.target_fps)
         self._client = connect()
         self._allocator = SlotAllocator(self._client, settings.shm_slot_count)
-        # ⭐ PARÇA BAŞINA AYRI AKIŞ (P-67). `inference_shards=1` iken
+        # Parça başına ayrı akış (P-67). `inference_shards=1` iken
         # tek akış — eski davranışın birebir aynısı.
         #
-        # ⚠ Neden filtre değil ayrı akış: tek akış + tüketici grubunda
-        # her kare TEK tüketiciye gider; kendisine ait olmayanı atan bir
+        # Neden filtre değil ayrı akış: tek akış + tüketici grubunda
+        # her kare tek tüketiciye gider; kendisine ait olmayanı atan bir
         # worker onu yok eder, ötekine geçirmez. Ölçüldü: %50 kayıp.
         self._parca_sayisi = max(1, int(settings.inference_shards))
         self._akislar = {
@@ -359,10 +359,10 @@ class IngestWorker:
             self._own_pool = True
 
         if self._own_pool:
-            # SIRA ÖNEMLİ: önce akışı temizle, sonra slotları dağıt.
+            # Sıra önemli: önce akışı temizle, sonra slotları dağıt.
             # Ters sırada, eski mesajları okuyan bir tüketici slotları
             # ikinci kez serbest bırakır ve havuz bozulur (P-10).
-            # ⚠ TÜM parça akışları temizlenmeli. Biri atlanırsa eski
+            # Tüm parça akışları temizlenmeli. Biri atlanırsa eski
             # mesajlar geçersiz slot referanslarıyla orada kalır ve
             # tüketici onları "geri verince" aynı slot iki kez dağıtılır
             # (P-10'un çok akışlı hâli).
@@ -382,7 +382,7 @@ class IngestWorker:
         metrics.worker_up.labels(component="ingest", worker_id=self.worker_id).set(1)
 
         for camera in self.cameras:
-            # ⭐ Her kamera KENDİ parça akışına yazar (P-67). Eşleme
+            # Her kamera kendi parça akışına yazar (P-67). Eşleme
             # deterministik (crc32) — aynı kamera her zaman aynı parçaya,
             # yoksa takip kimlikleri kopar.
             task = CameraTask(
@@ -398,7 +398,7 @@ class IngestWorker:
             thread.start()
 
     def refresh_watched(self) -> None:
-        """İzlenen kamera listesini ve TÜKETİCİ KAPASİTESİNİ tazeler.
+        """İzlenen kamera listesini ve tüketici kapasitesini tazeler.
 
         Panel hangi kutucukları açtığını bildiriyor (WS `watching`
         mesajı). Liste TTL'li: panel kapanırsa kendiliğinden silinir ve
@@ -437,28 +437,28 @@ class IngestWorker:
     def _refresh_capacity(self) -> None:
         """Tüketici kapasitesini okuyup kamera başına tavan hıza çevirir.
 
-        ⚠ NEDEN — ÖLÇÜLEN İSRAF
+        Neden — ölçülen israf
         -----------------------
         18.08.2026: alım 80 kare/sn üretiyor, çıkarım ~6 kare/sn
         tüketiyor, **karelerin %89'u atılıyor.** Atmak gecikmeyi
         sınırlıyor (P-25, doğru karar) ama israfı çözmüyor: atılan her
-        kare için decode + BGR dönüşümü + letterbox CPU'su ZATEN
+        kare için decode + BGR dönüşümü + letterbox CPU'su zaten
         ödenmiş oluyor. BGR dönüşümü alım maliyetinin %77'si (P-09).
 
         Ve o CPU boşa gitmiyor sadece — aynı çekirdekleri paylaşan
-        çıkarım sürecinden ÇALINIYOR. Poz'un izole ölçümde 2.77 ms,
+        çıkarım sürecinden çalınıyor. Poz'un izole ölçümde 2.77 ms,
         boru hattında 99.8 ms sürmesinin sebebi bu çekişme.
 
-        Yani üretimi kısmak tüketimi HIZLANDIRIYOR. Alışılmadık ama
+        Yani üretimi kısmak tüketimi hızlandırıyor. Alışılmadık ama
         mekanizma net: daha az kare → daha az alım CPU'su → çıkarıma
         daha çok çekirdek → kare başına daha hızlı işleme.
 
-        ⚠ GÜVENLİK PAYI (%85)
+        Güvenlik payı (%85)
         Tam kapasiteyi hedeflemek kuyruğu dolu tutar; dolu kuyruk
         dengede bile gecikme üretir (P-25'in ana dersi). Hedefi
-        kapasitenin biraz altına koymak kuyruğun BOŞALMASINI sağlıyor.
+        kapasitenin biraz altına koymak kuyruğun boşalmasını sağlıyor.
 
-        ⚠ TABAN HIZ
+        Taban hız
         Kapasite ne kadar düşerse düşsün kamera başına hız
         `target_fps_idle`ın (1 FPS) altına inmiyor. Sıfıra yaklaşan bir
         kamera kördür; gözetim sisteminde bu kabul edilemez. Kapasite
@@ -590,7 +590,7 @@ def main() -> int:
 
     deadline = time.monotonic() + args.duration if args.duration else None
     try:
-        # ⚠ İki farklı ritim: izlenen kamera listesi HIZLI tazelenmeli
+        # İki farklı ritim: izlenen kamera listesi hızlı tazelenmeli
         # (operatör kutucuk açınca birkaç saniyede etkisini görmeli),
         # istatistik raporu ise seyrek basılır. Tek bir uzun bekleme
         # kullansaydık panel değişikliği 5 dakika sonra etki ederdi.

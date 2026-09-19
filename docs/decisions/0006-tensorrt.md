@@ -8,7 +8,7 @@
 Çıkarım PyTorch FP16 ile yapılıyor. TensorRT genellikle 2-5× hızlanma
 vaat ediyor.
 
-## ⚠ On gün boyunca YANLIŞ bir gerekçeyle ertelendi
+## On gün boyunca yanlış bir gerekçeyle ertelendi
 
 Gün 8'den beri proje hafızasında şu yazıyordu:
 
@@ -27,13 +27,13 @@ GPU'nun %5 kullanımda görünmesi, ileri geçişin ucuz olduğunu değil,
 
 ## Ölçüm — önce kazanç tavanı
 
-⚠ CUDA olayıyla ölçüldü, duvar saatiyle değil: CUDA çağrıları
+CUDA olayıyla ölçüldü, duvar saatiyle değil: CUDA çağrıları
 eşzamansız, `perf_counter` işin bitişini değil kuyruğa atılışını ölçer.
 
 ```
 AŞAMA      kare ms    pay
 TENSOR       0.960    15%
-FORWARD      3.372    53%   ⬅ TensorRT'nin dokunabildiği tek yer
+FORWARD      3.372    53%   ← TensorRT'nin dokunabildiği tek yer
 ARTIK        1.970    31%   NMS + Results nesnesi kurma
 CONVERT      0.004     0%
 TOPLAM       6.305
@@ -44,7 +44,7 @@ hızlanma → toplam %35.6 kazanç. Yani denemeye değer.
 
 ## Ölçüm — sonra gerçek
 
-Motor derlendi (⚠ iki engel: TensorRT 11/cu13 torch cu128 ile uyumsuz
+Motor derlendi (iki engel: TensorRT 11/cu13 torch cu128 ile uyumsuz
 → 10.13/cu12; `dynamic=True` YOLO26'nın dikkat bloğunda kırılıyor →
 sabit parti).
 
@@ -57,13 +57,13 @@ TensorRT   3.662 ms/kare      1.40×  (−28.8% süre)
 TESPİT EŞDEĞERLİĞİ: 20/20 eşleşme · 0 kayıp · ortalama IoU 0.9989
 ```
 
-⚠ İkinci satır olmadan birincisi anlamsız. "Hızlandı" diye raporlanan
+İkinci satır olmadan birincisi anlamsız. "Hızlandı" diye raporlanan
 bir kazanç, modelin daha az insan bulmasıysa kazanç değil kayıptır —
 ve bu **sessiz** bir hatadır, hız grafiğinde görünmez.
 
 ## Karar
 
-**Üretime ALINMADI.** Sebep hızda değil, parti dağılımında:
+**Üretime alınmadı.** Sebep hızda değil, parti dağılımında:
 
 ```
 parti   PyTorch   TRT(8'e dolgu)   kazanç
@@ -90,11 +90,11 @@ Yani partilerin **yarısından fazlasında TensorRT kaybettirirdi.**
 **Açık iş:** `--batch-fill-ms` özelliği yazıldı (partiyi doldurmak için
 kısa süre bekle) ve mekanizmanın çalıştığı ölçüldü — dolu parti oranı
 %46 → %78. Ama **verim etkisi ölçülemedi**: bloklar arası yayılım
-etkiden büyük çıktı (P-36). Varsayılan KAPALI.
+etkiden büyük çıktı (P-36). Varsayılan kapalı.
 
 TensorRT ancak parti doldurma kanıtlanınca anlamlı.
 
-## ⚠ Kaydedilmeye değer ders
+## Kaydedilmeye değer ders
 
 Bir kararın gerekçesi belgeye girdikten sonra **veri gibi davranmaya
 başlıyor.** "TensorRT'ye gerek yok" on gün boyunca bir bulgu olarak

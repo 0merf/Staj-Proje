@@ -1,6 +1,6 @@
 ﻿# ══════════════════════════════════════════════════════════════
 #  Prometheus — SENTINEL metrik toplama
-#  Metrik listesi: PLAN.md §13.1
+#  Metrik listesi proje planımda
 # ══════════════════════════════════════════════════════════════
 
 global:
@@ -22,7 +22,7 @@ scrape_configs:
     static_configs:
       - targets: ["mediamtx:9998"]
 
-  # ─── Windows'ta NATIVE çalışan Python bileşenleri ───────────
+  # ─── Windows'ta natıve çalışan Python bileşenleri ───────────
   # host.docker.internal, konteynerden Windows host'una erişim sağlar.
   # (Geliştirme stratejisi: altyapı Docker'da, YZ worker'ları native)
   # Henüz ayakta değiller — hedefler DOWN görünecek, normaldir.
@@ -34,13 +34,13 @@ scrape_configs:
         labels:
           component: api
 
-  # ⚠ 01.09.2026 — DÖRT HEDEF ÜÇÜ ÖLÜYDÜ
+  # 01.09.2026 — dört hedef üçü ölüydü
   # Bu liste "4 ingest worker" tasarımından kalmıştı. O tasarım
   # değişti (tek süreç + kamera başına thread, çünkü FramePool tek
   # nesne olarak paylaşılabiliyor ve PyAV/OpenCV GIL'i bırakıyor) ama
   # kazıma yapılandırması güncellenmemişti.
   #
-  # Sonucu: Prometheus hedef listesinde ASLA ayağa kalkmayacak üç
+  # Sonucu: Prometheus hedef listesinde asla ayağa kalkmayacak üç
   # hedef sürekli DOWN görünüyordu. Zararsız gibi duruyor ama
   # gözlem sisteminin en değerli özelliğini bozar — "kırmızı bir şey
   # varsa bakılır" alışkanlığını. Hep kırmızı duran bir gösterge,
@@ -59,7 +59,7 @@ scrape_configs:
         labels:
           component: inference
 
-  # ⚠ 01.09.2026 — ALARM WORKER'I HİÇ KAZINMIYORDU
+  # 01.09.2026 — alarm worker'ı hiç kazınmıyordu
   # `sentinel_olaylar_yazildi_total` metriği vardı, üretiliyordu, ama
   # Prometheus'a hiç ulaşmıyordu. Grafana panosundaki "üretilen vs
   # kaydedilen alarm" karşılaştırması kalıcı olarak yarım kalırdı —

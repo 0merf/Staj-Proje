@@ -1,4 +1,4 @@
-"""Füzyon katmanı — beş sinyal, tek risk skoru (PLAN.md §6.6).
+"""Füzyon katmanı — beş sinyal, tek risk skoru.
 
 Neden bu katman var
 -------------------
@@ -20,29 +20,29 @@ o kalıcı çözüm.
 yaklaşıyor **ve** bileği sarsılıyor" bir olaydır. Ayrı ayrı hiçbiri
 eşiği aşmaz, birlikte aşmalıdır.
 
-⚠ FÜZYON HER SİNYALİ YUTMAZ — ve bu ayrım kritik
+Füzyon her sinyali yutmaz — ve bu ayrım kritik
 ------------------------------------------------
 Bir düşme, başka hiçbir sinyal olmasa bile alarmdır. Onu ağırlıklı
 toplamın içinde eritmek, tıbbi acil olabilecek bir olayı "diğer
 göstergeler sakin" diye bastırmak olurdu.
 
-    DOĞRUDAN ALARM (fiziksel gözlem, kanıt zinciri var)
+    Doğrudan alarm (fiziksel gözlem, kanıt zinciri var)
       düşme · koşma · kalabalık · saldırganlık(alarm seviyesi)
 
-    FÜZYONA GİREN (istatistiksel ipucu, tek başına yetersiz)
+    Füzyona giren (istatistiksel ipucu, tek başına yetersiz)
       Katman A olağandışılık · oyalanma · saldırganlık(uyarı) · ifade
 
 Kural şu: **gözlem doğrudan konuşur, ipucu ancak toplulukta konuşur.**
 
-⚠ AĞIRLIKLAR PLAN'DAN, KEYFİ DEĞİL
+Ağırlıklar proje planından, keyfi değil
 ----------------------------------
-PLAN §6.6'daki başlangıç ağırlıkları aynen alındı. En yüksek ağırlık
+Proje planındaki başlangıç ağırlıkları aynen alındı. En yüksek ağırlık
 saldırganlıkta çünkü en spesifik sinyal; en düşük ifadede çünkü
-bilimsel dayanağı en tartışmalı olan o (LITERATUR §2.4 — Barrett
+bilimsel dayanağı en tartışmalı olan o (literatür notlarım — Barrett
 ve arkadaşlarının yüz ifadesi–duygu eşlemesine yönelik eleştirisi).
 
-⚠ İFADE AĞIRLIĞI ŞU AN ÖLÜ SERMAYE
-Kamera çiftliğinde yüzler ~15 piksel; KADEME 2b çalışıyor ama
+İfade ağırlığı şu AN ölü sermaye
+Kamera çiftliğinde yüzler ~15 piksel; kademe 2b çalışıyor ama
 sınıflandırma üretmiyor (ölçüldü: 2700 aday → 0 sınıflandırma).
 Ağırlık yerinde duruyor ki modül gerçek bir kurulumda beslendiğinde
 kod değişikliği gerekmesin — ama raporda "bu bileşen bu veri setinde
@@ -57,18 +57,18 @@ from dataclasses import dataclass
 #  Ağırlıklar ve eşikler
 # ══════════════════════════════════════════════════════════════
 
-# PLAN §6.6 başlangıç ağırlıkları. Toplamı 1.00.
+# Proje planındaki başlangıç ağırlıkları. Toplamı 1.00.
 A_SALDIRGANLIK = 0.40  # en spesifik sinyal
 A_ANOMALI = 0.25  # Katman A — öğrenilmiş profile göre sapma
 A_KURAL = 0.20  # Katman B — fiziksel kural ihlalleri
-A_IFADE = 0.10  # ⚠ bilimsel belirsizlik nedeniyle düşük
+A_IFADE = 0.10  # bilimsel belirsizlik nedeniyle düşük
 A_KALABALIK = 0.05
 
 # Zamansal yumuşatma. Saldırganlık modülündekiyle aynı gerekçe:
 # düşük değer kararlı ama geç, ve erken uyarı hedefimiz var.
 EMA_ALFA = 0.4
 
-# ⚠ EŞİKLER ÖLÇÜMDEN TÜRETİLECEK, ŞİMDİLİK TÜREV
+# Eşikler ölçümden türetilecek, şimdilik türev
 # Katman A'nın tek başına 0.85'te sustuğu biliniyor. Füzyon skoru
 # ağırlıklı toplam olduğu için tek bir sinyalin 0.85'i, füzyonda
 # 0.25 × 0.85 = 0.21 eder. Yani "yalnızca bir sinyal bağırıyor"
@@ -91,7 +91,7 @@ ASGARI_TAMLIK = 0.3
 class Sinyaller:
     """Bir iz için o andaki beş sinyal. Hepsi 0-1 aralığında.
 
-    ⚠ `None` DEĞİL, 0.0 kullanılıyor ve bu bilinçli bir kayıp.
+    `None` değil, 0.0 kullanılıyor ve bu bilinçli bir kayıp.
     Diğer modüllerde "eksik bilgi" ile "sıfır" özenle ayrılıyor
     (person.py). Burada ayrılmıyor çünkü füzyon ağırlıklı bir
     toplam: eksik bir sinyali "bilinmiyor" saymak, kalan sinyalleri
@@ -135,7 +135,7 @@ class RiskSonucu:
     risk: float
     seviye: str  # sakin | uyari | alarm
     sinyaller: Sinyaller
-    # ⚠ Kaç sinyalin katkı verdiği. Tek sinyalli bir 0.4 ile üç
+    # Kaç sinyalin katkı verdiği. Tek sinyalli bir 0.4 ile üç
     # sinyalli bir 0.4 aynı şey değil: ikincisi çok daha ikna edici.
     # Operatöre ve rapora bu ayrım gösterilmeli.
     katkida_bulunan: int
@@ -180,7 +180,7 @@ class RiskFuzyonu:
     ) -> RiskSonucu | None:
         """Bir izin o andaki riskini hesaplar.
 
-        ⚠ SKOR HER ZAMAN HESAPLANIYOR, alarm eşiği yalnızca BİLDİRİM
+        Skor her zaman hesaplanıyor, alarm eşiği yalnızca bildirim
         kapısı. K6 (anomali AUC) ve K8 (erken uyarı avansı) ölçümleri
         eşiğin altındaki skor geçmişini kullanacak; eşiği ölçüm kapısı
         yapmak o iki kriteri ölçülemez kılardı.
@@ -218,7 +218,7 @@ class RiskFuzyonu:
     def _seviye(risk: float, mevcut: str) -> str:
         """Histerezisli seviye kararı.
 
-        ⚠ Yukarı yönde histerezis YOK — saldırganlık modülüyle aynı
+        Yukarı yönde histerezis yok — saldırganlık modülüyle aynı
         gerekçe (yangın alarmı mantığı): duman varsa anında öt, duman
         dağılınca bir süre daha ötmeye devam et. Merdiven gibi çıkmak
         erken uyarı avansını doğrudan yer.

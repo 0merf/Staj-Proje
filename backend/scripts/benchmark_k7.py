@@ -2,17 +2,17 @@
 
 Neden bu betik
 --------------
-K7 kriteri: **kamera-saat başına ≤3 yanlış alarm** (PLAN §1.4).
+K7 kriteri: **kamera-saat başına ≤3 yanlış alarm**.
 Şimdiye kadar bu sayıyı elle hesaplıyorduk ve "yanlış" olup olmadığını
 gözle değerlendiriyorduk. Artık gerekmiyor.
 
-⚠ KONTROLLÜ DENEY — çiftlikteki iki kamera bunun için var
-    cam-18  Avenue NORMAL   → burada çıkan HER alarm YANLIŞTIR
-    cam-19  Avenue ANOMALİ  → 39 segmentlik kare seviyeli yer gerçeği
+Kontrollü deney — çiftlikteki iki kamera bunun için var
+    cam-18  Avenue normal   → burada çıkan her alarm yanlıştır
+    cam-19  Avenue anomali  → 39 segmentlik kare seviyeli yer gerçeği
 
 İkisi aynı sahne, aynı kamera açısı. Tek başına "anomali kamerasında
 alarm çıktı" bir şey kanıtlamaz — sistem her şeye alarm veriyor olabilir.
-Aynı sahnenin normal hâlinde SESSİZ kalması asıl kanıttır.
+Aynı sahnenin normal hâlinde sessiz kalması asıl kanıttır.
 
 Ne ölçüyor
 ----------
@@ -24,8 +24,8 @@ Ne ölçüyor
    segmentle örtüşüyor
 4. **Tür bazında döküm** — hangi kural ne kadar gürültü üretiyor
 
-⚠ EŞLEŞTİRME TOLERANSI
-Alarm, bir olayın TAM ortasında çıkmak zorunda değil: analiz 3 saniyelik
+Eşleştirme toleransı
+Alarm, bir olayın tam ortasında çıkmak zorunda değil: analiz 3 saniyelik
 pencereyle çalışıyor ve olay bittikten kısa süre sonra da tetiklenebilir.
 Bu yüzden ±TOLERANS_S saniyelik pay veriliyor. Pay olmadan gerçek
 yakalamalar "kaçırılmış" sayılırdı.
@@ -59,7 +59,7 @@ EVENT_STREAM = "analytics.events"
 # Alarmın yer gerçeği segmentiyle örtüşmüş sayılması için izin verilen
 # zaman payı.
 #
-# ⚠ İLK DEĞER 4.0 SANİYEYDİ VE ÖLÇÜMÜ ANLAMSIZLAŞTIRIYORDU
+# İlk değer 4.0 saniyeydi ve ölçümü anlamsızlaştırıyordu
 # Avenue segmentleri kısa: ortalama 1.92 saniye. ±4 sn pay verince
 # toleranslı pencereler birleşiyor ve zaman çizgisinin **%63.6'sı**
 # "anomali" sayılıyor. O koşulda rastgele atılan bir alarm bile 0.64
@@ -68,7 +68,7 @@ EVENT_STREAM = "analytics.events"
 #
 # ±1 sn'de kapsam %35.9'a iniyor. Hâlâ yüksek ama ayırt edici.
 # Bu yüzden rapor artık **şans seviyesini de** yazıyor: kesinlik tek
-# başına değil, şansa göre NE KADAR İYİ olduğuyla birlikte okunmalı.
+# başına değil, şansa göre NE kadar iyi olduğuyla birlikte okunmalı.
 TOLERANS_S = 1.0
 
 # Kontrollü deneyin iki ucu
@@ -79,7 +79,7 @@ DENEY = "cam-19"     # anomalili — yer gerçeği var
 def yer_gercegi_yukle() -> list[tuple[float, float]]:
     """cam-19'un anomali aralıklarını okur.
 
-    ⚠ Video DÖNGÜDE oynuyor: kaynak 345 saniye ama kamera sonsuza dek
+    Video döngüde oynuyor: kaynak 345 saniye ama kamera sonsuza dek
     yayın yapıyor. Bu yüzden alarm zamanı da video içindeki konuma
     (modulo süre) çevrilmek zorunda — yoksa 400. saniyedeki alarm hiçbir
     segmentle eşleşmezdi.
@@ -149,7 +149,7 @@ def main() -> int:
     kamera_saat = gecen_saat * args.cameras
     genel_oran = len(alarmlar) / kamera_saat if kamera_saat else 0.0
 
-    # ── 2. Kontrol kamerası: her alarm YANLIŞ ──
+    # ── 2. Kontrol kamerası: her alarm yanlış ──
     kontrol_alarm = kamera_sayaci.get(KONTROL, 0)
     kontrol_oran = kontrol_alarm / gecen_saat if gecen_saat else 0.0
 
@@ -170,10 +170,10 @@ def main() -> int:
     recall = yakalanan / len(gercek) if gercek else 0.0
     precision = isabetli_alarm / len(deney_alarmlar) if deney_alarmlar else 0.0
 
-    # ⚠ ŞANS SEVİYESİ — kesinliğin tek başına anlamı yok
+    # Şans seviyesi — kesinliğin tek başına anlamı yok
     # Toleranslı pencereler zaman çizgisinin ne kadarını kaplıyorsa,
     # rastgele atılan bir alarmın "isabet" sayılma olasılığı odur.
-    # Kesinlik bunun ÜSTÜNDE değilse sistem şanstan iyi değil demektir.
+    # Kesinlik bunun üstünde değilse sistem şanstan iyi değil demektir.
     sans = 0.0
     if gercek and sure > 0:
         genis = sorted(

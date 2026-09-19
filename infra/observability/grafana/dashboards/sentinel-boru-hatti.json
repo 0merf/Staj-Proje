@@ -13,7 +13,7 @@
   "from": "now-30m",
   "to": "now"
  },
- "description": "Alım → çıkarım → analitik zincirinin canlı durumu. Panolar SORU sırasına göre dizildi: 'sistem ayakta mı' → 'ne kadar hızlı' → 'nerede tıkanıyor'.",
+ "description": "Alım → çıkarım → analitik zincirinin canlı durumu. Panolar soru sırasına göre dizildi: 'sistem ayakta mı' → 'ne kadar hızlı' → 'nerede tıkanıyor'.",
  "panels": [
   {
    "type": "row",
@@ -74,7 +74,7 @@
   {
    "type": "stat",
    "title": "Analiz hızı (toplam)",
-   "description": "Çıkarım worker'ının saniyede işlediği KARE. ⚠ K2 kriteri KAMERA BAŞINA 4 FPS istiyor; 20 kamerada bu 80 kare/sn eder. Kriter tam tutmuyor ve gerekçesi bilinçli (Kademe 0 elemesi, slot yokluğu, eski kare atma). ⚠ 03.09.2026: bu panel önce sentinel_detections_total kullanıyordu — o metrik KARE değil TESPİT EDİLEN KİŞİ sayıyor. Sahne başına ortalama ~1 kişi düştüğü için sayı makul görünüyordu; boş bir sahnede 0 gösterirdi. Doğru sayaç end_to_end_latency histogramının _count alanı: kare başına bir kez gözlemleniyor.",
+   "description": "Çıkarım worker'ının saniyede işlediği kare. K2 kriteri kamera başına 4 FPS istiyor; 20 kamerada bu 80 kare/sn eder. Kriter tam tutmuyor ve gerekçesi bilinçli (Kademe 0 elemesi, slot yokluğu, eski kare atma). 03.09.2026: bu panel önce sentinel_detections_total kullanıyordu — o metrik kare değil tespit edilen kişi sayıyor. Sahne başına ortalama ~1 kişi düştüğü için sayı makul görünüyordu; boş bir sahnede 0 gösterirdi. Doğru sayaç end_to_end_latency histogramının _count alanı: kare başına bir kez gözlemleniyor.",
    "gridPos": {
     "h": 5,
     "w": 5,
@@ -102,7 +102,7 @@
   {
    "type": "stat",
    "title": "Uçtan uca gecikme (p95)",
-   "description": "K3 kriteri: ≤1500 ms. Kare yakalanmasından sonucun yazılmasına kadar. ⚠ Bu HİSTOGRAM p95'i — ortalama değil: gecikmede kötü durum, ortalama durumdan önemlidir.",
+   "description": "K3 kriteri: ≤1500 ms. Kare yakalanmasından sonucun yazılmasına kadar. Bu histogram p95'i — ortalama değil: gecikmede kötü durum, ortalama durumdan önemlidir.",
    "gridPos": {
     "h": 5,
     "w": 5,
@@ -146,7 +146,7 @@
   {
    "type": "stat",
    "title": "Boş slot",
-   "description": "⚠ EN KRİTİK GÖSTERGE. Paylaşımlı bellek havuzunda kalan boş slot. Sıfıra yapışırsa alım worker'ı kare atmaya başlar ve sistem SESSİZCE durur — 30.08.2026'da tam bu yaşandı (P-38): süreçler ayakta, panel bağlı, hiçbir şey işlenmiyor.",
+   "description": "En kritik gösterge. Paylaşımlı bellek havuzunda kalan boş slot. Sıfıra yapışırsa alım worker'ı kare atmaya başlar ve sistem sessizce durur — 30.08.2026'da tam bu yaşandı (P-38): süreçler ayakta, panel bağlı, hiçbir şey işlenmiyor.",
    "gridPos": {
     "h": 5,
     "w": 5,
@@ -190,7 +190,7 @@
   {
    "type": "stat",
    "title": "Alarm / kamera-saat",
-   "description": "K7 kriteri: ≤3. ⚠ Bu sayı TÜM alarmları içeriyor, yalnızca YANLIŞ olanları değil — bir alarmın yanlış olduğunu söylemek yer gerçeği ister ve o zemin sadece kontrol kamerasında (cam-18) var.",
+   "description": "K7 kriteri: ≤3. Bu sayı tüm alarmları içeriyor, yalnızca yanlış olanları değil — bir alarmın yanlış olduğunu söylemek yer gerçeği ister ve o zemin sadece kontrol kamerasında (cam-18) var.",
    "gridPos": {
     "h": 5,
     "w": 5,
@@ -246,7 +246,7 @@
   {
    "type": "timeseries",
    "title": "Kademe 0 kararları",
-   "description": "Hareket filtresinin ne yaptığı. ⚠ `idle` yüksekse filtre iş görüyor demektir — bu İYİ bir şey, yükün büyük kısmı burada eleniyor. `refresh` periyodik yoklama: hareket olmasa da belirli aralıklarla kare geçiriliyor, yoksa hareketsiz duran bir kişi (bayılmış olabilir) hiç görülmezdi.",
+   "description": "Hareket filtresinin ne yaptığı. `idle` yüksekse filtre iş görüyor demektir — bu iyi bir şey, yükün büyük kısmı burada eleniyor. `refresh` periyodik yoklama: hareket olmasa da belirli aralıklarla kare geçiriliyor, yoksa hareketsiz duran bir kişi (bayılmış olabilir) hiç görülmezdi.",
    "gridPos": {
     "h": 8,
     "w": 12,
@@ -275,7 +275,7 @@
   {
    "type": "timeseries",
    "title": "Atılan kareler — sebebiyle",
-   "description": "⚠ `no_slot` sürekli yüksekse havuz tükenmiş demektir (P-38). `gate_idle` normaldir — hareket filtresinin işi. İkisini ayırt etmek önemli: biri sağlıklı eleme, diğeri arıza.",
+   "description": "`no_slot` sürekli yüksekse havuz tükenmiş demektir (P-38). `gate_idle` normaldir — hareket filtresinin işi. İkisini ayırt etmek önemli: biri sağlıklı eleme, diğeri arıza.",
    "gridPos": {
     "h": 8,
     "w": 12,
@@ -312,7 +312,7 @@
   {
    "type": "timeseries",
    "title": "Kademe başına süre (p50)",
-   "description": "Kare başına, parti içinde amortize edilmiş. ⚠ Ölçüldü: `detect` süresinin %53'ü saf GPU ileri geçişi, %31'i NMS + sonuç nesnesi kurma (P-33). GPU'nun boş görünmesi ileri geçişin ucuz olduğu anlamına GELMİYOR.",
+   "description": "Kare başına, parti içinde amortize edilmiş. Ölçüldü: `detect` süresinin %53'ü saf GPU ileri geçişi, %31'i NMS + sonuç nesnesi kurma (P-33). GPU'nun boş görünmesi ileri geçişin ucuz olduğu anlamına gelmiyor.",
    "gridPos": {
     "h": 8,
     "w": 12,
@@ -338,7 +338,7 @@
   {
    "type": "timeseries",
    "title": "Parti boyutu (p50 / p90)",
-   "description": "GPU'ya verilen parti. ⚠ Küçük parti = çağrı başına sabit maliyet daha az kareye bölünüyor. Ölçüldü: ortalama 5.52 kare/parti, partilerin yalnızca %47'si 7-8 aralığında — TensorRT'nin üretime alınmamasının sebebi bu (ADR-0006).",
+   "description": "GPU'ya verilen parti. Küçük parti = çağrı başına sabit maliyet daha az kareye bölünüyor. Ölçüldü: ortalama 5.52 kare/parti, partilerin yalnızca %47'si 7-8 aralığında — TensorRT'nin üretime alınmamasının sebebi bu (ADR-0006).",
    "gridPos": {
     "h": 8,
     "w": 12,
@@ -380,7 +380,7 @@
   {
    "type": "timeseries",
    "title": "Anomali türüne göre alarm",
-   "description": "⚠ `risk` türü FÜZYON alarmı (PLAN §6.6): tek bir sinyalin değil, en az iki sinyalin birleşiminin ürettiği alarm. Diğerleri tek modülün çıktısı.",
+   "description": "`risk` türü füzyon alarmı: tek bir sinyalin değil, en az iki sinyalin birleşiminin ürettiği alarm. Diğerleri tek modülün çıktısı.",
    "gridPos": {
     "h": 8,
     "w": 12,
@@ -408,8 +408,8 @@
   },
   {
    "type": "timeseries",
-   "title": "Üretilen vs KAYDEDİLEN alarm",
-   "description": "⚠ İki çizgi ayrışırsa veritabanı yolu tıkanmış demektir — ve bu, sistem dışarıdan sağlıklı görünürken SESSİZCE olur: panel canlı alarmları göstermeye devam eder, yalnızca geçmiş birikmez. Aradaki fark tam olarak kaybedilen alarm geçmişidir.",
+   "title": "Üretilen vs kaydedilen alarm",
+   "description": "İki çizgi ayrışırsa veritabanı yolu tıkanmış demektir — ve bu, sistem dışarıdan sağlıklı görünürken sessizce olur: panel canlı alarmları göstermeye devam eder, yalnızca geçmiş birikmez. Aradaki fark tam olarak kaybedilen alarm geçmişidir.",
    "gridPos": {
     "h": 8,
     "w": 12,
@@ -451,7 +451,7 @@
   {
    "type": "timeseries",
    "title": "Kısa ömürlü iz oranı",
-   "description": "⚠ Metrik adı bilerek 'switch' DEĞİL: sayılan şey ID switch değil, kısa ömürlü iz — bir VEKİL gösterge. Gerçek ID switch ölçümü MOT17 + TrackEval ister (PLAN §14.2). Yüksek oran, zamansal analizin (saldırganlık, oyalanma) girdisinin bozulduğu anlamına gelir.",
+   "description": "Metrik adı bilerek 'switch' değil: sayılan şey ID switch değil, kısa ömürlü iz, yani dolaylı bir gösterge. Gerçek ID switch ölçümü MOT17 + TrackEval ister. Yüksek oran, zamansal analizin (saldırganlık, oyalanma) girdisinin bozulduğu anlamına gelir.",
    "gridPos": {
     "h": 8,
     "w": 12,
@@ -477,7 +477,7 @@
   {
    "type": "timeseries",
    "title": "Kamera başına örnekleme hızı",
-   "description": "⚠ HEDEFLENEN ile GERÇEKLEŞEN ayrı çizgiler. Uyarlanabilir FPS (PLAN §5.2) hedefi düşürebilir: 30 sn hareketsiz kalan kamera 4 → 1 FPS'e iniyor. İkisi arasındaki fark 'sistem yetişemiyor' demek, hedefin kendisi düşmüşse değil.",
+   "description": "Hedeflenen ile gerçekleşen ayrı çizgiler. Uyarlanabilir FPS hedefi düşürebilir: 30 sn hareketsiz kalan kamera 4 → 1 FPS'e iniyor. İkisi arasındaki fark 'sistem yetişemiyor' demek, hedefin kendisi düşmüşse değil.",
    "gridPos": {
     "h": 8,
     "w": 12,
@@ -508,7 +508,7 @@
   },
   {
    "type": "row",
-   "title": "6 · GPU — PLAN §13.2'nin eksik panosu",
+   "title": "6 · GPU",
    "collapsed": false,
    "gridPos": {
     "h": 1,
@@ -521,7 +521,7 @@
   {
    "type": "timeseries",
    "title": "VRAM (ayrılmış)",
-   "description": "PyTorch ayırıcısının işgal ettiği VRAM. ⚠ `memory_allocated` DEĞİL `memory_reserved`: ayırıcı serbest bırakılan tensörün bloğunu OS'e geri vermiyor, yeniden kullanmak için elinde tutuyor. VRAM bütçesi (PLAN §2.2: ~4.6 GB / 7 GB) başka süreçlerin kullanamayacağı miktar üzerinden tutulmalı. ⚠ 03.09.2026'ya kadar bu metrik TANIMLIYDI ama hiç doldurulmuyordu — bu yüzden GPU panosu 17 gün kurulamadı.",
+   "description": "PyTorch ayırıcısının işgal ettiği VRAM. `memory_allocated` değil `memory_reserved`: ayırıcı serbest bırakılan tensörün bloğunu OS'e geri vermiyor, yeniden kullanmak için elinde tutuyor. VRAM bütçesi (~4.6 GB / 7 GB) başka süreçlerin kullanamayacağı miktar üzerinden tutulmalı. 03.09.2026'ya kadar bu metrik tanımlıydı ama hiç doldurulmuyordu — bu yüzden GPU panosu 17 gün kurulamadı.",
    "gridPos": {
     "h": 8,
     "w": 12,
@@ -544,7 +544,7 @@
   {
    "type": "timeseries",
    "title": "GPU kullanımı (%)",
-   "description": "⚠⚠ P-33 — BU SAYIYI YANLIŞ OKUMAK ON GÜN KAYBETTİRDİ.\n\nDüşük GPU kullanımı 'GPU ucuz' demek DEĞİLDİR. Bu metrik GÖREV DÖNGÜSÜNÜ ölçer (GPU zamanın yüzde kaçında meşgul), ÇAĞRI MALİYETİNİ değil. 'GPU %0-5'te boş, o hâlde hızlandırmaya değmez' çıkarımı on gün boyunca bir bulgu gibi alıntılandı; CUDA olayıyla ölçünce `detect`in 6.3 ms'inin %53'ünün (3.37 ms) saf ileri geçiş olduğu çıktı — TensorRT'nin tam alanı.\n\n⚠ Veri yoksa pynvml kurulu değil demektir. O durumda metrik hiç yazılmıyor; sıfır YAZILMIYOR — ölçülemeyeni 'ölçüldü ve sıfır' diye göstermek bu projenin üç kez pahalıya ödediği hata sınıfı.",
+   "description": "P-33 — bu sayıyı yanlış okumak ON gün kaybettirdi.\n\nDüşük GPU kullanımı 'GPU ucuz' demek değildir. Bu metrik görev döngüsünü ölçer (GPU zamanın yüzde kaçında meşgul), çağrı maliyetini değil. 'GPU %0-5'te boş, o hâlde hızlandırmaya değmez' çıkarımı on gün boyunca bir bulgu gibi alıntılandı; CUDA olayıyla ölçünce `detect`in 6.3 ms'inin %53'ünün (3.37 ms) saf ileri geçiş olduğu çıktı — TensorRT'nin tam alanı.\n\nVeri yoksa pynvml kurulu değil demektir. O durumda metrik hiç yazılmıyor; sıfır yazılmıyor — ölçülemeyeni 'ölçüldü ve sıfır' diye göstermek bu projenin üç kez pahalıya ödediği hata sınıfı.",
    "gridPos": {
     "h": 8,
     "w": 12,
@@ -568,7 +568,7 @@
   },
   {
    "type": "row",
-   "title": "7 · Güvenlik — PLAN §13.2'nin eksik panosu",
+   "title": "7 · Güvenlik",
    "collapsed": false,
    "gridPos": {
     "h": 1,
@@ -581,7 +581,7 @@
   {
    "type": "timeseries",
    "title": "Kimlik / yetki reddi (sebebe göre)",
-   "description": "G20 (hesap kilitleme) ve G28 (başarısız giriş serisi uyarısı) bu sayaca dayanıyor. ⚠ Kilit Gün 16'da yazılmıştı ve kaç kez devreye girdiğini gösteren hiçbir metrik yoktu — çalışan ama gözlemlenemeyen bir savunma, ilk sessiz arızasına kadar çalışır.\n\nSebepler: kimlik_hatali · kilitli · token_surumu_eski · yetkisiz · ws_kimliksiz · ws_token_gecersiz · ws_baglanti_siniri\n\n⚠ ANİ SIÇRAMA = kaba kuvvet denemesi.",
+   "description": "G20 (hesap kilitleme) ve G28 (başarısız giriş serisi uyarısı) bu sayaca dayanıyor. Kilit Gün 16'da yazılmıştı ve kaç kez devreye girdiğini gösteren hiçbir metrik yoktu — çalışan ama gözlemlenemeyen bir savunma, ilk sessiz arızasına kadar çalışır.\n\nSebepler: kimlik_hatali · kilitli · token_surumu_eski · yetkisiz · ws_kimliksiz · ws_token_gecersiz · ws_baglanti_siniri\n\nANİ sıçrama = kaba kuvvet denemesi.",
    "gridPos": {
     "h": 8,
     "w": 12,
@@ -604,7 +604,7 @@
   {
    "type": "timeseries",
    "title": "HTTP istekleri (durum koduna göre)",
-   "description": "⚠ Yol ETİKETİ ŞABLON, ham yol değil. Ham yolu etiket yapmak Prometheus'ta kardinalite patlamasına yol açardı: her farklı sorgu yeni bir zaman serisi. Eşleşmeyen istekler tek bir 'bilinmeyen' etiketinde toplanıyor — aksi hâlde rastgele yol deneyen bir bot metrik deposunu şişirebilirdi. Ölçüm ucunun kendisi bir saldırı yüzeyidir.\n\n⚠ 401/403 SERİSİ güvenlik sinyali, 5xx ise arıza sinyali.",
+   "description": "Yol etiketi şablon, ham yol değil. Ham yolu etiket yapmak Prometheus'ta kardinalite patlamasına yol açardı: her farklı sorgu yeni bir zaman serisi. Eşleşmeyen istekler tek bir 'bilinmeyen' etiketinde toplanıyor — aksi hâlde rastgele yol deneyen bir bot metrik deposunu şişirebilirdi. Ölçüm ucunun kendisi bir saldırı yüzeyidir.\n\n401/403 serisi güvenlik sinyali, 5xx ise arıza sinyali.",
    "gridPos": {
     "h": 8,
     "w": 12,
@@ -627,7 +627,7 @@
   {
    "type": "timeseries",
    "title": "Açık WebSocket bağlantısı",
-   "description": "Her WS bağlantısı 20 kameranın canlı analiz akışını dinliyor. G14 kullanıcı başına sınır uyguluyor (MAX_WS_CONNECTIONS_PER_USER).\n\n⚠ P-24: panel açıkken boru hattı verimi YARIYA düşüyor — tarayıcı 20 H.264 akışını CPU'da çözüyor ve o CPU çıkarımdan çalınıyor. Bu yüzden ÖLÇÜM yaparken bu değer 0 OLMALI. Sıfırdan farklıysa aynı anda alınan K2/K3 sayıları kirlidir.",
+   "description": "Her WS bağlantısı 20 kameranın canlı analiz akışını dinliyor. G14 kullanıcı başına sınır uyguluyor (MAX_WS_CONNECTIONS_PER_USER).\n\nP-24: panel açıkken boru hattı verimi yarıya düşüyor — tarayıcı 20 H.264 akışını CPU'da çözüyor ve o CPU çıkarımdan çalınıyor. Bu yüzden ölçüm yaparken bu değer 0 olmalı. Sıfırdan farklıysa aynı anda alınan K2/K3 sayıları kirlidir.",
    "gridPos": {
     "h": 8,
     "w": 12,
@@ -651,7 +651,7 @@
   {
    "type": "timeseries",
    "title": "Bastırılan alarm — füzyonun asıl işi",
-   "description": "⭐ K7 anlatısının en güçlü sayısı ve 03.09.2026'ya kadar DIŞARI ÇIKMIYORDU.\n\n`tek_sinyal`: füzyon skoru eşiği geçti ama yalnızca BİR sinyal katkı verdi. Tek sinyalli bir risk, o sinyalin kendi alarmının kopyasıdır ve operatöre aynı olayı iki kez göstermek K7'nin asıl riskini besler — operatörün sistemi umursamamaya başlaması.\n\n`sogumada`: aynı iz için soğuma penceresi dolmamış.\n\n⚠ Bu eğri ile 'üretilen alarm' eğrisi birlikte okunmalı: sistemin sessizliği bir başarı mı yoksa arıza mı, ancak ikisi yan yana görülünce anlaşılır.",
+   "description": "K7 anlatısının en güçlü sayısı ve 03.09.2026'ya kadar dışarı çıkmıyordu.\n\n`tek_sinyal`: füzyon skoru eşiği geçti ama yalnızca bir sinyal katkı verdi. Tek sinyalli bir risk, o sinyalin kendi alarmının kopyasıdır ve operatöre aynı olayı iki kez göstermek K7'nin asıl riskini besler — operatörün sistemi umursamamaya başlaması.\n\n`sogumada`: aynı iz için soğuma penceresi dolmamış.\n\nBu eğri ile 'üretilen alarm' eğrisi birlikte okunmalı: sistemin sessizliği bir başarı mı yoksa arıza mı, ancak ikisi yan yana görülünce anlaşılır.",
    "gridPos": {
     "h": 8,
     "w": 12,
@@ -674,7 +674,7 @@
   {
    "type": "timeseries",
    "title": "Risk skoru — kamera başına azami",
-   "description": "Füzyon katmanının anlık risk skoru. ⚠ ALARM EŞİĞİNİN ALTINI DA gösteriyor ve asıl değeri bu: alarm sayacı yalnızca eşiği GEÇEN riski gösterir, bu eğri TIRMANMAYI eşiğe varmadan gösterir.\n\n⭐ 'Sistem sessiz' ile 'sistem sessiz ama risk yükseliyor' arasındaki fark, K8'in (erken uyarı avansı) tam olarak konusu — ve projenin özgün katkısı.",
+   "description": "Füzyon katmanının anlık risk skoru. Alarm eşiğinin altını da gösteriyor ve asıl değeri bu: alarm sayacı yalnızca eşiği geçen riski gösterir, bu eğri tırmanmayı eşiğe varmadan gösterir.\n\n'Sistem sessiz' ile 'sistem sessiz ama risk yükseliyor' arasındaki fark, K8'in (erken uyarı avansı) tam olarak konusu — ve projenin özgün katkısı.",
    "gridPos": {
     "h": 8,
     "w": 24,

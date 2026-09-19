@@ -1,6 +1,6 @@
 """Slot muhasebesi — çöken bir tüketicinin sızdırdığı slotları kurtarma.
 
-⚠ NEDEN BU TESTLER VAR — 30.08.2026'da ölçülen SESSİZ arıza
+Neden bu testler var — 30.08.2026'da ölçülen sessiz arıza
 -----------------------------------------------------------
 Çıkarım worker'ı sert kapatıldığında (kill, çökme, ölçüm betiğinin
 yeniden başlatması) elindeki mesajlar tüketici grubunda **asılı**
@@ -15,7 +15,7 @@ yeşil — alım worker'ı yalnızca slot bulamadığı için her kareyi atıyor
 Gün 23'te 24 saatlik dayanıklılık koşusu var. Tek bir çökme havuzu
 kalıcı olarak küçültüyorsa o koşu anlamsız.
 
-⚠ TESTLER GERÇEK VALKEY İSTEMİYOR
+Testler gerçek VALKEY istemiyor
 Slot muhasebesi saf bir küme hesabı: "üç yerden birinde olmayan slot
 sızmıştır". Küme mantığını sınamak için sahte bir istemci yeterli;
 `XAUTOCLAIM`/`XPENDING` davranışı entegrasyon testinin konusu.
@@ -56,7 +56,7 @@ class TestSizanSlotlar:
         assert sorted(dagitici.sizanlari_geri_al({3, 4})) == [5, 6, 7]
 
     def test_HER_SLOT_YERINDEYSE_sizinti_YOK(self) -> None:
-        """⚠ Yanlış pozitif, kaçırmaktan tehlikeli.
+        """Yanlış pozitif, kaçırmaktan tehlikeli.
 
         Kullanımdaki bir slotu "sızmış" sanıp havuza atmak, aynı slota
         iki karenin birden yazılmasına yol açar — ve o bozulma

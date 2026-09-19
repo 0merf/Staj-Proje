@@ -1,8 +1,8 @@
 """Klip uç noktasının yol doğrulaması — G12 (path traversal).
 
-⚠ NEDEN AYRI BİR TEST DOSYASI
-`test_klip.py` klibin KESİLMESİNİ test ediyor (12 test). Bu dosya
-klibe ERİŞİMİ test ediyor. İkisi ayrı riskler:
+Neden ayrı bir test dosyası
+`test_klip.py` klibin kesilmesini test ediyor (12 test). Bu dosya
+klibe erişimi test ediyor. İkisi ayrı riskler:
 
     kesme  → yanlış anı içeren bir dosya üretme riski
     erişim → dosya sisteminde istenmeyen bir yere ulaşma riski
@@ -13,7 +13,7 @@ yazılıyor ve **hiçbir yerden erişilemiyordu.** Uç eklenince G12
 (path traversal) ilk kez gerçek bir saldırı yüzeyi hâline geldi —
 daha önce "gerekmedi" durumundaydı.
 
-⚠ BEYAZ LİSTE SINANIYOR, KARA LİSTE DEĞİL
+Beyaz liste sınanıyor, kara liste değil
 Testler yalnızca bilinen kötü girdileri denemiyor; **geçerli biçimin
 tam olarak ne olduğunu** sabitliyor. Kara liste testi ("`..` reddedilsin")
 yalnızca düşünülen saldırıları kapsar; beyaz liste testi düşünülmeyeni
@@ -28,7 +28,7 @@ from sentinel.api.routers.olaylar import KLIP_DESENI
 
 
 class TestGecerliAnahtar:
-    """`alerting/klip.py · klip_anahtari()` çıktısı GEÇMELİ."""
+    """`alerting/klip.py · klip_anahtari()` çıktısı geçmeli."""
 
     @pytest.mark.parametrize(
         "anahtar",
@@ -43,7 +43,7 @@ class TestGecerliAnahtar:
         assert KLIP_DESENI.match(anahtar)
 
     def test_gercek_uretici_ile_uyumlu(self) -> None:
-        """⭐ EN ÖNEMLİ TEST: desen ile ÜRETİCİ ayrışırsa uç ölür.
+        """en önemli test: desen ile üretici ayrışırsa uç ölür.
 
         Desen çok darsa geçerli klipler 404 döner ve sebebi görünmez
         olur ("klip yok" der, oysa klip var). Bu test iki tarafı
@@ -82,7 +82,7 @@ class TestReddedilenAnahtar:
             "2026/09/03//115742_fall.mp4",           # boş kamera
             "2026/09/03/cam-16/115742_FALL.mp4",     # büyük harf tür
             "2026/09/03/cam-16/115742_fall.mp4/x",   # fazladan parça
-            # ⚠ Kodlanmış çıkış denemeleri: FastAPI yolu çözerek
+            # Kodlanmış çıkış denemeleri: FastAPI yolu çözerek
             # verse bile desen bunları da elemeli.
             "2026/09/03/cam-16/%2e%2e%2fgizli.mp4",
             "....//....//gizli.mp4",
@@ -100,17 +100,17 @@ class TestReddedilenAnahtar:
         ],
     )
     def test_yeni_satir_ile_desen_atlatilamiyor(self, anahtar: str) -> None:
-        """⚠ `$` TUZAĞI — bu test deseni bulduğu için var.
+        """`$` tuzağı — bu test deseni bulduğu için var.
 
-        Python'da `$` yalnızca dizenin sonunu değil, SONDAKİ YENİ
-        SATIRDAN ÖNCESİNİ de eşleştirir: `re.match(r"^abc$", "abc\\n")`
-        EŞLEŞİR. Desenin ilk hâli `^...$` kullanıyordu, yani
+        Python'da `$` yalnızca dizenin sonunu değil, sondaki yeni
+        satırdan öncesini de eşleştirir: `re.match(r"^abc$", "abc\\n")`
+        eşleşir. Desenin ilk hâli `^...$` kullanıyordu, yani
         `".../115742_fall.mp4\\n"` girdisini kabul ediyordu.
 
         Tek başına sömürülebilir değil — sondaki `\\n` yolu
         değiştirmiyor. Ama doğrulayıcı "tam olarak bu biçim" iddia
         ederken başka bir şey yapıyordu, ve bu projede pahalıya patlayan
-        şey hep bu oldu: bir kontrolün ADI ile YAPTIĞI işin ayrışması.
+        şey hep bu oldu: bir kontrolün adı ile yaptığı işin ayrışması.
 
         Desen `\\A ... \\Z` çapalarına geçirildi.
         """

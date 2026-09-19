@@ -1,13 +1,13 @@
 import { expect, test } from '@playwright/test'
 
 /**
- * Uçtan uca panel testleri — CANLI sisteme karşı koşar.
+ * Uçtan uca panel testleri — canlı sisteme karşı koşar.
  *
- * ⚠ ÖN KOŞUL: sistem ayakta olmalı (`start_all.ps1`) ve `.env.e2e`
+ * ÖN koşul: sistem ayakta olmalı (`start_all.ps1`) ve `.env.e2e`
  * içinde test kullanıcısının bilgileri bulunmalı.
  *
- * ⭐ Bu testlerin hedefi ZİNCİR, parça değil. Her biri "kullanıcının
- * yapabildiği bir iş"i doğruluyor — CLAUDE.md'nin kapsam kuralı:
+ * Bu testlerin hedefi zincir, parça değil. Her biri "kullanıcının
+ * yapabildiği bir iş"i doğruluyor — proje notlarımın kapsam kuralı:
  * *"'klip kesiliyor' bir modül ifadesi; 'operatör alarmın videosunu
  * izleyebiliyor' bir kapsam ifadesi."*
  */
@@ -33,10 +33,10 @@ async function girisYap(page: import('@playwright/test').Page) {
   await expect(page.getByTestId('kamera-izgarasi')).toBeVisible()
 }
 
-test('API kimlik doğrulaması OLMADAN veri sızdırmıyor (G01)', async ({
+test('API kimlik doğrulaması olmadan veri sızdırmıyor (G01)', async ({
   request,
 }) => {
-  // ⚠ Bu test P-37'nin nöbetçisi: 30.08'de API korunurken VİDEO
+  // Bu test P-37'nin nöbetçisi: 30.08'de API korunurken video
   // herkese açık kalmıştı. Kimliksiz istek 401/403 dönmeli — 200
   // dönerse bir uç nokta korumasız demektir.
   for (const yol of [
@@ -52,13 +52,13 @@ test('API kimlik doğrulaması OLMADAN veri sızdırmıyor (G01)', async ({
   }
 })
 
-test('yanlış parola reddediliyor ve hata GÖSTERİLİYOR', async ({ page }) => {
+test('yanlış parola reddediliyor ve hata gösteriliyor', async ({ page }) => {
   await page.goto('/app')
   await page.locator('input[autocomplete="username"]').fill(KULLANICI)
   await page.locator('input[type="password"]').fill('kesinlikle-yanlis-parola')
   await page.getByRole('button', { name: /giriş/i }).click()
 
-  // ⚠ Yalnızca "girilemedi" yetmez — kullanıcıya SEBEP gösterilmeli.
+  // Yalnızca "girilemedi" yetmez — kullanıcıya sebep gösterilmeli.
   // Sessiz başarısızlık, operatörün sistemi çökmüş sanmasına yol açar.
   await expect(page.getByRole('alert')).toBeVisible()
   await expect(page.getByTestId('kamera-izgarasi')).toBeHidden()
@@ -74,12 +74,12 @@ test('giriş yapılınca 20 kamera kutucuğu geliyor (K1)', async ({ page }) => 
     .toBeGreaterThanOrEqual(20)
 })
 
-test('kameralar HAZIR durumda — akış gerçekten bağlı', async ({ page }) => {
+test('kameralar hazır durumda — akış gerçekten bağlı', async ({ page }) => {
   await girisYap(page)
   const kutucuklar = page.getByTestId('kamera-kutucugu')
   await expect.poll(() => kutucuklar.count()).toBeGreaterThanOrEqual(20)
 
-  // ⚠ Kutucuğun ÇİZİLMESİ akışın çalıştığını göstermez — P-45'in dersi
+  // Kutucuğun çizilmesi akışın çalıştığını göstermez — P-45'in dersi
   // (klipler kesiliyordu, erişilemiyordu). `data-hazir` alım katmanının
   // o kamerayı gerçekten okuyabildiğini söylüyor.
   await expect
@@ -92,20 +92,20 @@ test('kameralar HAZIR durumda — akış gerçekten bağlı', async ({ page }) =
 
 test('bir kamera açılınca video + kutu tuvali geliyor', async ({ page }) => {
   await girisYap(page)
-  // ⚠ Izgaranın çizilmesi kameraların HAZIR olduğu anlamına gelmiyor:
+  // Izgaranın çizilmesi kameraların hazır olduğu anlamına gelmiyor:
   // hazır bilgisi WebSocket'ten sonradan geliyor. Beklemeden tıklamak
   // testi zamanlamaya bağımlı (flaky) yapardı — ilk koşuda tam da bu
   // yüzden düştü.
   const hazirlar = page.locator('[data-testid="kamera-kutucugu"][data-hazir="1"]')
   await expect.poll(() => hazirlar.count(), { timeout: 30_000 }).toBeGreaterThan(0)
 
-  // ⚠ `exact: true` şart: kutucukta iki düğme "izle" içeriyor —
+  // `exact: true` şart: kutucukta iki düğme "izle" içeriyor —
   // başlıktaki "izle" ve yer tutucudaki "izlemek için tıkla".
   const ilk = hazirlar.first()
   await ilk.getByRole('button', { name: 'izle', exact: true }).click()
 
   // Mimari kural 2: video WHEP ile ayrı gelir, kutular ayrı kanaldan
-  // gelip TARAYICI canvas'ına çizilir. İkisinin de var olması gerekiyor.
+  // gelip tarayıcı canvas'ına çizilir. İkisinin de var olması gerekiyor.
   await expect(ilk.locator('video')).toBeVisible()
   await expect(ilk.locator('canvas')).toBeAttached()
 })

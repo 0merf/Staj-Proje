@@ -3,7 +3,7 @@
 Geliştirmede renkli/okunabilir, üretimde JSON çıktı verir.
 JSON önemli: log toplayıcılar (Loki, ELK) alanlara göre sorgu yapabilsin.
 
-⚠ ASLA loglanmayacaklar (PLAN.md §13.3): parolalar, token'lar,
+Asla loglanmayacaklar: parolalar, token'lar,
    RTSP kimlik bilgileri, ham kare verisi, yüz görüntüleri.
 """
 

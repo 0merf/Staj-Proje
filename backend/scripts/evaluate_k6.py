@@ -1,10 +1,10 @@
-"""K6 — anomali tespiti ROC-AUC ölçümü (PLAN §1.4, hedef ≥0.75).
+"""K6 — anomali tespiti ROC-AUC ölçümü (hedef ≥0.75).
 
 Neden bu betik
 --------------
-K6 bugüne kadar **hiç ölçülmedi.** Oysa PLAN'ın kendi sözü şu:
+K6 bugüne kadar **hiç ölçülmedi.** Oysa proje planının kendi sözü şu:
 
-> *"Hedefi tutturamamak başarısızlık değildir; ÖLÇMEMEK
+> *"Hedefi tutturamamak başarısızlık değildir; ölçmemek
 > başarısızlıktır."*
 
 Ölçüm için gereken iki şey de elimizde:
@@ -13,7 +13,7 @@ K6 bugüne kadar **hiç ölçülmedi.** Oysa PLAN'ın kendi sözü şu:
   · **sürekli skor** — füzyon katmanının risk skoru
     (`analytics/fusion.py`)
 
-⚠ NEDEN FÜZYON SKORU, KATMAN A SKORU DEĞİL
+Neden füzyon skoru, katman A skoru değil
 Katman A tek başına bir sapma sinyali; K6 "sistem anomaliyi ayırt
 edebiliyor mu" diye soruyor ve sistemin cevabı füzyondur. Katman A'yı
 tek başına ölçmek, sistemin bir parçasını sistem sanmak olurdu.
@@ -23,21 +23,21 @@ bileşenlerinden daha iyi olup olmadığı, füzyonun kendisini haklı
 çıkaran ya da çürüten sayıdır. Bileşeninden kötü bir füzyon,
 karmaşıklığı boşuna eklemiş demektir.
 
-⚠⚠ 03.09.2026 — BU KARŞILAŞTIRMA ELMAYLA ARMUTTU (P-41)
+03.09.2026 — bu karşılaştırma elmayla armuttu (P-41)
 --------------------------------------------------------
 İlk ölçüm şu sonucu verdi ve rapora "füzyon kendini haklı çıkardı"
 diye yazılmak üzereydi:
 
     katman_a  0.789
-    füzyon    0.867   ⬅ "demek ki birleştirme kazandırıyor"
+    füzyon    0.867   ← "demek ki birleştirme kazandırıyor"
 
 **Bu çıkarım desteklenmiyordu.** Karşılaştırılan iki sayı aynı
 işlemden geçmemişti:
 
-    katman_a  = HAM, kare başına anomali skoru
-    füzyon    = EMA(α=0.4) ile ZAMANSAL YUMUŞATILMIŞ ağırlıklı toplam
+    katman_a  = ham, kare başına anomali skoru
+    füzyon    = EMA(α=0.4) ile zamansal yumuşatılmış ağırlıklı toplam
 
-Yani füzyona iki şey birden eklenmişti — sinyal birleştirme VE
+Yani füzyona iki şey birden eklenmişti — sinyal birleştirme ve
 zamansal yumuşatma — ve ölçüm ikisini ayırmıyordu.
 
 Elde olan sayılar ikinciyi işaret ediyordu:
@@ -46,24 +46,24 @@ Elde olan sayılar ikinciyi işaret ediyordu:
     Şans seviyesindeki iki sinyali eklemek AUC'yi yükseltemez.
   · katman_a karelerinin **%42'si tam 0.0**. `_roc_auc` eşitlikleri
     0.5 sayıyor (doğru davranış) ve bu kadar çok eşitlik AUC'ye
-    TAVAN koyuyor. EMA geçmişten sızdırıp o sıfırları dolduruyor →
+    tavan koyuyor. EMA geçmişten sızdırıp o sıfırları dolduruyor →
     eşitlik azalıyor → AUC mekanik olarak yükseliyor.
 
 Bu yüzden beşinci bir seri eklendi: **`katman_a_ema`** — katman A'nın
-tek başına, füzyonla AYNI EMA'dan geçmiş hâli. Doğru soru artık
+tek başına, füzyonla aynı EMA'dan geçmiş hâli. Doğru soru artık
 sorulabiliyor:
 
     füzyon > katman_a_ema  → birleştirme gerçekten kazandırıyor
-    füzyon ≈ katman_a_ema  → kazanan YUMUŞATMA; füzyon katmanı bu
+    füzyon ≈ katman_a_ema  → kazanan yumuşatma; füzyon katmanı bu
                              veri setinde karşılığını vermiyor
 
-⚠ İki sonuç da rapor için değerli. Kötü olan tek şey, hangisi
+İki sonuç da rapor için değerli. Kötü olan tek şey, hangisi
 olduğunu bilmeden birini iddia etmekti. Bu, aynı sınıf hatanın
-DÖRDÜNCÜSÜ olurdu (P-17 sıralı koşu · P-36 bozuk blok · P-39
+dördüncüsü olurdu (P-17 sıralı koşu · P-36 bozuk blok · P-39
 koordinat uzayı): ölçüm aracına, ölçtüğü şeye gösterilen şüpheyi
 göstermemek.
 
-⚠ NEDEN ROC-AUC, DOĞRULUK DEĞİL
+Neden ROC-AUC, doğruluk değil
 Avenue'da anomali kareleri azınlıkta. "Hiçbir şey anomali değil"
 diyen bir sistem yüksek doğruluk alır ve hiçbir işe yaramaz. AUC
 eşikten bağımsız: "rastgele bir anomali karesi, rastgele bir normal
@@ -74,17 +74,17 @@ Ne yapar
 Avenue test kliplerini canlı boru hattının aynısından geçirir:
 
     kare → YOLO26 tespit → BoT-SORT → poz → özellikler
-         → Katman A + Katman B + saldırganlık → FÜZYON
+         → Katman A + Katman B + saldırganlık → füzyon
 
 Her kare için o karedeki izlerin **azami** risk skorunu alır (bir
 karede birinin riskli olması o kareyi riskli yapar), yer gerçeğiyle
 karşılaştırır.
 
-⚠ NEDEN AZAMİ, ORTALAMA DEĞİL
+Neden azami, ortalama değil
 Kalabalık bir karede tek bir kişi anormal davranıyorsa, ortalama onu
 kalabalığın içinde söndürürdü. Anomali tanımı gereği azınlıktadır.
 
-⚠ ÖLÇÜM KOŞULU: boru hattı KAPALI olmalı — GPU paylaşılmamalı.
+Ölçüm koşulu: boru hattı kapalı olmalı — GPU paylaşılmamalı.
 
 Kullanım
 --------
@@ -120,9 +120,9 @@ def _bootstrap_auc(
     tekrar: int = 2000,
     tohum: int = 20260910,
 ) -> dict[str, Any]:
-    """⭐⭐ AUC güven aralığı — İKİ SEVİYELİ, çünkü kareler bağımsız DEĞİL.
+    """AUC güven aralığı — iki seviyeli, çünkü kareler bağımsız değil.
 
-    ⚠ NEDEN İKİ YÖNTEM BİRDEN
+    Neden iki yöntem birden
     -------------------------
     K6 1439 kare üzerinden ölçülüyor ama bu 1439 **bağımsız gözlem
     değil**: kareler yalnızca 9 klipten geliyor ve aynı klibin ardışık
@@ -130,9 +130,9 @@ def _bootstrap_auc(
 
     · **kare seviyesi** (naif): 1439 kareyi yerine koyarak yeniden
       örnekler. Bağımsızlık varsayar → güven aralığını **gerçeğinden
-      DAR** gösterir.
+      dar** gösterir.
     · **küme (klip) seviyesi** (doğru): 9 klibi yerine koyarak yeniden
-      örnekler; bir klip seçilirse TÜM kareleri geliyor. Bağımsız birim
+      örnekler; bir klip seçilirse tüm kareleri geliyor. Bağımsız birim
       klip olduğu için istatistiksel olarak doğru olan budur.
 
     İkisi de raporlanıyor. Aradaki fark, "bağımsızlık varsayımı ne kadar
@@ -140,13 +140,13 @@ def _bootstrap_auc(
     alarmlarda bir kez yapılmıştı (P-77: 19 alarm sanılıyordu, 12
     bağımsız olay çıktı).
 
-    ⚠ 9 klip AZ. Küme aralığının geniş çıkması bir kusur değil,
-    örneklemin küçüklüğünün dürüst ifadesidir. Dar bir aralık
+    9 klip AZ. Küme aralığının geniş çıkması bir kusur değil,
+    örneklemin küçüklüğünü doğru yansıtır. Dar bir aralık
     bildirmek, elimizde olmayan bir kesinliği iddia etmek olurdu.
     """
     import random
 
-    # ⚠ S311: istatistik örneklemesi, kriptografi değil. Tekrarlanabilirlik
+    # S311: istatistik örneklemesi, kriptografi değil. Tekrarlanabilirlik
     # için tohum sabit.
     rng = random.Random(tohum)  # noqa: S311
 
@@ -188,7 +188,7 @@ def _bootstrap_auc(
             secilen = [klipler[rng.randrange(len(klipler))] for _ in range(len(klipler))]
             p = [v for k in secilen for v in gruplu[ad][k][0]]
             n = [v for k in secilen for v in gruplu[ad][k][1]]
-            # ⚠ Tek sınıflı örneklem AUC'yi tanımsız yapar — atlanıyor.
+            # Tek sınıflı örneklem AUC'yi tanımsız yapar — atlanıyor.
             if p and n:
                 kume_auc.append(_roc_auc(p, n))
 
@@ -206,7 +206,7 @@ def _bootstrap_auc(
 def _roc_auc(pozitif: list[float], negatif: list[float]) -> float:
     """Mann-Whitney U ile ROC eğrisi altındaki alan.
 
-    ⚠ Eşitlikler 0.5 sayılıyor. Skorların çoğu tam 0.0 olduğunda
+    Eşitlikler 0.5 sayılıyor. Skorların çoğu tam 0.0 olduğunda
     (hiçbir sinyal yok) bu fark yaratıyor: eşitliği 1 saymak AUC'yi
     yapay olarak yükseltirdi.
     """
@@ -252,17 +252,17 @@ def _klip_skorla(
     Dönen: her örneklenen kare için
     `(zaman, füzyon_riski, katman_a, saldırganlık, kural, katman_a_ema)`.
 
-    ⚠ Bileşenler de dönüyor: füzyonun bileşenlerinden daha iyi olup
+    Bileşenler de dönüyor: füzyonun bileşenlerinden daha iyi olup
     olmadığını görmeden füzyonu savunmak mümkün değil.
 
-    ⚠ `katman_a_ema` — ADİL KARŞILAŞTIRMANIN KENDİSİ (P-41)
+    `katman_a_ema` — adil karşılaştırmanın kendisi (P-41)
     Katman A'nın füzyonla aynı zamansal yumuşatmadan geçmiş hâli.
     Bu sütun olmadan "füzyon 0.867 > katman_a 0.789" cümlesi,
     birleştirmenin mi yumuşatmanın mı kazandırdığını söylemiyor.
 
-    ⚠ `sadece_ogren=True` — ISITMA İÇİN HIZLI YOL
+    `sadece_ogren=True` — ısıtma için hızlı yol
     Isıtma aşamasında yalnızca profil besleniyor; çift özellikleri,
-    tırmanma skoru, kural motoru ve füzyon HESAPLANMIYOR.
+    tırmanma skoru, kural motoru ve füzyon hesaplanmıyor.
 
     Ölçüldü: ilk sürüm ısıtmayı tam boru hattıyla yapıyordu ve
     15 328 kare **47 dakika** sürdü (kare başına ~184 ms — canlı
@@ -295,11 +295,11 @@ def _klip_skorla(
     kurallar = KuralMotoru()
     tirmanma = TirmanmaSkorlayici()
     fuzyon = fusion.RiskFuzyonu()
-    # ⚠ HER KLİP İÇİN TAZE PROFİL DEĞİL — Avenue'nun tüm test klipleri
-    # AYNI sahne. Profili klip başına sıfırlamak, kameranın normalini
+    # Her klip için taze profil değil — Avenue'nun tüm test klipleri
+    # aynı sahne. Profili klip başına sıfırlamak, kameranın normalini
     # her seferinde yeniden öğrenmek olurdu ve ilk saniyeler hep
     # "anomali" çıkardı. Profil dışarıdan veriliyor.
-    # ⚠ Profil KLİP başına değil KAMERA başına. Avenue'nun tüm
+    # Profil klip başına değil kamera başına. Avenue'nun tüm
     # klipleri aynı sahne ve "her kameranın normali ayrı öğrenilir"
     # ilkesi kamera düzeyinde tanımlı (mimari kural 7). Klip başına
     # sıfırlamak, her klibin ilk saniyelerini yapay anomali yapardı.
@@ -308,11 +308,11 @@ def _klip_skorla(
     cikti: list[tuple[float, float, float, float, float, float]] = []
     kare_no = 0
     onceki_ts = 0.0
-    # ⚠ Katman A'nın KENDİ EMA'sı — füzyonunkiyle aynı α, aynı başlangıç.
+    # Katman A'nın kendi EMA'sı — füzyonunkiyle aynı α, aynı başlangıç.
     # Kare seviyesinde tutuluyor (iz seviyesinde değil) çünkü
     # karşılaştırılan şey de kare seviyesindeki azami skor.
     # Füzyon EMA'yı iz başına uyguluyor; bu fark raporda yazılacak
-    # ama yönü BU SERİNİN LEHİNE değil: iz başına yumuşatma daha
+    # ama yönü bu serinin lehine değil: iz başına yumuşatma daha
     # keskin bir sinyal verir, yani bu seri füzyonu haksız yere
     # aşağı çekmiyor.
     a_ema = 0.0
@@ -363,7 +363,7 @@ def _klip_skorla(
 
             kare_h, kare_w = kare.shape[:2]
             for iz, ozellik in zip(izler, kisiler, strict=False):
-                # ⚠ Isıtmadaki ile AYNI koordinat uzayı — kaynak kare.
+                # Isıtmadaki ile aynı koordinat uzayı — kaynak kare.
                 # İkisi ayrışırsa profil, öğrendiğinden başka bir yerle
                 # karşılaştırılır.
                 bbox = _lb.to_source_box(
@@ -371,9 +371,9 @@ def _klip_skorla(
                     iz.detection.x2, iz.detection.y2,
                 )
                 ayak_x = (bbox[0] + bbox[2]) / 2.0
-                # ⚠ Isıtmada SKORLAMA da atlanıyor: profil henüz hazır
+                # Isıtmada skorlama da atlanıyor: profil henüz hazır
                 # değil, dönecek değer zaten 0.0 olurdu.
-                # Isıtmadaki ile AYNI yön hesabı — ikisi ayrışırsa
+                # Isıtmadaki ile aynı yön hesabı — ikisi ayrışırsa
                 # profil öğrendiğinden başka bir şeyle karşılaştırılır.
                 yon = None
                 if abs(iz.velocity_x) > 1.0 or abs(iz.velocity_y) > 1.0:
@@ -406,7 +406,7 @@ def _klip_skorla(
                 k_azami = max(k_azami, kural_map.get(iz.track_id, 0.0))
             profil.kare_ogren(len(izler))
 
-        # Füzyonla AYNI yumuşatma katsayısı — tek fark, girdide
+        # Füzyonla aynı yumuşatma katsayısı — tek fark, girdide
         # yalnızca Katman A'nın olması.
         a_ema = fusion.EMA_ALFA * a_azami + (1 - fusion.EMA_ALFA) * a_ema
         cikti.append((ts, risk_azami, a_azami, s_azami, k_azami, a_ema))
@@ -425,9 +425,9 @@ def _profili_isit(
     imgsz: int,
     kamera: str = "avenue",
 ) -> int:
-    """Profili besler — YALIN yol, özellik makinesi kurulmadan.
+    """Profili besler — yalın yol, özellik makinesi kurulmadan.
 
-    ⚠ NEDEN AYRI BİR FONKSİYON
+    Neden ayrı bir fonksiyon
     İlk sürüm ısıtmayı tam boru hattıyla (`_klip_skorla`) yapıyordu ve
     15 328 kare **56 dakikada bitmedi** — kare başına ~184 ms, canlı
     hattın ~25 ms'inin 7 katı.
@@ -440,34 +440,34 @@ def _profili_isit(
 
     Sonuç: 6× büyük pencere × 6× sık çağrı = **36× maliyet.**
 
-    ⚠ Bu, "örnekleme hızını artırmak maliyeti doğrusal artırır"
+    Bu, "örnekleme hızını artırmak maliyeti doğrusal artırır"
     varsayımının çürüdüğü yer. Pencere tabanlı bir sistemde hız
     artışı KAREsel etki yapıyor.
 
     Profilin öğrendiği şey yalnızca `(ayak noktası, hız, durağanlık)`.
-    Bunun için pencereye gerek yok — ama ARDIŞIK İKİ KARE DE YETMİYOR.
+    Bunun için pencereye gerek yok — ama ardışık iki kare de yetmiyor.
 
-    ⚠ İLK SÜRÜM HIZI ARDIŞIK KAREDEN HESAPLIYORDU VE YANLIŞTI
+    İlk sürüm hızı ardışık kareden hesaplıyordu ve yanlıştı
     Tanı betiği (`scripts/diagnose_katman_a.py`) ortaya çıkardı:
 
         öğrenilen hız p50 : 1.645 gövde/sn   (canlı ölçüm: 0.30)
         hücre sapması p50 : 4.734 gövde/sn   (fiziksel olarak saçma)
 
     Bir insan hızını saniyede 4.7 gövde boyu değiştiremez. O sayı
-    hareket değil GÜRÜLTÜ.
+    hareket değil gürültü.
 
     Sebep ölçek: 25 FPS'te iki kare arası 0.04 sn. Yürüyen bir insan o
     sürede ~3 piksel yer değiştiriyor; takipçinin konum gürültüsü ise
     5-20 piksel. **Gürültü sinyalden büyük.**
 
-    ⚠ Bu, "daha yüksek kare hızı = daha iyi ölçüm" sezgisinin
+    Bu, "daha yüksek kare hızı = daha iyi ölçüm" sezgisinin
     çürüdüğü yer: yer değiştirme `dt` ile küçülüyor, gürültü
-    küçülmüyor. Kare hızını artırmak hız ölçümünü İYİLEŞTİRMİYOR,
+    küçülmüyor. Kare hızını artırmak hız ölçümünü iyileştirmiyor,
     bozuyor.
 
     Canlı boru hattı bunu zaten doğru yapıyor (`person.py`): ardışık
     fark yerine pencere üzerinden **medyan**. Burada da aynı ilke
-    uygulanıyor — hız sabit bir zaman TABANI üzerinden ölçülüyor.
+    uygulanıyor — hız sabit bir zaman tabanı üzerinden ölçülüyor.
     """
     import cv2
 
@@ -481,7 +481,7 @@ def _profili_isit(
     takipci = BotSortTracker(frame_rate=int(max(1, ornek_fps)))
     profil = _PROFIL.setdefault(kamera, KameraNormali(camera=kamera))
 
-    # ⚠ HIZ TABANI — ardışık kare DEĞİL, sabit bir zaman aralığı.
+    # Hız tabanı — ardışık kare değil, sabit bir zaman aralığı.
     # Canlı hattın kamera başına ~3 FPS'ine karşılık gelen aralık;
     # bu süre içinde yürüyen bir insan ~50 piksel yol alıyor ve
     # takip gürültüsü (5-20 px) artık baskın değil.
@@ -506,9 +506,9 @@ def _profili_isit(
         profil.kare_ogren(len(izler))
         for iz in izler:
             d = iz.detection
-            # ⚠ KOORDİNAT UZAYI — sessiz ama ölümcül bir hataydı
-            # Tespitler MODEL uzayında (640×640 letterbox), profil ise
-            # ızgarayı KAYNAK kare boyutlarıyla (640×360) hesaplıyordu.
+            # Koordinat uzayı — sessiz ama ölümcül bir hataydı
+            # Tespitler model uzayında (640×640 letterbox), profil ise
+            # ızgarayı kaynak kare boyutlarıyla (640×360) hesaplıyordu.
             # Yani her konum yanlış hücreye düşüyordu: dolgu bandı
             # yüzünden y ekseni 140 piksel kaymış, alt hücreler
             # tümüyle kadraj dışına taşmıştı.
@@ -518,7 +518,7 @@ def _profili_isit(
             sx1, sy1, sx2, sy2 = lb.to_source_box(d.x1, d.y1, d.x2, d.y2)
             ayak_x = (sx1 + sx2) / 2.0
             ayak_y = sy2
-            # ⚠ Gövde boyu kutu yüksekliğinden. Poz iskeletinden daha
+            # Gövde boyu kutu yüksekliğinden. Poz iskeletinden daha
             # kaba ama ısıtma için yeterli — ve poz çağrısını tamamen
             # elemek ısıtmayı bir kat daha hızlandırıyor.
             boy = max(sy2 - sy1, 1.0)
@@ -528,7 +528,7 @@ def _profili_isit(
             gecmis = onceki.get(iz.track_id)
             if gecmis is not None:
                 dt = ts - gecmis[0]
-                # ⚠ Taban dolmadıysa referans GÜNCELLENMİYOR — bir
+                # Taban dolmadıysa referans güncellenmiyor — bir
                 # sonraki karede aynı referansa göre daha uzun bir
                 # aralık ölçülecek. Her karede referansı güncellemek,
                 # tam da düzeltmeye çalıştığımız ardışık-kare hatasını
@@ -547,7 +547,7 @@ def _profili_isit(
             else:
                 onceki[iz.track_id] = (ts, ayak_x, ayak_y, boy)
 
-            # ⚠ YÖN — Katman A'nın üçüncü kolu, ilk sürümde ÖLÜYDÜ
+            # Yön — Katman A'nın üçüncü kolu, ilk sürümde ölüydü
             # `yon=None` geçiliyordu, yani "ters yön" testi hiç
             # çalışmıyordu. Avenue'nun anomali türlerinden biri tam
             # olarak ters yön; o kolu kapalı bırakmak, ölçülen şeyin
@@ -570,7 +570,7 @@ def _profili_isit(
     return eklenen
 
 
-# Klip başına değil KAMERA başına profil: Avenue'nun tüm klipleri aynı
+# Klip başına değil kamera başına profil: Avenue'nun tüm klipleri aynı
 # sahne, ve "her kameranın normali ayrı öğrenilir" ilkesi kamera
 # düzeyinde tanımlı (mimari kural 7).
 _PROFIL: dict[str, Any] = {}
@@ -614,18 +614,18 @@ def main() -> int:
 
     harita = _segment_haritasi()
 
-    # ⚠ YALNIZCA YER GERÇEĞİ OLAN KLİPLER
+    # Yalnızca yer gerçeği olan klipler
     #
     # İlk ölçümde tüm test klipleri kullanıldı ve `10.avi` "0 anomali
-    # segmenti" diye işlendi. Ama Avenue'nun TEST bölümündeki her klip
+    # segmenti" diye işlendi. Ama Avenue'nun test bölümündeki her klip
     # tanımı gereği anomali içerir — bizim yer gerçeği dosyamız yalnızca
     # 01-09'u kapsıyor (`build_avenue` o kadarını üretmiş).
     #
-    # Yer gerçeği olmayan bir klibi ölçüme katmak, içindeki GERÇEK
+    # Yer gerçeği olmayan bir klibi ölçüme katmak, içindeki gerçek
     # anomalileri "normal" diye etiketlemek demek: sistem onları doğru
     # bulduğunda ceza alır. Ölçüm, ölçtüğü şeyi cezalandırır hâle gelir.
     #
-    # Kapsam dışı bırakmak bir kayıp değil dürüstlüktür: "9 klipte
+    # Kapsam dışı bırakmak bir kayıp değil, doğru olanıdır: "9 klipte
     # ölçtük" demek, "21 klipte ölçtük ama 12'sinin etiketi yoktu"
     # demekten iyidir.
     tumu = sorted(videolar_dizini.glob("*.avi"))
@@ -649,26 +649,26 @@ def main() -> int:
     dedektor.warmup(1)
     poz.warmup(8)
 
-    # ─── PROFİL ISITMA — metodolojik olarak zorunlu ───
+    # ─── Profil ısıtma — metodolojik olarak zorunlu ───
     #
-    # ⚠ İLK ÖLÇÜM BUNSUZ YAPILDI VE KATMAN A HİÇ SKOR ÜRETMEDİ
+    # İlk ölçüm bunsuz yapıldı ve katman A hiç skor üretmedi
     # `PROFIL_ASGARI_ORNEK = 2000`: profil bu kadar gözlem görmeden
     # hiçbir şeyi olağandışı saymıyor (soğuk başlangıçta her şey
     # "hiç görülmemiş" olur diye konmuş bir koruma). 2 test klibinde
     # o eşiğe ulaşılmadı; `katman_a` skorlarının %100'ü sıfır çıktı ve
     # AUC tam 0.500 (yani ölçüm hiçbir şey ölçmedi).
     #
-    # ⚠ AMA ASIL MESELE EŞİK DEĞİL, DENEY TASARIMI
+    # Ama asıl mesele eşik değil, deney tasarımı
     # Modülün tanımı "önce normali öğren, sonra sapmayı bul". Profili
     # test verisiyle ısıtmak iki hata birden olurdu:
     #   · test verisinde öğrenmek (anomaliyi de normal öğrenir)
     #   · ilk kareler profilsiz kalır ve ölçümü aşağı çeker
     #
-    # Avenue'nun EĞİTİM bölümü tam bu iş için var: tanımı gereği
+    # Avenue'nun eğitim bölümü tam bu iş için var: tanımı gereği
     # yalnızca normal davranış. Sistem sahada da böyle kurulur —
     # temiz bir dönem izlenir, sonra izlemeye geçilir.
     #
-    # ⚠ ISITMA ANALİZDEN HIZLI ÖRNEKLENİYOR — ve bu kasıtlı
+    # Isıtma analizden hızlı örnekleniyor — ve bu kasıtlı
     # İkinci ölçümde profil "hazır" oldu (2314 gözlem) ama Katman A
     # yine neredeyse sustu: skorların yalnızca %5.3'ü sıfırdan farklı.
     # Aritmetik açık:
@@ -679,14 +679,14 @@ def main() -> int:
     # Yani hiçbir hücre hız/yön istatistiği yapacak kadar veri
     # görmemiş; profil "hazır" ama içi boş.
     #
-    # Çözüm eşiği düşürmek DEĞİL — 4 örnekten çıkan bir sapma ölçüsü
+    # Çözüm eşiği düşürmek değil — 4 örnekten çıkan bir sapma ölçüsü
     # zaten gürültü olurdu. Çözüm daha çok veri, ve o veri elimizde:
     # analiz 4 FPS'te yapılıyor çünkü GPU bütçesi öyle gerektiriyor,
-    # ama PROFİL yalnızca konum ve hız öğreniyor ve bunlar her karede
+    # ama profil yalnızca konum ve hız öğreniyor ve bunlar her karede
     # zaten mevcut.
     #
-    # ⚠ Gerçek bir kurulumda bu ayrım daha da belirgin: profil
-    # GÜNLERCE öğrenir, analiz saniyede birkaç kare yapar. Öğrenme
+    # Gerçek bir kurulumda bu ayrım daha da belirgin: profil
+    # günlerce öğrenir, analiz saniyede birkaç kare yapar. Öğrenme
     # hızını analiz hızına eşitlemek, sistemin sahadaki davranışını
     # değil ölçüm betiğinin kısıtını modellemek olurdu.
     if args.isinma_klip > 0:
@@ -718,14 +718,14 @@ def main() -> int:
         ad: ([], [])
         for ad in ("fuzyon", "katman_a", "katman_a_ema", "saldirganlik", "kural")
     }
-    # ⭐ KLİP KİMLİĞİ DE SAKLANIYOR — küme bootstrap'ı için ZORUNLU.
+    # Klip kimliği de saklanıyor — küme bootstrap'ı için zorunlu.
     #
-    # ⚠ Aynı klibin kareleri BAĞIMSIZ DEĞİL: ardışık kareler aynı
+    # Aynı klibin kareleri bağımsız değil: ardışık kareler aynı
     # sahneyi, aynı kişileri, aynı aydınlatmayı gösteriyor. Kare
     # seviyesinde yeniden örnekleme, 1439 bağımsız gözlem varmış gibi
-    # davranır ve güven aralığını GERÇEĞİNDEN DAR gösterir.
+    # davranır ve güven aralığını gerçeğinden dar gösterir.
     #
-    # Bağımsız birim KLİP'tir (9 tane). P-77'de aynı hatanın canlı
+    # Bağımsız birim klip'tir (9 tane). P-77'de aynı hatanın canlı
     # alarmlarda yapıldığı görülmüştü: 19 alarm, döngüdeki konuma göre
     # tekilleştirilince 12 bağımsız olaya düşmüştü.
     #
@@ -790,7 +790,7 @@ def main() -> int:
         }
         print(f"{ad:<14} {auc:>7.3f} {p_med:>12.3f} {n_med:>11.3f} {p90:>12.3f}")
 
-    # ─── ⭐⭐ BOOTSTRAP — güven aralıkları ───
+    # ─── Bootstrap — güven aralıkları ───
     bs = _bootstrap_auc(klip_kayit, tekrar=args.bootstrap) if args.bootstrap > 0 else {}
     if bs:
         print(f"\n═══ ⭐ BOOTSTRAP · {bs['tekrar']} tekrar · %95 GA ═══")
@@ -817,8 +817,8 @@ def main() -> int:
         print(f"\n  K6 (≥0.75) küme GA alt sınırına göre: {karar}")
 
     fuzyon_auc = ozet["fuzyon"]["auc"]
-    # ⚠ EMA'lı seri "tek bileşen" yarışmasına GİRMİYOR: o bir bileşen
-    # değil, bir KONTROL GRUBU. Karşılaştırması ayrıca yapılıyor.
+    # EMA'lı seri "tek bileşen" yarışmasına girmiyor: o bir bileşen
+    # değil, bir kontrol grubu. Karşılaştırması ayrıca yapılıyor.
     en_iyi_bilesen = max(
         (ad for ad in seriler if ad not in ("fuzyon", "katman_a_ema")),
         key=lambda a: ozet[a]["auc"],
@@ -831,7 +831,7 @@ def main() -> int:
         f"  füzyon            : {fuzyon_auc:.3f}"
     )
 
-    # ─── ASIL SORU (P-41) ───
+    # ─── Asıl soru (P-41) ───
     ema_auc = ozet["katman_a_ema"]["auc"]
     fark = fuzyon_auc - ema_auc
     print(
@@ -841,7 +841,7 @@ def main() -> int:
         f"  füzyon (5 sinyal + EMA) : {fuzyon_auc:.3f}\n"
         f"  fark (füzyon − kontrol) : {fark:+.3f}"
     )
-    # ⚠ Eşik 0.02 KEYFİ ve öyle olduğu yazılıyor. 9 klip / 69 anomali
+    # Eşik 0.02 keyfi ve öyle olduğu yazılıyor. 9 klip / 69 anomali
     # karesiyle AUC'nin belirsizliği bu mertebede; daha küçük bir farkı
     # "kazanç" saymak, gürültüyü bulgu ilan etmek olurdu. Gerçek bir
     # güven aralığı bootstrap ister ve bu örneklem için abartı olurdu —
@@ -875,7 +875,7 @@ def main() -> int:
         "sonuc": ozet,
         "bootstrap": bs,
         "k6_tutuyor": bool(fuzyon_auc >= 0.75),
-        # ⚠ FÜZYONUN KENDİ SINAVI (P-41) — sayı JSON'a da giriyor ki
+        # Füzyonun kendi sınavı (P-41) — sayı JSON'a da giriyor ki
         # rapor bu karşılaştırmayı yeniden koşmadan alıntılayabilsin.
         "fuzyon_sinavi": {
             "soru": "kazandıran sinyal birleştirme mi, zamansal yumuşatma mı",

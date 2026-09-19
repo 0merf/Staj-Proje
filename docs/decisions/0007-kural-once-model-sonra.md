@@ -21,7 +21,7 @@ kıyas noktası yok.
 İlk günden çalışır, her bileşeni okunabilir, ama doğruluk tavanı
 düşük.
 
-**C · Önce B, sonra A — ve B taban çizgisi olarak KALIR**
+**C · Önce B, sonra A — ve B taban çizgisi olarak kalır**
 
 ## Karar
 
@@ -33,7 +33,7 @@ düşük.
    gövde, karşılıklı bakıyorlar."* Operatör sebebi görmezse alarmı
    kapatır — ve K7'nin asıl riski yanlış alarm sayısı değil,
    operatörün sistemi umursamamaya başlamasıdır.
-3. **Model için TABAN ÇİZGİSİ.** Eğitilecek modelin bu skoru geçip
+3. **Model için taban çizgisi.** Eğitilecek modelin bu skoru geçip
    geçmediği ölçülebilir. Geçmiyorsa modelin kendisi sorgulanır —
    *"model kullandık"* demek başarı değildir.
 
@@ -41,7 +41,7 @@ düşük.
 
 **Kazanılan:** Taban çizgisi sayısı elde edildi.
 
-**Kaybedilen — ve dürüstçe raporlanacak:** K5 hedefi (F1 ≥ 0.85)
+**Kaybedilen — ve raporda açıkça belirtiliyor:** K5 hedefi (F1 ≥ 0.85)
 kural tabanlı skorla **tutmuyor.** Bu bir başarısızlık değil, planın
 kendisi: modülün rolü zaten taban çizgisi olmaktı.
 
@@ -52,10 +52,10 @@ aynısından geçirildi (`benchmarks/rwf_eval_20260826-181902.json`):
 
 | Ayar | kavga p50 | normal p50 | AUC | F1 |
 |---|---|---|---|---|
-| ESKI | 0.368 | 0.219 | 0.665 | 0.704 |
-| IKISI | 0.089 | 0.063 | 0.629 | **0.712** |
+| Eski | 0.368 | 0.219 | 0.665 | 0.704 |
+| İkisi | 0.089 | 0.063 | 0.629 | **0.712** |
 
-⚠ `val` seçildi çünkü `train` bölümü sahte kamera cam-17'yi besliyor.
+`val` seçildi çünkü `train` bölümü sahte kamera cam-17'yi besliyor.
 Eşiği aynı kliplerle hem ayarlayıp hem değerlendirmek, ezberi başarı
 sanmaktır.
 
@@ -67,7 +67,7 @@ yani şans seviyesi.
 
 ---
 
-## ⚠ DÜZELTME (03.09.2026) — bu ADR kendi ilkesini ihlal ediyordu
+## Düzeltme (03.09.2026) — bu ADR kendi ilkesini ihlal ediyordu
 
 Yukarıdaki paragraf şunu yazıyor:
 
@@ -97,7 +97,7 @@ noktada zarar/fayda sınavını geçmiyor:
 tutmuyor (0.712 < 0.85); yanlılığı bildirmek sayıyı daha da aleyhimize
 çeviriyor ve doğrusu bu.
 
-⚠ **Kaydedilmeye değer ders:** Bir belgede ilkeyi doğru yazmak, onu
+**Kaydedilmeye değer ders:** Bir belgede ilkeyi doğru yazmak, onu
 uyguladığını göstermez. Bu ADR ilkeyi savunuyor ve ihlal ediyordu —
 üstelik ihlal, ilkenin yazıldığı paragrafın **iki satır altındaydı.**
 Aynı sınıf: ADR-0006'nın dersi (*"bir kararın gerekçesi belgeye

@@ -2,20 +2,20 @@ import { test } from '@playwright/test'
 import { mkdirSync } from 'node:fs'
 
 /**
- * RAPOR EKRAN GÖRÜNTÜLERİ — elle değil, OTOMATİK.
+ * Rapor ekran görüntüleri — elle değil, otomatik.
  *
- * ⭐ NEDEN PLAYWRIGHT İLE
+ * Neden PLAYWRIGHT ile
  * ----------------------
  * Elle alınan ekran görüntüsü bir kez alınır ve rapor güncellenirken
  * bayatlar — arayüz değişir, görüntü eski kalır ve okuyucuya artık var
  * olmayan bir sistem gösterilir. Bu proje bunun bir örneğini zaten
- * yaşadı: CLAUDE.md "zaman çizelgesi ve kamera detayı sayfaları YOK"
- * diyordu, oysa panelde ikisi de VARDI (belge bayattı).
+ * yaşadı: Proje notlarım "zaman çizelgesi ve kamera detayı sayfaları yok"
+ * diyordu, oysa panelde ikisi de vardı (belge bayattı).
  *
  * Bu betik her koşuda yeniden üretiyor: rapor ile sistem arasındaki
  * sapma imkânsız hale geliyor (mimari kural 0).
  *
- * ⚠ ÖN KOŞUL: sistem ayakta (`start_all.ps1`) ve `.env.e2e` dolu.
+ * ÖN koşul: sistem ayakta (`start_all.ps1`) ve `.env.e2e` dolu.
  *
  * Kullanım:
  *   npx playwright test e2e/ekran-goruntusu.spec.ts
@@ -26,15 +26,14 @@ const KULLANICI = process.env.E2E_USER ?? 'e2e-test'
 const PAROLA = process.env.E2E_PASSWORD ?? ''
 const DIZIN = '../docs/report/screenshots'
 
-// ⚠ VARSAYILAN OLARAK KOŞMUYOR (10.09).
+// Varsayılan olarak koşmuyor (10.09).
 //
-// Kullanıcının isteği: *"her koşuda yeni bir görsel çıkarmaya gerek
-// yok, kapat o özelliği. 1 kere çıkarırız, eğer değiştirirsek yeniden
-// çıkartırız — ama NİHAİ MODELDEN çıkarttırırız."*
+// Her koşuda yeni görsel üretmeye gerek yok: görseller bir kez
+// üretiliyor, arayüz değişirse nihai sürümden yeniden üretiliyor.
 //
 // Haklı ve gerekçesi teknik: her koşu 7.6 MB'lık yeni PNG üretiyordu
 // ve hepsi git geçmişine kalıcı olarak giriyordu. Dahası rapora
-// girecek görüntülerin TEK bir sürümden gelmesi gerekiyor; her koşuda
+// girecek görüntülerin tek bir sürümden gelmesi gerekiyor; her koşuda
 // yenilemek, raporun farklı bölümlerinde farklı sistem sürümlerinin
 // görüntülerini kullanma riski taşıyor.
 //
@@ -45,7 +44,7 @@ test.skip(
   'Rapor görüntüleri elle üretiliyor — EKRAN_GORUNTUSU=1 ile çalıştırın.',
 )
 
-// ⚠ Baskı için 2× ölçek: makale PDF'inde 1× görüntüler bulanık çıkıyor.
+// Baskı için 2× ölçek: makale PDF'inde 1× görüntüler bulanık çıkıyor.
 test.use({ viewport: { width: 1600, height: 950 }, deviceScaleFactor: 2 })
 
 test('rapor ekran görüntülerini üret', async ({ page }) => {
@@ -62,7 +61,7 @@ test('rapor ekran görüntülerini üret', async ({ page }) => {
   await page.getByRole('button', { name: /giriş/i }).click()
   await page.getByTestId('kamera-izgarasi').waitFor()
 
-  // Kameraların HAZIR bilgisi WebSocket'ten sonra geliyor.
+  // Kameraların hazır bilgisi WebSocket'ten sonra geliyor.
   const hazirlar = page.locator('[data-testid="kamera-kutucugu"][data-hazir="1"]')
   for (let i = 0; i < 30 && (await hazirlar.count()) < 20; i++) {
     await page.waitForTimeout(1000)
@@ -81,7 +80,7 @@ test('rapor ekran görüntülerini üret', async ({ page }) => {
   await page.waitForTimeout(12_000)
   await page.screenshot({ path: `${DIZIN}/03-canli-kutular.png` })
 
-  // ─── 4. Tek kamera yakın plan — ⚠ İÇİNDE KİŞİ OLAN kutucuk ───
+  // ─── 4. Tek kamera yakın plan — içinde kişi olan kutucuk ───
   //
   // İlk sürüm `hazirlar.first()` alıyordu ve boş bir otoparkı
   // yakaladı: rapora "kutu çizimi" örneği diye konacak görüntüde

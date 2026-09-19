@@ -1,4 +1,4 @@
-"""Tırmanma eşiklerini AYNI veri üzerinde yan yana kıyaslar.
+"""Tırmanma eşiklerini aynı veri üzerinde yan yana kıyaslar.
 
 Neden bu betik
 --------------
@@ -16,13 +16,13 @@ Bunun iki kusuru var:
 Bu betik tek bir canlı akıştan besleyip **N ayarı aynı anda** skorluyor.
 Aynı kareler, aynı izler, aynı pencereler → fark yalnızca ayardan.
 
-⚠ BU BETİK NEYİ ÖLÇMEZ
+Bu betik neyi ölçmez
 ----------------------
 **Duyarlılığı ölçmez.** Kamera çiftliğindeki görüntülerin çoğu normal;
 cam-17'nin bile yalnızca %10'u kavga ve döngü fazını bilmediğimiz için
 canlı zamanı klip zamanına eşleyemiyoruz.
 
-Yani buradan çıkan tek meşru sonuç şudur: *"bu ayar, kavganın OLMADIĞI
+Yani buradan çıkan tek meşru sonuç şudur: *"bu ayar, kavganın olmadığı
 görüntüde ne kadar susuyor."* Kavgayı yakalayıp yakalamadığı ayrı bir
 ölçümün konusu (RWF-2000 çevrimdışı değerlendirmesi, K5).
 
@@ -53,9 +53,9 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BENCHMARKS = PROJECT_ROOT / "benchmarks"
 
-# ⚠ NORMAL OLDUĞU BİLİNEN KAMERALAR
+# Normal olduğu bilinen kameralar
 # Yanlış alarm ancak burada anlamlı sayılır. cam-18 en güçlüsü: CUHK
-# Avenue'nun EĞİTİM bölümü, tanımı gereği yalnızca normal davranış
+# Avenue'nun eğitim bölümü, tanımı gereği yalnızca normal davranış
 # içeriyor ve cam-19 ile aynı sahne/açı — kontrol grubu.
 NORMAL_KAMERALAR = (
     "cam-01",
@@ -73,12 +73,12 @@ NORMAL_KAMERALAR = (
 def _ayarlar() -> dict[str, object]:
     """Kıyaslanacak eşik setleri.
 
-    ESKI  : 26.08 öncesi davranış — ölü bölge yok, çarpımsal kapı yok.
+    Eski  : 26.08 öncesi davranış — ölü bölge yok, çarpımsal kapı yok.
             Kıyas tabanı; ne kadar iyileştiğimizi ancak buna göre
             söyleyebiliriz.
-    BANT  : yalnızca ölü bölge (taban = ölçülen normal p90).
-    KAPI  : yalnızca etkileşim kapısı.
-    IKISI : ikisi birlikte — mevcut varsayılan.
+    Bant  : yalnızca ölü bölge (taban = ölçülen normal p90).
+    Kapı  : yalnızca etkileşim kapısı.
+    İkisi : ikisi birlikte — mevcut varsayılan.
     """
     from sentinel.analytics.aggression import VARSAYILAN
 
@@ -175,7 +175,7 @@ def main() -> int:
 
                 if not kisiler:
                     continue
-                # ⚠ Çift özellikleri BİR KEZ hesaplanıp tüm ayarlara
+                # Çift özellikleri bir kez hesaplanıp tüm ayarlara
                 # veriliyor: girdi ortak, fark yalnızca skorlamada.
                 ciftler = pair.kamera_ciftleri(depo.kamera_pencereleri(camera))
                 degerlendirme += 1
@@ -218,8 +218,8 @@ def main() -> int:
             "uyari_ustu_oran": round((n_uyari + n_alarm) / max(len(skorlar), 1), 5),
         }
 
-    # ─── Kavga İÇEREN kameralar — sağırlaşma kontrolü ───
-    # ⚠ Bu bölüm duyarlılık ölçümü DEĞİL (modül başlığı). Yalnızca
+    # ─── Kavga içeren kameralar — sağırlaşma kontrolü ───
+    # Bu bölüm duyarlılık ölçümü değil (modül başlığı). Yalnızca
     # "ayar her yerde susturmuş mu" sorusuna bakar: cam-17 (RWF, %10
     # kavga) hâlâ cam-18'den (kontrol) daha fazla uyarı üretiyor mu?
     print("\nSAĞIRLAŞMA KONTROLÜ — cam-17 (kavga içeriyor) vs cam-18 (kontrol)")

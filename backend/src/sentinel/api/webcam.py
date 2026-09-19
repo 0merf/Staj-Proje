@@ -1,12 +1,12 @@
 """Webcam yayınının panelden kontrolü.
 
-⚠ GÜVENLİK NOTU
+Güvenlik notu
 ---------------
 Bu modül bir işletim sistemi süreci başlatıyor. Böyle bir yetenek dikkatli
 tasarlanmalı:
 
 * Komut **sabit** bir argüman listesiyle çalışır — `shell=True` yok,
-  kullanıcı girdisi komuta katılmaz (PLAN.md §11.1 / G09).
+  kullanıcı girdisi komuta katılmaz (G09).
 * Tek değişken parametre kamera indeksi; tamsayı ve dar bir aralıkla
   sınırlandırılmıştır.
 * Aynı anda tek yayın olabilir.

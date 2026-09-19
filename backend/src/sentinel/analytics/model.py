@@ -1,6 +1,6 @@
-"""Öğrenilmiş saldırganlık modeli — ÜRETİM YOLU (P-56).
+"""Öğrenilmiş saldırganlık modeli — üretim yolu (P-56).
 
-⭐⭐ NEDEN BU MODÜL VAR — hakem denetiminin en ağır bulgusu
+Neden bu modül var — hakem denetiminin en ağır bulgusu
 ----------------------------------------------------------
 `docs/report/denetim-hakem.md` §1.1:
 
@@ -23,7 +23,7 @@ kümesinden geliyordu.
 Bu modül o boşluğu kapatıyor: eğitilmiş LightGBM modelini **canlı
 boru hattında** çalıştırıyor.
 
-NASIL BÖLÜŞÜLÜYOR — model KARAR, kural ATIF
+Nasıl bölüşülüyor — model karar, kural atıf
 -------------------------------------------
 Model **kamera seviyesinde** bir karar veriyor: *"bu kamerada, son 5
 saniyede kavga var mı?"* Ölçülmüş başarım bu soru için geçerli
@@ -33,7 +33,7 @@ Kural ise **iz seviyesinde**: *"hangi kişi olayın içinde?"* Büyüklüğü
 bilgisiz (P-52) ama sıralaması hâlâ anlamlı — yakınlık ve duruş
 bileşenleri ateşliyor.
 
-⭐ İkisi rolüne göre kullanılıyor:
+İkisi rolüne göre kullanılıyor:
 
     saldirganlik(iz) = model_kamera × pay(iz)
     pay(iz)          = kural(iz) / max(kural)      [ASGARI_PAY, 1.0]
@@ -43,25 +43,25 @@ söylüyor. Alt sınır (`ASGARI_PAY`) bilinçli: kural yolu bu videolarda
 düz çıkabiliyor ve o durumda kimseyi sıfırlamamalı — `aggression.py`
 içindeki `etkilesim_taban` ile aynı gerekçe.
 
-⚠ BUNUN BİLİNEN SINIRI: kalabalık bir sahnede model "kavga var" derse
+Bunun bilinen sınırı: kalabalık bir sahnede model "kavga var" derse
 ve kural sıralaması düzse, **herkes** yüksek skor alır. Yani atıf
 zayıf. Raporda böyle yazılacak; düzeltmesi çift (pair) seviyesinde bir
 model ister ve bu kapsam dışı.
 
-⚠⚠ ÖZELLİKLER EĞİTİMLE BİREBİR AYNI OLMAK ZORUNDA
+Özellikler eğitimle birebir aynı olmak zorunda
 -------------------------------------------------
 Model 99 sütunluk bir vektör bekliyor ve sütunların **sırası**
 model dosyasıyla birlikte sabitlenmiş. Çevrim içi hesap eğitimden
-ayrışırsa hata **SESSİZ** olur: skor üretilir, yalnızca yanlış olur.
+ayrışırsa hata **sessiz** olur: skor üretilir, yalnızca yanlış olur.
 
 Bu yüzden:
   * sütun adları `scripts/train_aggression.py`den okunuyor, kopyalanmıyor
   * özet formülü (azami/p90/ortalama · p75/medyan · aykırılık/sahne)
     orayla birebir aynı
-  * `tests/unit/test_model_ozellik.py` iki yolun AYNI girdide AYNI
+  * `tests/unit/test_model_ozellik.py` iki yolun aynı girdide aynı
     vektörü ürettiğini doğruluyor — ayrışma testte patlar
 
-⚠ EKSİK DEĞER `NaN`, SIFIR DEĞİL. Eğitimde de öyleydi; LightGBM
+Eksik değer `NaN`, sıfır değil. Eğitimde de öyleydi; LightGBM
 eksikliği veriden öğreniyor. Sıfır yazmak "bu pencerede hareket
 yoktu" demek olurdu, oysa gerçek durum "ölçemedik".
 
@@ -89,7 +89,7 @@ if TYPE_CHECKING:
 
 log = get_logger(__name__)
 
-# ⚠ Eğitimdeki klip uzunluğuyla AYNI (RWF klipleri 5 sn). Model o
+# Eğitimdeki klip uzunluğuyla aynı (RWF klipleri 5 sn). Model o
 # uzunluktaki özetlerle eğitildi; başka bir pencere, eğitildiğinden
 # farklı bir dağılım demek.
 PENCERE_S = 5.0
@@ -97,8 +97,8 @@ PENCERE_S = 5.0
 # Kural yolu düz çıkarsa kimseyi sıfırlama (bkz. modül başlığı).
 ASGARI_PAY = 0.5
 
-# Bileşen ve ham alan adları — `train_aggression.py` ile AYNI.
-# ⚠ Burada kopya duruyor çünkü `src/` bir betikten import edemez
+# Bileşen ve ham alan adları — `train_aggression.py` ile aynı.
+# Burada kopya duruyor çünkü `src/` bir betikten import edemez
 # (betikler pakette değil). Ayrışmayı test yakalıyor.
 BILESENLER = ("yakinlik", "bilek", "yaklasma", "enerji", "durus")
 HAM_ALANLAR = (
@@ -116,16 +116,16 @@ def _p(sirali: list[float], oran: float) -> float:
 
 
 def _medyan(sirali: list[float]) -> float:
-    """Sıralı listenin medyanı — `statistics.median` ile AYNI sonuç.
+    """Sıralı listenin medyanı — `statistics.median` ile aynı sonuç.
 
-    ⚠⚠ NEDEN KENDİ UYGULAMAMIZ VAR (P-57)
-    `statistics.median` listeyi KENDİ İÇİNDE tekrar sıralıyor ve tip
+    Neden kendi uygulamamız var (P-57)
+    `statistics.median` listeyi kendi içinde tekrar sıralıyor ve tip
     dönüşümü yapıyor. Bizim listeler zaten sıralı, dolayısıyla o iş
     tamamen boşa. Ölçüldü: `pencere_ozeti` 24.84 ms sürüyordu ve
     maliyetin neredeyse tamamı bu tür tekrarlardan geliyordu — kare
     bütçesinin (11.10 ms) **iki katından fazlası**.
 
-    ⚠ Çift uzunlukta ortadaki İKİ değerin ortalaması alınıyor —
+    Çift uzunlukta ortadaki iki değerin ortalaması alınıyor —
     `statistics.median` ile birebir aynı davranış. `test_model_ozellik`
     bunu kilitliyor: değer değişseydi eğitim/üretim ayrışırdı.
     """
@@ -144,15 +144,15 @@ def pencere_ozeti(
 ) -> dict[str, float]:
     """Pencereyi model girdisi olan özet sözlüğüne çevirir.
 
-    ⚠⚠ BU FONKSİYON `scripts/train_aggression.py · _klip_ozellikleri`
-    İLE BİREBİR AYNI ÖZETİ ÜRETMEK ZORUNDA. Ayrışırsa model, eğitildiği
+    Bu fonksiyon `scripts/train_aggression.py · _klip_ozellikleri`
+    ile birebir aynı özeti üretmek zorunda. Ayrışırsa model, eğitildiği
     dağılımdan başka bir dağılımla beslenir ve hata sessiz olur.
     `tests/unit/test_model_ozellik.py` bunu kilitliyor.
 
     Args:
-        bilesen_kareleri: kare başına, o karenin EN RİSKLİ kişisinin
+        bilesen_kareleri: kare başına, o karenin en riskli kişisinin
             kural bileşenleri + `skor` + `egim`.
-        ham_kareler: kare başına, o karedeki HER kişinin ham özellikleri.
+        ham_kareler: kare başına, o karedeki her kişinin ham özellikleri.
     """
     ozet: dict[str, float] = {}
     if not bilesen_kareleri:
@@ -162,12 +162,12 @@ def pencere_ozeti(
         d = sorted(s.get(alan, 0.0) for s in bilesen_kareleri)
         ozet[f"{alan}_azami"] = d[-1]
         ozet[f"{alan}_p90"] = _p(d, 0.90)
-        # ⚠ `statistics.fmean` yerine doğrudan toplam/uzunluk: aynı
+        # `statistics.fmean` yerine doğrudan toplam/uzunluk: aynı
         # sonuç, çağrı başına ~10× ucuz (P-57).
         ozet[f"{alan}_ortalama"] = sum(d) / len(d)
     ozet["egim_azami"] = max(s.get("egim", 0.0) for s in bilesen_kareleri)
 
-    # Ham özellikler — TÜM kişiler tek havuzda (bantlanmamış, P-48).
+    # Ham özellikler — tüm kişiler tek havuzda (bantlanmamış, P-48).
     havuz = [k for kare in ham_kareler for k in kare]
     for alan in HAM_ALANLAR:
         d = sorted(s[alan] for s in havuz if alan in s)
@@ -176,7 +176,7 @@ def pencere_ozeti(
             ozet[f"ham_{alan}_p75"] = _p(d, 0.75)
             ozet[f"ham_{alan}_medyan"] = _medyan(d)
 
-    # ⭐ Sahne-göreli aykırılık (P-49): kare içinde max − medyan.
+    # Sahne-göreli aykırılık (P-49): kare içinde max − medyan.
     # `max` kalabalıkla birlikte tanımı gereği büyüdüğü için tek
     # başına kalabalığı ölçüyordu.
     for alan in HAM_ALANLAR:
@@ -204,7 +204,7 @@ class SaldirganlikModeli:
     Kamera başına 5 saniyelik kayan pencere tutuyor ve her çağrıda o
     kameranın kavga olasılığını üretiyor.
 
-    ⚠ Model ya da sütun listesi yoksa `etkin = False` olur ve
+    Model ya da sütun listesi yoksa `etkin = False` olur ve
     `degerlendir()` `None` döner. Çağıran taraf bunu "model yok, kurala
     dön" diye okur — eksik bir bağımlılık boru hattını durdurmaz.
     """
@@ -230,24 +230,24 @@ class SaldirganlikModeli:
         try:
             import lightgbm as lgb
 
-            # ⚠⚠⚠ `num_threads=1` HAYATİ — P-57'nin asıl cevabı
+            # `num_threads=1` hayati — P-57'nin asıl cevabı
             #
-            # LightGBM OpenMP kullanıyor ve varsayılan olarak ÇEKİRDEK
-            # SAYISI kadar iş parçacığı açıyor (bu makinede 20).
+            # LightGBM OpenMP kullanıyor ve varsayılan olarak çekirdek
+            # sayısı kadar iş parçacığı açıyor (bu makinede 20).
             # OpenMP havuzu işler arasında **meşgul bekliyor**
             # (busy-wait); saniyede ~27 tahmin gelince havuz hiç
             # uykuya geçmiyor ve sürekli dönüyor.
             #
-            # Ölçülen sonuç: modelin KENDİ işi kare başına 0.86 ms
+            # Ölçülen sonuç: modelin kendi işi kare başına 0.86 ms
             # (bir çekirdeğin %2.6'sı) ama A/B ölçümünde modeli açmak
             # sistemin CPU'sunu %368 → %1427'ye çıkarıyordu.
             # Aradaki ~10.6 çekirdek, dönen OpenMP havuzuydu.
             #
-            # ⭐ Ve bu iş parçacıkları hiçbir şey kazandırmıyor:
-            # girdimiz TEK SATIR × 99 özellik. Böyle bir tahmini
+            # Ve bu iş parçacıkları hiçbir şey kazandırmıyor:
+            # girdimiz tek satır × 99 özellik. Böyle bir tahmini
             # paralelleştirmenin faydası yok, yalnızca zararı var.
             #
-            # ⚠ Duvar saati ölçümü bunu GÖSTEREMEZ: `predict` 0.307 ms
+            # Duvar saati ölçümü bunu gösteremez: `predict` 0.307 ms
             # sürüyor görünüyor çünkü iş 20 thread'e yayılıyor. Duvar
             # saati küçük, CPU zamanı büyük. İki farklı şey.
             self._booster = lgb.Booster(
@@ -257,7 +257,7 @@ class SaldirganlikModeli:
             log.warning("saldirganlik_modeli_yuklenemedi", hata=str(hata))
             return
 
-        # ⚠ SÜTUN SAYISI DOĞRULANIYOR. Model dosyası ile sütun listesi
+        # Sütun sayısı doğrulanıyor. Model dosyası ile sütun listesi
         # ayrı kaynaklardan geliyor; ayrışırlarsa LightGBM sessizce
         # yanlış sütunları okur ve skor bozulur.
         beklenen = self._booster.num_feature()
@@ -277,11 +277,11 @@ class SaldirganlikModeli:
     def _kunye_dogrula(model_yolu: Path) -> None:
         """Modelin eğitildiği kare hızı üretiminkiyle uyuşuyor mu?
 
-        ⚠⚠ 09.09.2026 — BU KONTROL OLMADIĞI İÇİN YANLIŞ MODEL ÜRETİMDE
-        OTURDU (P-63)
+        09.09.2026 — bu kontrol olmadığı için yanlış model üretimde
+        oturdu (P-63)
         ----------------------------------------------------------------
         FPS taraması (`deney_fps.py`) beş model eğitip her birini aynı
-        dosyaya yazıyordu. Üretimde kalan, taramanın SON bitirdiği
+        dosyaya yazıyordu. Üretimde kalan, taramanın son bitirdiği
         modeldi: **24.75 FPS**'te eğitilmiş olan. Üretim ise **2.75
         FPS**'te örnekliyor.
 
@@ -293,10 +293,10 @@ class SaldirganlikModeli:
         Bedeli ölçüldü: aynı 96 klip, aynı özellikler —
         **AUC 0.927 → 0.836**.
 
-        ⚠ Sütun sayısı kontrolü bunu YAKALAYAMAZ: beş varyantın hepsi 99
+        Sütun sayısı kontrolü bunu yakalayamaz: beş varyantın hepsi 99
         sütun üretiyor. Uyuşmazlık sayıda değil **dağılımda**.
 
-        ⚠ NEDEN HATA DEĞİL UYARI: üretim hızı uyarlanabilir (kapasiteye
+        Neden hata değil uyarı: üretim hızı uyarlanabilir (kapasiteye
         göre 2-4 FPS arası oynuyor), yani tam eşitlik beklenemez. Sert
         bir eşitlik kontrolü, meşru koşularda modeli kapatırdı. Uyarı,
         insanın bakması gereken yeri gösteriyor — sessizlik ise hiçbir
@@ -322,11 +322,11 @@ class SaldirganlikModeli:
                         ozellik_dosyasi=kunye.get("ozellik_dosyasi"))
             return
 
-        # ⚠ TEK BİR HEDEFLE KIYASLAMAK YANLIŞ ALARM ÜRETİR
+        # Tek bir hedefle kıyaslamak yanlış alarm üretir
         # `target_fps` (4) *istenen* hız; üretim kapasite sınırı yüzünden
         # ~2.75'te koşuyor (ölçüldü) ve hareketsiz kamerada
         # `target_fps_idle`e (1) kadar iniyor. Yani üretimin tek bir kare
-        # hızı yok, bir BANDI var. Doğru soru "eşit mi" değil,
+        # hızı yok, bir bandı var. Doğru soru "eşit mi" değil,
         # **"bandın içinde mi"**.
         alt = float(settings.target_fps_idle)
         ust = float(max(settings.target_fps, settings.target_fps_high_risk))
@@ -345,8 +345,8 @@ class SaldirganlikModeli:
     def _sutunlari_oku(sutun_yolu: Path | None) -> list[str]:
         """Sütun sırasını ölçüm JSON'undan okur.
 
-        ⚠ Sıra model dosyasıyla birlikte sabitlendi; alfabetik yeniden
-        üretmek YETMEZ — eğitim `sorted()` kullanıyor ama o sıralamanın
+        Sıra model dosyasıyla birlikte sabitlendi; alfabetik yeniden
+        üretmek yetmez — eğitim `sorted()` kullanıyor ama o sıralamanın
         korunduğunu varsaymak sessiz bir hata kaynağı olurdu.
         """
         if sutun_yolu is not None and sutun_yolu.is_file():
@@ -399,7 +399,7 @@ class SaldirganlikModeli:
     def _buda(self, camera: str, ts: float) -> None:
         """Pencereyi süreye göre kırpar.
 
-        ⚠ SINIRSIZ KUYRUK YOK (mimari kural 5). P-44'te füzyon iz
+        Sınırsız kuyruk yok (mimari kural 5). P-44'te füzyon iz
         sözlüğü tam bu yüzden sızdırmıştı: `buda()` yazılmış, hiç
         çağrılmamıştı.
         """
@@ -417,10 +417,10 @@ class SaldirganlikModeli:
             return None
         ham = self._ham.get(camera)
 
-        # ⚠⚠ İKİ AŞAMA AYRI ÖLÇÜLÜYOR — sentetik benchmark iki kez
+        # İki aşama ayrı ölçülüyor — sentetik benchmark iki kez
         # yanlış söyledi (P-57): önce 24.84 ms (pencereyi 814 kareye
         # şişirmişti), sonra 0.79 ms. A/B ölçümü ise modelin 10.6
-        # ÇEKİRDEK yediğini gösterdi. Sentetik ölçüm üretimin girdi
+        # çekirdek yediğini gösterdi. Sentetik ölçüm üretimin girdi
         # dağılımını taklit edemiyor; maliyet burada, gerçek veriyle
         # ölçülüyor.
         t0 = time.perf_counter()
@@ -437,7 +437,7 @@ class SaldirganlikModeli:
             import numpy as np
 
             t1 = time.perf_counter()
-            # ⚠ EKSİK ALAN `NaN` — eğitimle AYNI kural.
+            # Eksik alan `NaN` — eğitimle aynı kural.
             x = np.array([[ozet.get(c, float("nan")) for c in self._sutunlar]])
             sonuc = float(self._booster.predict(x)[0])
             metrics.aggression_model_duration.labels(asama="tahmin").observe(
@@ -462,7 +462,7 @@ def iz_paylari(
 ) -> dict[int, float]:
     """Kural skorlarını [asgari, 1.0] aralığında bir atıf payına çevirir.
 
-    ⚠ Kuralın BÜYÜKLÜĞÜ kullanılmıyor, yalnızca SIRALAMASI. P-52
+    Kuralın büyüklüğü kullanılmıyor, yalnızca sıralaması. P-52
     kuralın büyüklüğünün bilgi taşımadığını ölçtü (kavga/normal oranı
     1.01) ama yakınlık ve duruş bileşenleri ateşliyor, dolayısıyla
     "kim olayın içinde" sorusuna kısmî cevap veriyor.

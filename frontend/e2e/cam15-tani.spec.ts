@@ -1,13 +1,13 @@
 import { test } from '@playwright/test'
 
 /**
- * cam-15 SİYAH EKRAN — tek kamera odaklı tanı.
+ * cam-15 siyah ekran — tek kamera odaklı tanı.
  *
  * Bilinenler: MediaMTX'te hazır, H264, okuyucu var; alım worker'ı
  * 4.15 FPS okuyor. Yani sorun WHEP/WebRTC el sıkışmasında ya da
  * tarayıcının çözücüsünde.
  *
- * ⚠ Bu bir TEST değil, TANI: hiçbir şey iddia etmiyor, kanıt topluyor.
+ * Bu bir test değil, tanı: hiçbir şey iddia etmiyor, kanıt topluyor.
  */
 
 const KULLANICI = process.env.E2E_USER ?? 'e2e-test'

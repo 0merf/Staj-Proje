@@ -1,34 +1,34 @@
-"""TOPLULAŞTIRMA DENEYİ — `azami` gürültüyü mü ölçüyor?
+"""Toplulaştırma deneyi — `azami` gürültüyü mü ölçüyor?
 
 Bulgu zinciri (buraya nasıl geldik)
 ------------------------------------
 1. `evaluate_kaskad.py` : kural kapısı kavgaların %52'sini eliyor
-2. `diagnose_iskelet.py`: poz ÇALIŞIYOR (%89.6) — sorun poz değil
-3. `kalibre_rwf.py`     : kavga ve normal dağılımları NEREDEYSE AYNI
+2. `diagnose_iskelet.py`: poz çalışıyor (%89.6) — sorun poz değil
+3. `kalibre_rwf.py`     : kavga ve normal dağılımları neredeyse aynı
 
-        NORMAL              KAVGA
+        Normal              kavga
      p50    p90    p99   p50    p90    p99
     0.807  3.011  11.36  1.199  2.890  11.31    ← bilek_hizi_azami
 
-⭐ İki gözlem
+İki gözlem
    · **p99 her iki sınıfta da 11.3** — saniyede 11 gövde boyu bilek
-     hareketi fiziksel olarak imkânsız. Bunlar eklem tahmini HATASI.
+     hareketi fiziksel olarak imkânsız. Bunlar eklem tahmini hatası.
    · **p50 farkı gerçek** (0.807 → 1.199, %49) ama p90/p99'da kayboluyor.
 
 Hipotez
 -------
 **H · `azami` (max) toplulaştırması gürültüyü ölçüyor.**
 
-`person.py` pencere içindeki bilek hızlarının AZAMİSİNİ alıyor:
+`person.py` pencere içindeki bilek hızlarının azamisini alıyor:
 
     ozellik.bilek_hizi_azami = max(bilek)
 
 Gerekçesi kodda yazılı ve makul görünüyordu:
 
-    # AZAMİ, ortalama değil: vuruş anlık bir olaydır ve
+    # Azami, ortalama değil: vuruş anlık bir olaydır ve
     # ortalama onu 3 saniyeye yayıp söndürür.
 
-⚠ Ama `max` aynı zamanda **en gürültülü** istatistiktir: tek bir bozuk
+Ama `max` aynı zamanda **en gürültülü** istatistiktir: tek bir bozuk
 eklem tüm pencereyi ele geçirir. Vuruşu korumak isterken eklem
 hatasını yükseltmiş olabiliriz.
 
@@ -43,14 +43,14 @@ kavga/normal ayırt etme gücünü (ROC-AUC) ölçüyor:
     medyan  — tamamen dayanıklı, ama vuruşu söndürebilir
     ort     — karşılaştırma için
 
-⚠ HANGİSİNİN KAZANACAĞINI TAHMİN ETMİYORUZ. `max` kazanırsa hipotez
+Hangisinin kazanacağını tahmin etmiyoruz. `max` kazanırsa hipotez
 çürür ve gerekçesi zaten kodda yazılı olan tasarım doğrulanmış olur —
 bu da bir sonuçtur.
 
-⚠ TEK BAŞINA AUC YETMEZ, bu yüzden gürültü göstergesi de basılıyor:
+Tek başına AUC yetmez, bu yüzden gürültü göstergesi de basılıyor:
 p99/p50 oranı. Yüksek oran = uzun kuyruk = eklem hatası baskın.
 
-⚠ ÖLÇÜM KOŞULU: boru hattı KAPALI (GPU paylaşılmamalı).
+Ölçüm koşulu: boru hattı kapalı (GPU paylaşılmamalı).
 
 Kullanım
 --------
@@ -110,10 +110,10 @@ def _auc(poz: list[float], neg: list[float]) -> float:
 def _klip_hizlari(
     yol: Path, *, dedektor: Any, poz: Any, ornek_fps: float, imgsz: int
 ) -> dict[str, list[float]]:
-    """Bir klipteki TÜM ham hız örneklerini toplar (toplulaştırmadan).
+    """Bir klipteki tüm ham hız örneklerini toplar (toplulaştırmadan).
 
-    ⚠ `person.py · cikar()` çağrılmıyor — o zaten `max` uyguluyor.
-    Toplulaştırmayı karşılaştırabilmek için ondan ÖNCEKİ seriye
+    `person.py · cikar()` çağrılmıyor — o zaten `max` uyguluyor.
+    Toplulaştırmayı karşılaştırabilmek için ondan önceki seriye
     ihtiyaç var. (Aynı ilke: `kalibre_rwf.py` bantlamadan öncesine
     bakıyordu.)
     """
@@ -233,8 +233,8 @@ def main() -> int:
             if not poz_d or not neg_d:
                 continue
             auc = _auc(poz_d, neg_d)
-            # ⚠ GÜRÜLTÜ GÖSTERGESİ: uzun kuyruk = eklem hatası baskın.
-            # AUC tek başına hangi toplulaştırmanın SAĞLAM olduğunu
+            # Gürültü göstergesi: uzun kuyruk = eklem hatası baskın.
+            # AUC tek başına hangi toplulaştırmanın sağlam olduğunu
             # söylemiyor; bu oran söylüyor.
             hepsi = sorted(poz_d + neg_d)
             p99p50 = _yuzdelik(hepsi, 0.99) / max(statistics.median(hepsi), 1e-9)

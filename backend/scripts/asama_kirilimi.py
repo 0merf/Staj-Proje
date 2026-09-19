@@ -1,35 +1,35 @@
 """Çıkarım döngüsünün aşama kırılımı — tek birim, tek pencere, kapanış kontrollü.
 
-⭐ NEDEN BU BETİK VAR
+Neden bu betik var
 --------------------
 P-66'daki kırılım tablosu **elle** üretilmişti ve tekrar üretilemiyordu.
 10.09'da K3'ün gerilediği görülünce (p50 172→378 ms) "hangi aşama
 yavaşladı" sorusu soruldu ve tabloyu üreten bir araç olmadığı fark
 edildi.
 
-> ⭐⭐ Bir ölçümün tekrar edilemiyor olması, o ölçümü bir kanıt değil
-> bir ANI yapar. P-60 ve P-62'nin dersi buydu: düzeltme (ve ölçüm)
+> Bir ölçümün tekrar edilemiyor olması, o ölçümü bir kanıt değil
+> bir anı yapar. P-60 ve P-62'nin dersi buydu: düzeltme (ve ölçüm)
 > taşınmazsa yapılmamıştır.
 
-⚠ BU BETİĞİN KAÇINDIĞI ÜÇ HATA — üçü de bu projede yapıldı:
+Bu betiğin kaçındığı ÜÇ hata — üçü de bu projede yapıldı:
 
   1. **Kümülatif histogramı doğrudan okumak** (P-60). Prometheus
      histogramı süreç başından beri sayar; pencere farkı alınmazsa
-     ölçülen şey worker'ın TÜM ÖMRÜdür. → `_fark()` kullanılıyor.
+     ölçülen şey worker'ın tüm ÖMRÜdür. → `_fark()` kullanılıyor.
 
   2. **Aynı metrikte iki farklı birim toplamak** (P-66). Aşamaların
-     hepsi `observe(sure / len(batch))` ile KARE BAŞINA yazıyor;
+     hepsi `observe(sure / len(batch))` ile kare başına yazıyor;
      birini parti başına sanmak tabloyu tümüyle bozuyordu.
      → Kod okunarak doğrulandı, betik tek birim varsayıyor ve
-       kapanış kontrolüyle bunu SINIYOR.
+       kapanış kontrolüyle bunu sınıyor.
 
   3. **Parçaları ölçüp toplamı ölçmemek.** Kalanı ölçmemek "kalan
      sıfırdır" demektir. → `parti_TOPLAM` bağımsız ölçülüyor ve
      aşamaların toplamıyla karşılaştırılıyor (kapanış kontrolü).
 
-⚠ `bekleme_IS_DEGIL` tabloya KATILMAZ: o süre CPU harcamıyor, kare
+`bekleme_IS_DEGIL` tabloya katılmaz: o süre CPU harcamıyor, kare
 gelmesini bekliyor. Ayrı raporlanıyor, çünkü büyümesi darboğazın
-çıkarımda DEĞİL yukarı akışta olduğunu söyler.
+çıkarımda değil yukarı akışta olduğunu söyler.
 
 Kullanım:
     uv run python scripts/asama_kirilimi.py --pencere 120
@@ -53,7 +53,7 @@ BENCHMARKS = PROJECT_ROOT / "benchmarks"
 PORT = 9110
 METRIK = "sentinel_inference_duration_seconds"
 
-# Toplama KATILMAYAN aşama: CPU değil, bekleme.
+# Toplama katılmayan aşama: CPU değil, bekleme.
 BEKLEME = "bekleme_IS_DEGIL"
 TOPLAM = "parti_TOPLAM"
 
@@ -95,7 +95,7 @@ def _oku(metin: str) -> dict[str, tuple[float, float]]:
 def _fark(
     son: dict[str, tuple[float, float]], ilk: dict[str, tuple[float, float]],
 ) -> dict[str, tuple[float, float]]:
-    """Pencere farkı — kümülatif sayaçtan pencereye inmenin TEK doğru yolu."""
+    """Pencere farkı — kümülatif sayaçtan pencereye inmenin tek doğru yolu."""
     cikti = {}
     for stage, (s_sum, s_cnt) in son.items():
         i_sum, i_cnt = ilk.get(stage, (0.0, 0.0))
@@ -129,7 +129,7 @@ def main() -> int:
     asamalar = {
         k: v for k, v in d.items() if k not in (BEKLEME, TOPLAM) and v[1] > 0
     }
-    # Her gözlem ZATEN kare başına bir değer (observe(sure/len(batch))).
+    # Her gözlem zaten kare başına bir değer (observe(sure/len(batch))).
     ms = {k: (s / c) * 1000.0 for k, (s, c) in asamalar.items()}
     toplam_olculen = sum(ms.values())
 

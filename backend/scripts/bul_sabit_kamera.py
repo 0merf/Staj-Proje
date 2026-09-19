@@ -1,6 +1,6 @@
-"""UBI-Fights içinden SABİT KAMERALI kavga videosu bulur (P-50).
+"""UBI-Fights içinden sabit kameralı kavga videosu bulur (P-50).
 
-⭐ NEDEN
+Neden
 -------
 K8 ilk kez cam-15 (`F_74_1_2_0_0`) üzerinde ölçüldü ve tutmadı. Kareler
 gözle incelenince sebep ortaya çıktı: **o video elde tutulan bir
@@ -9,7 +9,7 @@ telefonla çekilmiş.** Görüntü kayıyor, yakınlaşıyor, sarsılıyor.
 Bizim boru hattımız sabit kamera varsayıyor ve varsayım kodda gerekçe
 olarak yazılı:
 
-    botsort.py · gmc_method="none"   "Kameralarımız SABİT."
+    botsort.py · gmc_method="none"   "Kameralarımız sabit."
     botsort.py · with_reid=False     "...sabit kameralarda zaten yeterli."
 
 Kamera hareketi **tüm** kutulara sahte hız ekler; hız temelli her
@@ -22,20 +22,20 @@ hareketli bir video koymak, çiftliğin kendisini de temsil etmiyordu.
 Bu betik, veri setindeki kavga videolarını tarayıp **en az hareket
 eden** kamerayı bulur.
 
-NASIL ÖLÇÜLÜYOR
+Nasıl ölçülüyor
 ---------------
 Ardışık kare çiftleri arasında seyrek optik akış (Lucas-Kanade,
 Shi-Tomasi köşeleri). Sahnedeki *insanlar* da hareket ettiği için
-akışın ORTALAMASI değil **MEDYANI** alınıyor: medyan, karenin
+akışın ortalaması değil **medyanı** alınıyor: medyan, karenin
 çoğunluğunun (arka plan) hareketini temsil eder.
 
     sabit kamera   → arka plan sabit → medyan akış ≈ 0
     hareketli kamera → arka plan kayar → medyan akış > 0
 
-⚠ Ölçü birimi **kare genişliğinin yüzdesi**, piksel değil: farklı
+Ölçü birimi **kare genişliğinin yüzdesi**, piksel değil: farklı
 çözünürlükteki videolar kıyaslanabilsin diye.
 
-⚠ NEDEN "insan sayısı" ile birlikte raporlanıyor
+Neden "insan sayısı" ile birlikte raporlanıyor
 ------------------------------------------------
 Boş bir sahnede optik akış zaten sıfıra yakın çıkar; o video "sabit"
 görünür ama kavga analizi için işe yaramaz. Bu yüzden aday, hem düşük
@@ -75,34 +75,34 @@ CIFT_SAYISI = 24
 # ve kodlama gürültüsü bu civarda kalıyor.
 SABIT_ESIGI = 0.10
 
-# ⚠⚠ SAHNE KESMESİ EŞİĞİ — "sabit" YETMİYOR
+# Sahne kesmesi eşiği — "sabit" yetmiyor
 #
 # İlk tarama F_0_1_0_0_0'ı önerdi: kayma 0.000%, 112 sn olay öncesi
 # bağlam. Kareler açılınca görüldü ki video **iki ayrı kameradan
 # kurgulanmış**: 0-100 sn hastane koridoru, 106 sn'den sonra otopark.
 #
-# Optik akış bunu göremez: her parça KENDİ İÇİNDE sabit, kesme ise
+# Optik akış bunu göremez: her parça kendi içinde sabit, kesme ise
 # tek karelik bir sıçrama ve medyan onu yutuyor.
 #
-# ⭐ Bizim için kesme, kameranın hareket etmesinden DAHA kötü:
+# Bizim için kesme, kameranın hareket etmesinden daha kötü:
 # Katman A her kameranın normalini ayrı öğreniyor (mimari kural 7).
 # Ortasında sahne değişen bir video, tek kameranın öğrenilmiş
 # normalini geçersiz kılar — profil iki farklı sahnenin karışımını
 # öğrenir ve ikisini de yanlış modeller.
 #
-# ⚠ İLK DENEMEM HİSTOGRAM KORELASYONUYDU VE KESMEYİ KAÇIRDI.
+# İlk denemem histogram korelasyonuydu ve kesmeyi kaçırdı.
 # F_0_1_0_0_0'ın 104. saniyesindeki kesmede korelasyon 0.582 çıktı —
-# 0.5 eşiğinin ÜSTÜNDE, yani "kesme yok" dedi. Sebep: iki sahne de
+# 0.5 eşiğinin üstünde, yani "kesme yok" dedi. Sebep: iki sahne de
 # kapalı alan, ikisi de düşük doygunluklu (bej fayans ⟷ gri beton).
-# Renk histogramları benziyor; SAHNE değişse de RENK değişmiyor.
+# Renk histogramları benziyor; sahne değişse de renk değişmiyor.
 #
-# ⭐ Gri seviye ortalama mutlak farkı aynı kesmeyi net gösterdi:
+# Gri seviye ortalama mutlak farkı aynı kesmeyi net gösterdi:
 #
 #     t=100.8  hist 0.952  gri_fark 16.3
-#     t=104.4  hist 0.582  gri_fark 43.6   ⬅ KESME
+#     t=104.4  hist 0.582  gri_fark 43.6   ← kesme
 #     t=108.0  hist 0.973  gri_fark  5.4
 #
-# Ölçüt bu yüzden gri farkı ve GÖRECELİ: eşik videonun kendi
+# Ölçüt bu yüzden gri farkı ve göreceli: eşik videonun kendi
 # medyanının 2.5 katı. Mutlak bir piksel eşiği, karanlık bir gece
 # sahnesiyle aydınlık bir sahneyi aynı ölçemezdi.
 KESME_ORANI = 2.5
@@ -144,7 +144,7 @@ def _kamera_hareketi(yol: Path, cift: int = CIFT_SAYISI) -> dict[str, float] | N
         if iyi.sum() < 20:
             continue
         d = (yeni[iyi] - koseler[iyi]).reshape(-1, 2)
-        # ⭐ MEDYAN, ortalama değil: sahnedeki insanlar da hareket
+        # Medyan, ortalama değil: sahnedeki insanlar da hareket
         # ediyor. Medyan, karenin çoğunluğunu (arka planı) temsil eder;
         # ortalama birkaç hızlı kişiyle sürüklenir.
         buyukluk = float(np.median(np.linalg.norm(d, axis=1)))
@@ -235,7 +235,7 @@ def main() -> int:
         print(f"❌ Video yok: {UBI / 'videos' / 'fight'}", file=sys.stderr)
         return 1
 
-    # ⚠ Önce ETİKETE göre eleme — kamera hareketi ölçmek pahalı, etiket
+    # Önce etikete göre eleme — kamera hareketi ölçmek pahalı, etiket
     # okumak bedava. Olay öncesi bağlamı olmayan video K8 için zaten
     # işe yaramaz (RWF'de tam bu yüzden ölçülememişti).
     adaylar: list[tuple[Path, dict[str, float]]] = []
@@ -265,7 +265,7 @@ def main() -> int:
         print("❌ Ölçülebilen video yok", file=sys.stderr)
         return 1
 
-    # ⭐ SIRALAMA ÖNCE KESMESİZLİĞE, sonra sabitliğe göre: kesmeli bir
+    # Sıralama önce kesmesizliğe, sonra sabitliğe göre: kesmeli bir
     # video ne kadar sabit olursa olsun tek kamerayı temsil etmiyor.
     sonuc.sort(key=lambda s: (s["kesme_sayisi"] > 0, s["kayma_medyan"]))
     sabitler = [

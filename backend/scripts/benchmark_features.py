@@ -7,7 +7,7 @@ Kırılıma bakınca en büyük kalem saldırganlık uyarıları ve bunlar VIRAT
 otoparkında, PETS meydanında çıkıyor — kavganın olmadığı yerlerde.
 
 Eşikleri körlemesine indirmek yanlış yol olurdu: eşiği düşürmek modülü
-susturur ama gerçek kavgayı da kaçırtır, üstelik SEBEBİ öğrenmemiş
+susturur ama gerçek kavgayı da kaçırtır, üstelik sebebi öğrenmemiş
 oluruz. Önce girdiye bakmak gerekiyor: saldırganlık skorunu şişiren
 özellik hangisi ve o özellik gerçekten hareketi mi ölçüyor, yoksa
 keypoint gürültüsünü mü?
@@ -72,7 +72,7 @@ def _dagilim(degerler: list[float]) -> dict[str, float] | None:
         "p90": round(d[int(len(d) * 0.90)], 3),
         "p99": round(d[min(len(d) - 1, int(len(d) * 0.99))], 3),
         "azami": round(d[-1], 3),
-        # ⚠ Kuyruk oranı: p99/p90. 1'e yakınsa dağılım düzgün,
+        # Kuyruk oranı: p99/p90. 1'e yakınsa dağılım düzgün,
         # büyükse birkaç aykırı örnek dağılımı domine ediyor demektir.
         "kuyruk_orani": round(
             d[min(len(d) - 1, int(len(d) * 0.99))] / max(d[int(len(d) * 0.90)], 1e-6), 2

@@ -1,6 +1,6 @@
-"""KATMAN A — kamera başına normal profili.
+"""Katman A — kamera başına normal profili.
 
-⚠ NEDEN BU TESTLER
+Neden bu testler
 ------------------
 Bu katman **öğreniyor**, yani hatası zamanla birikiyor ve sessiz.
 Yanlış öğrenilmiş bir profil çökme üretmez; sadece yanlış alarm verir
@@ -53,7 +53,7 @@ def _egit(
 
 class TestSogukBaslangic:
     def test_ogrenmeden_HIC_skor_uretilmiyor(self) -> None:
-        """⚠ En kritik koruma.
+        """En kritik koruma.
 
         Profil boşken her gözlem "hiç görülmemiş bölge" olur. Bu kontrol
         olmasa sistem her açılışta 20 kameradan alarm yağdırırdı ve
@@ -73,13 +73,13 @@ class TestSogukBaslangic:
     def test_hucre_az_ornekliyse_hiz_karari_verilmiyor(self) -> None:
         """Tek gözlemden "burada hız 0.4'tür" demek istatistik değil.
 
-        Profil geneli hazır olsa bile, O HÜCRE yeterince görülmediyse
+        Profil geneli hazır olsa bile, O hücre yeterince görülmediyse
         hız kararı verilmiyor.
         """
         profil = KameraNormali(camera="cam-01")
         # Profili başka bir bölgede doyur
         _egit(profil, n=PROFIL_ASGARI_ORNEK, x=100.0, y=700.0)
-        # Yeni bölgede az örnek: burada hız kararı OLMAMALI
+        # Yeni bölgede az örnek: burada hız kararı olmamalı
         _egit(profil, n=HUCRE_ASGARI_ORNEK - 5, x=1200.0, y=700.0, hiz=0.5)
 
         _skor, kanit = profil.skorla(1200.0, 700.0, W, H, 5.0, 0.0)
@@ -122,7 +122,7 @@ class TestOgrenilenNormal:
         assert kanit["hiz_sapmasi_sigma"] > 3.0
 
     def test_TERS_YON_yakalaniyor(self) -> None:
-        """⚠ "Ters yön" kuralı ayrıca yazılmadı — profilden DOĞAL çıkıyor.
+        """"Ters yön" kuralı ayrıca yazılmadı — profilden doğal çıkıyor.
 
         Koridorda herkes bir yöne gidiyorsa, ters yön o hücrede nadir
         bir kovadır. Katman A'nın kural yazmadan kural üretmesi.
@@ -136,7 +136,7 @@ class TestOgrenilenNormal:
         assert "yon_orani" in kanit
 
     def test_HER_KAMERANIN_normali_AYRI(self) -> None:
-        """⚠ Mimari kural 7.
+        """Mimari kural 7.
 
         Aynı hız, bir kamerada normal diğerinde anormal olabilmeli.
         """
@@ -177,7 +177,7 @@ class TestKisiSayisi:
 
 class TestKalicilik:
     def test_profil_gidip_geliyor(self, tmp_path: Path) -> None:
-        """⚠ Profil kaybı = sistem körlüğü.
+        """Profil kaybı = sistem körlüğü.
 
         Yeniden başlatmada yüklenmezse öğrenme sıfırlanır ve sistem
         saatlerce hiçbir şeyi olağandışı sayamaz.
@@ -222,7 +222,7 @@ class TestKalicilik:
 
 
 def test_welford_varyansi_NEGATIF_cikmiyor() -> None:
-    """⚠ Naif formülün (Σx²/n − ort²) katastrofik iptal sorunu.
+    """Naif formülün (Σx²/n − ort²) katastrofik iptal sorunu.
 
     Büyük ve birbirine yakın sayılarda naif yöntem negatif varyans
     üretebilir; karekökü alınınca NaN çıkar ve tüm skorlar sessizce

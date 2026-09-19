@@ -1,13 +1,13 @@
-"""Olay yazma ve sorgulama — PLAN.md §8.
+"""Olay yazma ve sorgulama.
 
-⚠ YAZMA YOLU ANALİZ DÖNGÜSÜNÜ BLOKLAMAMALI
+Yazma yolu analiz döngüsünü bloklamamalı
 ------------------------------------------
 Analytics worker saniyede onlarca kare işliyor. Her alarmda veritabanına
 senkron `INSERT` atmak iki şeyi birden bozar:
 
   · Ağ turu + fsync, kare işleme bütçesinin kat kat üstünde
-  · **Veritabanı yavaşlarsa ANALİZ yavaşlar.** Yardımcı bir bileşenin
-    arızası ana boru hattını durdurmamalı (PLAN §4.2 hata izolasyonu)
+  · **Veritabanı yavaşlarsa analiz yavaşlar.** Yardımcı bir bileşenin
+    arızası ana boru hattını durdurmamalı (hata izolasyonu)
 
 Bu yüzden yazma **ayrı bir tüketici** işi: analytics worker Valkey
 akışına yazmaya devam ediyor (zaten yapıyordu), alarm worker'ı o akışı
@@ -19,7 +19,7 @@ kaybolur ama **sistem çalışmaya devam eder** — ve bu bilinçli bir
 tercih, sessiz bir kusur değil. Alternatif (yazamayınca durmak) bir
 gözetim sisteminde daha kötüdür.
 
-⚠ NEDEN TOPLU (BATCH) YAZIM
+Neden toplu (batch) yazım
 Tek tek `INSERT` yerine `executemany`: 50 alarmlık bir kesitte 50 ağ
 turu yerine 1. Alarmlar zaten patlamalı gelir (bir olayda birden çok
 kamera birden alarm verir).
@@ -63,7 +63,7 @@ class Olay:
     tamlik: float | None = None
     karsi_taraf: int | None = None
     # Nesne deposu anahtarı. Alarm worker'ı klip kesebildiyse dolu.
-    # ⚠ INSERT'e giriyor, sonradan UPDATE edilmiyor: olay kaydı bir
+    # INSERT'e giriyor, sonradan UPDATE edilmiyor: olay kaydı bir
     # denetim izi ve değişmemeli.
     klip_anahtar: str | None = None
 
@@ -71,7 +71,7 @@ class Olay:
     def akistan(cls, alanlar: dict[str, str]) -> Olay | None:
         """Valkey `analytics.events` kaydından olay üretir.
 
-        ⚠ Bozuk kayıt sistemi durdurmamalı: `None` dönüyor ve çağıran
+        Bozuk kayıt sistemi durdurmamalı: `None` dönüyor ve çağıran
         atlıyor. Akıştaki tek bozuk JSON yüzünden alarm yazımının
         tamamen durması, çözdüğü sorundan büyük bir sorun olurdu.
         """
@@ -86,23 +86,23 @@ class Olay:
                 track_id=(
                     int(veri["track"]) if veri.get("track") is not None else None
                 ),
-                # ⭐⭐ `video_pts` KANITA EKLENİYOR — yer gerçeğinin anahtarı
+                # `video_pts` kanıta ekleniyor — yer gerçeğinin anahtarı
                 #
                 # Bu alan olmadan bir alarmın doğru olup olmadığı
-                # DOĞRULANAMIYORDU: kayıtta yalnızca duvar saati (`ts`)
+                # doğrulanamıyordu: kayıtta yalnızca duvar saati (`ts`)
                 # vardı ve kameralarımız sonsuz döngüdeki video dosyaları
                 # olduğu için o saat videodaki ana çevrilemiyordu.
                 #
                 # Sonuç ağırdı: sistem alarm üretiyor, hiç kimse o
                 # alarmın gerçek olup olmadığını söyleyemiyordu. K7'nin
-                # "11.69 alarm/kamera-saat" sayısı bu yüzden bir ALARM
+                # "11.69 alarm/kamera-saat" sayısı bu yüzden bir alarm
                 # oranı, yanlış alarm oranı değil.
                 #
-                # ⭐ `kanit` zaten `jsonb` → VERİTABANI ŞEMASI DEĞİŞMİYOR.
+                # `kanit` zaten `jsonb` → veritabanı şeması değişmiyor.
                 # Yeni sütun, migrasyon, indeks gerekmedi.
                 #
-                # ⚠ `-1` = bilinmiyor. Sıfırla karıştırılmamalı: 0.0
-                # videonun BAŞI demek, -1 "ölçemedim" demek.
+                # `-1` = bilinmiyor. Sıfırla karıştırılmamalı: 0.0
+                # videonun başı demek, -1 "ölçemedim" demek.
                 kanit={
                     **(veri.get("evidence") or {}),
                     **(
@@ -133,7 +133,7 @@ class Olay:
             "ciddiyet": self.ciddiyet,
             "skor": self.skor,
             "track_id": self.track_id,
-            # ⚠ JSON'a burada çevriliyor, sürücüye bırakılmıyor:
+            # JSON'a burada çevriliyor, sürücüye bırakılmıyor:
             # asyncpg jsonb için açık bir cast istiyor ve sözlüğü
             # kendiliğinden serileştirmiyor.
             "kanit": json.dumps(self.kanit or {}, ensure_ascii=False),
@@ -144,9 +144,9 @@ class Olay:
 
 
 async def yaz(olaylar: list[Olay]) -> int:
-    """Olayları toplu yazar. Hata durumunda 0 döner, İSTİSNA FIRLATMAZ.
+    """Olayları toplu yazar. Hata durumunda 0 döner, istisna fırlatmaz.
 
-    ⚠ Bilinçli olarak yutuluyor. Bu fonksiyonun çağıranı alarm
+    Bilinçli olarak yutuluyor. Bu fonksiyonun çağıranı alarm
     worker'ının ana döngüsü; veritabanı erişilemezse döngü durmamalı,
     bir sonraki kesitte yeniden denemeli. Sessiz değil ama: her hata
     loglanıyor ve sayaç metriğe işleniyor.
@@ -178,14 +178,14 @@ async def son_olaylar(
 ) -> list[dict[str, Any]]:
     """Olay geçmişini sorgular — operatörün 'dün gece ne oldu' sorusu.
 
-    ⚠ Parametreler BAĞLANIYOR, birleştirilmiyor. Filtreler kullanıcı
-    girdisinden geliyor ve bu bir SQL enjeksiyon yüzeyi (PLAN §11.1
+    Parametreler bağlanıyor, birleştirilmiyor. Filtreler kullanıcı
+    girdisinden geliyor ve bu bir SQL enjeksiyon yüzeyi (proje planı
     Öncelik-1). Sütun adları sabit, yalnızca değerler dışarıdan.
 
-    ⚠ `bas`/`bit` (unix saniye) 10.09'da eklendi. Sebep: zaman
+    `bas`/`bit` (unix saniye) 10.09'da eklendi. Sebep: zaman
     çizelgesindeki bir hücre "cam-13, saat 14:00" demek ve o hücreye
-    tıklayınca TAM O SAATİN olayları gerekiyor. `saat` parametresi
-    yalnızca "son N saat" diyebiliyordu, geçmişte bir PENCERE
+    tıklayınca tam O saatin olayları gerekiyor. `saat` parametresi
+    yalnızca "son N saat" diyebiliyordu, geçmişte bir pencere
     seçilemiyordu — çizelge bu yüzden tıklanamaz bir ısı haritasıydı.
     """
     kosullar = ["TRUE"]
@@ -199,8 +199,8 @@ async def son_olaylar(
     if ciddiyet:
         kosullar.append("ciddiyet = :ciddiyet")
         parametreler["ciddiyet"] = ciddiyet
-    # ⚠ `bas`/`bit` verilirse `saat` YOK SAYILIYOR: ikisi birlikte
-    # "son 24 saat İÇİNDE ama 3 gün önceki şu saat" gibi hiçbir zaman
+    # `bas`/`bit` verilirse `saat` yok sayılıyor: ikisi birlikte
+    # "son 24 saat içinde ama 3 gün önceki şu saat" gibi hiçbir zaman
     # sonuç veremeyecek bir koşul üretirdi. Belirli pencere isteyen
     # daha spesifiktir, o kazanır.
     if bas is not None or bit is not None:
@@ -231,7 +231,7 @@ async def son_olaylar(
 async def saatlik_ozet(saat: int = 24) -> list[dict[str, Any]]:
     """Saatlik alarm özeti — K7'nin sürekli hâli.
 
-    ⚠ Sürekli toplulaştırma görünümü yoksa (TimescaleDB eklentisi
+    Sürekli toplulaştırma görünümü yoksa (TimescaleDB eklentisi
     kurulamamış) ham tablodan hesaplanıyor. Yavaş ama doğru; özet
     görünüm bir hızlandırma, bir ön koşul değil.
     """

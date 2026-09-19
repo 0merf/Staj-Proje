@@ -1,12 +1,12 @@
-"""Kullanıcı tablosu ve denetim izi — PLAN.md §11.1 (G01, G05, G11).
+"""Kullanıcı tablosu ve denetim izi (G01, G05, G11).
 
-⚠ NEDEN DENETİM İZİ (AUDIT LOG) AYRI BİR TABLO
+Neden denetim izi (audıt log) ayrı bir tablo
 Bir gözetim sistemi insanları izliyor. "Kim, ne zaman, hangi kamerayı
 izledi" sorusunun cevabı olmadan sistemin kendisi denetlenemez hâle
 gelir — ve denetlenemeyen bir gözetim sistemi, izlediği kişilerden çok
-onu işletenlere ayrıcalık tanır (PLAN §12.3).
+onu işletenlere ayrıcalık tanır.
 
-Bu yüzden denetim izi uygulama günlüğüne değil VERİTABANINA yazılıyor:
+Bu yüzden denetim izi uygulama günlüğüne değil veritabanına yazılıyor:
 günlük dosyası döner, silinir, biçimi değişir; tablo sorgulanabilir ve
 saklama politikası uygulanabilir.
 """
@@ -49,7 +49,7 @@ SEMA: tuple[str, ...] = (
         hedef         TEXT,
         -- ⚠ IP saklanıyor çünkü "kim izledi" sorusunun cevabı yalnızca
         -- kullanıcı adı değil. Ama bu da kişisel veri: saklama süresi
-        -- olay tablosuyla aynı (KVKK, PLAN §12.4).
+        -- olay tablosuyla aynı (KVKK).
         ip            TEXT,
         basarili      BOOLEAN     NOT NULL DEFAULT TRUE,
         ayrinti       JSONB       NOT NULL DEFAULT '{}'::jsonb
@@ -60,25 +60,25 @@ SEMA: tuple[str, ...] = (
 )
 
 # ══════════════════════════════════════════════════════════════
-#  DENETİM İZİ SADECE-EKLEME (append-only)
+#  Denetim izi sadece-ekleme (append-only)
 # ══════════════════════════════════════════════════════════════
 #
-# ⚠ 03.09.2026 — PLAN §12.1 BUNU SÖZ VERİYORDU, KOD YAPMIYORDU
-# PLAN'ın KVKK bölümü şunu yazıyor: *"Denetim kaydı ... sadece-ekleme,
+# 03.09.2026 — proje planım bunu söz veriyordu, kod yapmıyordu
+# Proje planının KVKK bölümü şunu yazıyor: *"Denetim kaydı ... sadece-ekleme,
 # DB trigger ile UPDATE/DELETE engellenir."* Tablo vardı, trigger yoktu.
 #
-# ⚠ Neden bu bir detay değil: denetim izinin TEK değeri değiştirilemez
+# Neden bu bir detay değil: denetim izinin tek değeri değiştirilemez
 # olmasıdır. Silinebilen bir denetim kaydı, kötü niyetli bir yöneticiye
 # karşı hiçbir şey ifade etmez — ve denetim izinin var oluş sebebi tam
 # olarak yetkili birinin yetkisini kötüye kullanmasıdır. Yetkisiz
 # kişiye karşı zaten RBAC var.
 #
-# ⚠ Bu koruma VERİTABANI seviyesinde, uygulama seviyesinde değil.
+# Bu koruma veritabanı seviyesinde, uygulama seviyesinde değil.
 # Uygulama katmanında "UPDATE yazmayalım" demek bir disiplindir;
-# trigger bir MEKANİZMADIR. Aradaki fark, psql'e doğrudan bağlanan
+# trigger bir mekanizmadır. Aradaki fark, psql'e doğrudan bağlanan
 # birinin ne yapabildiğidir.
 #
-# ⚠ DÜRÜST SINIR: veritabanının SAHİBİ bu trigger'ı düşürebilir
+# Sınır: veritabanının sahibi bu trigger'ı düşürebilir
 # (`DROP TRIGGER`). Gerçek değişmezlik ayrı bir sunucuya yazmak ya da
 # WORM depolama ister; bu kurulumda yok ve raporda böyle yazılacak.
 # Trigger, kazayı ve sıradan kötüye kullanımı engelliyor; kararlı bir
@@ -100,9 +100,9 @@ DENETIM_KORUMASI: tuple[str, ...] = (
         BEFORE UPDATE OR DELETE ON denetim_izi
         FOR EACH ROW EXECUTE FUNCTION denetim_degistirilemez()
     """,
-    # ⚠ TRUNCATE AYRI BİR TETİKLEYİCİ İSTİYOR — ve bu kolayca atlanır.
+    # TRUNCATE ayrı bir tetikleyici istiyor — ve bu kolayca atlanır.
     # `TRUNCATE` satır bazlı değil ifade bazlı çalışır; yukarıdaki
-    # `FOR EACH ROW` tetikleyicisi onu HİÇ görmez. Yani yalnızca
+    # `FOR EACH ROW` tetikleyicisi onu hiç görmez. Yani yalnızca
     # UPDATE/DELETE engellenseydi, tabloyu tek komutla boşaltmak
     # serbest kalırdı — korumanın adı doğru, kapsamı yanlış olurdu.
     "DROP TRIGGER IF EXISTS denetim_no_truncate ON denetim_izi",
@@ -126,16 +126,16 @@ class KullaniciKaydi:
 async def semayi_kur(baglanti: AsyncConnection) -> None:
     """Kullanıcı ve denetim tablolarını kurar. Her açılışta çağrılır.
 
-    ⚠ İdempotent olmak ZORUNDA: elle migration gerektiren bir sistem,
+    İdempotent olmak zorunda: elle migration gerektiren bir sistem,
     bir bileşen yeniden başladığında sessizce çalışmaz duruma gelir.
     """
     for ifade in SEMA:
         await baglanti.execute(text(ifade))
 
-    # ⚠ KORUMA AYRI VE HATASI YUTULUYOR — ama SESSİZCE DEĞİL
+    # Koruma ayrı ve hatası yutuluyor — ama sessizce değil
     # Trigger kurulamazsa (yetki yok, plpgsql eklentisi yok) sistem
     # yine çalışmalı: denetim yazımı devam eder, yalnızca
-    # değiştirilemezlik garantisi düşer. Ama bu bir GÜVENLİK
+    # değiştirilemezlik garantisi düşer. Ama bu bir güvenlik
     # bozulmasıdır ve WARNING seviyesinde, etkisiyle birlikte
     # loglanıyor — "denetim izi korumasız çalışıyor" cümlesi loga
     # düşmeden bu duruma girilmiyor.
@@ -176,7 +176,7 @@ async def kullanici_ekle(
 ) -> None:
     """Kullanıcı ekler ya da varsa parolasını/rolünü günceller.
 
-    ⚠ `ON CONFLICT ... DO UPDATE`: bu fonksiyon hem kurulum betiğinden
+    `ON CONFLICT ... DO UPDATE`: bu fonksiyon hem kurulum betiğinden
     hem yönetim ucundan çağrılıyor ve ikisinde de "varsa güncelle"
     doğru davranış. `token_surumu` de artırılıyor — parola değiştiyse
     eski oturumlar düşmeli.
@@ -214,7 +214,7 @@ async def denetim_yaz(
 ) -> None:
     """Denetim izine bir satır yazar.
 
-    ⚠ İSTİSNA FIRLATMIYOR. Denetim yazımı başarısız diye asıl isteğin
+    İstisna fırlatmıyor. Denetim yazımı başarısız diye asıl isteğin
     reddedilmesi, kullanılabilirliği güvenliğe feda etmek olurdu ve
     saldırgana kolay bir hizmet dışı bırakma yolu verirdi (veritabanını
     yorup girişleri engellemek). Başarısızlık loglanıyor.

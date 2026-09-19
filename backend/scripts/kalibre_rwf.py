@@ -1,4 +1,4 @@
-"""RWF-2000 için ölü bölge eşiklerini KENDİ verisinden kalibre eder.
+"""RWF-2000 için ölü bölge eşiklerini kendi verisinden kalibre eder.
 
 Neden bu betik — teşhisin sonucu
 ---------------------------------
@@ -6,7 +6,7 @@ Neden bu betik — teşhisin sonucu
 
   1. Kural kapısı kavga kliplerinin %52'sini eliyor
   2. Sebep `bilek` bileşeninin sıfır olması
-  3. Ama poz tahmini ÇALIŞIYOR (%89.6 başarı, bilek %100 görünür)
+  3. Ama poz tahmini çalışıyor (%89.6 başarı, bilek %100 görünür)
   4. Yani sorun poz değil, **eşikler**
 
 `aggression.py` ölü bölge tabanlarını sabit tutuyor:
@@ -22,7 +22,7 @@ Oxford caddesi + PETS, 720p, 4 FPS). RWF-2000 başka bir dünya: farklı
 sıfır olmayanların medyanı 0.089 — kapı eşiği 0.15'in altında. Modül
 bu veri setinde pratikte **sağır.**
 
-⚠⚠ BU, KENDİ MİMARİ KURALIMIZIN İHLALİ
+BU, kendi mimari kuralımızın ihlali
 Mimari kural 7: *"Her kameranın normali ayrı öğrenilir."* Katman A bunu
 uyguluyor (kamera başına profil). Saldırganlık modülü uygulamıyor —
 çiftlik geneli tek taban kullanıyor. Kod bunu itiraf da ediyor:
@@ -34,7 +34,7 @@ Faz 5 gelmedi. Bu betik o borcu kapatıyor.
 
 Yöntem
 ------
-⚠ TABANLAR YALNIZCA `nonfight` KLİPLERİNDEN ölçülüyor.
+Tabanlar yalnızca `nonfight` kliplerinden ölçülüyor.
 
 Ölü bölgenin tanımı *"normal davranışın üstü"*. Tabanı kavga
 kliplerini de içeren bir dağılımdan hesaplamak, ölçmek istediğimiz
@@ -44,10 +44,10 @@ etiket sızdırmanın (label leakage) ders kitabı örneği.
     taban = normal davranışın p90
     doyum = normal davranışın p99'unun üstü (p99 × 1.5)
 
-Bu, `aggression.py`'nin özgün gerekçesiyle AYNI kural — yalnızca
+Bu, `aggression.py`'nin özgün gerekçesiyle aynı kural — yalnızca
 başka bir veri kümesine uygulanmış hâli.
 
-⚠ ÖLÇÜM KOŞULU: boru hattı KAPALI (GPU paylaşılmamalı).
+Ölçüm koşulu: boru hattı kapalı (GPU paylaşılmamalı).
 
 Kullanım
 --------
@@ -78,20 +78,20 @@ CIFTLIK_CIKTI = PROJECT_ROOT / "data" / "_tmp" / "ciftlik_esikler.json"
 
 TOHUM = 42
 
-# ─── FİZİKSEL MAKULİYET SINIRI ───
+# ─── Fiziksel makuliyet sınırı ───
 #
-# ⚠⚠ Bu sınır olmadan kalibrasyon GÜRÜLTÜYÜ kalibre ediyordu.
+# Bu sınır olmadan kalibrasyon gürültüyü kalibre ediyordu.
 #
 # Çiftlik ölçümünde p99 = 24.2 gövde/sn çıktı. Bir insanın bileği
 # saniyede 24 gövde boyu yol alamaz: profesyonel bir boksörün yumruğu
 # ~9 m/s, ortalama gövde boyu ~1.7 m → ~5.3 gövde/sn. Üstelik o bir
-# ANLIK tepe; pencere içindeki p75 değeri hiçbir zaman oraya varmaz.
+# anlık tepe; pencere içindeki p75 değeri hiçbir zaman oraya varmaz.
 #
 # Yani 24.2 hareket değil, **eklem tahmini hatası**: poz modeli bir
 # karede bileği yanlış yere koyuyor, iki kare arasındaki "hız"
 # fırlıyor.
 #
-# ⚠ Sınırın üstü ATILIYOR, kırpılmıyor. Kırpmak (clip) o örneği
+# Sınırın üstü atılıyor, kırpılmıyor. Kırpmak (clip) o örneği
 # sınırda bir gözlem gibi sayardı; oysa o bir gözlem değil, bir
 # ölçüm hatası. Atmak, "bu veriyi ölçemedim" demek — ve bu projenin
 # tekrarlayan ilkesi (`person.py`: eksik ≠ sıfır).
@@ -101,9 +101,9 @@ TOHUM = 42
 MAKUL_UST_SINIR = 8.0
 
 # Ham (bantlanmamış) toplanacak büyüklükler → `Esikler` alan adları.
-# ⚠ 07.09.2026 — p75 ALANLARINA GEÇİLDİ (P-47)
+# 07.09.2026 — p75 alanlarına geçildi (P-47)
 # `aggression.py` artık `bilek_hizi_p75` okuyor. Eşikleri hâlâ `azami`
-# dağılımından türetmek, skorlanan büyüklükten BAŞKA bir büyüklüğün
+# dağılımından türetmek, skorlanan büyüklükten başka bir büyüklüğün
 # istatistiğini kullanmak olurdu — ve p75 değerleri azaminin ~%26'sı
 # olduğu için ölü bölge her şeyi yutardı (modül sessizce sağırlaşır).
 ALANLAR = {
@@ -116,10 +116,10 @@ ALANLAR = {
 def _ham_topla(
     yol: Path, *, dedektor: Any, poz: Any, ornek_fps: float, imgsz: int
 ) -> dict[str, list[float]]:
-    """Bir klipten HAM (bantlanmamış) özellik değerlerini toplar.
+    """Bir klipten ham (bantlanmamış) özellik değerlerini toplar.
 
-    ⚠ `aggression.py` çağrılmıyor — o zaten bantlıyor. Buradaki amaç
-    bantlamadan ÖNCEKİ dağılımı görmek; bantlanmış değerden taban
+    `aggression.py` çağrılmıyor — o zaten bantlıyor. Buradaki amaç
+    bantlamadan önceki dağılımı görmek; bantlanmış değerden taban
     türetmek, ölçmek istediğimiz şeyi ölçtüğümüz aracın içinden
     okumak olurdu.
     """
@@ -168,7 +168,7 @@ def _ham_topla(
                 oz = cikar(depo.al(kamera, iz.track_id))  # type: ignore[arg-type]
                 for alan in ALANLAR:
                     v = getattr(oz, alan, None)
-                    # ⚠ `None` ATLANIYOR, sıfır sayılmıyor. "Ölçemedim"
+                    # `None` atlanıyor, sıfır sayılmıyor. "Ölçemedim"
                     # ile "sıfır ölçtüm" farklı şeyler; ikincisi
                     # dağılımı aşağı çeker ve tabanı yapay olarak
                     # düşürürdü (person.py modül başlığındaki ilke).
@@ -207,17 +207,17 @@ def main() -> int:
     dedektor.warmup(1)
     poz.warmup(8)
 
-    # ⚠ YALNIZCA EĞİTİM BÖLÜMÜNÜN `nonfight` KLİPLERİ
+    # Yalnızca eğitim bölümünün `nonfight` klipleri
     # `val` dokunulmuyor: eşikler val'dan türetilirse, val üzerinde
     # bildirilen skor kendi kalibrasyonundan beslenmiş olur. Bu,
     # ADR-0007'nin kaydettiği eşik-yanlılığının daha kötü bir hâli
-    # olurdu — orada eşik test kümesinde ARANIYORDU, burada test
-    # kümesinden TÜRETİLMİŞ olurdu.
+    # olurdu — orada eşik test kümesinde aranıyordu, burada test
+    # kümesinden türetilmiş olurdu.
     if args.ciftlik:
-        # ⚠ ÇİFTLİK VİDEOLARI "NORMAL" SAYILIYOR — ve bu bir VARSAYIM.
+        # Çiftlik videoları "normal" sayılıyor — ve bu bir varsayım.
         # Kaynaklar (Oxford yaya caddesi, PETS meydanı, VIRAT) tanımı
         # gereği normal davranış içeriyor. İstisna cam-16 (UR Fall,
-        # düşme) ve cam-17 (RWF kavga) — ikisi de KASTEN olay içeriyor
+        # düşme) ve cam-17 (RWF kavga) — ikisi de kasten olay içeriyor
         # ve tabanı yukarı çekerlerdi.
         haric = {"cam-16", "cam-17"}
         klipler = [
@@ -252,7 +252,7 @@ def main() -> int:
     for alan, (taban_ad, doyum_ad) in ALANLAR.items():
         ham = havuz[alan]
         d = sorted(v for v in ham if v <= MAKUL_UST_SINIR)
-        # ⚠ Atılan oran bir GÜRÜLTÜ ÖLÇÜSÜ — raporlanıyor, gizlenmiyor.
+        # Atılan oran bir gürültü ölçüsü — raporlanıyor, gizlenmiyor.
         # Yüksekse poz tahmini o veri setinde güvenilmez demektir.
         atilan = len(ham) - len(d)
         atilan_oran = atilan / max(len(ham), 1)
@@ -264,10 +264,10 @@ def main() -> int:
         p99 = d[int(len(d) * 0.99)]
         eski_taban = getattr(VARSAYILAN, taban_ad)
         yeni[taban_ad] = round(p90, 3)
-        # ⚠ Doyum p99'un 1.5 KATI. p99 hâlâ NORMAL davranış; doyum
+        # Doyum p99'un 1.5 katı. p99 hâlâ normal davranış; doyum
         # (bileşenin 1.0 olduğu nokta) ancak normali açıkça aşan
         # harekete ayrılmalı. `aggression.py`'deki özgün gerekçe aynı.
-        # ⚠ DOYUM p99'DAN DEĞİL p90'IN KATINDAN
+        # Doyum p99'dan değil p90'ın katından
         # p99, fiziksel sınır uygulandıktan sonra bile uzun kuyruklu
         # (gürültünün bir kısmı sınırın altında kalıyor). p90 sağlam
         # bir üst çeyrek göstergesi; doyumu onun 2 katına koymak

@@ -1,16 +1,16 @@
 /** Kutuları videoyla hizalama.
  *
- * ZAMAN ÇİZELGESİ — önce bunu netleştirelim
+ * Zaman çizelgesi — önce bunu netleştirelim
  * -----------------------------------------
  * Üç farklı an var ve karıştırmak doğrudan hataya götürüyor:
  *
- *   yakalanma anı : karenin kameradan alındığı an   ← GERÇEK zaman ekseni
+ *   yakalanma anı : karenin kameradan alındığı an   ← gerçek zaman ekseni
  *   varış anı     : sonucun tarayıcıya ulaştığı an  (yakalanma + gecikme)
  *   şimdi         : ekrana çizdiğimiz an
  *
- * ⚠ İLK SÜRÜMÜN HATASI: tamponu **varış anına** göre indeksliyordu.
+ * İlk sürümün hatası: tamponu **varış anına** göre indeksliyordu.
  * Boru hattı gecikmesi sabit olmadığı için (181-465 ms arası
- * dalgalanıyor) düzenli aralıklarla yakalanan kareler DÜZENSİZ
+ * dalgalanıyor) düzenli aralıklarla yakalanan kareler düzensiz
  * aralıklarla varıyor. Zaman ekseni çarpılınca kutular hızlanıp
  * yavaşlıyordu — "bazen yetişiyor, bazen yetişemiyor" tam olarak buydu.
  *
@@ -22,21 +22,21 @@
  * Tampon bu eksene göre sıralanınca kareler arası mesafe gerçekten
  * eşit oluyor ve hareket düzgünleşiyor.
  *
- * NEDEN İLERİ TAHMİN ZORUNLU
+ * Neden ileri tahmin zorunlu
  * --------------------------
  * Video sahneyi `now − 13 ms` anında gösteriyor (WebRTC çok hızlı).
  * Analiz ise `now − 465 ms` anına ait. Yani ekranda gördüğümüz ana
- * ait bir analiz sonucu HENÜZ YOK — o kare daha yeni işleniyor.
+ * ait bir analiz sonucu henüz yok — o kare daha yeni işleniyor.
  *
- * Dolayısıyla kutuları hizalamanın tek yolu, kişinin ŞU AN nerede
+ * Dolayısıyla kutuları hizalamanın tek yolu, kişinin şu AN nerede
  * olduğunu hız vektöründen tahmin etmek. Ara değerleme (iki gerçek
  * nokta arasını doldurmak) ancak videoyu geciktirirsek mümkün olur —
- * o da ayrı bir iş (CALISMA.md §11.1, seçenek A1).
+ * o da ayrı bir iş (çalışma notlarım, seçenek A1).
  *
- * ⚠ İLK SÜRÜMÜN İKİNCİ HATASI: kaydırıcı "geriye bak" diye
+ * İlk sürümün ikinci hatası: kaydırıcı "geriye bak" diye
  * uygulanıyordu. Analiz zaten geride olduğu için bu, kutuları daha da
  * geriye atıyordu — kullanıcı kaydırıcıyı artırdıkça sorun büyüyordu.
- * Şimdi kaydırıcı "ne kadar İLERİ tahmin et" anlamına geliyor.
+ * Şimdi kaydırıcı "ne kadar ileri tahmin et" anlamına geliyor.
  */
 
 import type { Detection, TimedResult } from '../types'
@@ -45,7 +45,7 @@ import type { Detection, TimedResult } from '../types'
  *
  * Hız vektörü doğrusal bir tahmindir: kişi dönerse, durursa ya da
  * hızlanırsa tahmin bozulur. Uzun mesafede kutu yanlış yerde olur —
- * o zaman donuk göstermek daha dürüst. */
+ * o zaman donuk göstermek daha doğru. */
 const MAX_LEAD_MS = 700
 
 /** Tampon derinliği. 4 FPS'te 12 sonuç ≈ 3 saniyelik geçmiş. */
@@ -54,7 +54,7 @@ export const BUFFER_SIZE = 12
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t
 
 /**
- * Bir sonucun YAKALANMA anını tarayıcı saatinde verir.
+ * Bir sonucun yakalanma anını tarayıcı saatinde verir.
  *
  * `lat` sunucunun ölçtüğü boru hattı gecikmesi. Yoksa (eski sürüm)
  * varış anına düşüyoruz — bozulmaz, sadece daha az düzgün olur.
@@ -76,8 +76,8 @@ function blend(from: Detection, to: Detection, t: number): Detection {
   if (from.kp && to.kp && from.kp.length === to.kp.length) {
     kp = to.kp.map((point, i) => {
       const prev = from.kp![i]
-      // Güveni düşük keypoint ARA DEĞERLENMEZ: görünmeyen uzvu
-      // "yolda" göstermek olmayan bir duruş uydurmaktır (PLAN §6.2).
+      // Güveni düşük keypoint ara değerlenmez: görünmeyen uzvu
+      // "yolda" göstermek olmayan bir duruş uydurmaktır.
       if (prev[2] < 0.3 || point[2] < 0.3) return point
       return [lerp(prev[0], point[0], t), lerp(prev[1], point[1], t), point[2]] as
         [number, number, number]
@@ -108,10 +108,10 @@ export interface RenderFrame {
   mode: 'interpolated' | 'predicted' | 'exact'
   /** Bu kareyi Kademe 0'ın neden geçirdiği: motion | refresh | warmup.
    *
-   * ⚠ "SAKİN" ile "BOZUK"u ayıran sinyal bu.
+   * "Sakin" ile "bozuk"u ayıran sinyal bu.
    * Hareket filtresi yalnızca geçen kareleri yayınlıyor, yani `idle`
    * hiç gelmiyor. `refresh` ise "hareket yoktu ama 5 saniyelik zorunlu
-   * yoklama zamanı geldi" demek — yani sahnede bir şey OLMUYOR.
+   * yoklama zamanı geldi" demek — yani sahnede bir şey olmuyor.
    * Sonuç gecikmişse ve son kare `refresh` ise sistem bozuk değil,
    * kamera sakin. */
   gate: string
@@ -122,7 +122,7 @@ export interface RenderFrame {
  *
  * @param buffer   Sonuçlar (varış sırasına göre)
  * @param now      performance.now()
- * @param leadMs   Videonun ÖLÇÜLEN gecikmesi (ms). Ekranda görünen
+ * @param leadMs   Videonun ölçülen gecikmesi (ms). Ekranda görünen
  *                 sahnenin ne kadar geride olduğu. Büyükse ara
  *                 değerleme, küçükse ileri tahmin devreye girer.
  */
@@ -136,15 +136,15 @@ export function frameAt(
   const newest = buffer[buffer.length - 1]
   const newestCapture = captureTime(newest)
 
-  // Hedef: ŞU AN EKRANDA GÖRÜNEN karenin yakalanma anı.
+  // Hedef: şu AN ekranda görünen karenin yakalanma anı.
   //
   // Video `videoLatencyMs` kadar geriden geliyor, yani ekranda
   // gördüğümüz sahne `now - videoLatencyMs` anına ait. Analiz sonucunu
   // da o ana getirmemiz gerekiyor.
   //
-  // Video TAMPONLANMIŞSA (setVideoBuffer) videoLatency analiz
-  // gecikmesini aşar ve hedef, elimizdeki en yeni sonucun GERİSİNDE
-  // kalır → iki gerçek ölçüm arasında ARA DEĞERLEME yapabiliriz.
+  // Video tamponlanmışsa (setVideoBuffer) videoLatency analiz
+  // gecikmesini aşar ve hedef, elimizdeki en yeni sonucun gerisinde
+  // kalır → iki gerçek ölçüm arasında ara değerleme yapabiliriz.
   // Tamponlanmamışsa hedef ileride kalır → tahmine düşeriz.
   const target = now - leadMs
 
@@ -173,11 +173,11 @@ export function frameAt(
     }
   }
 
-  // ⚠ t [0,1] ARALIĞINA KISILIYOR
-  // Hedef, tamponun EN ESKİSİNDEN de eskiyse yukarıdaki döngü hiçbir
+  // t [0,1] aralığına kısılıyor
+  // Hedef, tamponun en eskisinden de eskiyse yukarıdaki döngü hiçbir
   // aralık bulamaz ve `before = buffer[0]` olarak kalır. O durumda
-  // `target - captureTime(before)` NEGATİF çıkar; kısılmazsa `blend`
-  // kutuyu iki gerçek nokta arasında değil, hareketin TERS yönünde
+  // `target - captureTime(before)` negatif çıkar; kısılmazsa `blend`
+  // kutuyu iki gerçek nokta arasında değil, hareketin ters yönünde
   // 3 saniyelik tampon boyu kadar uzağa fırlatır.
   //
   // Ne zaman olur: analiz durur/yavaşlarsa (sonuç gelmiyor) ve video
@@ -189,7 +189,7 @@ export function frameAt(
 
   // Kimliği olan izleri eşleştirip ara değerliyoruz. Kimliksiz
   // tespitler (takipçi henüz onaylamadı — P-13) eşleştirilemez ama
-  // KAYBOLMAZ.
+  // kaybolmaz.
   const previous = new Map<number, Detection>()
   for (const d of before.detections) {
     if (d.id !== undefined) previous.set(d.id, d)

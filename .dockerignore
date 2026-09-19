@@ -1,6 +1,6 @@
-# ⚠ BU DOSYA OLMADAN DERLEME PRATİKTE İMKÂNSIZ
+# Bu dosya olmadan derleme pratikte imkânsız
 #
-# Docker, derlemeye başlamadan önce bağlamın (context) TAMAMINI
+# Docker, derlemeye başlamadan önce bağlamın (context) tamamını
 # arka plan sürecine gönderiyor. `data/` içinde RWF-2000 veri seti
 # (~12 GB) ve kamera çiftliği videoları var; onlar olmadan bağlam
 # birkaç MB, onlarla birlikte on gigabaytlarca.
@@ -8,12 +8,12 @@
 # Bu dosya yokken belirti şudur: "transferring context..." satırı
 # dakikalarca ilerlemiyor ve derleme hiç başlamıyor gibi görünüyor.
 
-# ─── Büyük veri — imaja GİRMEZ, çalışma zamanında BAĞLANIR ───
+# ─── Büyük veri — imaja girmez, çalışma zamanında bağlanır ───
 data/
 benchmarks/
 notebooks/
 
-# ⚠ Modeller de bağlanıyor (`./backend/models:/app/models:ro`).
+# Modeller de bağlanıyor (`./backend/models:/app/models:ro`).
 # İmaja gömmek her model güncellemesinde yeniden derleme demekti;
 # ayrıca `.engine` dosyası donanıma özgü ve taşınabilir değil.
 models/
@@ -29,7 +29,7 @@ backend/.pytest_cache/
 .ruff_cache/
 .mypy_cache/
 
-# ⚠ node_modules HARİÇ TUTULUYOR ama frontend/ dâhil: imaj kendi
+# node_modules hariç tutuluyor ama frontend/ dâhil: imaj kendi
 # `npm ci` çağrısını yapıyor (Linux'a özgü ikili paketler var,
 # Windows'ta kurulmuş node_modules konteynerde çalışmaz).
 frontend/node_modules/
@@ -37,7 +37,7 @@ frontend/dist/
 backend/src/sentinel/api/static/app/
 
 # ─── Sırlar ───
-# ⚠ `.env` İMAJA GİRMEZ. Compose `env_file` ile ÇALIŞMA ZAMANINDA
+# `.env` imaja girmez. Compose `env_file` ile çalışma zamanında
 # veriyor. İmaja gömülen bir sır, imajı alan herkese açıktır ve
 # katman geçmişinden silinemez (G15).
 .env

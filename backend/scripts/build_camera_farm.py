@@ -16,14 +16,14 @@ Kaynaklar
 ---------
   VIRAT   : gerçek dış mekân gözetim kayıtları (otopark/kampüs), 1080p30
   Oxford  : yoğun cadde CCTV'si + gerçek etiket dosyası
-  PETS2009: aynı sahnenin 7 FARKLI KAMERA AÇISI — JPEG kare dizisi hâlinde
+  PETS2009: aynı sahnenin 7 farklı kamera açısı — JPEG kare dizisi hâlinde
   RWF-2000: 5 saniyelik kavga/normal klipleri → uzun akışa birleştirilir
 
 RWF kameralarının özel değeri
 -----------------------------
 Klipleri birleştirirken hangi saniyede kavga başladığını biliyoruz.
 Bu bilgi `data/annotations/cam-NN.truth.json` dosyasına yazılır ve
-"erken uyarı avansı" metriğinin (PLAN.md §6.5.5) ölçümünde kullanılır.
+"erken uyarı avansı" metriğinin ölçümünde kullanılır.
 Bedava ground-truth.
 
 ffmpeg
@@ -79,72 +79,72 @@ class CameraSpec:
     seed: int = 0
 
 
-# ─── KAMERA ÇİFTLİĞİ PLANI ───────────────────────────────────
-# Dağılım gerekçesi PLAN.md §7.1'de. Özet:
+# ─── Kamera çiftliği planı ───────────────────────────────────
+# Dağılım gerekçesi proje planında. Özet:
 #   normal sahne çoğunlukta olmalı ki anomali modülü "normal"i öğrenebilsin.
 
 PETS_BASE = "_sources/pets/Crowd_PETS09/S2/L1/Time_12-34"
 
-# ⚠ 18.08.2026 — ÇİFTLİK YENİDEN DÜZENLENDİ
+# 18.08.2026 — çiftlik yeniden düzenlendi
 #
 # Önceki dağılımın iki sorunu vardı:
 #
 # 1. **cam-10…cam-16 aynı sahnenin 7 açısıydı** (PETS09 · S2/L1 ·
 #    Time_12-34). Yedi kamera aynı olayı izliyordu. Bu üç şeyi bozuyordu:
-#      · "Her kameranın normali AYRI öğrenilir" ilkesi (mimari kural 7) —
+#      · "Her kameranın normali ayrı öğrenilir" ilkesi (mimari kural 7) —
 #        yedisinin normali aynı çıkıyordu, ilke gösterilemiyordu
-#      · Bir olayda 7 kamera birden alarm veriyordu → PLAN §6.6'daki
+#      · Bir olayda 7 kamera birden alarm veriyordu → proje planındaki
 #        "sistem seviyesi olay" bastırma kuralı boşuna tetiklenirdi
 #      · Sahne çeşitliliği yapay olarak düşüktü
 #    3 açı bırakıldı (birbirine en uzak olanlar): kalabalık ve ani
 #    dağılma senaryoları için yeterli, kopya değil.
 #
-# 2. **Pexels videoları HİÇ kullanılmıyordu** (10 klip, ~151 MB).
-#    Oysa PLAN §7.1 "19-20: yakın plan yüz içeren sahne — duygu modülü
+# 2. **Pexels videoları hiç kullanılmıyordu** (10 klip, ~151 MB).
+#    Oysa proje planı "19-20: yakın plan yüz içeren sahne — duygu modülü
 #    testi" diyordu ve o slotlara RWF kavga klipleri konmuştu.
-#    Sonuç: KADEME 2b'nin çalışabileceği TEK kamera yoktu ve modül
+#    Sonuç: kademe 2b'nin çalışabileceği tek kamera yoktu ve modül
 #    kamera çiftliğinde hiç sonuç üretemiyordu
 #    (benchmarks/expression_20260818-gun14.json).
 #
 # Ayrıca 10 Pexels klibi demografik olarak çeşitli (farklı yaş, cinsiyet,
-# ten rengi, ışık, arka plan). PLAN §12.2 yanlılık değerlendirmesi için
+# ten rengi, ışık, arka plan). Proje planı yanlılık değerlendirmesi için
 # alt gruplara ayrılmış performans raporlamayı istiyor; elimizdeki tek
 # elverişli malzeme bu.
 #
-# ⚠ Karşılanamayan istek: PLAN §7.1 "boş sahne" ve "düşme/koşma"
-# kameraları da istiyor. Elimizde o tür görüntü YOK ve uydurmak
+# Karşılanamayan istek: Proje planı "boş sahne" ve "düşme/koşma"
+# kameraları da istiyor. Elimizde o tür görüntü yok ve uydurmak
 # ölçümü yanıltır. Raporda kapsam notu olarak yazılacak. (Hareket
 # filtresinin yük düşürdüğü zaten sentetik `cam-test-static` ile ve
 # gerçek kameraların gate oranlarıyla gösteriliyor.)
 
 PEXELS = "_sources/pexels"
 
-# CUHK Avenue Dataset — kare seviyesinde YER GERÇEĞİ olan anomali seti.
+# CUHK Avenue Dataset — kare seviyesinde yer gerçeği olan anomali seti.
 #
-# ⚠ NEDEN BU SET ÖZEL
+# Neden bu SET özel
 # Diğer kameralarımızın hiçbirinde "burada anomali var" diye etiket yok;
 # kurallarımızın doğru çalışıp çalışmadığını ancak gözle bakarak
 # değerlendirebiliyorduk. Avenue her karesi için piksel maskesi taşıyor:
 # maskede sıfırdan farklı piksel varsa o kare anomalidir.
-# Bu, K6 kriterinin (anomali ROC-AUC) gerçekten ÖLÇÜLEBİLMESİ demek.
+# Bu, K6 kriterinin (anomali ROC-AUC) gerçekten ölçülebilmesi demek.
 #
-# ⚠ İÇERİĞİ: koşma, nesne fırlatma, oyalanma, ters yön, çocuğun zıplaması.
-# DÜŞME İÇERMİYOR. Düşme kuralımız hâlâ yalnızca sentetik testlerle
+# İçeriği: koşma, nesne fırlatma, oyalanma, ters yön, çocuğun zıplaması.
+# Düşme içermiyor. Düşme kuralımız hâlâ yalnızca sentetik testlerle
 # doğrulanmış durumda; gerçek doğrulama için UR Fall / Le2i gerekiyor.
 # Bu kısıt raporda açıkça yazılacak.
 AVENUE = "archive/Avenue_Dataset/Avenue Dataset"
 
-# UR Fall Detection Dataset — GERÇEK düşme görüntüsü.
+# UR Fall Detection Dataset — gerçek düşme görüntüsü.
 #
-# ⚠ NEDEN GEREKLİ
-# Avenue'nun anomalileri koşma/fırlatma/oyalanma; DÜŞME İÇERMİYOR.
+# Neden gerekli
+# Avenue'nun anomalileri koşma/fırlatma/oyalanma; düşme içermiyor.
 # Düşme kuralımız (rules.py · _dusme) şimdiye kadar yalnızca sentetik
 # iskeletlerle test edilmişti — gerçek bir düşme görüntüsünde hiç
 # denenmedi. Ofis ortamında kayıtlı bu dizi o boşluğu kapatıyor.
 #
-# ⚠ TEK DİZİ, KISA (160 kare @ 30 FPS ≈ 5.3 sn). Bu bir sınırlama ama
+# Tek dizi, kısa (160 kare @ 30 FPS ≈ 5.3 sn). Bu bir sınırlama ama
 # döngüde oynadığı için düşme her ~5 saniyede tekrarlanıyor: kural
-# defalarca sınanıyor. İstatistiksel güç için yetersiz, VARLIK
+# defalarca sınanıyor. İstatistiksel güç için yetersiz, varlık
 # doğrulaması için yeterli. Raporda böyle yazılacak.
 UR_FALL = "fall-01-cam0-rgb/fall-01-cam0-rgb"
 
@@ -167,15 +167,15 @@ CAMERA_PLAN: list[CameraSpec] = [
     CameraSpec("cam-09", "video", "_sources/oxford/TownCentreXVID.mp4", "Cadde — yoğun yaya"),
     # ── 10-16 · Kalabalık: PETS09, aynı sahnenin 7 açısı ──
     #
-    # ⚠ 19.08.2026 — GERİ ALINDI, ve sebebi öğretici
+    # 19.08.2026 — geri alındı, ve sebebi öğretici
     # 18.08'de bu 7 açının 3'e indirilmesi "kopya sahne" gerekçesiyle
     # savunulmuştu (her kameranın normali ayrı öğrenilmeli). Gerekçe
-    # kendi başına DOĞRU. Ama değişiklik ölçülmeden yapıldı ve boşalan
+    # kendi başına doğru. Ama değişiklik ölçülmeden yapıldı ve boşalan
     # 4 slota RWF kavga klipleri kondu — çiftliğin yükü sessizce arttı,
     # sistem yavaşladı, sebebi günlerce aranmadı.
     #
     # Ders: bir gerekçenin doğru olması, değişikliğin ölçülmeden
-    # yapılabileceği anlamına gelmiyor. Çiftlik ÖLÇÜM ZEMİNİ — zemini
+    # yapılabileceği anlamına gelmiyor. Çiftlik ölçüm zemini — zemini
     # değiştirince tüm eski ölçümler kıyaslanamaz hâle geliyor.
     # 7 açı sorunu gerçek ama ayrı bir iş; çözülürse tek başına, ölçüm
     # öncesi/sonrası kıyaslamayla çözülecek.
@@ -185,8 +185,8 @@ CAMERA_PLAN: list[CameraSpec] = [
     CameraSpec("cam-13", "frames", f"{PETS_BASE}/View_005", "Meydan — açı 5"),
     CameraSpec("cam-14", "frames", f"{PETS_BASE}/View_006", "Meydan — açı 6"),
     CameraSpec("cam-15", "frames", f"{PETS_BASE}/View_007", "Meydan — açı 7"),
-    # ⚠ cam-16 PETS'in 8. açısıydı — 7 kopya açıdan biri, en az bilgi
-    # taşıyanı. Yerine GERÇEK DÜŞME kondu: düşme kuralının tek
+    # cam-16 PETS'in 8. açısıydı — 7 kopya açıdan biri, en az bilgi
+    # taşıyanı. Yerine gerçek düşme kondu: düşme kuralının tek
     # doğrulanmamış kural olması, kopya bir kalabalık açısından çok
     # daha önemli bir eksikti.
     CameraSpec(
@@ -195,28 +195,28 @@ CAMERA_PLAN: list[CameraSpec] = [
     ),
     # ── 17-19 · Saldırganlık: RWF-2000 birleştirilmiş + ground-truth ──
     CameraSpec("cam-17", "rwf", "", "Test — kavga (seyrek)", clip_count=60, fight_ratio=0.10, seed=17),
-    # ── 18-19 · CUHK Avenue: YER GERÇEKLİ anomali doğrulaması ──
+    # ── 18-19 · CUHK Avenue: yer gerçekli anomali doğrulaması ──
     #
-    # ⚠ KONTROLLÜ DENEY TASARIMI — ikisi AYNI sahne, aynı kamera açısı
-    #   cam-18: yalnızca NORMAL kayıtlar   → kontrol grubu
+    # Kontrollü deney tasarımı — ikisi aynı sahne, aynı kamera açısı
+    #   cam-18: yalnızca normal kayıtlar   → kontrol grubu
     #   cam-19: anomali içeren kayıtlar    → deney grubu
     #
     # Neden ikisi birden: tek başına "anomali kamerasında alarm çıktı"
     # demek yetmez — sistem her şeye alarm veriyor olabilir. Aynı
-    # sahnenin normal hâlinde SESSİZ kalması, alarmın gerçekten olaya
+    # sahnenin normal hâlinde sessiz kalması, alarmın gerçekten olaya
     # tepki verdiğinin kanıtı. Yanlış alarm oranı (K7) da buradan
     # doğrudan okunuyor: cam-18'de çıkan her alarm yanlıştır.
     CameraSpec("cam-18", "avenue", AVENUE, "Avenue — normal (kontrol)", seed=18),
     CameraSpec("cam-19", "avenue", AVENUE, "Avenue — anomali (yer gerçekli)", seed=19),
-    # ── 20 · TEK DEĞİŞİKLİK: yakın plan yüz (PLAN §7.1) ──
+    # ── 20 · tek değişiklik: yakın plan yüz ──
     #
-    # Eskiden "RWF tamamı normal" idi. Değiştirilme sebebi: KADEME 2b'nin
-    # çalışabileceği TEK bir kamera bile yoktu — gözetim görüntüsünde
+    # Eskiden "RWF tamamı normal" idi. Değiştirilme sebebi: kademe 2b'nin
+    # çalışabileceği tek bir kamera bile yoktu — gözetim görüntüsünde
     # yüzler ~15 px ve ifade modeli 60 px istiyor. Modül kuruluydu ama
     # kamera çiftliğinde hiç sonuç üretemiyordu
     # (benchmarks/expression_20260818-gun14.json).
     #
-    # ⚠ Neden 3 değil 1: 18.08'de üç yüz kamerası eklenmişti; yeteneği
+    # Neden 3 değil 1: 18.08'de üç yüz kamerası eklenmişti; yeteneği
     # göstermek için biri yeterli, üçü çiftliğin karakterini gereksiz
     # değiştiriyor. Ölçülen: bu kamerada kişi boyu p50 550 px, yüz
     # 68.8 px, yüz tespiti isabeti %100 — yani modül gerçekten çalışıyor.
@@ -255,10 +255,10 @@ def encode_args(out_rel: str) -> list[str]:
         "-crf", "23",
         "-r", str(TARGET_FPS),
         "-g", str(TARGET_FPS * 2),  # 2 sn GOP — WebRTC'de hızlı başlangıç
-        # ⚠ B-frame KAPALI olmalı. WebRTC'nin H.264 profili B-frame
+        # B-frame kapalı olmalı. WebRTC'nin H.264 profili B-frame
         #   desteklemez; MediaMTX bağlantıyı "doesn't support H264 streams
         #   with B-frames" diyerek kapatır. libx264 varsayılanı B-frame
-        #   ÜRETİR. Bkz. docs/report/problems.md · P-08
+        #   üretir. Bkz. docs/report/problems.md · P-08
         "-bf", "0",
         "-pix_fmt", "yuv420p",
         "-an",  # ses yok
@@ -299,7 +299,7 @@ def build_frames(spec: CameraSpec) -> dict[str, object]:
     # -framerate: girdinin gerçek hızı; -r: çıktı hızı.
     # İkisi farklı olunca ffmpeg kare çoğaltır → süre korunur, akış 25 FPS olur.
     run_ffmpeg(["-framerate", str(spec.input_fps), "-i", pattern, *encode_args(f"videos/{spec.cam}.mp4")])
-    # ⚠ Kare sayısı desenin UZANTISINDAN okunuyor, "*.jpg" varsayılmıyor.
+    # Kare sayısı desenin uzantısından okunuyor, "*.jpg" varsayılmıyor.
     # UR Fall PNG dizisi eklenince manifest "source_frames: 0" yazdı —
     # video üretilmişti, sayaç yalan söylüyordu. Sessiz yanlış sayı,
     # eksik sayıdan kötüdür: ölçüm zeminine güven kalmaz.
@@ -315,7 +315,7 @@ def build_rwf(spec: CameraSpec) -> dict[str, object]:
     if not fight_pool or not normal_pool:
         raise FileNotFoundError(f"RWF-2000 bulunamadı: {root}")
 
-    # Sabit tohum: aynı komut her çalıştığında AYNI kamera üretilir.
+    # Sabit tohum: aynı komut her çalıştığında aynı kamera üretilir.
     # Tekrarlanabilirlik ölçüm için şart — ground-truth ile video eşleşmeli.
     # (S311: güvenlik amaçlı değil, kasten deterministik.)
     rng = random.Random(spec.seed)  # noqa: S311
@@ -363,7 +363,7 @@ def build_rwf(spec: CameraSpec) -> dict[str, object]:
         "camera": spec.cam,
         "source": "RWF-2000 (train bölümü)",
         "citation": "Cheng et al., arXiv:1911.05913",
-        # Bu dosya HANGİ kamera tanımından üretildi — bayat kalırsa
+        # Bu dosya hangi kamera tanımından üretildi — bayat kalırsa
         # `_truth_denetle` yakalasın diye (bkz. o fonksiyonun docstring'i).
         "uretim_kaynagi": spec.source or "RWF-2000",
         "seed": spec.seed,
@@ -379,9 +379,9 @@ def build_rwf(spec: CameraSpec) -> dict[str, object]:
 
 
 def build_faces(spec: CameraSpec) -> dict[str, object]:
-    """Pexels yakın plan yüz kliplerini birleştirir — KADEME 2b'nin girdisi.
+    """Pexels yakın plan yüz kliplerini birleştirir — kademe 2b'nin girdisi.
 
-    ⚠ NEDEN İKİ AŞAMALI
+    Neden iki aşamalı
     -------------------
     `concat` demuxer, birleştirilen dosyaların **aynı codec ve aynı
     çözünürlükte** olmasını ister; sadece paketleri arka arkaya
@@ -392,12 +392,12 @@ def build_faces(spec: CameraSpec) -> dict[str, object]:
     Bu yüzden önce her klip tek tek 720p'ye normalize ediliyor, sonra
     birleştiriliyor. İkinci geçiş `-c copy` ile yeniden kodlamıyor.
 
-    ⚠ NEDEN BİRDEN ÇOK KLİP
+    Neden birden çok klip
     -----------------------
     Tek bir yüz koysaydık ifade modülü tek kişiyle test edilirdi.
     Birkaç klip dönüşümlü olunca:
       · ifade sınıflandırma farklı yüzlerde deneniyor
-      · PLAN §12.2'nin istediği demografik alt grup analizi mümkün oluyor
+      · proje planının istediği demografik alt grup analizi mümkün oluyor
       · takip modülü "kişi kadraja girdi/çıktı" senaryosunu görüyor
     """
     src_dir = DATA / spec.source
@@ -443,9 +443,9 @@ def build_faces(spec: CameraSpec) -> dict[str, object]:
 
 
 def build_avenue(spec: CameraSpec) -> dict[str, object]:
-    """CUHK Avenue kameralarını üretir + KARE SEVİYESİNDE yer gerçeği.
+    """CUHK Avenue kameralarını üretir + kare seviyesinde yer gerçeği.
 
-    ⚠ BU BETİĞİN EN DEĞERLİ ÇIKTISI
+    Bu betiğin en değerli çıktısı
     Diğer kameralarımızda "burada anomali var" diye bir etiket yok;
     kuralların doğru çalışıp çalışmadığını gözle değerlendiriyorduk.
     Avenue her kare için piksel maskesi taşıyor ve maskede sıfırdan
@@ -453,15 +453,15 @@ def build_avenue(spec: CameraSpec) -> dict[str, object]:
 
     Maskeler `.mat` dosyalarında ve kare kare tutuluyor. Burada
     kare→anomali ikili etiketine indirgeniyor, sonra birleştirilmiş
-    videodaki ZAMANA çevriliyor. Sonuç: "şu saniyeler arasında anomali
+    videodaki zamana çevriliyor. Sonuç: "şu saniyeler arasında anomali
     var" listesi — kurallarımızın çıktısıyla doğrudan karşılaştırılabilir.
 
-    ⚠ İKİ KAMERA, KONTROLLÜ DENEY
-      cam-18 (seed 18) → yalnızca `training_videos`  = NORMAL, kontrol
-      cam-19 (seed 19) → yalnızca `testing_videos`   = ANOMALİLİ, deney
+    İki kamera, kontrollü deney
+      cam-18 (seed 18) → yalnızca `training_videos`  = normal, kontrol
+      cam-19 (seed 19) → yalnızca `testing_videos`   = anomalili, deney
     Aynı sahne, aynı kamera açısı. Tek başına "anomali kamerasında alarm
     çıktı" demek yetmez — sistem her şeye alarm veriyor olabilir. Aynı
-    sahnenin normal hâlinde SESSİZ kalması, alarmın gerçekten olaya tepki
+    sahnenin normal hâlinde sessiz kalması, alarmın gerçekten olaya tepki
     verdiğinin kanıtı.
     """
     import scipy.io as sio
@@ -499,11 +499,11 @@ def build_avenue(spec: CameraSpec) -> dict[str, object]:
 
         # ─── Yer gerçeği: hangi kareler anomali? ───
         if anomalili:
-            # ⚠ ADLANDIRMA UYUŞMAZLIĞI — sessiz hata kaynağıydı
+            # Adlandırma uyuşmazlığı — sessiz hata kaynağıydı
             # Videolar sıfır dolgulu (`01.avi`), maskeler değil
             # (`1_label.mat`). İlk sürüm `klip.stem` kullanıyordu, dosya
             # bulunamıyordu ve `if maske.is_file()` sessizce atlıyordu:
-            # betik "0 hata" diye başarı raporladı ama yer gerçeği BOŞ
+            # betik "0 hata" diye başarı raporladı ama yer gerçeği boş
             # çıktı. Var olmayan bir dosyayı sessizce geçmek, olmayan
             # veriyi "veri yok" sanmaya yol açıyor.
             maske = maske_dizin / f"{int(klip.stem)}_label.mat"
@@ -594,7 +594,7 @@ def _araliklar(
 def _truth_denetle(plan: list[CameraSpec]) -> None:
     """Yer gerçeği dosyaları hâlâ doğru kamerayı mı anlatıyor, kontrol eder.
 
-    ⚠ 26.08.2026 — GERÇEK BİR ÖLÇÜM ZEHİRLENMESİ YAKALANDI
+    26.08.2026 — gerçek bir ölçüm zehirlenmesi yakalandı
 
     cam-13…cam-16, cam-18 ve cam-20 bir zamanlar RWF-2000 kavga kameralarıydı
     ve `cam-NN.truth.json` dosyalarına kavga zaman damgaları yazılmıştı.
@@ -673,7 +673,7 @@ def main() -> int:
 
     VIDEOS.mkdir(parents=True, exist_ok=True)
 
-    # ⚠ `--only` MANİFESTİ EZMEZ — bu bir hataydı, düzeltildi
+    # `--only` manifesti ezmez — bu bir hataydı, düzeltildi
     #
     # Önceki sürüm manifesti sıfırdan kuruyordu. `--only cam-11 … cam-20`
     # ile çalıştırıldığında sonuç: manifest 20 değil **10 kayıt** içerdi

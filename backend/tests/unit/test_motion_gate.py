@@ -1,6 +1,6 @@
-"""KADEME 0 hareket filtresi kararları.
+"""Kademe 0 hareket filtresi kararları.
 
-⚠ NEDEN ÖNEMLİ
+Neden önemli
 --------------
 Bu filtre 20 kamerayı tek GPU'da döndürebilmemizin sebebi. İki yönde de
 bozulabilir ve **her iki bozulma da sessizdir**:
@@ -40,7 +40,7 @@ def _isit(gate: MotionGate, ts_baslangic: float = 0.0) -> float:
     """Arka plan modelini oturtur, ısınma karelerini tüketir.
 
     MOG2 ilk karelerde her şeyi ön plan sanar; `warmup_frames` bu yüzden
-    var. Testler ısınma SONRASI davranışa bakmalı.
+    var. Testler ısınma sonrası davranışa bakmalı.
     """
     ts = ts_baslangic
     for _ in range(WARMUP + 15):
@@ -69,7 +69,7 @@ def test_isinma_sirasinda_HER_KARE_geciyor(gate: MotionGate) -> None:
 def test_duragan_sahne_ELENIYOR(gate: MotionGate) -> None:
     """Filtrenin varlık sebebi.
 
-    `cam-test-static` tam olarak bunu doğrulamak için var (PLAN §5.1).
+    `cam-test-static` tam olarak bunu doğrulamak için var.
     """
     ts = _isit(gate)
 
@@ -98,7 +98,7 @@ def test_hareket_GECIRILIYOR(gate: MotionGate) -> None:
 
 
 def test_zorunlu_yenileme_karesi_geliyor(gate: MotionGate) -> None:
-    """⚠ Kadrajda hareketsiz duran kişi kaybolmasın diye.
+    """Kadrajda hareketsiz duran kişi kaybolmasın diye.
 
     Oturan/bekleyen biri arka plana karışır ve filtre onu eler; takip
     kimliği kaybolur ve kişi "yok olur". N saniyede bir zorunlu tam

@@ -1,13 +1,13 @@
-"""PyTorch FP16 vs TensorRT — A/B ölçümü ve TESPİT EŞDEĞERLİĞİ.
+"""PyTorch FP16 vs TensorRT — A/B ölçümü ve tespit eşdeğerliği.
 
 Neden bu betik
 --------------
 `benchmark_detect_breakdown.py` TensorRT'nin dokunabildiği payı ölçtü:
 ileri geçiş, `detect` bütçesinin %53'ü (3.37 ms/kare). Amdahl'a göre
-3× hızlanma → %35.6 toplam kazanç. Bu bir TAHMİN; bu betik gerçeği
+3× hızlanma → %35.6 toplam kazanç. Bu bir tahmin; bu betik gerçeği
 ölçüyor.
 
-⚠ İKİ SORU, İKİSİ DE SORULMALI
+İki soru, ikisi de sorulmalı
 ------------------------------
 1. **Daha hızlı mı?**  → süre karşılaştırması
 2. **Aynı şeyi mi buluyor?** → tespit karşılaştırması
@@ -15,16 +15,16 @@ ileri geçiş, `detect` bütçesinin %53'ü (3.37 ms/kare). Amdahl'a göre
 İkincisi olmadan birincisi anlamsız. FP16 dönüşümü, katman füzyonu ve
 farklı çekirdek seçimleri sonucu değiştirebilir. "3× hızlandı" diye
 raporlanan bir kazanç, aslında modelin daha az insan bulmasıysa kazanç
-değil kayıptır — ve bu SESSİZ bir hatadır, hız grafiğinde görünmez.
+değil kayıptır — ve bu sessiz bir hatadır, hız grafiğinde görünmez.
 
-⚠ DÖNÜŞÜMLÜ KOŞU — P-17'nin dersi
+Dönüşümlü koşu — P-17'nin dersi
 ---------------------------------
 İki yapılandırma arka arkaya değil, **dönüşümlü** ölçülüyor
 (A,B,A,B,...). Sıralı koşuda GPU sıcaklığı, saat frekansı ve termal
 kısıtlama ikinciyi sistematik olarak cezalandırıyor. Gün 8'de tam bu
 yüzden bir kazanç önce %-34 ölçülüp sonra %+43 çıkmıştı.
 
-⚠ SABİT PARTİ BOYUTU
+Sabit parti boyutu
 --------------------
 Motor `dynamic=False` ile derlendi. Dinamik şekiller YOLO26'nın dikkat
 bloğunda kırılıyor:
@@ -38,7 +38,7 @@ gerekiyor — eksik kareler tekrarla tamamlanır. Bu betik gerçek maliyeti
 görebilmek için tam parti ölçüyor; kısmi parti maliyeti ayrı bir konu
 ve karar notunda yazılı.
 
-⚠ ÖLÇÜM KOŞULU: boru hattı KAPALI.
+Ölçüm koşulu: boru hattı kapalı.
 
 Kullanım
 --------
@@ -65,9 +65,9 @@ BENCHMARKS = PROJECT_ROOT / "benchmarks"
 
 
 def _gercek_kareler(sayi: int, imgsz: int) -> list[np.ndarray]:
-    """Kamera çiftliğinden GERÇEK kareler — sentetik gürültü değil.
+    """Kamera çiftliğinden gerçek kareler — sentetik gürültü değil.
 
-    ⚠ Tespit eşdeğerliği sentetik kareyle sınanamaz: rastgele
+    Tespit eşdeğerliği sentetik kareyle sınanamaz: rastgele
     dikdörtgenlerde model zaten insan bulmaz, iki yapılandırma da
     "0 tespit" der ve eşdeğerlik sahte biçimde doğrulanmış olur.
     """
@@ -176,7 +176,7 @@ def main() -> int:
     torch.cuda.synchronize()
 
     sureler: dict[str, list[float]] = {ad: [] for ad in modeller}
-    # ⚠ DÖNÜŞÜMLÜ: her turda ikisi de ölçülüyor
+    # Dönüşümlü: her turda ikisi de ölçülüyor
     for _ in range(args.tur):
         for ad, m in modeller.items():
             torch.cuda.synchronize()

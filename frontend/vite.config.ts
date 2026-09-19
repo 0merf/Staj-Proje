@@ -3,18 +3,18 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
-// Vite 7 — Vite 8 DEĞİL. Gerekçe: Vite 8 + Tailwind v4 + React 19
-// birleşiminde bilinen kurulum sorunları raporlanmış (PLAN.md §3.5).
+// Vite 7 — Vite 8 değil. Gerekçe: Vite 8 + Tailwind v4 + React 19
+// birleşiminde bilinen kurulum sorunları raporlanmış.
 export default defineConfig(({ command }) => ({
-  // ⚠ Derlenmiş sürüm FastAPI'de `/app` altında servis ediliyor.
-  // `base` verilmezse Vite varlıkları `/assets/...` diye KÖKTEN arar,
-  // sunucu 404 döner ve sayfa BEYAZ açılır — konsola bakmadan sebebi
+  // Derlenmiş sürüm FastAPI'de `/app` altında servis ediliyor.
+  // `base` verilmezse Vite varlıkları `/assets/...` diye kökten arar,
+  // sunucu 404 döner ve sayfa beyaz açılır — konsola bakmadan sebebi
   // anlaşılmayan bir hata. Geliştirme sunucusunda kök doğru, o yüzden
   // yalnızca derlemede değiştiriyoruz.
   base: command === 'build' ? '/app/' : '/',
   plugins: [react(), tailwindcss()],
   server: {
-    // ⚠ IPv4'e SABİTLENDİ. Varsayılan `localhost` Windows'ta yalnızca
+    // IPv4'e sabitlendi. Varsayılan `localhost` Windows'ta yalnızca
     // ::1 (IPv6) dinlemeye yol açıyor; 127.0.0.1'den erişilemiyor ve
     // araçlar sessizce bağlanamıyor. Aynı tuzak altyapı adreslerinde de
     // yaşanmıştı (docs/report/problems.md · P-03).
@@ -35,14 +35,14 @@ export default defineConfig(({ command }) => ({
     emptyOutDir: true,
   },
   test: {
-    // ⚠ E2E DOSYALARI VITEST'TEN AYRILIYOR
+    // E2E dosyaları VITEST'ten ayrılıyor
     //
     // Vitest varsayılanı her `*.spec.ts`'i topluyor ve `e2e/` altındaki
     // Playwright testlerini de çalıştırmaya kalkıyordu:
     //     Error: Playwright Test did not expect test.beforeAll()
     //
     // İki koşucu, iki farklı iş: Vitest saf birim (altyapısız, ~2 sn),
-    // Playwright CANLI sisteme bağlanan zincir testi. Karıştırmak,
+    // Playwright canlı sisteme bağlanan zincir testi. Karıştırmak,
     // birim testlerini ayakta sistem gerektirir hâle getirirdi.
     exclude: ['e2e/**', 'node_modules/**', 'dist/**'],
   },

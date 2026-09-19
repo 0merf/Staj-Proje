@@ -1,6 +1,6 @@
-"""KATMAN B — kural tabanlı anomaliler (PLAN.md §6.4).
+"""Katman B — kural tabanlı anomaliler.
 
-⚠ BU DOSYA 26.08.2026'DA YOKTU
+Bu dosya 26.08.2026'da yoktu
 ------------------------------
 Katman B'nin dört kuralı da (düşme, koşma, oyalanma, kalabalık)
 **hiç birim testi olmadan** üretimde çalışıyordu. Daha kötüsü: bir
@@ -14,12 +14,12 @@ burada gerekçe de yoktu, sadece yanlış bir cümle vardı.
 Testlerin bakış açısı
 ---------------------
 Bu kurallar bir insan hakkında iddiada bulunuyor ("bu kişi düştü").
-Yanlış olduğunda iki yönde de pahalı ve hata SESSİZ: alarm makul
+Yanlış olduğunda iki yönde de pahalı ve hata sessiz: alarm makul
 görünür, sadece yanlış sebeple çıkmıştır.
 
 O yüzden her kural için **iki taraf** da sınanıyor:
   · olay gerçekten olduğunda ateşliyor mu
-  · olaya BENZEYEN ama olay olmayan durumda susuyor mu
+  · olaya benzeyen ama olay olmayan durumda susuyor mu
 
 İkincisi daha önemli. Ateşlemeyen bir kural görünür bir eksiklik;
 yanlış ateşleyen bir kural sistemin güvenilirliğini bitirir.
@@ -45,7 +45,7 @@ from sentinel.analytics.features.person import KisiOzellikleri
 def kisi(track_id: int = 1, **alanlar: float) -> KisiOzellikleri:
     """Varsayılanı 'ayakta duran, sakin bir insan' olan özellik vektörü.
 
-    ⚠ Varsayılanın NORMAL olması bilinçli: her test yalnızca
+    Varsayılanın normal olması bilinçli: her test yalnızca
     değiştirdiği alanı anlatıyor, geri kalanı "normal" diye okunuyor.
     Aksi hâlde bir testin neyi sınadığı, yazılmayan alanlardan
     çıkarılmak zorunda kalırdı.
@@ -68,7 +68,7 @@ def turleri(bulgular: list) -> set[AnomaliTuru]:
 
 
 # ══════════════════════════════════════════════════════════════
-#  DÜŞME — üç kanıt birden aranıyor
+#  Düşme — üç kanıt birden aranıyor
 # ══════════════════════════════════════════════════════════════
 
 
@@ -88,7 +88,7 @@ class TestDusme:
         assert AnomaliTuru.DUSME in turleri(bulgular)
 
     def test_EGILIP_BIR_SEY_ALAN_kisi_dusme_SAYILMIYOR(self) -> None:
-        """⚠ Düşmeyi eğilmekten ayıran şey HIZ.
+        """Düşmeyi eğilmekten ayıran şey hız.
 
         Eğilen kişide de gövde yatar, kutu da genişler. Tek fark:
         eğilmek yavaştır, düşmek ani. `DUSME_EGIM_HIZI` bu ayrımı
@@ -109,7 +109,7 @@ class TestDusme:
         assert AnomaliTuru.DUSME not in turleri(bulgular)
 
     def test_TERS_DONMUS_iskelet_dusme_SAYILMIYOR(self) -> None:
-        """⚠ REGRESYON — canlı sistemde gerçekten yaşandı.
+        """Regresyon — canlı sistemde gerçekten yaşandı.
 
         Poz modeli baş ile ayağı karıştırınca gövde eğimi 175° çıkıyor
         ve kural skor 1.00 üretiyordu. 175° "yatay" değil, "baş aşağı
@@ -117,7 +117,7 @@ class TestDusme:
         90° civarındadır.
 
         Üst sınır (`DUSME_EGIM_AZAMI`) bu yüzden eklendi (commit
-        1dfa4ca). Bu hata SENTETİK testte asla çıkmazdı; gerçek
+        1dfa4ca). Bu hata sentetik testte asla çıkmazdı; gerçek
         görüntü olmadan bulunamazdı.
         """
         m = KuralMotoru()
@@ -140,7 +140,7 @@ class TestDusme:
 
 
 # ══════════════════════════════════════════════════════════════
-#  KOŞMA
+#  Koşma
 # ══════════════════════════════════════════════════════════════
 
 
@@ -153,7 +153,7 @@ class TestKosma:
         assert AnomaliTuru.KOSMA in turleri(bulgular)
 
     def test_DUSUK_TAMLIK_kosma_sayilmiyor(self) -> None:
-        """⚠ Az örnekten çıkan yüksek hız, hız değil gürültüdür.
+        """Az örnekten çıkan yüksek hız, hız değil gürültüdür.
 
         İki örnekten hesaplanan hızda tek bir kutu sıçraması "koşuyor"
         gibi görünür. Gerçekten koşan biri kadrajda birkaç saniye kalır
@@ -176,17 +176,17 @@ class TestKosma:
 
 
 # ══════════════════════════════════════════════════════════════
-#  OYALANMA — süre TEK BAŞINA yetmiyor
+#  Oyalanma — süre tek başına yetmiyor
 # ══════════════════════════════════════════════════════════════
 
 
 def _oyalandir(m: KuralMotoru, saniye: float, normal: float | None = None) -> list:
-    """Bir kişiyi `saniye` boyunca aynı yerde tutar, TÜM bulguları döndürür.
+    """Bir kişiyi `saniye` boyunca aynı yerde tutar, tüm bulguları döndürür.
 
-    ⚠ Kare kare besleniyor: oyalanma sayacı `dt` ile birikiyor, tek
+    Kare kare besleniyor: oyalanma sayacı `dt` ile birikiyor, tek
     çağrıda oluşmaz.
 
-    ⚠ BULGULAR BİRİKTİRİLİYOR, son kare değil
+    Bulgular biriktiriliyor, son kare değil
     Oyalanma alarmı eşik aşıldığında **bir kez** ateşliyor; sonraki
     karelerde `durum.aktif` onu bastırıyor (aynı olay tekrar tekrar
     bildirilmemeli). Yalnızca son karenin çıktısına bakmak, alarm
@@ -215,19 +215,19 @@ def _oyalandir(m: KuralMotoru, saniye: float, normal: float | None = None) -> li
 
 class TestOyalanma:
     def test_uzun_sure_ayni_yerde_YAKALANIYOR(self) -> None:
-        """Profil bilgisi yokken kural ESKİ davranışına dönüyor."""
+        """Profil bilgisi yokken kural eski davranışına dönüyor."""
         m = KuralMotoru()
         bulgular = _oyalandir(m, OYALANMA_SANIYE + 5, normal=None)
         assert AnomaliTuru.OYALANMA in turleri(bulgular)
 
     def test_INSANLARIN_NORMALDE_DURDUGU_yerde_alarm_YOK(self) -> None:
-        """⚠ 26.08.2026'da eklenen ikinci kanıt.
+        """26.08.2026'da eklenen ikinci kanıt.
 
         Bank, vitrin önü, otobüs durağı — buralarda 45 saniye durmak
         olayın kendisi değil, mekânın doğasıdır. Kural artık öğrenilmiş
         profile soruyor: "burada gözlemlerin kaçta kaçı durağandı?"
 
-        Bu, mimari kural 7'nin ("her kameranın normali AYRI") mekân
+        Bu, mimari kural 7'nin ("her kameranın normali ayrı") mekân
         boyutundaki karşılığı.
         """
         m = KuralMotoru()

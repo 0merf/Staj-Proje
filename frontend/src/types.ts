@@ -1,17 +1,17 @@
 /** Sunucuyla paylaşılan mesaj sözleşmesi.
  *
  * Kaynak: backend `inference/worker.py::_serialize`.
- * ⚠ Alan adları kasten kısa: 20 kamera × ~4 sonuç/sn × ~5 kişi
+ * Alan adları kasten kısa: 20 kamera × ~4 sonuç/sn × ~5 kişi
  * durumunda uzun anahtarlar mesaj boyutunu ikiye katlardı.
  */
 
-/** Tek bir kişi tespiti. Koordinatlar KAYNAK karenin piksel uzayında. */
+/** Tek bir kişi tespiti. Koordinatlar kaynak karenin piksel uzayında. */
 export interface Detection {
   /** [x1, y1, x2, y2] */
   bbox: [number, number, number, number]
   conf: number
   cls: number
-  /** İz kimliği. YOKSA takipçi henüz onaylamamış demektir (P-13). */
+  /** İz kimliği. Yoksa takipçi henüz onaylamamış demektir (P-13). */
   id?: number
   /** Hız vektörü [vx, vy], piksel/saniye. Ara değerleme için. */
   v?: [number, number]
@@ -19,16 +19,16 @@ export interface Detection {
   age?: number
   /** COCO-17 iskelet: 17 × [x, y, güven]. Poz kademesi kapalıysa yok. */
   kp?: [number, number, number][]
-  /** KADEME 2b — yüz ifadesi. Seyrek gelir (iz başına ~2 sn'de bir). */
+  /** kademe 2b — yüz ifadesi. Seyrek gelir (iz başına ~2 sn'de bir). */
   expr?: Expression
 }
 
 /** Yüz ifadesi sınıflandırması.
  *
- * ⚠ Bu bir DUYGU İDDİASI DEĞİL. Model "üzgün" dediğinde kanıtladığı tek
+ * Bu bir duygu iddiası değil. Model "üzgün" dediğinde kanıtladığı tek
  * şey, görüntünün eğitim setindeki "üzgün" etiketli yüzlere benzediği.
- * Bu yüzden panelde `q` (kalite) eşiğin altındaysa etiket HİÇ
- * gösterilmiyor — gürültüyü bilgi gibi sunmamak için (PLAN.md §6.3).
+ * Bu yüzden panelde `q` (kalite) eşiğin altındaysa etiket hiç
+ * gösterilmiyor — gürültüyü bilgi gibi sunmamak için.
  */
 export interface Expression {
   /** AffectNet etiketi (İngilizce, modelden geldiği gibi). */
@@ -41,10 +41,10 @@ export interface Expression {
 }
 
 /** Etiketin operatöre gösterilebilecek kadar güvenilir olduğu eşikler.
- * Sunucudaki `ExpressionResult.usable` ile AYNI değerler olmalı
+ * Sunucudaki `ExpressionResult.usable` ile aynı değerler olmalı
  * (backend `inference/emotion/base.py`). */
 export const EXPR_MIN_QUALITY = 0.5
-// ⚠⚠ 10.09.2026 — 0.40 -> 0.55 (P-73). Sunucudaki `usable` ile AYNI
+// 10.09.2026 — 0.40 -> 0.55 (P-73). Sunucudaki `usable` ile aynı
 // olmak zorunda; ayrışırlarsa panel sunucunun güvenilmez saydığı bir
 // etiketi gösterir (ya da tersi) ve iki taraf farklı şey iddia eder.
 //
@@ -57,7 +57,7 @@ export const EXPR_MIN_CONF = 0.55
 export interface FrameResult {
   type: 'frame'
   cam: string
-  /** Sunucunun MONOTONİK saati — Date.now() ile karşılaştırılamaz. */
+  /** Sunucunun monotonik saati — Date.now() ile karşılaştırılamaz. */
   ts: number
   seq: number
   /** Kaynak kare boyutu. Kameralar farklı çözünürlükte olabilir. */
@@ -66,7 +66,7 @@ export interface FrameResult {
   count: number
   motion: number
   gate: string
-  /** Bu karenin ANALIZ yolunda harcadigi sure (ms) — sunucu olcuyor. */
+  /** Bu karenin analiz yolunda harcadigi sure (ms) — sunucu olcuyor. */
   lat?: number
   detections: Detection[]
 }
@@ -87,23 +87,23 @@ export interface Camera {
 /** Panelde ne çizilsin — kullanıcı 3 kademeli düğmeyle seçiyor. */
 export type ViewMode = 'off' | 'boxes' | 'full'
 
-/** Panelin hangi sayfada olduğu (PLAN §10.1).
+/** Panelin hangi sayfada olduğu.
  *
- * ⚠ NEDEN ROUTER DEĞİL, DURUM DEĞİŞKENİ
+ * Neden router değil, durum değişkeni
  * `react-router` üç görünüm için bir bağımlılık, bir sağlayıcı
  * sarmalayıcısı ve bir URL sözleşmesi getiriyordu. Bu panelde derin
  * bağlantı (deep link) gereksinimi yok: operatör panele girip
  * görünüm değiştiriyor, URL paylaşmıyor.
  *
- * ⚠ BEDELİ AÇIKÇA YAZILIYOR: tarayıcının geri düğmesi görünümler
+ * Bedeli açıkça yazılıyor: tarayıcının geri düğmesi görünümler
  * arasında çalışmıyor ve bir görünüme doğrudan bağlantı verilemiyor.
  * Gerçek bir üründe router doğru seçim olurdu; bu takas kapsam
  * gerekçesiyle yapıldı. */
 export type Sayfa = 'izgara' | 'zaman-cizelgesi' | 'kamera'
 
-/** Analitik katmanının ürettiği anomali (KATMAN B).
+/** Analitik katmanının ürettiği anomali (katman B).
  *
- * ⚠ Alarm ABONELİK FİLTRESİNE TAKILMAZ — kutucuk kapalı olsa bile
+ * Alarm abonelik filtresine takılmaz — kutucuk kapalı olsa bile
  * gelir. Gözetim sisteminin varlık sebebi kimsenin bakmadığı kamerada
  * olanı bildirmek (backend: api/ws/manager.py · _dispatch_alert).
  */
@@ -129,13 +129,13 @@ export interface TimedAlert extends Alert {
   gecmis?: boolean
   /** Olay klibinin anahtarı — varsa `/api/v1/events/klip/<anahtar>`.
    *
-   * ⚠ 03.09.2026'ya kadar bu alan MAPLENMİYORDU: `/api/v1/events`
+   * 03.09.2026'ya kadar bu alan maplenmiyordu: `/api/v1/events`
    * yanıtı `klip` alanını döndürüyordu (`HistoryEvent.klip`), ama
    * `loadHistory` onu `TimedAlert`'e taşımıyordu ve panelde kullanan
    * hiçbir şey yoktu. Yani klip kesiliyor, veritabanına yazılıyor ve
    * arayüze hiç ulaşmıyordu.
    *
-   * ⚠ Canlı alarmlarda BOŞ ve bu normaldir: klibi alarm worker'ı
+   * Canlı alarmlarda boş ve bu normaldir: klibi alarm worker'ı
    * veritabanına yazarken kesiyor, canlı WebSocket mesajı ondan önce
    * gidiyor. Klip ancak geçmiş yüklendiğinde görünür — yani "canlı
    * alarmda klip yok" bir arıza değil, sıralamanın sonucu. */
@@ -144,7 +144,7 @@ export interface TimedAlert extends Alert {
 
 /** `/api/v1/events` yanıtındaki tek kayıt.
  *
- * ⚠ Alan adları TÜRKÇE çünkü veritabanı şeması Türkçe (`db/schema.py`).
+ * Alan adları türkçe çünkü veritabanı şeması Türkçe (`db/schema.py`).
  * Canlı WebSocket mesajı ise İngilizce alan adları kullanıyor — ikisi
  * ayrı sözleşme ve karıştırılmamalı. Dönüşüm tek yerde yapılıyor
  * (`store.ts · loadHistory`). */
@@ -167,26 +167,26 @@ export const ANOMALI_TR: Record<string, string> = {
   running: 'koşma',
   loitering: 'oyalanma',
   crowd: 'kalabalık',
-  // KATMAN A — kural değil, öğrenilmiş profile göre üretilen alarm.
+  // Katman A — kural değil, öğrenilmiş profile göre üretilen alarm.
   // Diğerleri "şu fiziksel olay oldu" der; bu "bu kameranın normali
   // böyle değil" der. Adlandırma bu farkı taşımalı.
   unusual: 'olağandışı',
-  // ⚠ FÜZYON — beş sinyalin birleşimi (analytics/fusion.py).
+  // Füzyon — beş sinyalin birleşimi (analytics/fusion.py).
   // Diğerleri "şu olay oldu" der; bu "bu kişi genel olarak riskli"
   // der. Adlandırma farkı taşımalı: operatör tek bir gözleme mi
   // yoksa bir birikime mi baktığını bilmeli.
   risk: 'RİSK (birleşik)',
-  // ⚠ 10.09'da EKLENDİ — üretimde vardı, sözlükte yoktu.
-  // Panelde ham anahtar görünüyordu ("AGGRESSİON"): Türkçe bir
+  // 10.09'da eklendi — üretimde vardı, sözlükte yoktu.
+  // Panelde ham anahtar görünüyordu ("aggression"): Türkçe bir
   // arayüzün ortasında İngilizce bir alan adı. Sözlükte olmayan tür
   // sessizce ham hâliyle geçiyordu; artık `types.test.ts` bunu
   // yakalıyor (arka uçtaki tür listesiyle karşılaştırarak).
   aggression: 'SALDIRGANLIK',
 }
 
-/** Arka ucun ürettiği TÜM olay türleri (`analytics/`, `alerting/`).
+/** Arka ucun ürettiği tüm olay türleri (`analytics/`, `alerting/`).
  *
- * ⚠ Bu liste bir KOPYA ve kopyalar bayatlar. Bayatlamayı sessiz
+ * Bu liste bir kopya ve kopyalar bayatlar. Bayatlamayı sessiz
  * olmaktan çıkarmak için `types.test.ts` her ikisini karşılaştırıyor:
  * arka uçta yeni bir tür eklenirse ve buraya yansımazsa test düşüyor.
  * Kopyanın kendisini yok edemiyoruz (ön yüz Python okumuyor), ama

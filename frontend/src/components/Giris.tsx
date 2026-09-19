@@ -1,9 +1,9 @@
-/** Giriş ekranı — PLAN.md §11.1.
+/** Giriş ekranı.
  *
- * ⚠ TOKEN NEREDE SAKLANIYOR: HİÇBİR YERDE
+ * Token nerede saklanıyor: hiçbir yerde
  * ---------------------------------------
  * Erişim tokenı `localStorage`'a ya da bir React state'ine
- * KONULMUYOR. Sunucu onu `httponly` çerez olarak veriyor; JavaScript
+ * konulmuyor. Sunucu onu `httponly` çerez olarak veriyor; JavaScript
  * okuyamıyor, dolayısıyla bir XSS açığı tokenı çalamıyor.
  *
  * Bu, "token'ı localStorage'da tut" yaygın kalıbının tam tersi ve
@@ -15,7 +15,7 @@
  * yapılmış mı" sorusunu tokena bakarak değil, **sunucuya sorarak**
  * cevaplıyor (`/api/v1/auth/ben`).
  *
- * ⚠ WEBSOCKET DE ÇEREZLE ÇALIŞIYOR
+ * WEBSOCKET de çerezle çalışıyor
  * Tarayıcının WebSocket API'si özel başlık eklemeye izin vermiyor;
  * çerez ise el sıkışmada kendiliğinden gidiyor. Token'ı sorgu
  * parametresine koymak alternatifti ve kötü olurdu: sorgu dizeleri
@@ -47,7 +47,7 @@ export function Giris({ onSuccess }: Props) {
         onSuccess()
         return
       }
-      // ⚠ SUNUCUNUN MESAJI OLDUĞU GİBİ GÖSTERİLİYOR ve o mesaj
+      // Sunucunun mesajı olduğu gibi gösteriliyor ve o mesaj
       // bilinçli olarak belirsiz ("kullanıcı adı ya da parola hatalı").
       // İstemcide "kullanıcı bulunamadı" gibi bir ayrım uydurmak,
       // sunucunun kullanıcı numaralandırmaya karşı aldığı önlemi

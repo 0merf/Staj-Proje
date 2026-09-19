@@ -2,14 +2,14 @@
 
 Neden bu ölçüm
 --------------
-Koşma eşiği (1.5 gövde/sn) FİZİKTEN türetilmişti:
+Koşma eşiği (1.5 gövde/sn) fizikten türetilmişti:
 
     yürüme ~1.4 m/s ÷ ortalama boy 1.7 m ≈ 0.8 gövde/sn
     koşu   ~3.0 m/s ÷ 1.7 m              ≈ 1.8 gövde/sn
 
 Makul bir akıl yürütme ama **gerçek verimizle doğrulanmadı.** Kullanıcı
 panelde şunu fark etti: cam-09'da (Oxford Town Centre, yoğun cadde)
-YÜRÜYEN insanlar 1.58-2.21 gövde/sn çıkıyor ve eşiği aşıyor.
+yürüyen insanlar 1.58-2.21 gövde/sn çıkıyor ve eşiği aşıyor.
 
 Bu, projede tekrar eden hata deseninin bir örneği daha: doğru görünen
 bir hesap, ölçülmeden kullanılırsa yanlış olabiliyor (P-14 en-boy oranı,
@@ -23,7 +23,7 @@ Canlı `inference.results` akışını dinler, özellik motorunu besler ve
 kamera başına `govde_hizi` dağılımını çıkarır. Çıktı: hangi persentilin
 hangi hıza denk geldiği.
 
-⚠ Yer gerçeği YOK. Bu ölçüm "koşan kim" demiyor; "bu kameralarda hızlar
+Yer gerçeği yok. Bu ölçüm "koşan kim" demiyor; "bu kameralarda hızlar
 nasıl dağılıyor" diyor. Eşiği persentile bağlamak, mutlak bir sayıya
 bağlamaktan daha savunulabilir — ama mükemmel değil ve raporda böyle
 yazılacak.

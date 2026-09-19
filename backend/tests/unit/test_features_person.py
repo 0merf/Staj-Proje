@@ -1,6 +1,6 @@
-"""Kişi bazlı özellik çıkarımı — PLAN.md §6.5.2.
+"""Kişi bazlı özellik çıkarımı.
 
-⚠ NEDEN BU TESTLER ÖNEMLİ
+Neden bu testler önemli
 -------------------------
 Bu sayılar doğrudan **saldırganlık skoruna** giriyor. Yanlış bir
 `bilek_hizi_azami`, sakin bir insanı alarma dönüştürebilir ya da
@@ -67,7 +67,7 @@ def iskelet(
         kp[i][1] = y * olcek
 
     if yatay:
-        # Gövdeyi 90° çevir: omuz ile kalça AYNI yükseklikte, yan yana
+        # Gövdeyi 90° çevir: omuz ile kalça aynı yükseklikte, yan yana
         kp[sk.SOL_OMUZ][:2] = [60 * olcek, 130 * olcek]
         kp[sk.SAG_OMUZ][:2] = [60 * olcek, 150 * olcek]
 
@@ -105,7 +105,7 @@ def pencere_kur(
 
 class TestGeometri:
     def test_dik_durus_sifir_derece(self) -> None:
-        """⚠ Görüntü koordinatlarında y AŞAĞI artar.
+        """Görüntü koordinatlarında y aşağı artar.
 
         Referans vektör yanlış işaretle yazılsaydı dik duruş 180°
         çıkar ve "yere yatmış" ile karışırdı — düşme kuralı ters
@@ -114,7 +114,7 @@ class TestGeometri:
         assert sk.govde_egimi(iskelet()) == pytest.approx(0.0, abs=1.0)
 
     def test_yatay_govde_90_dereceye_yakin(self) -> None:
-        """Düşme tespitinin (PLAN §6.4 Katman B) temel sinyali."""
+        """Düşme tespitinin (Katman B) temel sinyali."""
         egim = sk.govde_egimi(iskelet(yatay=True))
         assert egim is not None
         assert egim > 60.0
@@ -126,7 +126,7 @@ class TestGeometri:
         assert yukarida > asagida
 
     def test_eksik_keypoint_UYDURULMUYOR(self) -> None:
-        """⚠ PLAN §6.2 — görünmeyen uzvun yeri tahmin edilmez.
+        """Görünmeyen uzvun yeri tahmin edilmez.
 
         `None` dönmek "hesaplayamadım" demek. Bunun yerine 0.0
         dönseydi füzyon katmanı onu "kol tamamen aşağıda" diye okurdu
@@ -144,7 +144,7 @@ class TestGeometri:
         assert sk.omuz_merkezi(iskelet(eksik=(sk.SOL_OMUZ,))) is not None
 
     def test_ayak_noktasi_kutunun_alt_ortasi(self) -> None:
-        """Takipçinin hız referansıyla AYNI nokta olmalı.
+        """Takipçinin hız referansıyla aynı nokta olmalı.
 
         Ayrışırlarsa hız ile mesafe farklı referanslarda ölçülür ve
         çift bazlı özellikler (yaklaşma hızı) tutarsızlaşır.
@@ -153,13 +153,13 @@ class TestGeometri:
 
 
 # ══════════════════════════════════════════════════════════════
-#  ⭐ Ölçek normalizasyonu — en kritik özellik
+#  Ölçek normalizasyonu — en kritik özellik
 # ══════════════════════════════════════════════════════════════
 
 
 class TestOlcekNormalizasyonu:
     def test_AYNI_hareket_FARKLI_uzaklikta_ayni_hizi_veriyor(self) -> None:
-        """⚠ Bu tutmazsa sistem kullanılamaz.
+        """Bu tutmazsa sistem kullanılamaz.
 
         Kameraya yakın kişi ile uzak kişi aynı hareketi yaptığında
         piksel hızları kat kat farklıdır. Normalizasyon bozulursa
@@ -192,7 +192,7 @@ class TestOlcekNormalizasyonu:
     def test_govde_boyu_omuz_kalcadan_turetiliyor(self) -> None:
         """Kutu yüksekliği yedek plan; omuz-kalça tercih edilir.
 
-        Kollarını kaldıran kişinin KUTUSU uzar ama omuz-kalça mesafesi
+        Kollarını kaldıran kişinin kutusu uzar ama omuz-kalça mesafesi
         değişmez. Ölçek kutudan alınsaydı, ölçmek istediğimiz hareket
         ölçeğimizi bozardı.
         """
@@ -209,7 +209,7 @@ class TestOlcekNormalizasyonu:
 
 class TestPencere:
     def test_KISMI_pencereyle_de_ozellik_uretiliyor(self) -> None:
-        """⚠ Ölçüm: izlerin medyan ömrü 4 kare (1 sn).
+        """Ölçüm: izlerin medyan ömrü 4 kare (1 sn).
 
         "12 örnek yoksa hesaplama" kuralı modülü izlerin yarısından
         fazlasında susturur ve saldırganlık tespiti pratikte çalışmaz.
@@ -222,7 +222,7 @@ class TestPencere:
         assert ozellik.ornek_sayisi == 2
 
     def test_tamlik_skoru_ornek_sayisiyla_artiyor(self) -> None:
-        """⚠ Füzyona giren güvenilirlik sinyali.
+        """Füzyona giren güvenilirlik sinyali.
 
         2 örnekten çıkan hız ile 12 örnekten çıkan aynı sayı aynı
         güvene sahip değil; bu skor olmadan füzyon ikisini eşit sayar.
@@ -235,14 +235,14 @@ class TestPencere:
         assert cok.tamlik == pytest.approx(1.0)
 
     def test_tek_ornekte_zamansal_ozellik_YOK_ama_durus_VAR(self) -> None:
-        """Hız bir FARK — tek noktadan hesaplanamaz. Duruş hesaplanır."""
+        """Hız bir fark — tek noktadan hesaplanamaz. Duruş hesaplanır."""
         ozellik = cikar(pencere_kur([(0.0, iskelet())]))
         assert ozellik.bilek_hizi_azami is None
         assert ozellik.govde_egimi is not None
         assert ozellik.en_boy_orani is not None
 
     def test_BUYUK_BOSLUK_hiz_sanilmiyor(self) -> None:
-        """⚠ Sistem doygunken karelerin %70'i atılıyor (ölçüldü).
+        """Sistem doygunken karelerin %70'i atılıyor (ölçüldü).
 
         Atlanan karelerden sonra kişi büyük bir mesafe kat etmiş
         görünür. O aralıktan hız hesaplamak sahte bir "ani hızlanma"
@@ -260,8 +260,8 @@ class TestPencere:
     def test_pencere_suresi_asilinca_eski_ornek_dusuyor(self) -> None:
         """3 sn'lik pencere gerçekten 3 sn tutmalı — ne fazla, ne eksik.
 
-        Sınır DAHİL: `simdi - ts > PENCERE_S` olan düşer, tam 3.0 sn
-        önceki örnek KALIR. Fazla tutmak eski hareketi güncel sanmak,
+        Sınır dahil: `simdi - ts > PENCERE_S` olan düşer, tam 3.0 sn
+        önceki örnek kalır. Fazla tutmak eski hareketi güncel sanmak,
         az tutmak zamansal bilgiyi boşa harcamak olurdu.
         """
         pencere = pencere_kur([(t, iskelet()) for t in (0.0, 1.0, 2.0, 5.0)])
@@ -273,7 +273,7 @@ class TestPencere:
         assert pencere.sure_s == pytest.approx(PENCERE_S)
 
     def test_kameralar_arasi_kimlik_KARISMIYOR(self) -> None:
-        """⚠ Takip kimlikleri kamera İÇİNDE benzersiz, arasında değil.
+        """Takip kimlikleri kamera içinde benzersiz, arasında değil.
 
         cam-01'deki 7 numaralı iz ile cam-09'daki 7 numaralı iz farklı
         kişiler. Karışsalardı iki ayrı insanın hareketleri tek bir
@@ -360,9 +360,9 @@ class TestOzellikAnlami:
 
 
 def test_BOZUK_iskelet_dusme_sayilmiyor() -> None:
-    """⚠ Canlı koşuda yakalandı: "gövde eğimi 175°" ile düşme alarmı.
+    """Canlı koşuda yakalandı: "gövde eğimi 175°" ile düşme alarmı.
 
-    175°, omuz-kalça vektörünün neredeyse tam AŞAĞI baktığı anlamına
+    175°, omuz-kalça vektörünün neredeyse tam aşağı baktığı anlamına
     gelir — kişi baş aşağı. Bu düşme değil, poz modelinin omuz ile
     kalçayı ters ataması. Gerçek düşmede gövde yatay olur (55-120°).
 
@@ -374,7 +374,7 @@ def test_BOZUK_iskelet_dusme_sayilmiyor() -> None:
         DUSME_EGIM_DERECE,
     )
 
-    # Ters çevrilmiş iskelet: omuz kalçanın ALTINDA
+    # Ters çevrilmiş iskelet: omuz kalçanın altında
     kp = iskelet()
     kp[sk.SOL_OMUZ][1], kp[sk.SOL_KALCA][1] = kp[sk.SOL_KALCA][1], kp[sk.SOL_OMUZ][1]
     kp[sk.SAG_OMUZ][1], kp[sk.SAG_KALCA][1] = kp[sk.SAG_KALCA][1], kp[sk.SAG_OMUZ][1]

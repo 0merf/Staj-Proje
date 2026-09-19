@@ -1,14 +1,14 @@
 """İlk yönetici hesabını (ya da yeni bir kullanıcı) oluşturur.
 
-⚠ NEDEN BETİK, NEDEN "İLK AÇILIŞTA VARSAYILAN ADMIN"
+Neden betik, neden "ilk açılışta varsayılan ADMIN"
 Bazı sistemler ilk açılışta `admin/admin` gibi bir hesap yaratır. Bu,
 sahada en sık sömürülen açıklardan biri: kimse değiştirmiyor ve
 varsayılan parolalar internette listeli.
 
-Bu proje hiçbir hesabı kendiliğinden yaratmıyor. Hesap AÇIKÇA
+Bu proje hiçbir hesabı kendiliğinden yaratmıyor. Hesap açıkça
 oluşturulmalı ve parola operatör tarafından verilmeli.
 
-⚠ PAROLA KOMUT SATIRINDA VERİLMİYOR. Komut geçmişine (`history`) ve
+Parola komut satırında verilmiyor. Komut geçmişine (`history`) ve
 süreç listesine (`ps`, Görev Yöneticisi) düşer. `getpass` ile
 sorulyor — ekrana da yazılmıyor.
 
@@ -67,7 +67,7 @@ def main() -> int:
     args = ap.parse_args()
 
     if args.uret:
-        # ⚠ `secrets`, `random` DEĞİL. `random` tahmin edilebilir bir
+        # `secrets`, `random` değil. `random` tahmin edilebilir bir
         # sözde rastgele üreteç; parola üretiminde kullanılmamalı.
         parola = secrets.token_urlsafe(18)
         print(f"Üretilen parola: {parola}\n⚠ Bunu güvenli bir yere kaydedin, tekrar gösterilmeyecek.\n")

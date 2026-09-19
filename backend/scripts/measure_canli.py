@@ -1,44 +1,44 @@
-"""CANLI DOĞRULAMA — model üretimde gerçekten konuşuyor mu? (P-56)
+"""Canlı doğrulama — model üretimde gerçekten konuşuyor mu? (P-56)
 
-⭐ NEDEN BU BETİK
+Neden bu betik
 ----------------
 Hakem denetimi iki ölümcül bulgu çıkardı:
 
   §1.1  Hiçbir öğrenilmiş model canlı boru hattında değildi
-  §1.2  Saldırganlık sinyali (füzyon ağırlığı 0.40) HİÇ ateşlemiyordu
+  §1.2  Saldırganlık sinyali (füzyon ağırlığı 0.40) hiç ateşlemiyordu
         — K7 koşusundaki 39 alarmın sıfırı saldırganlıktandı
 
 Model artık entegre (`analytics/model.py`). Ama **entegre etmek
 çalıştığını göstermez.** Bu, projede defalarca yakalanan hatanın ta
 kendisi olurdu:
 
-    P-43  ifade sınıflandırılıyordu, karara HİÇ ulaşmıyordu
-    P-44  `buda()` yazılmıştı, hiç ÇAĞRILMIYORDU
-    P-45  klipler kesiliyordu, kimse GÖREMİYORDU
+    P-43  ifade sınıflandırılıyordu, karara hiç ulaşmıyordu
+    P-44  `buda()` yazılmıştı, hiç çağrılmıyordu
+    P-45  klipler kesiliyordu, kimse göremiyordu
 
-> ⭐ *"Her parçası tek tek çalışan bir sistem uçtan uca çalışmayabilir
-> ve parça testleri bunu asla göstermez."* (CLAUDE.md · ikinci tez)
+> *"Her parçası tek tek çalışan bir sistem uçtan uca çalışmayabilir
+> ve parça testleri bunu asla göstermez."* (proje notlarım · ikinci tez)
 
 Bu betik uçtan uca soruyor: **model canlıda skor üretiyor mu, o skor
 alarma dönüşüyor mu, ve bunun bedeli ne?**
 
-NE ÖLÇÜLÜYOR
+NE ölçülüyor
 ------------
 1. **Model canlı mı** — `sentinel_aggression_model_score` gauge'ı
    kaç kamerada sıfırdan farklı? Hep 0 ise model yüklü ama besleme
    kopuk demektir.
-2. **Alarm türü kırılımı** — `aggression` türü ARTIK görünüyor mu?
+2. **Alarm türü kırılımı** — `aggression` türü artık görünüyor mu?
 3. **Gecikme** — p50/p95. Referans: K4'te p50 205 ms · p95 463 ms.
    Model kare başına ek maliyet getiriyor; bedeli görünmeli.
 4. **Analiz hızı** — kamera başına FPS. Referans: 2.75.
 5. **Kaynak** — süreç başına CPU/RAM (psutil) + GPU kullanımı/VRAM.
 
-⚠ ÖLÇÜM KOŞULU
+Ölçüm koşulu
 --------------
-Boru hattı AYAKTA, panel KAPALI (P-24: panel açıkken verim yarıya
-düşüyor), ölçüm sırasında sisteme DOKUNULMAZ (P-36).
+Boru hattı ayakta, panel kapalı (P-24: panel açıkken verim yarıya
+düşüyor), ölçüm sırasında sisteme dokunulmaz (P-36).
 
-⚠ İlk `--isinma` saniyesi atılıyor (P-28): profiller ısınmadan
+İlk `--isinma` saniyesi atılıyor (P-28): profiller ısınmadan
 üretilen sayı ölçüm değil.
 
 Kullanım:
@@ -65,7 +65,7 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BENCHMARKS = PROJECT_ROOT / "benchmarks"
 
-# worker → metrik portu (CLAUDE.md §5 · Servis portları)
+# worker → metrik portu (proje notlarım · Servis portları)
 PORTLAR = {
     "alim": 9101,
     "cikarim": 9110,
@@ -74,8 +74,8 @@ PORTLAR = {
 }
 KAMERA_SAYISI = 20
 
-# K4'te ölçülen referanslar — model ENTEGRE EDİLMEDEN önce.
-# ⚠ Karşılaştırma zemini: aynı donanım, aynı kamera sayısı, panel kapalı.
+# K4'te ölçülen referanslar — model entegre edilmeden önce.
+# Karşılaştırma zemini: aynı donanım, aynı kamera sayısı, panel kapalı.
 REFERANS = {
     "gecikme_p50_ms": 205.0,
     "gecikme_p95_ms": 463.0,
@@ -144,7 +144,7 @@ def _kova_farki(
 ) -> dict[float, float]:
     """İki kümülatif histogram anlık görüntüsünün farkı.
 
-    ⚠⚠ 09.09.2026 — BU FONKSİYON YOKTU VE p50/p95'İ ANLAMSIZ YAPIYORDU
+    09.09.2026 — bu fonksiyon yoktu ve p50/p95'i anlamsız yapıyordu
     ------------------------------------------------------------------
     Prometheus histogramı **kümülatif**: süreç başından beri her şeyi
     sayıyor. Bu betik yüzdeliği doğrudan o kümülatif kovadan alıyordu,
@@ -154,17 +154,17 @@ def _kova_farki(
     İki sonucu vardı:
 
       1. Aynı sistem, aynı kod, farklı sayı — sonuç worker'ın ölçümden
-         ÖNCE ne kadar süredir ayakta olduğuna bağlıydı.
-      2. `--isinma` bayrağı YALAN söylüyordu: attığı şey ilk 90 saniyenin
+         önce ne kadar süredir ayakta olduğuna bağlıydı.
+      2. `--isinma` bayrağı yalan söylüyordu: attığı şey ilk 90 saniyenin
          **örnekleriydi**, ama o saniyelerin gecikmeleri histogramda
          sonsuza dek kalıyordu (P-28 tam da bunu engellemek içindi).
 
-    ⭐ `measure_k4.py` bunu DOĞRU yapıyor (`_kova_farki`, aynı ad). Bu
-    betik ondan SONRA yazıldı ve düzeltmeyi devralmadı. Aynı projede
+    `measure_k4.py` bunu doğru yapıyor (`_kova_farki`, aynı ad). Bu
+    betik ondan sonra yazıldı ve düzeltmeyi devralmadı. Aynı projede
     aynı hatanın iki kez yapılması, düzeltmenin koda değil yalnızca **o
     dosyaya** konmuş olmasındandır.
 
-    ⚠ Verim sayıları (`analiz_kare`, `kare_yayinlandi`) zaten fark
+    Verim sayıları (`analiz_kare`, `kare_yayinlandi`) zaten fark
     alarak hesaplanıyordu — yani betik sayaçlarda doğru, histogramda
     yanlış davranıyordu. Hata "unutmak" değil, **iki metrik tipini aynı
     sanmak**tı.
@@ -173,10 +173,10 @@ def _kova_farki(
 
 
 def _yuzdelik(kovalar: dict[float, float], oran: float) -> float | None:
-    """Kümülatif histogramdan yüzdelik — ARA DEĞERLEME, kesin değil.
+    """Kümülatif histogramdan yüzdelik — ara değerleme, kesin değil.
 
-    ⚠ Histogram ham değerleri saklamıyor; kova sınırları arasında
-    doğrusal ara değerleme yapılıyor. Sonuç bir TAHMİN ve raporda
+    Histogram ham değerleri saklamıyor; kova sınırları arasında
+    doğrusal ara değerleme yapılıyor. Sonuç bir tahmin ve raporda
     böyle yazılmalı (measure_k4.py ile aynı yöntem, aynı uyarı).
     """
     if not kovalar:
@@ -207,19 +207,19 @@ def _kaynak() -> dict[str, Any]:
         cikti["not"] = "psutil kurulu değil — CPU/RAM ölçülemedi"
         return cikti
 
-    # ⚠⚠ 09.09.2026 — BU BLOK BOZUKTU VE İKİ GÜN YANLIŞ RAPOR ÜRETTİ
+    # 09.09.2026 — bu blok bozuktu ve iki gün yanlış rapor üretti
     #
     # `uv run` bir rol için ÜÇ python.exe üretiyor: nohup → uv → küçük
-    # bir başlatıcı → ASIL süreç. Eski kod ilk eşleşeni alıyordu ve o
+    # bir başlatıcı → asıl süreç. Eski kod ilk eşleşeni alıyordu ve o
     # genellikle başlatıcıydı: her rol için hep `15.5 MB / %0.0`.
     #
-    # ⭐ Toplam doğruydu (`toplam_cpu` ayrı hesaplanıyordu) ama
-    # KIRILIM anlamsızdı — ve P-58'deki "10 çekirdek nerede" sorusunu
+    # Toplam doğruydu (`toplam_cpu` ayrı hesaplanıyordu) ama
+    # kırılım anlamsızdı — ve P-58'deki "10 çekirdek nerede" sorusunu
     # iki gün boyunca cevapsız bırakan tam olarak buydu. Kırılım
     # düzelir düzelmez suçlu (analitik worker, 795% CPU) ilk bakışta
     # göründü.
     #
-    # Düzeltme: aynı rol için birden çok aday varsa EN BÜYÜK RSS'li
+    # Düzeltme: aynı rol için birden çok aday varsa en büyük RSS'li
     # olan asıl süreçtir (başlatıcı ~4 MB, asıl yüzlerce MB).
     adaylar: dict[str, Any] = {}
     for p in psutil.process_iter(["pid", "name", "cmdline", "memory_info"]):
@@ -245,7 +245,7 @@ def _kaynak() -> dict[str, Any]:
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue
 
-    # ⚠ KOPYA UYARISI: aynı rolde birden çok ASIL süreç varsa iki
+    # Kopya uyarısı: aynı rolde birden çok asıl süreç varsa iki
     # takım worker koşuyor demektir (P-58'de gerçekten oldu:
     # 40 RTSP akışı, iki kopya YOLO, iki `--owner` alım).
     kopya: dict[str, int] = {}
@@ -314,7 +314,7 @@ def _ornek_al() -> dict[str, Any]:
         o = _ayristir(metin)
 
         if rol == "analitik":
-            # ⭐ MODEL CANLI MI — asıl soru bu.
+            # Model canlı MI — asıl soru bu.
             skorlar = _sec(o, "sentinel_aggression_model_score")
             veri["model_skorlari"] = {
                 e.get("cam", "?"): v for e, v in skorlar
@@ -323,14 +323,14 @@ def _ornek_al() -> dict[str, Any]:
                 e.get("cam", "?"): v
                 for e, v in _sec(o, "sentinel_risk_score")
             }
-            # ⚠⚠ ALARM SAYACI ANALİTİK WORKER'DA, ALARM WORKER'DA DEĞİL.
+            # Alarm sayacı analitik worker'da, alarm worker'da değil.
             # İlk sürüm `sentinel_events_written_total`ı 9130'dan
-            # kazıyordu ve HİÇBİR ŞEY BULAMIYORDU — "alarm yok" diye
+            # kazıyordu ve hiçbir şey bulamıyordu — "alarm yok" diye
             # rapor ediyordu. Oysa alarm worker'ı yalnızca
             # `sentinel_worker_up` yayınlıyor; anomaliler analitikte
             # sayılıyor.
             #
-            # ⭐ Bu, ölçüm aracının sessizce yanlış yere bakmasının bir
+            # Bu, ölçüm aracının sessizce yanlış yere bakmasının bir
             # örneği daha (P-40: panel kare yerine kişi sayıyordu).
             # "Sonuç yok" ile "yanlış yere baktım" aynı görünür.
             turler: dict[str, float] = {}
@@ -339,9 +339,9 @@ def _ornek_al() -> dict[str, Any]:
             veri["alarm_turleri"] = turler
 
         if rol == "cikarim":
-            # ⚠ Yüzdelik BURADA hesaplanmıyor — ham kovalar saklanıyor.
+            # Yüzdelik burada hesaplanmıyor — ham kovalar saklanıyor.
             # Sebep: histogram kümülatif; yüzdelik ancak ölçüm penceresinin
-            # İKİ UCU arasındaki FARKTAN alınabilir (bkz. `_kova_farki`).
+            # iki ucu arasındaki farktan alınabilir (bkz. `_kova_farki`).
             veri["gecikme_kova"] = _kovalar(
                 o, "sentinel_end_to_end_latency_seconds")
             sayac = _sec(o, "sentinel_end_to_end_latency_seconds_count")
@@ -349,19 +349,19 @@ def _ornek_al() -> dict[str, Any]:
             veri["kapasite_fps"] = next(
                 (v for _e, v in _sec(o, "sentinel_pipeline_capacity_fps")), None)
         if rol in ("cikarim", "alim"):
-            # ⭐ KUYRUK DERİNLİĞİ — metrik Gün 1'den beri yayınlanıyordu ve
-            # HİÇBİR ölçüm betiği okumuyordu (ne measure_k4 ne bu betik).
+            # Kuyruk derinliği — metrik Gün 1'den beri yayınlanıyordu ve
+            # hiçbir ölçüm betiği okumuyordu (ne measure_k4 ne bu betik).
             #
             # Neden önemli: örnekleme 2.77 FPS iken analiz 1.42 FPS ölçüldüğü
             # koşular var. Aradaki kareler bir yere gidiyor ve `frames_dropped`
             # onları saymıyor — çünkü kayıp alım tarafında değil, sınırlı
             # akışın (`maxlen`) kuyruğundan düşerek oluyor. Derinlik, o
-            # kaybın TEK gözlemlenebilir izi.
+            # kaybın tek gözlemlenebilir izi.
             veri.setdefault("kuyruk", {}).update({
                 e.get("queue", "?"): v
                 for e, v in _sec(o, "sentinel_queue_depth")
             })
-            # ⭐ ASIL geri basınç. `queue_depth` (XLEN) MAXLEN tavanına
+            # Asıl geri basınç. `queue_depth` (XLEN) MAXLEN tavanına
             # çakılıyor — ölçüldü: inference.results sağlıklı sistemde
             # bile 5001 (ayar 5000). `lag` ise tüketici yetiştikçe
             # sıfıra iniyor, yani gerçekten birikmeyi gösteriyor.
@@ -428,7 +428,7 @@ def main() -> int:
     ilk_o = ornekler[0]
     sure = son["ts"] - ilk_o["ts"]
 
-    # ─── ⭐ MODEL CANLI MI ───
+    # ─── Model canlı MI ───
     print("\n═══ ⭐ MODEL CANLIDA KONUŞUYOR MU ═══")
     tum_skorlar = [
         v for o in ornekler for v in (o.get("model_skorlari") or {}).values()
@@ -468,7 +468,7 @@ def main() -> int:
     # ─── Gecikme ve verim ───
     print("\n═══ GECİKME VE VERİM (referans: model ENTEGRE DEĞİLKEN) ═══")
     print(f"{'ölçüt':<22} {'şimdi':>10} {'referans':>10} {'fark':>10}")
-    # ⭐ Yüzdelik, pencerenin İKİ UCU arasındaki histogram FARKINDAN.
+    # Yüzdelik, pencerenin iki ucu arasındaki histogram farkından.
     # Böylece ısınma gerçekten atılmış oluyor (P-28) ve sonuç worker'ın
     # uptime'ından bağımsız hale geliyor.
     fark_kova = _kova_farki(
@@ -495,7 +495,7 @@ def main() -> int:
     if pencere_ornek < 500:
         print("  ⚠ Örnek az — yüzdelikler gürültülü, süreyi artırın.")
 
-    # ─── ⭐ KARE MUHASEBESİ — kayıp nerede ───
+    # ─── Kare muhasebesi — kayıp nerede ───
     # Örnekleme ve analiz arasındaki fark, hiçbir sayaçta görünmeyen
     # bir kayıptır: sınırlı akıştan (`maxlen`) düşen kareler.
     kayip = yayin_farki - kare_farki

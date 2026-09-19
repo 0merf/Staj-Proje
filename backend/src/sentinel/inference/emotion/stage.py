@@ -1,4 +1,4 @@
-"""KADEME 2b kapısı — hangi kişiye ne zaman yüz analizi yapılacak.
+"""Kademe 2b kapısı — hangi kişiye ne zaman yüz analizi yapılacak.
 
 Bu dosyanın tamamı **iş yapmamak** üzerine. 20 kamerada kare başına
 ~4.5 kişi var; hepsini her karede sınıflandırmak saniyede yüzlerce
@@ -12,7 +12,7 @@ model çağrısı demek.
     ─────────────────────────────────
     ancak hepsi geçilirse: yüz tespiti (1.46 ms) → ifade (7.4 ms)
 
-⚠ Maliyetler ÖLÇÜLDÜ (18.08.2026). Bu dosya uzun süre "~58 ms/yüz"
+Maliyetler ölçüldü (18.08.2026). Bu dosya uzun süre "~58 ms/yüz"
 diyordu ve bütçe tasarımı ona dayanıyordu; rakam ~8 kat yanlıştı.
 Ölçüm ve gerekçe: `emotion/base.py` modül başlığı ·
 `benchmarks/expression_20260818-gun14.json`
@@ -20,8 +20,8 @@ diyordu ve bütçe tasarımı ona dayanıyordu; rakam ~8 kat yanlıştı.
 Kademeli işlemenin aynı mantığı: pahalı adıma gelmeden önce ucuz
 kontrollerle mümkün olduğunca ele.
 
-⚠ Bütçe neden şart: kapı olmadan kalabalık bir kamera tek başına tüm
-CPU'yu yiyebilir ve KADEME 1 (tespit) aç kalır. Tespit kaybetmek,
+Bütçe neden şart: kapı olmadan kalabalık bir kamera tek başına tüm
+CPU'yu yiyebilir ve kademe 1 (tespit) aç kalır. Tespit kaybetmek,
 ifade kazanmaktan çok daha pahalıdır — ifade füzyonda 0.10 ağırlıklı,
 tespit ise her şeyin temeli.
 """
@@ -57,14 +57,14 @@ MIN_PERSON_HEIGHT = 180
 
 # Tek turda en fazla kaç yüz sınıflandırılsın.
 #
-# ⚠ Bu sabitin ESKİ gerekçesi yanlış bir ölçüme dayanıyordu:
+# Bu sabitin eski gerekçesi yanlış bir ölçüme dayanıyordu:
 # "58 ms/yüz olduğu için 4 yüz ≈ 230 ms". Gerçek maliyet 7.4 ms/yüz,
 # yani 4 yüz ≈ 30 ms (benchmarks/expression_20260818-gun14.json).
 #
-# Sayı yine de 4'te BIRAKILDI, çünkü doğru gerekçe farklı: sınır,
-# modelin maliyetinden değil ÇIKARIM DÖNGÜSÜNÜN bütçesinden geliyor.
+# Sayı yine de 4'te bırakıldı, çünkü doğru gerekçe farklı: sınır,
+# modelin maliyetinden değil çıkarım döngüsünün bütçesinden geliyor.
 # Batch başına toplam süre ~119 ms ölçüldü; 30 ms buna %25 ekliyor.
-# 8'e çıkarsak %50 olurdu ve KADEME 1 (her şeyin temeli) aç kalırdı.
+# 8'e çıkarsak %50 olurdu ve kademe 1 (her şeyin temeli) aç kalırdı.
 # Tespit kaybetmek, ifade kazanmaktan pahalıdır — ifade füzyonda 0.10
 # ağırlıklı.
 #
@@ -79,7 +79,7 @@ class TrackExpression:
     """Bir izin ifade geçmişi.
 
     Neden geçmiş tutuluyor: tek karelik sınıflandırma gürültülüdür.
-    PLAN.md §6.3 kayan ortalama istiyor — yumuşatılmış etiket, tek
+    Proje planı kayan ortalama istiyor — yumuşatılmış etiket, tek
     ölçümden çok daha kararlı.
     """
 
@@ -96,7 +96,7 @@ class TrackExpression:
 
 
 class ExpressionStage:
-    """KADEME 2b: yüz tespiti + ifade sınıflandırma, seyreltilmiş."""
+    """Kademe 2b: yüz tespiti + ifade sınıflandırma, seyreltilmiş."""
 
     def __init__(
         self,
@@ -139,7 +139,7 @@ class ExpressionStage:
         """Bir karenin kişilerini kapıdan geçirip ifade sınıflandırır.
 
         Dönen sözlük: iz kimliği → ifade sonucu. Yalnızca bu turda
-        SINIFLANDIRILAN izler var; diğerleri için çağıran taraf
+        sınıflandırılan izler var; diğerleri için çağıran taraf
         `last_for()` ile son bilinen sonucu alabilir.
         """
         candidates: list[tuple[int, np.ndarray, FaceBox]] = []
@@ -210,7 +210,7 @@ class ExpressionStage:
 
             # Yumuşatılmış etiket kullanılıyor: tek karelik sınıflandırma
             # gürültülüdür, çoğunluk oyu belirgin şekilde kararlı
-            # (PLAN.md §6.3).
+            #.
             smoothed = state.smoothed_label() or label
             result = ExpressionResult(
                 label=smoothed,
@@ -236,9 +236,9 @@ class ExpressionStage:
     def prune(self, max_age_s: float = 60.0) -> None:
         """Uzun süredir görülmeyen izlerin durumunu temizler.
 
-        ⚠ SAAT TUTARLILIĞI
+        Saat tutarlılığı
         `process()` çağrısına karenin `captured_at` damgası geliyor ve o
-        bir DUVAR saati (ingest/decoder.py · DecodedFrame.timestamp).
+        bir duvar saati (ingest/decoder.py · DecodedFrame.timestamp).
         Burada `time.monotonic()` kullanılıyordu — iki farklı zaman
         ekseni. Monotonik değer duvar saatinden çok küçük olduğu için
         `now - v.last_at` daima büyük negatif çıkıyor, hiçbir kayıt asla

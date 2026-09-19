@@ -1,6 +1,6 @@
 """YOLO ağırlığını TensorRT motoruna ihraç eder — tekrar üretilebilir biçimde.
 
-⚠ MOTOR DOSYASI GIT'E GİRMEZ, GİREMEZ
+Motor dosyası GIT'e girmez, giremez
 -------------------------------------
 `.engine` dosyası **bu makineye özeldir**: derlenirken GPU mimarisi
 (compute capability), TensorRT sürümü, sürücü sürümü ve seçilen
@@ -11,15 +11,15 @@ Bu yüzden `.gitignore`'da. Git'e giren şey **onu üreten bu betik.**
 Tekrar üretilebilirlik dosyayı taşımakla değil, üretim reçetesini
 saklamakla sağlanır.
 
-⚠ İKİ ENGEL VE NEDEN BU AYARLAR
+İki engel ve neden bu ayarlar
 -------------------------------
-**1. TensorRT 11 (cu13) ÇALIŞMIYOR.** `pip install tensorrt` bu makinede
+**1. TensorRT 11 (cu13) çalışmıyor.** `pip install tensorrt` bu makinede
 `tensorrt-cu13` getiriyor; torch ise `cu128`. Ayrıca TensorRT 11
 "strongly-typed" olduğu için FP16 builder bayrağını kaldırmış ve düşük
 hassasiyeti ONNX grafiğine gömmek için ayrıca `nvidia-modelopt`
 istiyor. Kullanılan: **`tensorrt-cu12==10.13.*`**
 
-**2. `dynamic=True` KIRILIYOR.** YOLO26'nın dikkat bloğunda:
+**2. `dynamic=True` kırılıyor.** YOLO26'nın dikkat bloğunda:
 
     Could not find any implementation for node
     ForeignNode[/model.10/m/m.0/attn/Split_82.../attn/Add]
@@ -27,7 +27,7 @@ istiyor. Kullanılan: **`tensorrt-cu12==10.13.*`**
 Dinamik şekillerle o füzyon için TensorRT uygun çekirdek bulamıyor.
 Bu yüzden **sabit parti** ile ihraç ediliyor.
 
-⚠ SABİT PARTİNİN BEDELİ ÖLÇÜLDÜ
+Sabit partinin bedeli ölçüldü
 -------------------------------
 Motor yalnızca tam parti alır; eksik kareler tekrarla doldurulur ve
 maliyet tam parti kadar olur:
@@ -46,7 +46,7 @@ Kullanım
     uv pip install "tensorrt-cu12==10.13.*" onnxslim
     uv run python scripts/export_tensorrt.py
     uv run python scripts/export_tensorrt.py --model models/yolo26s-pose.pt --batch 64
-    uv run python scripts/benchmark_tensorrt.py      # sonra MUTLAKA ölç
+    uv run python scripts/benchmark_tensorrt.py      # sonra mutlaka ölç
 """
 
 from __future__ import annotations
@@ -109,7 +109,7 @@ def main() -> int:
         format="engine",
         imgsz=args.imgsz,
         quantize=None if args.fp32 else 16,
-        # ⚠ dynamic=False zorunlu — gerekçesi modül başlığında.
+        # dynamic=False zorunlu — gerekçesi modül başlığında.
         dynamic=False,
         batch=args.batch,
         workspace=args.workspace,

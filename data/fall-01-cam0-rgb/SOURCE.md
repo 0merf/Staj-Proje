@@ -1,11 +1,11 @@
 # UR Fall Detection Dataset — Kaynak, Lisans ve Atıf
 
-> **PLAN.md §7.2 kuralı:** Her veri seti için indirme adresi, lisans ve
+> **Proje planı kuralı:** Her veri seti için indirme adresi, lisans ve
 > alıntı bilgisi kaydedilir. Veri **git'e girmez**, bu dosya girer.
 
 ## Ne için kullanılıyor
 
-**Düşme kuralının gerçek görüntüde doğrulanması** (PLAN.md §6.4 Katman B).
+**Düşme kuralının gerçek görüntüde doğrulanması** (Katman B).
 
 ### Neden gerekliydi
 
@@ -15,7 +15,7 @@ açısından en kritik olay, hem de kanıt zinciri mimarisinin vitrini
 
 Buna rağmen **26.08.2026'ya kadar hiç doğrulanmamıştı.**
 
-⚠ Bu satır ilk yazıldığında *"doğrulaması yalnızca sentetik
+Bu satır ilk yazıldığında *"doğrulaması yalnızca sentetik
 iskeletlerdi (`tests/unit/test_rules.py`)"* diyordu. **Yanlıştı** — o
 dosya hiç var olmamıştı; Katman B'nin dört kuralının da tek bir birim
 testi yoktu. Cümle, kuralı yazan kişinin (benim) ne yaptığını
@@ -76,9 +76,9 @@ fall-01-cam0-rgb-001.png … fall-01-cam0-rgb-160.png
 birlikte. **Bu projede yalnızca cam0 RGB kullanılıyor** — derinlik ve
 ivmeölçer sensörleri sistem mimarimizde yok (IP kamera varsayımı).
 
-## ⚠ Kapsam sınırı — raporda açıkça yazılacak
+## Kapsam sınırı — raporda açıkça yazılacak
 
-**Tek dizi, 5.3 saniye.** Bu istatistiksel bir değerlendirme DEĞİL.
+**Tek dizi, 5.3 saniye.** Bu istatistiksel bir değerlendirme değil.
 
 Ne kanıtlar: düşme kuralı gerçek bir düşmede, gerçek YOLO26-pose
 iskeletiyle, gerçek boru hattı gecikmesi altında ateşliyor ve kanıt
@@ -87,9 +87,9 @@ değerleri eşiklerin doğru tarafında.
 Ne kanıtlamaz: duyarlılık (kaç düşmeden kaçını yakalar) ve özgüllük
 (kaç düşmemede yanlış alarm verir). Bunun için 30 düşme dizisinin
 tamamı + 40 günlük aktivite dizisi çevrimdışı işlenmeli. Zaman
-bütçesine göre değerlendirilecek (`YOL-HARITASI.md`).
+bütçesine göre değerlendirilecek.
 
-⚠ **Yanlış pozitif zaten görüldü ve düzeltildi:** 175° gövde eğimiyle
+**Yanlış pozitif zaten görüldü ve düzeltildi:** 175° gövde eğimiyle
 (ters dönmüş iskelet — poz modelinin baş/ayak karıştırması) kural
 skor 1.00 üretmişti. Üst sınır eklendi (`DUSME_EGIM_AZAMI = 150.0`,
 commit `1dfa4ca`). Gerçek görüntü olmasa bu hata bulunamazdı — bu da

@@ -1,4 +1,4 @@
-"""KADEME 1'in 6.4 ms'i NEREDE geçiyor? — TensorRT kararının ön koşulu.
+"""Kademe 1'in 6.4 ms'i nerede geçiyor? — TensorRT kararının ön koşulu.
 
 Neden bu betik
 --------------
@@ -7,7 +7,7 @@ Elimizde iki ölçüm var ve ikisi birbiriyle çelişiyor gibi duruyor:
   · `detect()` çağrısı kare başına ~6.4 ms sürüyor
   · GPU koşu boyunca **%0-5 kullanımda**, kısıtlama sebebi `GpuIdle`
 
-Eğer GPU boşsa, 6.4 ms'in çoğu GPU'da GEÇMİYOR demektir. Ama bugüne kadar
+Eğer GPU boşsa, 6.4 ms'in çoğu GPU'da geçmiyor demektir. Ama bugüne kadar
 bu "çoğu" hiç ölçülmedi — tahmin edildi.
 
 Bu ayrım TensorRT kararını tek başına belirliyor. TensorRT **yalnızca**
@@ -27,17 +27,17 @@ Nasıl ölçer
 -----------
 `detect()` dört aşamaya ayrılıp ayrı ayrı zamanlanır:
 
-  1. TENSOR   : numpy yığma + H2D kopya + permute/flip/half/div  (_as_tensor)
-  2. FORWARD  : saf model ileri geçişi                            ⬅ TensorRT'nin alanı
-  3. ARTIK    : predict() toplamı − forward  (NMS + Results kurma)
-  4. CONVERT  : GPU→CPU aktarım + Detection listesi               (_convert)
+  1. Tensor   : numpy yığma + H2D kopya + permute/flip/half/div  (_as_tensor)
+  2. FORWARD  : saf model ileri geçişi                            ← TensorRT'nin alanı
+  3. Artık    : predict() toplamı − forward  (NMS + Results kurma)
+  4. Convert  : GPU→CPU aktarım + Detection listesi               (_convert)
 
-⚠ FORWARD **CUDA olayı** ile ölçülür, `time.perf_counter()` ile değil.
+FORWARD **CUDA olayı** ile ölçülür, `time.perf_counter()` ile değil.
 CUDA çağrıları eşzamansızdır: Python satırı biter, GPU hâlâ çalışıyordur.
 Duvar saati ölçümü kuyruğa atma süresini ölçer, işin kendisini değil.
 `torch.cuda.Event` GPU'nun kendi zaman çizgisinde ölçer.
 
-⚠ ÖLÇÜM KOŞULU: boru hattı KAPALI olmalı. Çıkarım worker'ı açıkken
+Ölçüm koşulu: boru hattı kapalı olmalı. Çıkarım worker'ı açıkken
 GPU'da çekişme olur ve tam da ölçmek istediğimiz aşama şişer.
 
 Kullanım
@@ -68,8 +68,8 @@ BENCHMARKS = PROJECT_ROOT / "benchmarks"
 def _sentetik_kareler(sayi: int, imgsz: int, tohum: int = 7) -> list[np.ndarray]:
     """Gerçekçi doluluk üreten sahte kareler.
 
-    ⚠ Tamamen siyah kare KULLANILMAZ: dedektör hiçbir şey bulamaz, NMS
-    boş listeyle çalışır ve 3. aşama ("ARTIK") yapay olarak sıfıra iner.
+    Tamamen siyah kare kullanılmaz: dedektör hiçbir şey bulamaz, NMS
+    boş listeyle çalışır ve 3. aşama ("artık") yapay olarak sıfıra iner.
     Gürültü + birkaç dikdörtgen, NMS'e gerçekçi sayıda aday verir.
     """
     rng = np.random.default_rng(tohum)
@@ -133,7 +133,7 @@ def main() -> int:
     ev0, ev1 = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
 
     for _ in range(args.tekrar):
-        # 1 · TENSOR — CPU tarafı bittiğinde GPU kopyası da bitsin diye senkron
+        # 1 · tensor — CPU tarafı bittiğinde GPU kopyası da bitsin diye senkron
         torch.cuda.synchronize()
         t0 = time.perf_counter()
         tensor = det._as_tensor(kareler)
@@ -156,7 +156,7 @@ def main() -> int:
         torch.cuda.synchronize()
         t_predict.append((time.perf_counter() - t0) * 1000)
 
-        # 4 · CONVERT — GPU→CPU aktarımı burada gerçekleşiyor
+        # 4 · convert — GPU→CPU aktarımı burada gerçekleşiyor
         t0 = time.perf_counter()
         for r in sonuc:
             tespit_sayisi += len(det._convert(r))
@@ -180,7 +180,7 @@ def main() -> int:
         print(f"{ad:<10} {ms:>9.3f} {ms / n:>8.3f} {ms / toplam:>5.0%}")
     print(f"{'TOPLAM':<10} {toplam:>9.3f} {toplam / n:>8.3f}")
 
-    # ⬇ Asıl cevap: TensorRT'nin dokunabileceği pay ne kadar?
+    # ↓ Asıl cevap: TensorRT'nin dokunabileceği pay ne kadar?
     pay = forward_o["p50"] / toplam
     print(f"\nTensorRT'nin dokunabildiği pay: %{pay * 100:.0f} (FORWARD)")
     for hiz in (2.0, 3.0, 5.0):

@@ -1,6 +1,6 @@
 """Model ağırlıklarını indirir ve bütünlüklerini kayıt altına alır.
 
-⚠ NEDEN CHECKSUM (PLAN.md §11.4 / G26)
+Neden checksum (G26)
 --------------------------------------
 `.pt` dosyaları Python **pickle** formatındadır. Pickle yüklemek
 **rastgele kod çalıştırmak** demektir — kötü niyetli bir `.pt` dosyası

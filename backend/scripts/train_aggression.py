@@ -1,35 +1,35 @@
-"""Saldırganlık modeli eğitimi — kural tabanlı tabanı GEÇMEYE çalışıyor.
+"""Saldırganlık modeli eğitimi — kural tabanlı tabanı geçmeye çalışıyor.
 
 Neden bu betik (ADR-0007'nin ikinci yarısı)
 -------------------------------------------
 ADR-0007 şunu söylüyordu:
 
-> *"Önce kural tabanlı skor, sonra model. Kural skoru KALIR — çünkü
->  eğitilecek modelin geçmesi gereken TABAN ÇİZGİSİ odur."*
+> *"Önce kural tabanlı skor, sonra model. Kural skoru kalır — çünkü
+>  eğitilecek modelin geçmesi gereken taban çizgisi odur."*
 
 Taban ölçüldü: **K5 F1 = 0.712** (RWF-2000 val, `evaluate_rwf.py`).
 Bu betik ikinci yarıyı yapıyor.
 
-⚠ NE DEĞİŞİYOR — ve ne DEĞİŞMİYOR
+NE değişiyor — ve ne değişmiyor
 Değişmeyen: özellikler. `aggression.py` altı bileşen üretiyor
 (yakınlık, bilek, yaklaşma, enerji, duruş, etkileşim) ve model
 **aynılarını** kullanıyor. Yeni bir özellik mühendisliği yok.
 
 Değişen: bileşenlerin nasıl birleştirildiği.
 
-    ŞU AN   : 0.30·yakınlık + 0.25·bilek + 0.20·yaklaşma + …
-              ağırlıklar ELLE kondu, PLAN'dan alındı
-    MODEL   : ağırlıklar VERİDEN öğreniliyor, üstelik doğrusal
-              OLMAYAN etkileşimlerle
+    Şu AN   : 0.30·yakınlık + 0.25·bilek + 0.20·yaklaşma + …
+              ağırlıklar elle kondu, proje planından alındı
+    model   : ağırlıklar veriden öğreniliyor, üstelik doğrusal
+              olmayan etkileşimlerle
 
-⭐ Doğrusal olmama neden önemli: *"yüksek bilek hızı"* tek başına
-kavga değil. *"Yüksek bilek hızı VE yakın mesafe VE karşılıklı duruş"*
-kavga. Ağırlıklı toplam bu koşullu ilişkiyi ifade EDEMEZ — her bileşen
+Doğrusal olmama neden önemli: *"yüksek bilek hızı"* tek başına
+kavga değil. *"Yüksek bilek hızı ve yakın mesafe ve karşılıklı duruş"*
+kavga. Ağırlıklı toplam bu koşullu ilişkiyi ifade edemez — her bileşen
 diğerlerinden bağımsız katkı verir. Karar ağacı tam olarak bunu
 ifade edebiliyor: *"eğer mesafe < X ise, bilek hızına bak; değilse
 bakma."*
 
-⚠ NEDEN LightGBM, NEDEN DERİN AĞ DEĞİL
+Neden LightGBM, neden derin AĞ değil
   · Veri az: 1600 eğitim klibi, klip başına tek etiket
   · Özellik sayısı 6 — derin ağın öğrenecek bir temsili yok,
     özellikler zaten elle çıkarılmış
@@ -37,20 +37,20 @@ bakma."*
   · Çıkarım maliyeti ~mikrosaniye — canlı hatta ek yük yok
   · **Açıklanabilir kalıyor:** özellik önemi çıkarılabiliyor, ve
     operatöre "skor 0.72 çünkü şu" demeye devam edebiliyoruz.
-    Bu, PLAN §6.5'in açıkça istediği bir özellik.
+    Bu, proje planının açıkça istediği bir özellik.
 
-⚠ SIZINTIYA KARŞI: train / val AYRI BÖLÜMLERDEN
+Sızıntıya karşı: train / val ayrı bölümlerden
 Model `train/` bölümünde eğitiliyor, `val/` bölümünde ölçülüyor.
 `evaluate_rwf.py` (K5 tabanı) da `val` kullanıyor — yani taban ile
 model **aynı veride** karşılaştırılıyor, adil.
 
-⚠ AMA: `train` bölümünün bir kısmı sahte kamera cam-17'yi besliyor.
+Ama: `train` bölümünün bir kısmı sahte kamera cam-17'yi besliyor.
 Yani model, canlı sistemde göreceği bazı görüntülerle eğitilmiş
-olacak. Bu bir sızıntı DEĞİL (K5/K8 ölçümleri `val`'da yapılıyor) ama
+olacak. Bu bir sızıntı değil (K5/K8 ölçümleri `val`'da yapılıyor) ama
 canlı demo "modelin daha önce gördüğü" veriyi içeriyor ve raporda
 böyle yazılacak.
 
-⚠ ÖLÇÜM KOŞULU: boru hattı KAPALI olmalı (özellik çıkarımı GPU
+Ölçüm koşulu: boru hattı kapalı olmalı (özellik çıkarımı GPU
 kullanıyor — tespit + poz).
 
 Kullanım
@@ -86,8 +86,8 @@ OZELLIK_DOSYASI = PROJECT_ROOT / "data" / "_tmp" / "rwf_ozellikler.json"
 def _ozellik_dosyasi(args: argparse.Namespace) -> Path:
     """Özellik dosyası yolu — FPS taraması için ayrıştırılabilir (P-55).
 
-    ⚠ Tek bir sabit yol, FPS taramasını imkânsız kılıyordu: her koşu
-    bir öncekini eziyordu ve iki ayarı YAN YANA kıyaslamak için ikisinin
+    Tek bir sabit yol, FPS taramasını imkânsız kılıyordu: her koşu
+    bir öncekini eziyordu ve iki ayarı yan yana kıyaslamak için ikisinin
     de aynı anda diskte durması gerekiyor. Aynı gerekçe `Esikler`
     sınıfının doğuş gerekçesiydi (P-17: ortak zemin olmadan iki sayı
     kıyaslanamaz).
@@ -99,11 +99,11 @@ def _ozellik_dosyasi(args: argparse.Namespace) -> Path:
 MODEL_DOSYASI = PROJECT_ROOT / "models" / "saldirganlik_lgbm.txt"
 
 # Özellik dosyası → o dosyanın çıkarıldığı kare hızı (P-55 · deney_fps.py).
-# ⚠ Künyeye yazılıyor çünkü model dosyası bunu KENDİ SÖYLEMİYOR — ve
+# Künyeye yazılıyor çünkü model dosyası bunu kendi söylemiyor — ve
 # söylemediği için 24.75 FPS'te eğitilmiş bir model, 2.75 FPS'te koşan
 # üretimde bir gün boyunca fark edilmeden oturdu (P-63).
 _DOSYA_FPS = {
-    "rwf_ozellikler.json": 2.75,      # ⬅ ÜRETİMİN HIZI
+    "rwf_ozellikler.json": 2.75,      # ← üretimin hızı
     "rwf_ozellikler_4fps.json": 4.00,
     "rwf_fps825.json": 8.25,
     "rwf_fps165.json": 16.50,
@@ -114,7 +114,7 @@ _DOSYA_FPS = {
 def _ozellik_fps(ad: str) -> float | None:
     """Özellik dosyasının kare hızı; bilinmiyorsa `None`.
 
-    ⚠ `None` "hız yok" değil **"bilmiyorum"** demek. İkisini karıştırmak,
+    `None` "hız yok" değil **"bilmiyorum"** demek. İkisini karıştırmak,
     bu projede defalarca yakalanan "sonuç yok" ile "yanlış yere baktım"
     karışıklığı olurdu.
     """
@@ -122,14 +122,14 @@ def _ozellik_fps(ad: str) -> float | None:
 
 TOHUM = 42
 
-# ⚠ ÖZELLİK ADLARI `aggression.py · bilesenler` ile BİREBİR AYNI
+# Özellik adları `aggression.py · bilesenler` ile birebir aynı
 # olmak zorunda. Ayrışırsa model eğitildiğinden başka bir şeyle
-# beslenir ve hata SESSİZ olur — skor üretilir, yalnızca yanlış olur.
+# beslenir ve hata sessiz olur — skor üretilir, yalnızca yanlış olur.
 # (Aynı sınıf tuzak: analytics/ifade.py · IFADE_RISK etiket kümesi.)
 BILESENLER = ("yakinlik", "bilek", "yaklasma", "enerji", "durus", "etkilesim")
 
-# ⚠ BANTLANMAMIŞ ham özellikler — model yolu için (P-48).
-# `KisiOzellikleri` alan adlarıyla BİREBİR aynı olmak zorunda.
+# Bantlanmamış ham özellikler — model yolu için (P-48).
+# `KisiOzellikleri` alan adlarıyla birebir aynı olmak zorunda.
 HAM_ALANLAR = (
     "bilek_hizi_p75", "bilek_sarsintisi_p75", "bilek_hizi_azami",
     "hareket_enerjisi", "govde_hizi", "kol_yuksekligi_azami",
@@ -137,13 +137,13 @@ HAM_ALANLAR = (
     "en_boy_orani", "oyalanma_s",
 )
 
-# Klip başına özet istatistikler. ⚠ Klip etiketi klip seviyesinde
-# ("bu 5 saniyede kavga var") ama özellikler KARE seviyesinde çıkıyor.
+# Klip başına özet istatistikler. Klip etiketi klip seviyesinde
+# ("bu 5 saniyede kavga var") ama özellikler kare seviyesinde çıkıyor.
 # Aradaki köprü bir toplulaştırma ve seçimi önemli:
 #   azami   → "en riskli an ne kadar riskliydi"
 #   p90     → azaminin gürültüye dayanıklı hâli
 #   ortalama→ olayın klibin ne kadarını kapladığı
-#   egim    → TIRMANMA hızı (projenin özgün iddiası)
+#   egim    → tırmanma hızı (projenin özgün iddiası)
 OZETLER = ("azami", "p90", "ortalama", "egim_azami")
 
 
@@ -152,7 +152,7 @@ def _klip_ozellikleri(
 ) -> dict[str, float] | None:
     """Bir klipten model girdisi üretir.
 
-    ⚠ `evaluate_rwf.py` ve `evaluate_k8.py` ile AYNI boru hattı.
+    `evaluate_rwf.py` ve `evaluate_k8.py` ile aynı boru hattı.
     Üç betik aynı modülü ölçüyor; ön işleme farkı üçünü kıyaslanamaz
     kılardı.
     """
@@ -174,10 +174,10 @@ def _klip_ozellikleri(
     depo = PencereDeposu()
     skorlayici = TirmanmaSkorlayici()
 
-    # Kare başına: her bileşenin o karedeki AZAMİ değeri + skor + eğim
+    # Kare başına: her bileşenin o karedeki azami değeri + skor + eğim
     seri: list[dict[str, float]] = []
     ham_seri: list[dict[str, float]] = []
-    # ⚠ Kare bazlı gruplama — AYKIRILIK özelliği için ZORUNLU (P-49).
+    # Kare bazlı gruplama — aykırılık özelliği için zorunlu (P-49).
     # `ham_seri` bütün kişileri bütün karelerden tek havuza atıyor;
     # "aynı karedeki diğerlerine göre" sorusu o havuzda sorulamaz.
     ham_kareler: list[list[dict[str, float]]] = []
@@ -212,15 +212,15 @@ def _klip_ozellikleri(
             ciftler = pair.kamera_ciftleri(depo.kamera_pencereleri(kamera))
             skorlar = skorlayici.degerlendir(kamera, kisiler, ciftler, ts)
 
-            # ⚠⚠ 07.09.2026 — HAM ÖZELLİKLER DE TOPLANIYOR (P-48)
+            # 07.09.2026 — ham özellikler de toplanıyor (P-48)
             #
-            # `bilesenler` sözlüğü ölü bölgeden GEÇMİŞ değerler taşıyor:
-            # `_bant(deger, taban, doyum)` tabanın altını SIFIRA
-            # yuvarlıyor. O bantlama KURAL yolu için doğru (yanlış alarm
-            # bastırma) ama MODEL yolu için bilgi imhası:
+            # `bilesenler` sözlüğü ölü bölgeden geçmiş değerler taşıyor:
+            # `_bant(deger, taban, doyum)` tabanın altını sıfıra
+            # yuvarlıyor. O bantlama kural yolu için doğru (yanlış alarm
+            # bastırma) ama model yolu için bilgi imhası:
             #
             #   RWF'de normal p90 = 2.187, kavga p50 = 0.954
-            #   → kavga sinyalinin yarısı tabanın ALTINDA → sıfırlanıyor
+            #   → kavga sinyalinin yarısı tabanın altında → sıfırlanıyor
             #
             # Model sınırı kendisi öğrenmeli; ona sınırı çizilmiş veri
             # vermek, öğrenmesi gereken şeyi elinden almak.
@@ -238,7 +238,7 @@ def _klip_ozellikleri(
                 ham_kareler.append(kare_kisileri)
 
             if skorlar:
-                # ⚠ Kare içinde AZAMİ: kavga iki kişilik bir olay ve
+                # Kare içinde azami: kavga iki kişilik bir olay ve
                 # bir karede birinin skoru yüksekse o kare risklidir.
                 en_riskli = max(skorlar, key=lambda s: s.skor)
                 satir = dict.fromkeys(BILESENLER, 0.0)
@@ -253,7 +253,7 @@ def _klip_ozellikleri(
 
     cap.release()
     if not seri:
-        # ⚠ Hiç iz yoksa klip ATILIYOR, sıfırla doldurulmuyor.
+        # Hiç iz yoksa klip atılıyor, sıfırla doldurulmuyor.
         # Sıfır vektörü "hiçbir saldırganlık belirtisi yok" demek;
         # oysa gerçek durum "kimseyi göremedik". İkisini karıştırmak,
         # tespit başarısızlığını model girdisi yapmak olurdu.
@@ -268,21 +268,21 @@ def _klip_ozellikleri(
     cikti["egim_azami"] = max(s["egim"] for s in seri)
     cikti["kare_sayisi"] = float(len(seri))
 
-    # ⚠ KARE SERİSİ DE SAKLANIYOR — kaskad deneyi için ZORUNLU
+    # Kare serisi de saklanıyor — kaskad deneyi için zorunlu
     #
     # Klip özeti ("bu klipte azami yakınlık 0.8'di") kaskadı ölçmeye
-    # YETMEZ: kaskadın sorusu kare bazlı — *"bu KARE kural kapısını
+    # yetmez: kaskadın sorusu kare bazlı — *"bu kare kural kapısını
     # geçti mi, geçmediyse LightGBM hiç çağrılmadı mı"*. Özet, kapının
     # klip boyunca kaç kez açıldığını gizler.
     #
-    # ⚠ Aynı ders bu projede daha önce de çıktı: `evaluate_rwf.py` (K5)
-    # klip başına yalnızca AZAMİ skoru tutuyordu ve K8 (zamanlama)
+    # Aynı ders bu projede daha önce de çıktı: `evaluate_rwf.py` (K5)
+    # klip başına yalnızca azami skoru tutuyordu ve K8 (zamanlama)
     # ölçülemez hâle gelmişti. Özet bir yorumdur; seri veridir ve
     # sonradan sorulacak soruyu bugünden bilemiyoruz.
     #
     # Maliyet: klip başına ~20 kare × 8 alan ≈ 1 KB. 720 klip için
     # ~1 MB — saklamamak için hiçbir gerekçe yok.
-    # ⚠ HAM özelliklerin özeti — bantlanmamış (P-48)
+    # Ham özelliklerin özeti — bantlanmamış (P-48)
     for alan in HAM_ALANLAR:
         d = sorted(s[alan] for s in ham_seri if alan in s)
         if d:
@@ -290,10 +290,10 @@ def _klip_ozellikleri(
             cikti[f"ham_{alan}_p75"] = d[min(len(d) - 1, int(len(d) * 0.75))]
             cikti[f"ham_{alan}_medyan"] = statistics.median(d)
 
-    # ─── ⭐ SAHNE-GÖRELİ AYKIRILIK (P-49) ───
+    # ─── sahne-göreli aykırılık (P-49) ───
     #
-    # `ham_*_azami` bütün kişiler+kareler havuzunun MAKSİMUMU. `max`,
-    # örneklem büyüdükçe TANIMI GEREĞİ büyüyen bir istatistik: 9 kişilik
+    # `ham_*_azami` bütün kişiler+kareler havuzunun maksimumu. `max`,
+    # örneklem büyüdükçe tanımı gereği büyüyen bir istatistik: 9 kişilik
     # bir sahnenin "en hızlı kişisi", 4 kişilik sahneninkinden yüksek
     # çıkar — kimse kavga etmese bile.
     #
@@ -303,32 +303,32 @@ def _klip_ozellikleri(
     #      1-4             1.099                   4%
     #      5-6             1.049                  20%
     #      7-8             1.372                  20%
-    #      9+              1.535                  23%   ⬅ kavga sabit,
+    #      9+              1.535                  23%   ← kavga sabit,
     #                                                      hız +%40
     #     Pearson r(kişi sayısı, bilek hızı) = +0.274
     #
-    # ⚠⚠ Bu P-47 İLE AYNI HATA, FARKLI EKSENDE. Orada `max`-over-ZAMAN
+    # Bu P-47 ile aynı hata, farklı eksende. Orada `max`-over-ZAMAN
     # eklem gürültüsünü ölçüyordu ve p75'e çevrildi. Buradaki `max`
     # -over-KİŞİ kalabalığı ölçüyor — aynı istatistik, atlanmış eksen.
     #
-    # ⭐ DÜZELTME: kavganın işareti "biri hızlı hareket ediyor" değil,
-    # **"biri çevresindekilere GÖRE hızlı hareket ediyor"**. Aynı
+    # Düzeltme: kavganın işareti "biri hızlı hareket ediyor" değil,
+    # **"biri çevresindekilere göre hızlı hareket ediyor"**. Aynı
     # karedeki medyan çıkarılıyor:
     #
     #     aykirilik = max(kare) − medyan(kare)
     #
-    # Oran değil FARK alınıyor: birim (gövde/sn) korunuyor ve medyan
+    # Oran değil fark alınıyor: birim (gövde/sn) korunuyor ve medyan
     # sıfıra yaklaşınca patlamıyor.
     #
-    # ⭐ Ölçülen bonus: kavgada sahne MEDYANI da düşüyor (cam-15:
+    # Ölçülen bonus: kavgada sahne medyanı da düşüyor (cam-15:
     # 0.501 → 0.345). Seyirci donup izliyor. Kontrast iki taraftan
     # birden geliyor; `max` ikisini de göremiyordu.
     #
     #     ölçüt                 kavga   normal   oran
-    #     max                   1.152    1.192   0.97  ❌
-    #     aykırılık (max−med)   0.751    0.542   1.39  ✅
+    # max 1.152 1.192 0.97
+    # aykırılık (max−med) 0.751 0.542 1.39
     #
-    # ⚠ ESKİ `ham_*` ALANLARI SİLİNMEDİ: makalede ablasyon basamağı
+    # Eski `ham_*` alanları silinmedi: makalede ablasyon basamağı
     # olarak ikisi karşılaştırılacak.
     for alan in HAM_ALANLAR:
         aykiriliklar: list[float] = []
@@ -379,7 +379,7 @@ def _ozellik_cikar(args: argparse.Namespace) -> int:
             klipler = sorted((RWF / bolum / sinif).glob("*.avi"))
             random.Random(TOHUM).shuffle(  # noqa: S311 — kripto değil
                 klipler)
-            # ⚠ val'da daha az klip: ölçüm için yeterli, süre için kritik
+            # val'da daha az klip: ölçüm için yeterli, süre için kritik
             n = args.klip if bolum == "train" else min(args.klip, 60)
             klipler = klipler[:n]
             for i, yol in enumerate(klipler, 1):
@@ -420,10 +420,10 @@ def _egit(args: argparse.Namespace) -> int:
         print("❌ Eğitim ya da doğrulama kümesi boş.", file=sys.stderr)
         return 1
 
-    # Sütun sırası SABİT — model dosyasıyla birlikte kaydediliyor.
-    # ⚠ Sıra ayrışırsa model yanlış özellikleri okur ve hata SESSİZ olur.
+    # Sütun sırası sabit — model dosyasıyla birlikte kaydediliyor.
+    # Sıra ayrışırsa model yanlış özellikleri okur ve hata sessiz olur.
     #
-    # ⚠ SÜTUNLAR TÜM KLİPLERİN BİRLEŞİMİNDEN, İLK KLİPTEN DEĞİL.
+    # Sütunlar tüm kliplerin birleşiminden, ilk klipten değil.
     # Ham özellikler `None` ise atlanıyor (bkz. `_klip_ozellikleri`),
     # yani her klipte her alan bulunmuyor. İlk klibin anahtarlarına
     # bakmak, o klipte olmayan bir alanı tüm veri setinden silmek ya da
@@ -432,10 +432,10 @@ def _egit(args: argparse.Namespace) -> int:
     sutunlar = sorted(
         {k for bolum in ("train", "val") for s in veri[bolum] for k in s} - haric
     )
-    # ⭐ ABLASYON — AYNI ÇIKARIM KOŞUSU, farklı sütun kümesi (P-49).
+    # Ablasyon — aynı çıkarım koşusu, farklı sütun kümesi (P-49).
     #
-    # ⚠ Bu bayrak, bu projede DÖRT KEZ tekrarlanan hatayı önlemek için
-    # var (CLAUDE.md §9 "raporun asıl tezi"): iki koşuyu kıyaslarken
+    # Bu bayrak, bu projede dört kez tekrarlanan hatayı önlemek için
+    # var (proje notlarım "raporun asıl tezi"): iki koşuyu kıyaslarken
     # aynı anda iki şeyi değiştirmek. `--cikar` yeniden koşturulursa
     # örneklem de değişiyor; o hâlde "özellik kazandırdı" denemez.
     # Önbellekli özellik dosyası üzerinde sütun düşürmek, tek değişkenli
@@ -448,16 +448,16 @@ def _egit(args: argparse.Namespace) -> int:
               f"düşürüldü → {len(sutunlar)} özellik kaldı")
 
     def _matris(satirlar: list[dict[str, Any]]) -> tuple[Any, Any]:
-        # ⚠ EKSİK DEĞER `NaN`, SIFIR DEĞİL — bu projenin tekrarlayan dersi
+        # Eksik değer `NaN`, sıfır değil — bu projenin tekrarlayan dersi
         # (`person.py` modül başlığı: *"sıfır 'hareket etmedi' demektir,
         # eksik ise 'bilmiyoruz'"*).
         #
-        # Sıfır yazmak modele YANLIŞ bir gözlem öğretirdi: "bu klipte
+        # Sıfır yazmak modele yanlış bir gözlem öğretirdi: "bu klipte
         # bilek hızı sıfırdı" ile "bu klipte bilek hızı ölçülemedi"
         # farklı şeyler ve ikincisi kavga kliplerinde sık.
         #
         # LightGBM `NaN`'ı yerel olarak destekliyor: her bölünmede
-        # eksik değerleri hangi dala göndereceğini VERİDEN öğreniyor.
+        # eksik değerleri hangi dala göndereceğini veriden öğreniyor.
         # Bu, eksikliği bir bilgi kaynağına çeviriyor.
         x = np.array([
             [float(s[c]) if c in s else float("nan") for c in sutunlar]
@@ -470,11 +470,11 @@ def _egit(args: argparse.Namespace) -> int:
     xva, yva = _matris(veri["val"])
     print(f"eğitim {xtr.shape} · doğrulama {xva.shape} · {len(sutunlar)} özellik")
 
-    # ⚠ KÜÇÜK MODEL, BİLİNÇLİ OLARAK
+    # Küçük model, bilinçli olarak
     # 1600 klip ve 6 temel özellikle derin bir ağaç ezberler. Sığ
     # ağaçlar + güçlü düzenlileştirme, bu boyutta veri için doğru
     # tercih — ve model ne kadar basitse açıklanabilirliği o kadar
-    # korunuyor (PLAN §6.5'in şartı).
+    # korunuyor ('in şartı).
     model = lgb.LGBMClassifier(
         n_estimators=300,
         learning_rate=0.05,
@@ -496,8 +496,8 @@ def _egit(args: argparse.Namespace) -> int:
     )
 
     olasilik = model.predict_proba(xva)[:, 1]
-    # ⚠ VAL TAHMİNLERİNİ DIŞA VER — istatistiksel test için zorunlu.
-    # Tek bir AUC sayısı, iki ayarın farkının GÜRÜLTÜ İÇİNDE olup
+    # VAL tahminlerini dışa ver — istatistiksel test için zorunlu.
+    # Tek bir AUC sayısı, iki ayarın farkının gürültü içinde olup
     # olmadığını söylemez. Eşleştirilmiş bootstrap için klip başına
     # tahmin gerekiyor (bkz. deney_fps.py).
     if getattr(args, "tahmin_cikti", ""):
@@ -523,8 +523,8 @@ def _egit(args: argparse.Namespace) -> int:
     neg = [float(p) for p, y in zip(olasilik, yva, strict=True) if y == 0]
     auc = _auc(poz, neg)
 
-    # ⚠ EŞİK BURADA DA TEST KÜMESİNDE ARANIYOR — ADR-0007'nin
-    # kaydettiği aynı yanlılık. Taban çizgisiyle ADİL karşılaştırma
+    # Eşik burada da test kümesinde aranıyor — ADR-0007'nin
+    # kaydettiği aynı yanlılık. Taban çizgisiyle adil karşılaştırma
     # için kasten aynı yöntem kullanılıyor: ikisi de optimistik, fark
     # anlamlı kalıyor. Mutlak sayı raporlanırken yanlılık yazılacak.
     en_iyi = (0.0, 0.0, 0.0, 0.0)
@@ -543,10 +543,10 @@ def _egit(args: argparse.Namespace) -> int:
 
     esik, f1, duyarlilik, kesinlik = en_iyi
 
-    # ⚠ DOĞRULUK (accuracy) DA HESAPLANIYOR — literatürle KARŞILAŞTIRMA için
+    # Doğruluk (accuracy) da hesaplanıyor — literatürle karşılaştırma için
     # RWF-2000 üzerine yayınlanan çalışmaların neredeyse tamamı doğruluk
     # raporluyor (Flow Gated Network %87.25, IDG-ViolenceNet %89.4).
-    # F1/AUC ile doğruluk aynı şey DEĞİL; farklı metrikleri yan yana
+    # F1/AUC ile doğruluk aynı şey değil; farklı metrikleri yan yana
     # koymak bu projenin dört kez pahalıya ödediği hata sınıfı (P-41).
     # Sınıflar dengeli olduğu için (56 kavga / 48 normal) doğruluk
     # burada anlamlı bir ölçüt.
@@ -580,15 +580,15 @@ def _egit(args: argparse.Namespace) -> int:
     for ad, deger in onem[:8]:
         print(f"  {ad:24} {deger:>6}")
 
-    # ⚠⚠ 09.09.2026 — BU SATIR ÜRETİM MODELİNİ SESSİZCE EZİYORDU (P-63)
+    # 09.09.2026 — bu satır üretim modelini sessizce eziyordu (P-63)
     #
     # `deney_fps.py` bu betiği FPS taraması için **beş kez** alt süreçte
     # çağırıyor (2.75 / 4.00 / 8.25 / 16.50 / 24.75) ve her çağrı aynı
-    # dosyanın üzerine yazıyordu. Üretimde kalan model, taramanın EN SON
+    # dosyanın üzerine yazıyordu. Üretimde kalan model, taramanın en son
     # bitirdiği modeldi — yani 24.75 FPS'te eğitilmiş olan (AUC 0.918),
     # en iyisi olan 16.50 değil, üretimin kendi hızı olan 2.75 hiç değil.
     #
-    # Deney bir ARAŞTIRMA aracı; üretim yapıtını değiştirmemeli. Artık
+    # Deney bir araştırma aracı; üretim yapıtını değiştirmemeli. Artık
     # çıktı yolu seçilebilir ve tarama kendi dizinine yazıyor.
     hedef_model = (
         (PROJECT_ROOT / args.model_cikti) if getattr(args, "model_cikti", "")
@@ -597,10 +597,10 @@ def _egit(args: argparse.Namespace) -> int:
     hedef_model.parent.mkdir(parents=True, exist_ok=True)
     model.booster_.save_model(str(hedef_model))
 
-    # ⭐ YANIN A KÜNYE YAZILIYOR — "bu model hangi veriyle eğitildi"
+    # Yanın A künye yazılıyor — "bu model hangi veriyle eğitildi"
     #
     # Model dosyası tek başına hangi kare hızındaki özelliklerle
-    # eğitildiğini SÖYLEMİYOR. Söylemediği için de yanlış modelin
+    # eğitildiğini söylemiyor. Söylemediği için de yanlış modelin
     # üretimde oturduğu bir gün boyunca fark edilmedi. Künye, üretim
     # tarafının uyuşmazlığı görebilmesi için (bkz. `analytics/model.py`).
     kunye = {

@@ -4,16 +4,16 @@ Neden gerekli
 -------------
 "Bu kişi 3 saniyedir hızlanıyor" cümlesini kurabilmek için o kişinin
 son 3 saniyesini tutmak gerekiyor. Tek kare hiçbir zamansal bilgi
-taşımaz; saldırganlık ve anomalinin tamamı zamansaldır (PLAN §6.5.2).
+taşımaz; saldırganlık ve anomalinin tamamı zamansaldır.
 
-⚠ TASARIMI BELİRLEYEN ÖLÇÜM (18.08.2026)
+Tasarımı belirleyen ölçüm (18.08.2026)
 ----------------------------------------
 Kimlik kararlılığı ölçüldü ve tablo şu çıktı:
 
     20 kamera (doygun)  parçalanma %72.2 · medyan iz ömrü 2 kare
      6 kamera (rahat)   parçalanma %45.1 · medyan iz ömrü 4 kare
 
-4 FPS'te 4 kare = **1 saniye.** PLAN §6.5.2 ise 3 saniyelik pencere
+4 FPS'te 4 kare = **1 saniye.** Proje planı ise 3 saniyelik pencere
 istiyor (12 örnek). Yani izlerin yarısından fazlası "tam pencere"ye
 hiç ulaşmıyor.
 
@@ -23,7 +23,7 @@ Bunun iki tasarım sonucu var ve ikisi de bu dosyada:
    hesaplama" densaydı modül izlerin çoğunda susardı ve saldırganlık
    tespiti pratikte çalışmazdı.
 
-2. **Her sonuç bir TAMLIK skoru taşır.** 2 örnekten çıkan "bilek hızı"
+2. **Her sonuç bir tamlık skoru taşır.** 2 örnekten çıkan "bilek hızı"
    ile 12 örnekten çıkan aynı sayı aynı güvene sahip değildir. Füzyon
    katmanı bu farkı görmek zorunda; görmezse gürültüyü kanıt sanar.
 
@@ -40,11 +40,11 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-# Zamansal pencere uzunluğu (saniye). PLAN §6.5.3.
+# Zamansal pencere uzunluğu (saniye).
 PENCERE_S = 3.0
 
-# Anlamlı bir hesap için gereken EN AZ örnek sayısı.
-# 2 seçildi çünkü hız/ivme bir FARK: iki nokta olmadan hesaplanamaz.
+# Anlamlı bir hesap için gereken en az örnek sayısı.
+# 2 seçildi çünkü hız/ivme bir fark: iki nokta olmadan hesaplanamaz.
 # Daha yüksek bir eşik (örn. 6) izlerin yarısını dışarıda bırakırdı.
 MIN_ORNEK = 2
 
@@ -115,21 +115,21 @@ class IzPenceresi:
     def tamlik(self) -> float:
         """0-1: bu pencere ne kadar dolu?
 
-        ⚠ FÜZYONA GİRMESİ GEREKEN SAYI BUDUR.
+        Füzyona girmesi gereken sayı budur.
         İki örnekten hesaplanmış bir "bilek hızı" ile on iki örnekten
         hesaplanmış aynı değer aynı şey değildir. Bu skor olmadan
         füzyon katmanı ikisini eşit ağırlıkta değerlendirir ve az
         veriden çıkan gürültüyü kanıt sanar.
 
         Ölçüm (18.08.2026) izlerin medyan ömrünün 4 kare olduğunu
-        gösterdi, yani pratikte bu skor çoğu zaman 1.0'ın ALTINDA
+        gösterdi, yani pratikte bu skor çoğu zaman 1.0'ın altında
         olacak. Bu bir kusur değil, ölçülmüş gerçeğin çıktıya
         taşınması.
         """
         return min(1.0, self.sayi / TAM_ORNEK)
 
     def gecerli_ciftler(self) -> list[tuple[Ornek, Ornek]]:
-        """Ardışık örnek çiftleri — aralarında büyük boşluk OLMAYANLAR.
+        """Ardışık örnek çiftleri — aralarında büyük boşluk olmayanlar.
 
         Kare atlandığında (geri basınç, eski kare atma) iki örnek
         arasında 1 saniyeden uzun boşluk olabiliyor. O aralıktan hız
@@ -163,8 +163,8 @@ class IzPenceresi:
 class PencereDeposu:
     """Kamera × iz kimliği → pencere.
 
-    ⚠ Kamera bazlı ayrım şart: takipçi kimlikleri kamera içinde
-    benzersiz, kameralar arasında DEĞİL. cam-01'deki 7 numaralı iz ile
+    Kamera bazlı ayrım şart: takipçi kimlikleri kamera içinde
+    benzersiz, kameralar arasında değil. cam-01'deki 7 numaralı iz ile
     cam-09'daki 7 numaralı iz farklı kişiler (tracker/botsort.py).
     """
 

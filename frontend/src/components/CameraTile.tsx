@@ -1,13 +1,13 @@
 /** Tek kamera kutucuğu: video + üstüne çizilen analiz katmanı.
  *
- * MİMARİ KURAL 2 BURADA UYGULANIYOR
+ * Mimari kural 2 burada uygulanıyor
  * ---------------------------------
- * Sunucu videoya kutu ÇİZMEZ. Video WHEP ile dokunulmadan gelir,
+ * Sunucu videoya kutu çizmez. Video WHEP ile dokunulmadan gelir,
  * kutular WebSocket'ten ~500 baytlık JSON olarak gelir, birleştirmeyi
  * tarayıcı yapar. Sunucu tarafında çizim yapsaydık her kamera için
  * yeniden kodlama gerekirdi ve NVENC oturum limitine takılırdık.
  *
- * ÇİZİM DÖNGÜSÜ REACT'TEN BAĞIMSIZ
+ * Çizim döngüsü REACT'ten bağımsız
  * --------------------------------
  * Sonuçlar saniyede ~3-4 kez geliyor ama çizim requestAnimationFrame
  * ile ekran tazeleme hızında (60 Hz) çalışıyor. Aradaki karelerde kutu
@@ -34,17 +34,17 @@ import {
 } from '../lib/whep'
 import { EXPR_MIN_CONF, EXPR_MIN_QUALITY, type Camera } from '../types'
 
-/** ⚠ İKİ EŞİK — çünkü "sakin" ile "bozuk" aynı şey değil
+/** iki eşik — çünkü "sakin" ile "bozuk" aynı şey değil
  *
  * Eski sürümde tek eşik vardı (4 sn) ve aşıldığında "analiz durdu"
- * yazıyordu. Bu YANILTICIYDI: bir otopark kamerasında saatlerce hiçbir
+ * yazıyordu. Bu yanıltıcıydı: bir otopark kamerasında saatlerce hiçbir
  * şey olmaz, Kademe 0 hareket filtresi kareleri haklı olarak eler ve
  * sonuç üretilmez. Sistem tam olarak tasarlandığı gibi çalışırken panel
  * "analiz durdu" diye alarm veriyordu.
  *
  * Üstüne uyarlanabilir FPS var: 30 sn hareketsizlikte kamera 1 FPS'e
  * düşüyor ve yalnızca 5 saniyelik zorunlu yenileme karesi geçiyor.
- * Yani SAĞLIKLI bir sakin kamerada sonuçlar 5-10 sn arayla gelir —
+ * Yani sağlıklı bir sakin kamerada sonuçlar 5-10 sn arayla gelir —
  * 4 sn eşiği bunu daima "arıza" sayıyordu.
  *
  * Şimdi: SAKIN_MS'i aşan ama son karesi `refresh` olan kamera "sakin"
@@ -81,15 +81,15 @@ export function CameraTile({ camera, webrtcBase }: Props) {
           return
         }
         sessionRef.current = session
-        // ⚠ Kutu hizalamasının ÇÖZÜMÜ burada: videoyu bilerek
+        // Kutu hizalamasının çözümü burada: videoyu bilerek
         // geciktiriyoruz ki analiz sonuçları yetişsin ve kutular
-        // tahmin edilmek yerine ARA DEĞERLENSİN (LITERATUR.md §T).
+        // tahmin edilmek yerine ara değerlensin.
         setVideoBuffer(session.pc, useStore.getState().videoBufferMs)
       })
       .catch((error) => console.warn('WHEP başarısız', camera.name, error))
 
     // Video gecikmesini periyodik ölç. Bu sayede hizalama kaydırıcısı
-    // tahmin değil ÖLÇÜM önerebiliyor (bkz. SyncControl).
+    // tahmin değil ölçüm önerebiliyor (bkz. SyncControl).
     const probe = window.setInterval(async () => {
       const pc = sessionRef.current?.pc
       if (!pc) return
@@ -123,12 +123,12 @@ export function CameraTile({ camera, webrtcBase }: Props) {
     const videoTicks: number[] = []
 
     const draw = () => {
-      // ⚠ requestVideoFrameCallback — requestAnimationFrame DEĞİL.
+      // requestVideoFrameCallback — requestAnimationFrame değil.
       // rAF ekranın tazeleme hızına bağlıdır (60 Hz) ve videodan
       // bağımsız çalışır; kutu ile videonun güncellendiği anlar
       // birbirini tutmaz. rVFC video karesi ekrana basıldığında
       // tetiklenir, yani çizim video hızına senkron olur
-      // (LITERATUR.md §T). Desteklenmiyorsa rAF'a düşüyoruz.
+      //. Desteklenmiyorsa rAF'a düşüyoruz.
       const video = videoRef.current as
         | (HTMLVideoElement & { requestVideoFrameCallback?: (cb: () => void) => number })
         | null
@@ -155,7 +155,7 @@ export function CameraTile({ camera, webrtcBase }: Props) {
       if (!ctx) return
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-      // Ayarları store'dan HER KAREDE okuyoruz. getState() abonelik
+      // Ayarları store'dan her karede okuyoruz. getState() abonelik
       // kurmaz, yani ayar değişimi render tetiklemiyor.
       const { viewMode, videoLatencyMs, videoBufferMs } = useStore.getState()
       const buffer = buffers.get(camera.name)
@@ -176,7 +176,7 @@ export function CameraTile({ camera, webrtcBase }: Props) {
           badgeRef.current.textContent = `analiz durdu · ${(frame.ageMs / 1000).toFixed(0)} sn`
           badgeRef.current.className = 'rounded bg-bad/25 px-2 py-0.5 text-bad'
         } else if (frame.ageMs > SAKIN_MS && frame.gate === 'refresh') {
-          // Kademe 0 kareleri eliyor çünkü sahnede hareket YOK.
+          // Kademe 0 kareleri eliyor çünkü sahnede hareket yok.
           // Bu bir arıza değil, filtrenin doğru çalıştığının kanıtı —
           // 20 kamerayı tek GPU'da döndürebilmemizin sebebi tam da bu.
           badgeRef.current.textContent = 'sakin · hareket yok'
@@ -192,7 +192,7 @@ export function CameraTile({ camera, webrtcBase }: Props) {
           // neden ara değerlenmesi gerektiğini gözle gösteriyor.
           const vf = videoTicks.length
           const af = analysisFps(camera.name)
-          // ⚠ ONDALIK: analiz kamera başına 1 FPS'in ALTINDA koşuyor.
+          // Ondalık: analiz kamera başına 1 FPS'in altında koşuyor.
           // Tam sayıya yuvarlamak 0.6 FPS'i "0" gösterir ve sistem
           // çalışmıyor sanılır — tam olarak yaşanan buydu.
           badgeRef.current.textContent =
@@ -206,7 +206,7 @@ export function CameraTile({ camera, webrtcBase }: Props) {
       // Kutuları çizmeyi bırakma eşiği: bayat kutu yanlış yerde durur.
       if (viewMode === 'off' || !frame || frame.ageMs > DURDU_MS) return
 
-      // ⚠ Ölçek matematiği `lib/overlay.ts`e taşındı ve orada test
+      // Ölçek matematiği `lib/overlay.ts`e taşındı ve orada test
       // ediliyor (25 test). Burada kopyasını tutmak, "test edilen kod
       // ile koşan kod" ayrışması demekti — bu projenin en pahalı hata
       // türü (P-39, P-56).
@@ -236,30 +236,30 @@ export function CameraTile({ camera, webrtcBase }: Props) {
         ctx.fillStyle = '#06111f'
         ctx.fillText(label, x + 4, Math.max(11, y - 4))
 
-        // KADEME 2b — yüz ifadesi, kutunun SAĞ ÜSTÜNDE.
+        // Kademe 2b — yüz ifadesi, kutunun sağ üstünde.
         //
-        // ⚠ Yalnızca KALİTE VE GÜVEN eşiği geçilirse yazılıyor. Sunucu
+        // Yalnızca kalite ve güven eşiği geçilirse yazılıyor. Sunucu
         // her sınıflandırmayı gönderiyor (kalite skoruyla birlikte) ama
         // düşük kaliteli olanı ekrana basmak operatöre bilgi değil
         // gürültü sunmak olurdu — 15 piksellik bulanık bir yüze "öfke"
-        // demek teknik olarak bir çıktıdır, bilgi değildir (PLAN §6.3).
+        // demek teknik olarak bir çıktıdır, bilgi değildir.
         //
         // Eşikler sunucudaki `ExpressionResult.usable` ile aynı.
         const expr = det.expr
         if (expr && expr.q >= EXPR_MIN_QUALITY && expr.conf >= EXPR_MIN_CONF) {
-          // ⚠ 10.09.2026 — ETİKET KUTUNUN ALTINDAYDI VE KESİLİYORDU
+          // 10.09.2026 — etiket kutunun altındaydı ve kesiliyordu
           //
-          // Eski konum `y + h` (kutunun ALTI). Kişi kadrajın alt
+          // Eski konum `y + h` (kutunun altı). Kişi kadrajın alt
           // yarısındaysa etiket kutucuğun dışına taşıyor ve operatör
-          // onu HİÇ göremiyordu. Kullanıcı canlı panelde yakaladı:
-          // "cogu kamerada gozukmuyor".
+          // onu hiç göremiyordu. Canlı panelde fark ettim: etiket çoğu
+          // kamerada görünmüyordu.
           //
-          // Yeni konum kutunun SAĞ ÜSTÜ. Sebep: sol üstte zaten iz
+          // Yeni konum kutunun sağ üstü. Sebep: sol üstte zaten iz
           // kimliği + güven rozeti var (`#1 94%`), çakışırlardı.
           //
-          // ⚠ Kenara sığmazsa İÇERİ alınıyor: sağ kenara yapışık bir
+          // Kenara sığmazsa içeri alınıyor: sağ kenara yapışık bir
           // kutuda etiket yine taşardı. Aynı düşünce dikeyde de var —
-          // kutu en üstteyse etiket kutunun İÇİNE kayıyor.
+          // kutu en üstteyse etiket kutunun içine kayıyor.
           const text = `${expr.tr} ${(expr.conf * 100).toFixed(0)}%`
           const ew = ctx.measureText(text).width + 8
           const eh = 15
@@ -277,10 +277,10 @@ export function CameraTile({ camera, webrtcBase }: Props) {
     }
 
     handle = requestAnimationFrame(draw)
-    // ⚠ REF DEĞERİ TEMİZLİKTEN ÖNCE KOPYALANIYOR (ESLint bulgusu).
-    // `videoRef.current` temizlik çalıştığında BAŞKA bir düğümü
+    // REF değeri temizlikten önce kopyalanıyor (ESLint bulgusu).
+    // `videoRef.current` temizlik çalıştığında başka bir düğümü
     // gösteriyor olabilir — React o ana kadar DOM'u değiştirmiş olur.
-    // O durumda `cancelVideoFrameCallback` YANLIŞ videoda çağrılır ve
+    // O durumda `cancelVideoFrameCallback` yanlış videoda çağrılır ve
     // eski geri çağrı iptal edilmeden kalır: sessiz bir sızıntı.
     const videoDugumu = videoRef.current as
       | (HTMLVideoElement & { cancelVideoFrameCallback?: (h: number) => void })
@@ -361,7 +361,7 @@ function drawSkeleton(
 
   ctx.lineWidth = 2
   for (const [a, b, color] of BONES) {
-    // Eksik keypoint ARA DEĞERLENMEZ (PLAN.md §6.2): görünmeyen uzvu
+    // Eksik keypoint ara değerlenmez: görünmeyen uzvu
     // tahmin etmek, olmayan bir duruşu varmış gibi göstermektir.
     if (!ok(a) || !ok(b)) continue
     ctx.strokeStyle = color

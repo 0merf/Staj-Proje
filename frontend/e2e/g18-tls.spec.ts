@@ -1,19 +1,19 @@
 import { expect, test } from '@playwright/test'
 
 /**
- * G18 — TLS + TEK GİRİŞ NOKTASI · güvenlik nöbetçisi
+ * G18 — TLS + tek giriş noktası · güvenlik nöbetçisi
  *
- * ⭐ NE KORUYOR: P-37'nin tam çözümü
+ * NE koruyor: P-37'nin tam çözümü
  * ----------------------------------
  * 30.08.2026'da bulunan açık: API kimlik doğrulamalıydı ama **video
  * değildi**. O gün uygulanan çözüm bir ağ kısıtıydı (port 127.0.0.1'e
- * bağlandı) — erişimi sınırlar, açığı KAPATMAZ.
+ * bağlandı) — erişimi sınırlar, açığı kapatmaz.
  *
  * Caddy videoyu API ile aynı kökene alıp `forward_auth` ile her WHEP
  * isteğini önce FastAPI'ye sorduruyor. Bu dosya o iddiayı sınıyor.
  *
- * ⚠ ÖN KOŞUL: `docker compose --profile tls up -d caddy`
- * Caddy kapalıysa testler ATLANIYOR (başarısız sayılmıyor) — çünkü
+ * ÖN koşul: `docker compose --profile tls up -d caddy`
+ * Caddy kapalıysa testler atlanıyor (başarısız sayılmıyor) — çünkü
  * varsayılan kurulumda kapalı olması bilinçli bir karar.
  */
 
@@ -32,20 +32,20 @@ test.describe('G18 — TLS ve video kimlik doğrulaması', () => {
     }
   })
 
-  test('⭐ KİMLİKSİZ video isteği ENGELLENİYOR (P-37)', async ({ request }) => {
+  test('Kimliksiz video isteği engelleniyor (P-37)', async ({ request }) => {
     const cevap = await request.post(`${TLS_TABAN}/cam-01/whep`, {
       headers: { 'Content-Type': 'application/sdp' },
       data: 'v=0',
     })
-    // 401/403 = forward_auth reddetti, MediaMTX'e HİÇ ulaşmadı.
-    // ⚠ 400 gelirse Caddy isteği GEÇİRMİŞ demektir — açık geri gelmiş.
+    // 401/403 = forward_auth reddetti, MediaMTX'e hiç ulaşmadı.
+    // 400 gelirse Caddy isteği geçirmiş demektir — açık geri gelmiş.
     expect(
       [401, 403],
       `kimliksiz WHEP ${cevap.status()} döndü — video korumasız olabilir`,
     ).toContain(cevap.status())
   })
 
-  test('⭐ GİRİŞ YAPMIŞ istemci videoya ERİŞEBİLİYOR', async ({ request }) => {
+  test('Giriş yapmış istemci videoya erişebiliyor', async ({ request }) => {
     const giris = await request.post(`${TLS_TABAN}/api/v1/auth/login`, {
       data: { kullanici_adi: KULLANICI, parola: PAROLA },
     })
@@ -55,7 +55,7 @@ test.describe('G18 — TLS ve video kimlik doğrulaması', () => {
       headers: { 'Content-Type': 'application/sdp' },
       data: 'v=0',
     })
-    // ⚠ 400 BEKLENEN VE DOĞRU: Caddy isteği geçirdi, MediaMTX geçerli
+    // 400 beklenen ve doğru: Caddy isteği geçirdi, MediaMTX geçerli
     // bir SDP teklifi bekliyordu. Yani yetki kapısı açıldı.
     // 401 gelseydi güvenlik sistemi meşru kullanıcıyı da kesiyordu —
     // "güvenli ama çalışmıyor" da bir arıza.
@@ -75,11 +75,11 @@ test.describe('G18 — TLS ve video kimlik doğrulaması', () => {
     expect(b['server'] ?? '').not.toContain('Caddy')
   })
 
-  test('İÇ UÇLAR dışarıya sızmıyor: /metrics ve / (P-86)', async ({ request }) => {
-    // ⚠⚠ BU TEST BİR AÇIĞIN NÖBETÇİSİ.
+  test('İÇ uçlar dışarıya sızmıyor: /metrics ve / (P-86)', async ({ request }) => {
+    // Bu test bir açığın nöbetçisi.
     //
     // 10.09'da bulundu: Caddy'nin "diğer her şeyi geçir" bloğu
-    // FastAPI'nin kimlik doğrulaması OLMAYAN uçlarını da dışarı
+    // FastAPI'nin kimlik doğrulaması olmayan uçlarını da dışarı
     // açıyordu. `/metrics` tek giriş noktasından 200 dönüyordu ve
     // 218 satır Prometheus verisi veriyordu: kamera adları, kamera
     // başına alarm sayıları, kare hızları, uç nokta envanteri.
@@ -88,7 +88,7 @@ test.describe('G18 — TLS ve video kimlik doğrulaması', () => {
     // sisteme hiç girmeden "kaç kamera var, hangisi ne kadar alarm
     // üretiyor" öğrenilebiliyordu.
     //
-    // ⭐ P-37'nin dersi tekrar: "API korunuyor" ≠ "her uç korunuyor".
+    // P-37'nin dersi tekrar: "API korunuyor" ≠ "her uç korunuyor".
     const olcum = await request.get(`${TLS_TABAN}/metrics`)
     expect(
       olcum.status(),

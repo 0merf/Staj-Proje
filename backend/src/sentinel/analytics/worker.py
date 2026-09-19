@@ -1,17 +1,17 @@
-"""Analitik worker'ı — iskeletten ANLAMA giden katman.
+"""Analitik worker'ı — iskeletten anlama giden katman.
 
 Mimarideki yeri
 ---------------
     çıkarım worker'ı  →  inference.results  (kutular + iskelet + kimlik)
                               ↓
-                      ANALİTİK WORKER  (bu dosya)
+                      analitik worker  (bu dosya)
                         · pencereleri besle
                         · özellik çıkar      (analytics/features/)
                         · kuralları uygula   (analytics/anomaly/rules.py)
                               ↓
                         analytics.events  →  API  →  panel
 
-Neden AYRI bir süreç
+Neden ayrı bir süreç
 --------------------
 Çıkarım worker'ının tek işi GPU'yu doyurmak. Oraya analitik eklemek iki
 şeyi birden bozardı: GPU boşta beklerken CPU analitik yapar (kare
@@ -20,7 +20,7 @@ gecikir) ve analitikte bir hata GPU boru hattını düşürür.
 Ayrıca bu worker **GPU'ya hiç dokunmuyor** — tamamen CPU ve hafif.
 Gerekirse ayrı bir makineye taşınabilir; çıkarım worker'ı taşınamaz.
 
-⚠ NEDEN KADEME 0 BURAYA DA UYGULANMIYOR
+Neden kademe 0 buraya da uygulanmıyor
 ---------------------------------------
 Hareket filtresi alım tarafında. Buraya gelen her sonuç zaten filtreyi
 geçmiş bir kareye ait, yani "bir şey oluyor" demek. Burada ikinci bir
@@ -84,7 +84,7 @@ def _handle_signal(_sig: int, _frame: FrameType | None) -> None:
 def _model_sutun_yolu() -> Path | None:
     """Model sütun sırasını taşıyan en yeni ölçüm JSON'u.
 
-    ⚠ Sütun SIRASI model dosyasıyla birlikte sabitlendi ve ayrı bir
+    Sütun sırası model dosyasıyla birlikte sabitlendi ve ayrı bir
     dosyada duruyor. Alfabetik yeniden üretmek yetmez: eğitim
     `sorted()` kullanıyor ama o varsayıma dayanmak sessiz bir hata
     kaynağı olurdu. `SaldirganlikModeli` sütun sayısını model
@@ -105,19 +105,19 @@ class AnalyticsWorker:
         self._client = connect()
         self._pencereler = PencereDeposu()
         self._kurallar = KuralMotoru()
-        # KATMAN A — kamera başına öğrenilen normal profil.
+        # Katman A — kamera başına öğrenilen normal profil.
         # Diskten yükleniyor: profil kaybı sistem körlüğü demek
         # (bkz. anomaly/normalcy.py · NormalProfilDeposu).
         self._normal = NormalProfilDeposu(PROJECT_ROOT / "data" / "profiles")
-        # SALDIRGANLIK — kişi + çift özelliklerinden tırmanma skoru
+        # Saldırganlık — kişi + çift özelliklerinden tırmanma skoru
         self._tirmanma = TirmanmaSkorlayici()
-        # ⭐⭐ ÖĞRENİLMİŞ MODEL — P-56, hakem denetiminin en ağır bulgusu
+        # Öğrenilmiş model — P-56, hakem denetiminin en ağır bulgusu
         #
-        # 08.09.2026'ya kadar canlı boru hattında HİÇBİR öğrenilmiş
+        # 08.09.2026'ya kadar canlı boru hattında hiçbir öğrenilmiş
         # model yoktu: K5 F1 = 0.889 yalnızca çevrim dışı betiklerde
-        # ölçülüyordu. Ve bu, füzyonun EN AĞIR sinyalini (0.40)
+        # ölçülüyordu. Ve bu, füzyonun en ağır sinyalini (0.40)
         # P-52'de ayırt etmediği ölçülen kural kümesine bırakıyordu.
-        # K7 koşusunda üretilen 39 alarmın SIFIRI saldırganlıktandı.
+        # K7 koşusunda üretilen 39 alarmın sıfırı saldırganlıktandı.
         #
         # Model kamera seviyesinde karar veriyor, kural iz seviyesinde
         # atıf yapıyor (bkz. analytics/model.py modül başlığı).
@@ -130,10 +130,10 @@ class AnalyticsWorker:
             if not self._model.etkin:
                 log.warning("saldirganlik_modeli_devre_disi_kurala_donuluyor")
                 self._model = None
-        # FÜZYON — beş sinyali tek risk skorunda birleştirir (PLAN §6.6)
+        # Füzyon — beş sinyali tek risk skorunda birleştirir
         self._fuzyon = RiskFuzyonu()
-        # İFADE — KADEME 2b çıktısını füzyona taşıyan katman.
-        # ⚠ 03.09.2026'ya kadar YOKTU: füzyon sinyali `ifade=0.0` diye
+        # İfade — kademe 2b çıktısını füzyona taşıyan katman.
+        # 03.09.2026'ya kadar yoktu: füzyon sinyali `ifade=0.0` diye
         # sabit yazılıydı ve mesajdaki `expr` alanı hiç okunmuyordu.
         # "Duygu analizi" şartnamedeki üç yetenekten biri ve sistemin
         # kararına hiç katılmıyordu (bkz. analytics/ifade.py).
@@ -151,7 +151,7 @@ class AnalyticsWorker:
         self.anomaliler = 0
         self.saldirganlik = 0
         self.fuzyon_alarm = 0
-        # ⚠ Bastırılan füzyon alarmı sayısı AYRI tutuluyor: "füzyon
+        # Bastırılan füzyon alarmı sayısı ayrı tutuluyor: "füzyon
         # çalışıyor ama tek sinyalli olduğu için susuyor" ile "füzyon
         # hiç skor üretmiyor" arasındaki farkı ancak bu sayaç gösterir.
         self.fuzyon_bastirilan = 0
@@ -161,9 +161,9 @@ class AnalyticsWorker:
     def _ensure_group(self) -> None:
         """Tüketici grubunu kurar (varsa sessizce geçer).
 
-        ⚠ `id="$"` bilinçli — çıkarım worker'ının aksine.
+        `id="$"` bilinçli — çıkarım worker'ının aksine.
         Orada `"0"` gerekiyordu çünkü akıştaki her mesaj işlenmemiş bir
-        SLOT taşıyor ve okunmazsa havuz kilitleniyor (P-10). Burada öyle
+        slot taşıyor ve okunmazsa havuz kilitleniyor (P-10). Burada öyle
         bir kaynak yok: analitik geç açıldıysa geçmişteki sonuçları
         işlemenin değeri de yok — gerçek zamanlı bir sistemde 10 dakika
         önceki anomaliyi şimdi bildirmek yanlış olur.
@@ -219,19 +219,19 @@ class AnalyticsWorker:
                 self._pencereler.buda(time.time())
                 self._kurallar.buda(time.time())
                 self._tirmanma.buda(time.time())
-                # ⚠ 03.09.2026 — FÜZYON BUDANMIYORDU: SESSİZ BELLEK SIZINTISI
+                # 03.09.2026 — füzyon budanmıyordu: sessiz bellek sızıntısı
                 #
                 # `RiskFuzyonu.buda()` 01.09'da füzyon katmanıyla birlikte
-                # YAZILDI ama hiçbir yerden ÇAĞRILMADI. Diğer üç bileşen
+                # yazıldı ama hiçbir yerden çağrılmadı. Diğer üç bileşen
                 # buradan budanıyordu; füzyon listeye eklenmemişti.
                 #
                 # Etkisi: `_izler` sözlüğü her yeni (kamera, iz) çifti için
                 # kalıcı bir kayıt tutuyordu. İz kimlikleri sürekli
-                # yenilendiği için bu sözlük SINIRSIZ büyüyor — mimari
+                # yenilendiği için bu sözlük sınırsız büyüyor — mimari
                 # kural 5'in ("her kuyruk sınırlı, sınırsız kuyruk = RAM
                 # patlaması") doğrudan ihlali.
                 #
-                # ⚠ Neden 2 gün fark edilmedi: sızıntı yavaş ve BELİRTİSİZ.
+                # Neden 2 gün fark edilmedi: sızıntı yavaş ve belirtisiz.
                 # Sistem çalışmaya devam ediyor, alarm üretmeye devam
                 # ediyor, yalnızca bellek büyüyor. Kısa koşularda
                 # görünmez — ve bugüne kadar hiç uzun koşu yapılmamıştı.
@@ -239,7 +239,7 @@ class AnalyticsWorker:
                 self._fuzyon.buda(time.time())
                 self._ifade.buda(time.time())
                 self._normal.kaydet()
-                # ⭐ Ölmüş tüketicide asılı kalan sonuçları geri al (P-60).
+                # Ölmüş tüketicide asılı kalan sonuçları geri al (P-60).
                 # Budamayla aynı periyot: ikisi de "arka plan bakımı" ve
                 # ikisi de sessiz sızıntı önlüyor.
                 self._sahipsizleri_topla()
@@ -253,7 +253,7 @@ class AnalyticsWorker:
         self._bitir(time.monotonic() - started)
 
     def _isle(self, yanit: Any) -> None:
-        """⚠ `Any` bilinçli: `redis-py`'nin `xreadgroup` dönüş tipi,
+        """`Any` bilinçli: `redis-py`'nin `xreadgroup` dönüş tipi,
         `decode_responses` ayarına göre değişen çok kollu bir birleşim
         (union) ve statik olarak daraltılamıyor. Tipi burada zorlamak
         okunmayan bir `cast` yığını üretirdi; yapı zaten aşağıda
@@ -278,12 +278,12 @@ class AnalyticsWorker:
         tespitler = veri.get("detections", [])
         ts = float(alanlar.get("ts", 0.0)) or time.time()
 
-        # ⭐⭐ KAYNAK VİDEODAKİ ZAMAN — yer gerçeğinin anahtarı.
+        # Kaynak videodaki zaman — yer gerçeğinin anahtarı.
         #
         # Olay kaydında bugüne kadar yalnızca duvar saati vardı ve
         # kameralarımız sonsuz döngüdeki video dosyaları olduğu için o
         # saat videodaki ana çevrilemiyordu. Sonuç: sistem alarm
-        # üretiyor, kimse alarmın GERÇEK olup olmadığını söyleyemiyordu.
+        # üretiyor, kimse alarmın gerçek olup olmadığını söyleyemiyordu.
         #
         # Kamera başına son görülen `pts` tutuluyor; alarm üretildiği an
         # o değer olayın kanıtına yazılıyor. Böylece her alarm kaynak
@@ -323,15 +323,15 @@ class AnalyticsWorker:
         dt = max(0.0, min(5.0, ts - onceki))  # sıçramalara karşı sınırlı
         self._son_degerlendirme[camera] = ts
 
-        # ─── SALDIRGANLIK: çift özellikleri + tırmanma skoru ───
-        # ⚠ Kişi özellikleri "ne yapıyor" der, çift özellikleri "kiminle"
+        # ─── Saldırganlık: çift özellikleri + tırmanma skoru ───
+        # Kişi özellikleri "ne yapıyor" der, çift özellikleri "kiminle"
         # der. Saldırganlık tanımı gereği etkileşimli olduğu için ikisi
         # birlikte gerekiyor (analytics/features/pair.py).
         kamera_pencereleri = self._pencereler.kamera_pencereleri(camera)
         ciftler = pair.kamera_ciftleri(kamera_pencereleri)
         skorlar = self._tirmanma.degerlendir(camera, ozellikler, ciftler, ts)
-        # ⭐ Öğrenilmiş modeli besle — kayan 5 sn penceresi (P-56).
-        # ⚠ Kural skorlarından SONRA çağrılıyor çünkü modelin girdisinin
+        # Öğrenilmiş modeli besle — kayan 5 sn penceresi (P-56).
+        # Kural skorlarından sonra çağrılıyor çünkü modelin girdisinin
         # bir kısmı kural bileşenleri (eğitimde de öyleydi).
         if self._model is not None:
             self._model.besle(camera, ozellikler, skorlar, ts)
@@ -339,7 +339,7 @@ class AnalyticsWorker:
             if skor.seviye in ("uyari", "alarm"):
                 self._tirmanma_yayinla(camera, skor, ts)
 
-        # ⚠ KATMAN A → KATMAN B'ye TEK YÖNLÜ BİLGİ AKIŞI
+        # Katman A → katman B'ye tek yönlü bilgi akışı
         # Oyalanma kuralı "burada durulur mu" sorusunun cevabını
         # öğrenilmiş profilden alıyor (rules.py · _oyalanma). Bağlantı
         # burada kuruluyor, kural motorunun içinde değil: iki katman
@@ -352,24 +352,24 @@ class AnalyticsWorker:
             self._oyalanma_normali(camera, tespitler, ozellikler, veri),
         )
 
-        # ─── KATMAN A: kamera normaline göre skorla ───
-        # ⚠ ARTIK ALARM ÜRETMİYOR, SKOR ÜRETİYOR (30.08.2026)
+        # ─── Katman A: kamera normaline göre skorla ───
+        # Artık alarm üretmiyor, skor üretiyor (30.08.2026)
         # Katman A istatistiksel bir sapma sinyali. Tek başına alarm
         # vermesi kontrol kamerasında saatte 90 alarma yol açıyordu ve
         # kod bunu "geçici bir kısıtlama, kalıcı çözüm füzyon" diye
         # yazıyordu. Kalıcı çözüm geldi: skor füzyona giriyor.
         anomali_skorlari = self._katman_a(camera, ozellikler, tespitler, veri, ts)
 
-        # ─── KADEME 2b: yüz ifadesi → füzyon sinyali ───
-        # ⚠ Mesajdaki `expr` alanı burada İLK KEZ okunuyor (03.09.2026).
-        # KADEME 2b Gün 14'ten beri çalışıyor ve çıktısı panele gidiyordu;
+        # ─── Kademe 2b: yüz ifadesi → füzyon sinyali ───
+        # Mesajdaki `expr` alanı burada ilk kez okunuyor (03.09.2026).
+        # Kademe 2b Gün 14'ten beri çalışıyor ve çıktısı panele gidiyordu;
         # analitik zincire hiç girmiyordu (analytics/ifade.py).
         ifade_skorlari = self._ifade.guncelle(camera, tespitler, ts)
 
         for bulgu in bulgular:
             self._yayinla(bulgu, ts)
 
-        # ─── FÜZYON: beş sinyal, tek risk skoru (PLAN §6.6) ───
+        # ─── Füzyon: beş sinyal, tek risk skoru ───
         self._fuzyon_degerlendir(
             camera, ozellikler, skorlar, bulgular, anomali_skorlari,
             ifade_skorlari, ts,
@@ -411,20 +411,20 @@ class AnalyticsWorker:
         veri: dict[str, Any],
         ts: float,
     ) -> dict[int, tuple[float, dict[str, float]]]:
-        """Kamera normaline göre olağandışılık (PLAN §6.4 Katman A).
+        """Kamera normaline göre olağandışılık (Katman A).
 
-        ⚠ İZ KİMLİĞİ → (skor, kanıt) DÖNDÜRÜYOR, alarm listesi DEĞİL.
+        İZ kimliği → (skor, kanıt) döndürüyor, alarm listesi değil.
         30.08.2026'ya kadar burası doğrudan alarm üretiyordu ve eşiği
         0.85'e çekmek zorunda kalmıştık. Artık skor füzyona giriyor
         (`analytics/fusion.py`), eşik orada ve sinyaller birlikte
         değerlendiriliyor.
 
-        ⚠ ÖNCE ÖĞREN, SONRA SKORLA — ve sıra önemli.
+        Önce öğren, sonra skorla — ve sıra önemli.
         Profil `hazir` değilken skor üretmiyor; yalnızca öğreniyor.
-        Bu koruma olmadan sistem AÇILIŞTA alarm yağdırırdı: hiçbir şey
+        Bu koruma olmadan sistem açılışta alarm yağdırırdı: hiçbir şey
         öğrenilmemişken her gözlem "hiç görülmemiş" olur.
 
-        ⚠ ÖĞRENME DURDURULMUYOR.
+        Öğrenme durdurulmuyor.
         Profil hazır olduktan sonra da öğrenmeye devam ediyor — sahne
         mevsimle, saatle, mobilya değişimiyle kayar. Donmuş bir profil
         birkaç hafta sonra her şeyi anomali sayardı.
@@ -453,11 +453,11 @@ class AnalyticsWorker:
             if hz and (abs(hz[0]) > 1 or abs(hz[1]) > 1):
                 yon = math.atan2(float(hz[1]), float(hz[0]))
 
-            # ⚠ SIRA: önce skorla, SONRA öğren.
+            # Sıra: önce skorla, sonra öğren.
             # Tersi olsaydı gözlem kendi normalini yükseltip kendini
             # olağan gösterirdi — özellikle nadir hücrelerde.
             skor, kanit = profil.skorla(ayak_x, ayak_y, kare_w, kare_h, hiz, yon)
-            # ⚠ `oyalanma_s > 0` = kişi 3 sn'lik pencerede yarım gövde
+            # `oyalanma_s > 0` = kişi 3 sn'lik pencerede yarım gövde
             # boyundan az yer değiştirdi (person.py). Bu gözlem hücrenin
             # "burada durulur mu" istatistiğini besliyor: oyalanma kuralı
             # tek başına süreye bakmasın, bağlama da baksın.
@@ -466,7 +466,7 @@ class AnalyticsWorker:
                 duragan=ozellik.oyalanma_s > 0.0,
             )
 
-            # ⚠ EŞİK YOK — skorun tamamı füzyona gidiyor.
+            # Eşik yok — skorun tamamı füzyona gidiyor.
             # Eşik koymak, füzyonun birleştirebileceği zayıf sinyalleri
             # daha kaynağında yok etmek olurdu. Karar füzyonun işi.
             if ozellik.track_id >= 0:
@@ -484,9 +484,9 @@ class AnalyticsWorker:
         ifade_skorlari: dict[int, float],
         ts: float,
     ) -> None:
-        """Beş sinyali iz bazında birleştirir (PLAN §6.6).
+        """Beş sinyali iz bazında birleştirir.
 
-        ⚠ NEDEN DOĞRUDAN ALARMLAR DA GİRDİ OLUYOR
+        Neden doğrudan alarmlar da girdi oluyor
         Bir düşme zaten kendi alarmını verdi (yukarıda yayınlandı).
         Yine de füzyona giriyor çünkü füzyonun işi "bu kişi ne kadar
         riskli" sorusuna cevap vermek; düşen bir kişi risklidir ve
@@ -494,8 +494,8 @@ class AnalyticsWorker:
         biri "düştü" der, diğeri "bu kişi genel olarak riskli" der ve
         operatör için ikisi farklı bilgidir.
 
-        ⚠ İFADE SİNYALİ ARTIK GERÇEKTEN AKIYOR (03.09.2026)
-        Önceki sürüm `ifade=0.0` diye SABİT yazıyordu ve yanına şunu
+        İfade sinyali artık gerçekten akıyor (03.09.2026)
+        Önceki sürüm `ifade=0.0` diye sabit yazıyordu ve yanına şunu
         not düşmüştü: *"Bağlantı yeri hazır; gerçek bir kurulumda
         beslendiğinde kod değişikliği gerekmeyecek."*
 
@@ -503,17 +503,17 @@ class AnalyticsWorker:
         değildi: bu worker mesajdaki `expr` alanını hiç okumuyordu.
         Yüzler yeterince büyük olsa bile skor buraya ulaşmazdı.
 
-        ⚠ BU KAMERA ÇİFTLİĞİNDE SİNYAL YİNE DE ÇOĞUNLUKLA 0 OLACAK —
+        Bu kamera çiftliğinde sinyal yine de çoğunlukla 0 olacak —
         ama artık sebebi farklı ve bu ayrım raporda önemli:
-          · ÖNCE : kod sinyali taşımıyordu     (mühendislik eksiği)
-          · ŞİMDİ: yüzler ~15 px, kalite eşiğinin altında (veri sınırı)
+          · önce : kod sinyali taşımıyordu     (mühendislik eksiği)
+          · şimdi: yüzler ~15 px, kalite eşiğinin altında (veri sınırı)
         Birincisi bir hata, ikincisi bir bulgu. Bulgu raporlanabilir,
         hata raporlanamaz — düzeltilir.
         """
         # İz kimliği → o izin sinyalleri
         tirmanma_map = {s.track_id: s.skor for s in tirmanma}
 
-        # ⭐⭐ SALDIRGANLIK SİNYALİ: model KARAR, kural ATIF (P-56)
+        # Saldırganlık sinyali: model karar, kural atıf (P-56)
         #
         # 08.09.2026'ya kadar bu sinyal doğrudan kural skoruydu ve
         # P-52 onun gerçek görüntüde ayırt etmediğini ölçmüştü
@@ -530,15 +530,15 @@ class AnalyticsWorker:
         if model_skoru is not None:
             metrics.aggression_model_score.labels(cam=camera).set(model_skoru)
 
-        # Kural sinyali: bu izde ateşleyen kuralların EN YÜKSEĞİ.
-        # ⚠ Toplam değil azami — iki kural birden ateşlemek, birinin
+        # Kural sinyali: bu izde ateşleyen kuralların en yükseği.
+        # Toplam değil azami — iki kural birden ateşlemek, birinin
         # iki katı kadar riskli demek değil.
         kural_map: dict[int, float] = {}
         for b in bulgular:
             if b.track_id is not None and b.track_id >= 0:
                 kural_map[b.track_id] = max(kural_map.get(b.track_id, 0.0), b.skor)
 
-        # Kalabalık KAMERA seviyesinde bir sinyal, iz seviyesinde değil:
+        # Kalabalık kamera seviyesinde bir sinyal, iz seviyesinde değil:
         # aynı kameradaki herkes aynı kalabalığın içinde.
         kalabalik = max(
             (b.skor for b in bulgular if b.tur is AnomaliTuru.KALABALIK), default=0.0
@@ -569,8 +569,8 @@ class AnalyticsWorker:
             if sonuc is None:
                 continue
             kamera_azami_risk = max(kamera_azami_risk, sonuc.risk)
-            # ⭐ Her sinyalin kamera başına AZAMİSİ ayrı yayınlanıyor (P-72).
-            # Birleşik `risk_score` bir sinyalin HİÇ ateşlemediğini
+            # Her sinyalin kamera başına azamisi ayrı yayınlanıyor (P-72).
+            # Birleşik `risk_score` bir sinyalin hiç ateşlemediğini
             # gösteremiyor — P-43'te ifade tam olarak öyle sessizdi ve
             # 17 gün fark edilmedi. Şartnamenin üç yeteneğinin de karara
             # katıldığını ancak bu kırılım kanıtlıyor.
@@ -581,8 +581,8 @@ class AnalyticsWorker:
             if sonuc.seviye in ("uyari", "alarm"):
                 self._risk_yayinla(camera, sonuc, ts)
 
-        # ⚠ EŞİĞİN ALTINDAKİ RİSK DE YAYINLANIYOR — ve asıl değeri bu.
-        # Alarm sayacı yalnızca eşiği GEÇEN riski gösterir; bu gauge
+        # Eşiğin altındaki risk de yayınlanıyor — ve asıl değeri bu.
+        # Alarm sayacı yalnızca eşiği geçen riski gösterir; bu gauge
         # tırmanmayı eşiğe varmadan gösteriyor. "Sistem sessiz" ile
         # "sistem sessiz ama risk yükseliyor" arasındaki fark, K8'in
         # (erken uyarı avansı) tam olarak konusu.
@@ -596,8 +596,8 @@ class AnalyticsWorker:
     def _risk_yayinla(self, camera: str, sonuc: RiskSonucu, ts: float) -> None:
         """Füzyon riskini alarm akışına yazar.
 
-        ⚠ TEK SİNYALLİ RİSK YAYINLANMIYOR
-        Füzyonun varlık sebebi sinyalleri BİRLEŞTİRMEK. Tek bir
+        Tek sinyalli risk yayınlanmıyor
+        Füzyonun varlık sebebi sinyalleri birleştirmek. Tek bir
         sinyalin yükselttiği bir risk skoru, o sinyalin kendi alarmının
         kopyasından başka bir şey değil — ve operatöre aynı olayı iki
         kez göstermek, K7'nin asıl riskini (operatörün sistemi
@@ -605,7 +605,7 @@ class AnalyticsWorker:
         """
         if sonuc.katkida_bulunan < 2:
             self.fuzyon_bastirilan += 1
-            # ⚠ 03.09.2026 — BU SAYAÇ DIŞARI ÇIKMIYORDU
+            # 03.09.2026 — bu sayaç dışarı çıkmıyordu
             # `fuzyon_bastirilan` yalnızca worker kapanırken loga
             # düşüyordu. Oysa K7 anlatısının en güçlü sayısı bu:
             # "kaç alarm operatöre gitmeden önlendi". Bastırılmayan
@@ -666,16 +666,16 @@ class AnalyticsWorker:
     ) -> None:
         """Tırmanma skorunu alarm akışına yazar.
 
-        ⚠ Yalnızca `uyari` ve `alarm` seviyeleri yayınlanıyor.
+        Yalnızca `uyari` ve `alarm` seviyeleri yayınlanıyor.
         `dikkat` seviyesi operatöre gösterilmeye değmez — sistemde her
-        an onlarca kişi o seviyededir. Ama skor SÜREKLİ hesaplanıyor;
-        seviye eşiği yalnızca BİLDİRİM kapısı, ölçüm kapısı değil.
+        an onlarca kişi o seviyededir. Ama skor sürekli hesaplanıyor;
+        seviye eşiği yalnızca bildirim kapısı, ölçüm kapısı değil.
         Erken uyarı avansı (K8) hesaplanırken tüm skor geçmişi kullanılacak.
 
         Soğuma kural motorundan geçiyor: aynı kişi için saldırganlık ve
         anomali alarmı ayrı ayrı bildirilmemeli.
         """
-        # ⚠ Sözlüğe çevirmeden ÖNCE soğuma kontrolü: bastırılacak bir
+        # Sözlüğe çevirmeden önce soğuma kontrolü: bastırılacak bir
         # alarm için serileştirme yapmak boşuna iş.
         if self._kurallar.saldirganlik_sogumada_mi(camera, skor.track_id, ts):
             return
@@ -755,10 +755,10 @@ class AnalyticsWorker:
     # ─── Raporlama ───────────────────────────────────────────
 
     def _rapor(self, elapsed: float) -> None:
-        # ⭐ Analitik worker'ın kendi birikmesi HİÇ ÖLÇÜLMÜYORDU (P-60).
+        # Analitik worker'ın kendi birikmesi hiç ölçülmüyordu (P-60).
         # Çıkarım yetişse bile analitik geri kalabilir ve bu, gecikme
         # histogramında görünmez: `end_to_end_latency` çıkarım worker'ında
-        # gözlemleniyor, analitik ondan SONRA geliyor.
+        # gözlemleniyor, analitik ondan sonra geliyor.
         gecikme = self._grup_gecikmesi()
         if gecikme is not None:
             metrics.consumer_lag.labels(
@@ -777,12 +777,12 @@ class AnalyticsWorker:
     def _sahipsizleri_topla(self, *, bosta_ms: int = 30_000, adet: int = 200) -> int:
         """Ölmüş bir tüketicide asılı kalan sonuçları geri alır ve işler.
 
-        ⚠⚠ 09.09.2026 — BU OLMADAN HER SERT KAPANIŞ SESSİZ KAYIP BIRAKIYOR
+        09.09.2026 — bu olmadan her sert kapanış sessiz kayıp bırakıyor
         ------------------------------------------------------------------
         `XREADGROUP` ile okunan her kayıt, ACK gelene kadar o tüketiciye
         **asılı (pending)** kalıyor. Analitik worker sert kapatılırsa
         (kill, çökme, `stop_all`) elindeki kayıtlar asılı kalıyor; yeni
-        worker `>` ile yalnızca YENİ kayıtları okuduğu için onlar
+        worker `>` ile yalnızca yeni kayıtları okuduğu için onlar
         **sonsuza dek işlenmiyor.**
 
         Ölçüldü (09.09.2026, canlı sistem):
@@ -795,7 +795,7 @@ class AnalyticsWorker:
         duruyordu. Arıza **sessiz**: worker ayakta, akış akıyor, sayaçlar
         artıyor — yalnızca o kayıtlar hiç işlenmiyor.
 
-        ⭐ Çıkarım worker'ının kare akışında bu kurtarma ZATEN VARDI
+        Çıkarım worker'ının kare akışında bu kurtarma zaten vardı
         (`FrameStream.sahipsizleri_topla`, P-38'den sonra yazıldı) ve
         docstring'i sebebini tek tek anlatıyor. Sonuç akışına
         taşınmamıştı. **Bir düzeltmenin bir akışta yapılmış olması, onu
@@ -819,7 +819,7 @@ class AnalyticsWorker:
             return 0
 
         gecerli = [(mid, alanlar) for mid, alanlar in (kayitlar or []) if alanlar]
-        # ⚠ Akıştan düşmüş (MAXLEN) ama hâlâ asılı kayıtlar boş alanlarla
+        # Akıştan düşmüş (MAXLEN) ama hâlâ asılı kayıtlar boş alanlarla
         # dönüyor. İçerikleri yok, işlenemezler; ACK'lenmezse sonsuza dek
         # toplanmaya çalışılırlar.
         for mid, alanlar in kayitlar or []:
@@ -834,7 +834,7 @@ class AnalyticsWorker:
     def _grup_gecikmesi(self) -> int | None:
         """`XINFO GROUPS`'un `lag` alanı — teslim edilmemiş kayıt sayısı.
 
-        ⚠ `None` "birikme yok" DEĞİL, "ölçemedim" demek. Bu worker akışa
+        `None` "birikme yok" değil, "ölçemedim" demek. Bu worker akışa
         `ResultStream` nesnesiyle değil doğrudan istemciyle bağlanıyor,
         o yüzden sorgu burada tekrarlanıyor.
         """

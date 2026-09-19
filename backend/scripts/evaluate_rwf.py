@@ -19,17 +19,17 @@ canlı boru hattının aynısından geçirir:
 Her klip için ulaşılan **azami skor** kaydedilir, sonra kavga ve normal
 dağılımları karşılaştırılır: ROC-AUC, en iyi eşik, o eşikte F1.
 
-⚠ NEDEN `val` BÖLÜMÜ
+Neden `val` bölümü
 `train` bölümü sahte kamera cam-17'yi beslemek için kullanılıyor.
 Eşiği aynı kliplerle hem ayarlayıp hem değerlendirmek, ezberi başarı
 sanmaktır. Ölçüm ancak görülmemiş veride anlamlıdır.
 
-⚠ NE ÖLÇMEZ — ERKEN UYARI AVANSI (K8)
+NE ölçmez — erken uyarı avansı (K8)
 RWF etiketi klip seviyesindedir: "bu 5 saniyede kavga var". Kavganın
 kaçıncı saniyede başladığı etiketli değil. Avans ölçümü için elle
-etiketlenmiş bir alt küme gerekiyor (PLAN §6.5.5 adım 5) — ayrı iş.
+etiketlenmiş bir alt küme gerekiyor (adım 5) — ayrı iş.
 
-⚠ ÖLÇÜM KOŞULU: boru hattı KAPALI olmalı, GPU'yu paylaşmasın.
+Ölçüm koşulu: boru hattı kapalı olmalı, GPU'yu paylaşmasın.
 
 Kullanım
 --------
@@ -59,7 +59,7 @@ RWF = PROJECT_ROOT / "data" / "datasets" / "RWF-2000" / "val"
 def _roc_auc(pozitif: list[float], negatif: list[float]) -> float:
     """ROC eğrisi altındaki alan — Mann-Whitney U ile.
 
-    ⚠ EŞİKTEN BAĞIMSIZ olduğu için burada doğru metrik bu. Doğruluk
+    Eşikten bağımsız olduğu için burada doğru metrik bu. Doğruluk
     veya F1, seçilen eşiğe bağlıdır; AUC "rastgele bir kavga klibi,
     rastgele bir normal klipten yüksek skor alma olasılığı"nı verir.
     0.5 = yazı tura, 1.0 = kusursuz ayrım.
@@ -115,7 +115,7 @@ def _klip_skorla(
     kaynak_fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
     adim = max(1, round(kaynak_fps / ornek_fps))
 
-    # ⚠ Klip başına TAZE takipçi ve pencere: klipler birbirinden
+    # Klip başına taze takipçi ve pencere: klipler birbirinden
     # bağımsız, önceki klibin izleri sonrakine sızmamalı.
     takipci = BotSortTracker(frame_rate=int(ornek_fps))
     depo = PencereDeposu()
@@ -131,7 +131,7 @@ def _klip_skorla(
         if kare_no % adim:
             kare_no += 1
             continue
-        # ⚠ Canlı boru hattıyla AYNI ön işleme: model uzayında letterbox.
+        # Canlı boru hattıyla aynı ön işleme: model uzayında letterbox.
         # Farklı ön işleme = farklı tespitler = kıyaslanamaz ölçüm.
         hazir, _lb = letterbox(kare, imgsz)
         ts = kare_no / kaynak_fps
@@ -251,7 +251,7 @@ def main() -> int:
         }
 
     print("\n⚠ AUC eşikten bağımsızdır — asıl kıyas ölçüsü budur.")
-    print("  K5 hedefi: F1 ≥ 0.85 (PLAN §1.4)")
+    print("  K5 hedefi: F1 ≥ 0.85")
 
     cikti = {
         "olculdu": datetime.now(UTC).isoformat(),

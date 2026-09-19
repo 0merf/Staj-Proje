@@ -58,7 +58,7 @@
   .cam .bar .close.hidden{display:none}
   .cam .frame{aspect-ratio:16/9;background:#05070b;position:relative}
   .cam iframe{width:100%;height:100%;border:0;display:block}
-  /* Kutular VİDEONUN ÜSTÜNE çizilir — sunucu videoya dokunmaz.
+  /* Kutular videonun üstüne çizilir — sunucu videoya dokunmaz.
      pointer-events:none olmalı ki oynatıcı kontrolleri tıklanabilsin. */
   .cam canvas.ov{position:absolute;inset:0;width:100%;height:100%;
                  pointer-events:none;z-index:2}
@@ -134,7 +134,7 @@ async function loadConfig () {
 }
 
 // ─── Kamera kartları ────────────────────────────────────────
-// ⚠ Kartlar BİR KEZ oluşturulur, sonra yalnızca durum alanları
+// Kartlar bir kez oluşturulur, sonra yalnızca durum alanları
 //   güncellenir. innerHTML'i her yenilemede yeniden yazmak, oynayan
 //   <iframe>'i yok edip yeniden yaratır ve video baştan başlar.
 const cards = new Map();   // name -> {root, dot, meta, frame, playing}
@@ -199,7 +199,7 @@ function renderIdle (entry, cam) {
 }
 
 // ─── Webcam: panelden aç/kapat ──────────────────────────────
-// Kamera KENDİLİĞİNDEN açılmaz; yalnızca bu düğmeyle başlar.
+// Kamera kendiliğinden açılmaz; yalnızca bu düğmeyle başlar.
 async function renderWebcam (entry, cam) {
   let st = { running: false };
   try { st = await (await fetch('/api/v1/cameras/webcam')).json(); } catch { /* API yok */ }
@@ -255,13 +255,13 @@ function startPlay (cam) {
 }
 
 // ══════════════════════════════════════════════════════════════
-//  KİLOMETRE TAŞI 1 — canlı kutular
+//  Kilometre taşı 1 — canlı kutular
 //
-//  ⚠ Video ve kutular AYRI kanaldan gelir:
+//  Video ve kutular ayrı kanaldan gelir:
 //     · video  : WHEP/WebRTC → <iframe>
 //     · kutular: WebSocket JSON → <canvas>
-//  Sunucu videoya HİÇ dokunmaz. Böylece NVENC oturum limitine
-//  takılmıyoruz ve GPU tamamen YZ'ye kalıyor (PLAN.md §9.2).
+//  Sunucu videoya hiç dokunmaz. Böylece NVENC oturum limitine
+// takılmıyoruz ve GPU tamamen YZ'ye kalıyor.
 // ══════════════════════════════════════════════════════════════
 
 const latest = new Map();   // cam -> son sonuç
@@ -284,7 +284,7 @@ function connectWs () {
     const msg = JSON.parse(event.data);
     if (msg.type !== 'frame') return;
     wsFrames++;
-    // ⚠ msg.ts sunucunun MONOTONİK saatidir — Date.now() ile
+    // msg.ts sunucunun monotonik saatidir — Date.now() ile
     //   karşılaştırılamaz. Tazelik için tarayıcının kendi saatini kullan.
     msg._rx = performance.now();
     latest.set(msg.cam, msg);
@@ -323,7 +323,7 @@ function drawSkeleton (ctx, kp, dx, dy, sx, sy) {
 
   ctx.lineWidth = 2;
   for (const [a, b, color] of SKELETON) {
-    // Eksik keypoint'ler ARA DEĞERLENMEZ (PLAN.md §6.2): görünmeyen
+    // Eksik keypoint'ler ara değerlenmez: görünmeyen
     // uzvu tahmin etmek, olmayan bir duruşu varmış gibi göstermektir.
     if (!ok(a) || !ok(b)) continue;
     ctx.strokeStyle = color;
@@ -344,7 +344,7 @@ function drawSkeleton (ctx, kp, dx, dy, sx, sy) {
   ctx.strokeStyle = stroke; ctx.fillStyle = fill; ctx.lineWidth = lw;
 }
 
-// Çizim döngüsü React state'inden BAĞIMSIZ çalışır.
+// Çizim döngüsü React state'inden bağımsız çalışır.
 // Her sonuçta yeniden render tetiklemek 20 kamerada saniyede ~100
 // güncelleme demek olurdu; rAF ile ekran tazeleme hızına bağlıyoruz.
 function drawLoop () {
@@ -362,7 +362,7 @@ function drawLoop () {
 
     const stale = !result || (performance.now() - result._rx) > STALE_MS;
     if (stale && entry.badge) {
-      // Sessizce donmak yerine SEBEBİNİ söyle. "bekleniyor…" yazısının
+      // Sessizce donmak yerine sebebini söyle. "bekleniyor…" yazısının
       // sonsuza dek asılı kalması, sistemin bozuk olduğu izlenimi verir.
       entry.badge.textContent = result ? 'analiz durdu' : 'analiz bekleniyor';
       entry.badge.className = 'badge warn';
@@ -374,10 +374,10 @@ function drawLoop () {
     const sx = canvas.width / (result.w || 1280);
     const sy = canvas.height / (result.h || 720);
 
-    // ─── KUTU İNTERPOLASYONU ────────────────────────────────
+    // ─── Kutu interpolasyonu ────────────────────────────────
     // Video 25 FPS, tespit ~3 FPS. Aradaki ~330 ms boyunca kutu donuk
     // kalırsa yürüyen kişi kutudan çıkar. Takipçinin verdiği hız
-    // vektörüyle kutunun ŞU ANKİ konumunu tahmin ediyoruz.
+    // vektörüyle kutunun şu anki konumunu tahmin ediyoruz.
     //
     // Ekstrapolasyon sınırlı: hız bilgisi eskidikçe tahmin güvenilmez
     // hale gelir. MAX_EXTRAPOLATE_MS'ten sonra kutu olduğu yerde kalır
@@ -408,7 +408,7 @@ function drawLoop () {
       ctx.setLineDash([]);
 
       // Etiket: iz kimliği + güven. Kimlik, kişinin kareler boyunca
-      // AYNI kişi olduğunu gösteriyor — takibin gözle görülür kanıtı.
+      // aynı kişi olduğunu gösteriyor — takibin gözle görülür kanıtı.
       const label = det.id != null
         ? `#${det.id} ${(det.conf * 100).toFixed(0)}%`
         : `${(det.conf * 100).toFixed(0)}%`;
@@ -418,10 +418,10 @@ function drawLoop () {
       ctx.fillText(label, x + 4, Math.max(11, y - 4));
       ctx.fillStyle = ctx.strokeStyle;
 
-      // ─── İSKELET (KADEME 2a) ──────────────────────────────
+      // ─── İskelet (kademe 2a) ──────────────────────────────
       // Noktalar tek başına okunmaz; kemikleri çizmek duruşu görünür
       // kılıyor. Saldırganlık modülü kol açısına ve bilek hızına
-      // bakacak (PLAN.md §6.5.2) — operatörün de aynı şeyi görmesi,
+      // bakacak — operatörün de aynı şeyi görmesi,
       // modelin neye tepki verdiğini anlaşılır kılar.
       if (det.kp) drawSkeleton(ctx, det.kp, dx, dy, sx, sy);
     }
@@ -461,7 +461,7 @@ async function refreshCameras () {
     }
     // Webcam kartı kendi durumunu yönetir (aç/kapat düğmesi)
     if (cam.kind === 'webcam' && !entry.playing) renderWebcam(entry, cam);
-    // Yalnızca durum göstergesini güncelle — oynayan iframe'e DOKUNMA
+    // Yalnızca durum göstergesini güncelle — oynayan iframe'e dokunma
     entry.dot.className = 'dot ' + (cam.ready ? 'ok' : 'idle');
     entry.meta.title = cam.label + (cam.readers ? ` · ${cam.readers} izleyici` : '');
   }

@@ -1,6 +1,6 @@
-"""Kimlik doğrulama ve yetkilendirme — PLAN.md §11.1.
+"""Kimlik doğrulama ve yetkilendirme.
 
-⚠ NEDEN BU TESTLER ÖZELLİKLE ÖNEMLİ
+Neden bu testler özellikle önemli
 -----------------------------------
 Güvenlik hataları **sessizdir.** Yanlış bir anomali eşiği panelde
 görülür; yanlış bir yetki kontrolü hiçbir şey göstermez — sistem
@@ -49,9 +49,9 @@ class TestParola:
         assert not guvenlik.parola_dogru_mu(h, "cok-guclu-bir-parolb")
 
     def test_AYNI_PAROLA_FARKLI_HASH(self) -> None:
-        """⚠ Tuz (salt) çalışıyor mu.
+        """Tuz (salt) çalışıyor mu.
 
-        İki kullanıcı aynı parolayı seçtiğinde hash'leri AYNI olsaydı,
+        İki kullanıcı aynı parolayı seçtiğinde hash'leri aynı olsaydı,
         veritabanını ele geçiren biri "bu ikisi aynı parolayı
         kullanıyor" bilgisini bedava alırdı — ve gökkuşağı tabloları
         (rainbow table) işe yarardı.
@@ -65,17 +65,17 @@ class TestParola:
     def test_BOZUK_HASH_istisna_firlatmiyor(self) -> None:
         """Veritabanındaki bozuk bir kayıt giriş ucunu çökertmemeli.
 
-        ⚠ `False` dönüyor, istisna değil: hata türünü dışarı vermek
+        `False` dönüyor, istisna değil: hata türünü dışarı vermek
         saldırgana "bu kullanıcı var ama kaydı bozuk" gibi bilgiler
         sızdırır.
         """
         assert not guvenlik.parola_dogru_mu("bu-bir-hash-degil", "parola")
 
     def test_argon2id_kullaniliyor(self) -> None:
-        """⚠ MD5/SHA DEĞİL — onlar HIZLI olmak için tasarlandı.
+        """MD5/SHA değil — onlar hızlı olmak için tasarlandı.
 
         Parola hash'inde hız saldırganın işine yarar. Argon2id hem CPU
-        hem BELLEK maliyeti dayatıyor, yani GPU'yla paralel kırma
+        hem bellek maliyeti dayatıyor, yani GPU'yla paralel kırma
         avantajını da siliyor.
         """
         assert guvenlik.parola_hashle("x").startswith("$argon2id$")
@@ -94,7 +94,7 @@ class TestToken:
         assert govde["rol"] == "operator"
 
     def test_YENILEME_TOKENI_ERISIM_OLARAK_KULLANILAMIYOR(self) -> None:
-        """⚠ En kritik test.
+        """En kritik test.
 
         `tip` alanı olmasaydı 7 günlük bir yenileme tokenı, 15 dakikalık
         erişim tokenı yerine kullanılabilirdi — yani çalınan bir tokenın
@@ -135,9 +135,9 @@ class TestToken:
             guvenlik.token_coz(t)
 
     def test_ALG_NONE_saldirisi_calismiyor(self) -> None:
-        """⚠ JWT'nin en bilinen açığı.
+        """JWT'nin en bilinen açığı.
 
-        `algorithms=` verilmezse kütüphane tokenın KENDİ başlığındaki
+        `algorithms=` verilmezse kütüphane tokenın kendi başlığındaki
         algoritmaya güvenir; saldırgan `alg: none` yazıp imzasız token
         kabul ettirebilir. `token_coz` algoritmayı açıkça veriyor.
         """
@@ -151,7 +151,7 @@ class TestToken:
             guvenlik.token_coz(imzasiz)
 
     def test_ANAHTAR_YOKSA_ACIKCA_PATLIYOR(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """⚠ Rastgele anahtar ÜRETİLMİYOR.
+        """Rastgele anahtar üretilmiyor.
 
         "Ayarlanmamışsa üret" davranışı cazip görünür ama iki felakete
         yol açar: her yeniden başlatmada tüm oturumlar düşer, ve daha
@@ -190,7 +190,7 @@ class TestRoller:
     ) -> None:
         """Roller hiyerarşik: admin > operator > viewer.
 
-        ⚠ Tablo TAM: 3×3 = 9 kombinasyonun hepsi yazılı. Yalnızca
+        Tablo tam: 3×3 = 9 kombinasyonun hepsi yazılı. Yalnızca
         "beklenen" durumları test etmek, hiyerarşinin ters çevrildiği
         bir hatayı kaçırırdı.
         """
@@ -203,7 +203,7 @@ class TestRoller:
         else:
             with pytest.raises(HTTPException) as e:
                 asyncio.run(dogrula(kullanici))
-            # ⚠ 403, 401 DEĞİL: "kim olduğunu biliyorum ama bunu
+            # 403, 401 değil: "kim olduğunu biliyorum ama bunu
             # yapamazsın". 401 dönseydi istemci sonsuz yeniden giriş
             # döngüsüne girerdi.
             assert e.value.status_code == 403

@@ -1,11 +1,11 @@
 """Olay klibi kesme — segment seçimi ve adlandırma.
 
-⚠ NE TEST EDİLİYOR, NE EDİLMİYOR
+NE test ediliyor, NE edilmiyor
 --------------------------------
 Bu testler **video kesmiyor**: gerçek fMP4 segmenti üretmek FFmpeg
 gerektirir ve birim testi entegrasyon testine dönüştürürdü.
 
-Test edilen şey, kesimden ÖNCEKİ karar zinciri:
+Test edilen şey, kesimden önceki karar zinciri:
 
   · segment adından zaman okunuyor mu (yanlış okunursa klip kayar)
   · doğru segmentler seçiliyor mu (yanlış seçilirse klip boş çıkar)
@@ -14,9 +14,9 @@ Test edilen şey, kesimden ÖNCEKİ karar zinciri:
 Bu üçü yanlışsa remux'un kusursuz çalışması bir işe yaramaz — yanlış
 saniyeyi kusursuz keser.
 
-⚠ Remux'un kendisi CANLI sistemde doğrulanacak: kayıt açılıp gerçek bir
+Remux'un kendisi canlı sistemde doğrulanacak: kayıt açılıp gerçek bir
 alarmda üretilen klip izlenerek. Bir dosyanın "video olduğunu" iddia
-eden bir birim testi, dosyanın DOĞRU videoyu içerdiğini söylemez.
+eden bir birim testi, dosyanın doğru videoyu içerdiğini söylemez.
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ from sentinel.alerting import klip
 def _segment_yaz(dizin: Path, an: datetime) -> Path:
     """Adı MediaMTX biçiminde olan boş bir segment dosyası oluşturur.
 
-    ⚠ `an` **UTC** olmalı — MediaMTX konteynerinde TZ ayarlı değil ve
+    `an` **UTC** olmalı — MediaMTX konteynerinde TZ ayarlı değil ve
     dosya adlarını UTC yazıyor (P-83'te ölçüldü:
     `docker exec sentinel-mediamtx date` → UTC).
     """
@@ -44,19 +44,19 @@ class TestSegmentListeleme:
     def test_GERCEK_mediamtx_dosya_adi_UTC_olarak_okunuyor(
         self, tmp_path: Path
     ) -> None:
-        """⚠⚠ BU TEST P-83'ÜN NÖBETÇİSİ — ve eski hâli hatayı GÖREMEZDİ.
+        """bu test P-83'ün nöbetçisi — ve eski hâli hatayı göremezdi.
 
         Eski test dosya adını `datetime(...).astimezone()` ile
-        ÜRETİYOR, sonra kod aynı varsayımla OKUYORDU. Gidiş-dönüş
+        üretiyor, sonra kod aynı varsayımla okuyordu. Gidiş-dönüş
         kendi içinde tutarlı olduğu için test her zaman geçiyordu —
         varsayım yanlış olsa bile.
 
-        ⭐ Projenin tezi burada en saf hâliyle: **test ile kod aynı
+        Projenin tezi burada en saf hâliyle: **test ile kod aynı
         yanlış varsayımı paylaşıyorsa, test o varsayımı asla
         sınayamaz.** Gerçek bedeli: klip zinciri 30.08'den 10.09'a
         kadar hiç çalışmadı ve 229 test yeşil kaldı.
 
-        Bu sürüm dosya adını ELLE, sabit bir dizge olarak yazıyor —
+        Bu sürüm dosya adını elle, sabit bir dizge olarak yazıyor —
         koddan değil, gerçek bir MediaMTX çıktısından kopyalanmış
         biçimde. Ve sonucu mutlak bir ana (UTC) karşı sınıyor.
         """
@@ -67,14 +67,14 @@ class TestSegmentListeleme:
 
         s = klip._segmentleri_listele(tmp_path, "cam-16")
         assert len(s) == 1
-        # ⚠ Yerel saat alanlarına DEĞİL, mutlak ana bakılıyor. Testin
+        # Yerel saat alanlarına değil, mutlak ana bakılıyor. Testin
         # koştuğu makinenin saat dilimi sonucu değiştirmemeli.
         assert s[0].baslangic == datetime(
             2026, 8, 30, 11, 57, 42, 123456, tzinfo=UTC
         )
 
     def test_mtime_DEGIL_dosya_adi_kullaniliyor(self, tmp_path: Path) -> None:
-        """`mtime` segmentin BİTİŞİ; ondan okusaydık her klip kayardı."""
+        """`mtime` segmentin bitişi; ondan okusaydık her klip kayardı."""
         an = datetime(2026, 8, 30, 11, 57, 42, tzinfo=UTC)
         _segment_yaz(tmp_path / "cam-16", an)
 
@@ -91,7 +91,7 @@ class TestSegmentListeleme:
         assert klip._segmentleri_listele(tmp_path, "cam-16") == []
 
     def test_olmayan_kamera_bos_donuyor(self, tmp_path: Path) -> None:
-        """Kayıt kapalıyken beklenen durum — istisna DEĞİL boş liste."""
+        """Kayıt kapalıyken beklenen durum — istisna değil boş liste."""
         assert klip._segmentleri_listele(tmp_path, "cam-99") == []
 
     def test_zamana_gore_siralaniyor(self, tmp_path: Path) -> None:
@@ -117,11 +117,11 @@ class TestSegmentSecimi:
         assert klip._kapsayan_segmentler(s, bas, bit) == [s[2]]
 
     def test_SEGMENT_SINIRINA_denk_gelen_olay_IKI_segment_aliyor(self) -> None:
-        """⚠ Asıl zor durum bu.
+        """Asıl zor durum bu.
 
         Olay penceresi (±10 sn) bir segment sınırına denk gelirse iki
         dosyadan da paket almak gerekiyor. Tek segment alınsaydı klibin
-        yarısı eksik çıkardı ve bu SESSİZ bir kusur olurdu — dosya
+        yarısı eksik çıkardı ve bu sessiz bir kusur olurdu — dosya
         oynatılabilir, sadece olay içinde yok.
         """
         s = self._segmentler()
@@ -134,7 +134,7 @@ class TestSegmentSecimi:
         """`recordDeleteAfter: 1h` ile eski segmentler siliniyor.
 
         Alarm geçmişi 30 gün, kayıt 1 saat. Yani eski bir alarmın klibi
-        YOKTUR ve bu beklenen durum — boş liste dönmeli, uydurma bir
+        yoktur ve bu beklenen durum — boş liste dönmeli, uydurma bir
         segment değil.
         """
         s = self._segmentler()
@@ -158,7 +158,7 @@ class TestSegmentSecimi:
 
 class TestAnahtar:
     def test_tarihe_gore_bolumleniyor(self) -> None:
-        """⚠ Düz dizin DEĞİL.
+        """Düz dizin değil.
 
         On binlerce dosyayı tek dizine koymak listelemeyi ve "şu günün
         kliplerini sil" işlemini pahalı hâle getirir. Tarih öneki bunu
@@ -180,7 +180,7 @@ class TestKlipCikar:
     def test_KAYIT_YOKSA_None_donuyor_ISTISNA_FIRLATMIYOR(
         self, tmp_path: Path
     ) -> None:
-        """⚠ Varsayılan yapılandırmada BEKLENEN durum.
+        """Varsayılan yapılandırmada beklenen durum.
 
         Kayıt varsayılan olarak kapalı (~14 GB/saat). Klip
         üretilemediği için alarm yazımının durması, çözdüğü sorundan

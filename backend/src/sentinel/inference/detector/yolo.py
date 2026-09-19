@@ -1,6 +1,6 @@
 """Ultralytics tabanlı dedektör (YOLO26 / YOLO11).
 
-⚠ LİSANS: Ultralytics **AGPL-3.0**'dır. Staj/akademik kullanımda sorun
+Lisans: Ultralytics **AGPL-3.0**'dır. Staj/akademik kullanımda sorun
    yoktur; ürünleşmede Apache-2.0 alternatiflerine geçilmelidir.
    Bu dosya `Detector` protokolünü uyguladığı için geçiş, konfigürasyonda
    `DETECTOR_BACKEND` değerini değiştirmekten ibarettir (base.py).
@@ -53,8 +53,8 @@ class UltralyticsDetector:
         path = Path(model_path)
         if not path.is_file():
             # Ultralytics tanınmış isimleri kendisi indirir (yolo26s.pt gibi).
-            # ⚠ .pt dosyaları pickle'dır; yalnızca resmi kaynak + checksum
-            #   ile kullanılmalı (PLAN.md §11.4). fetch_models.py bunu yapar.
+            # .pt dosyaları pickle'dır; yalnızca resmi kaynak + checksum
+            # ile kullanılmalı. fetch_models.py bunu yapar.
             log.warning("model_dosyasi_yok_indirilecek", path=str(path))
 
         self._conf = conf_threshold
@@ -127,7 +127,7 @@ class UltralyticsDetector:
     def _as_tensor(self, images: list[np.ndarray]) -> Any | None:
         """Kareleri doğrudan GPU tensörüne çevirir — mümkünse.
 
-        ⚠ NEDEN: Ultralytics'e numpy listesi verildiğinde ön işlemeyi
+        Neden: Ultralytics'e numpy listesi verildiğinde ön işlemeyi
         (yeniden boyutlandırma, renk dönüşümü, eksen değiştirme,
         normalizasyon) **CPU'da** yapar. Gün 8 ölçümü bunun süre
         bütçesinin %53'ünü yediğini, GPU'nun ise %0-5 kullanımda boş

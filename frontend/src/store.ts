@@ -7,12 +7,12 @@
  * edilmesi demek olurdu. Zustand ile abone olan bileşen kendi
  * kesitini seçiyor.
  *
- * ⚠ DAHA ÖNEMLİSİ: sonuç tamponu React'in DIŞINDA tutuluyor
+ * Daha önemlisi: sonuç tamponu React'in dışında tutuluyor
  * (`buffers` bir Map ve mutasyona uğruyor). Çizim döngüsü
  * requestAnimationFrame ile ekran tazeleme hızında çalışıyor ve
  * tampondan okuyor — yani gelen her mesaj bir render tetiklemiyor.
  * React yalnızca kamera listesi, bağlantı durumu ve kullanıcı
- * ayarları gibi SEYREK değişen şeyleri yönetiyor.
+ * ayarları gibi seyrek değişen şeyleri yönetiyor.
  */
 import { create } from 'zustand'
 import type {
@@ -33,11 +33,11 @@ export const buffers = new Map<string, TimedResult[]>()
 export const resultTimes = new Map<string, number[]>()
 
 /** Son bir saniyede kaç analiz sonucu geldi (kamera başına). */
-/** Analiz penceresi. ⚠ Video penceresinden UZUN olmak ZORUNDA.
+/** Analiz penceresi. Video penceresinden uzun olmak zorunda.
  *
  * İlk sürüm 1 saniye kullanıyordu ve `length < 2` ise 0 dönüyordu.
  * Video için doğruydu (25 FPS → saniyede 26 örnek), analiz için
- * TAMAMEN yanlış: analiz kamera başına ~0.5-2 FPS koşuyor, yani çoğu
+ * tamamen yanlış: analiz kamera başına ~0.5-2 FPS koşuyor, yani çoğu
  * saniyede 0 veya 1 sonuç düşüyor. Sonuç: panelde kutular çizilirken
  * rozet "0 yz" yazıyordu — ölçüm aracı bozuktu, boru hattı değil.
  *
@@ -50,7 +50,7 @@ export function analysisFps(camera: string): number {
   const now = performance.now()
   while (times.length && now - times[0] > ANALIZ_PENCERE_MS) times.shift()
   if (times.length === 0) return 0
-  // Sabit pencereye değil GERÇEKLEŞEN aralığa bölüyoruz: kamera yeni
+  // Sabit pencereye değil gerçekleşen aralığa bölüyoruz: kamera yeni
   // açıldıysa elimizde 5 saniyelik geçmiş yok ve sabit bölme hızı
   // olduğundan düşük gösterirdi.
   const span = Math.max(500, now - times[0])
@@ -89,8 +89,8 @@ interface State {
   playing: Set<string>
   messageCount: number
   /** Tarayıcıya "videoyu bu kadar tamponla" dediğimiz değer (ms).
-   *  Analiz gecikmesini aşarsa kutular TAHMİN yerine ARA DEĞERLEME ile
-   *  çiziliyor — literatürün önerdiği yöntem (LITERATUR.md §T). */
+   *  Analiz gecikmesini aşarsa kutular tahmin yerine ara değerleme ile
+   * çiziliyor — literatürün önerdiği yöntem. */
   videoBufferMs: number
   /** Ölçülen video yolu gecikmesi (WebRTC jitter tamponu). */
   videoLatencyMs: number | null
@@ -98,7 +98,7 @@ interface State {
   aiLatencyMs: number | null
   /** Son alarmlar — en yenisi başta.
    *
-   * ⚠ 30.08.2026: artık YALNIZCA canlı akış değil. Panel açılışta
+   * 30.08.2026: artık yalnızca canlı akış değil. Panel açılışta
    * `/api/v1/events` ile geçmişi de yüklüyor. Öncesinde panel
    * kapalıyken olan hiçbir şey görülemiyordu ve panel her açıldığında
    * sistem "hiç alarm üretmemiş" gibi görünüyordu. */
@@ -127,7 +127,7 @@ export const useStore = create<State>((set) => ({
   viewMode: 'full',
   sayfa: 'izgara',
   seciliKamera: null,
-  // İLERİ TAHMİN payı (ms). Video ~13 ms'de geliyor, analiz ~200-465 ms.
+  // İleri tahmin payı (ms). Video ~13 ms'de geliyor, analiz ~200-465 ms.
   // Aradaki fark kadar ileri tahmin gerekiyor; panel bunu ölçüp
   // "öner" düğmesiyle sunuyor. 0 = tahmin yok (kutular analizin
   // olduğu anı gösterir, yani videodan geride kalır).
@@ -169,8 +169,8 @@ export const useStore = create<State>((set) => ({
     })),
   pushAlert: (a) =>
     set((s) => ({
-      // En yenisi BAŞTA, en fazla 50 kayıt.
-      // ⚠ Panelde tutulan sayı bir GÖRÜNTÜLEME sınırı, saklama sınırı
+      // En yenisi başta, en fazla 50 kayıt.
+      // Panelde tutulan sayı bir görüntüleme sınırı, saklama sınırı
       // değil. Kalıcı kayıt TimescaleDB'de (30 gün) ve `/api/v1/events`
       // ile sorgulanabiliyor. Sınırsız biriktirmek belleği şişirir ve
       // operatörün dikkatini eskiye dağıtır.
@@ -179,12 +179,12 @@ export const useStore = create<State>((set) => ({
 
   /** Açılışta son 24 saatin alarmlarını yükler.
    *
-   * ⚠ CANLI AKIŞLA ÇAKIŞMA: WebSocket bağlanmadan önce çağrılıyor ama
+   * Canlı akışla çakışma: WebSocket bağlanmadan önce çağrılıyor ama
    * yine de aynı olay iki kez gelebilir (geçmiş sorgusu ile ilk canlı
    * mesaj arasındaki pencerede üretilenler). Tekilleştirme
    * (kamera, ts, iz) üçlüsüne göre yapılıyor — olay kimliği yok.
    *
-   * ⚠ HATA SESSİZ GEÇİLİYOR. Geçmiş yüklenemezse panel canlı akışla
+   * Hata sessiz geçiliyor. Geçmiş yüklenemezse panel canlı akışla
    * çalışmaya devam etmeli; yardımcı bir isteğin başarısızlığı asıl
    * işlevi durdurmamalı. */
   loadHistory: async () => {
@@ -211,7 +211,7 @@ export const useStore = create<State>((set) => ({
             score: o.skor,
             evidence: o.kanit ?? {},
             completeness: o.tamlik ?? 0,
-            // ⚠ `rx` normalde varış anı (performance.now tabanlı).
+            // `rx` normalde varış anı (performance.now tabanlı).
             // Geçmiş kayıtlarda "varış" diye bir şey yok; olayın kendi
             // zamanını tarayıcı zaman tabanına çeviriyoruz ki liste
             // doğru sıralansın ve saat doğru görünsün.

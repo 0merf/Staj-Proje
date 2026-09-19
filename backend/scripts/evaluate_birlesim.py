@@ -1,19 +1,17 @@
-"""İSKELET + VİDEO BİRLEŞİMİ — "3 YZ birlikte çalışsın" fikrinin ölçümü (P-54).
+"""İskelet + video birleşimi — "3 YZ birlikte çalışsın" fikrinin ölçümü (P-54).
 
-⭐ FİKİR KİMİN
--------------
-Kullanıcı baştan beri şunu söylüyordu:
+Fikir
+-----
+Şartname üç farklı yapay zekâ görevi istiyor. Bunun sebebi üçünün
+birlikte çalışması olabilir; üçü birlikte çalışsa daha iyi sonuç vermez
+mi?
 
-> *"Bu adamların bana verdiği projede 3 farklı yapay zekânın koşmasını
-> istemelerinin sebebi üçünün birlikte çalışmasını istemeleri; üçü de
-> birlikte çalışsa daha iyi sonuç vermez mi?"*
-
-İlk cevabım "füzyon zaten var" olmuştu ve eksikti: mevcut füzyon
+İlk düşüncem "füzyon zaten var" olmuştu ve eksikti: mevcut füzyon
 **aynı özelliklerden** türeyen beş skoru topluyor. Birbirinden bağımsız
 bilgi kaynakları değiller; P-41 bunu ölçmüştü (füzyonun K6 kazancının
 %91'i yumuşatmadan geliyordu).
 
-⭐⭐ ŞİMDİ GERÇEKTEN BAĞIMSIZ İKİ KAYNAK VAR ve ölçüm ikisinin
+Şimdi gerçekten bağımsız iki kaynak var ve ölçüm ikisinin
 **zıt hatalar** yaptığını gösterdi (`train_video_model.py`, aynı
 val kümesi — video RWF train'in tamamıyla eğitildi):
 
@@ -21,29 +19,29 @@ val kümesi — video RWF train'in tamamıyla eğitildi):
     iskelet + LightGBM          0.927  0.889     0.957       0.830
     R3D-18 ham piksel           0.937  0.911     0.864       0.962
 
-İskelet yolu TEMKİNLİ (yanlış alarm az, kaçırıyor); video yolu
-AÇGÖZLÜ (neredeyse hiç kaçırmıyor, yanlış alarm çok). Bu tablo
+İskelet yolu temkinli (yanlış alarm az, kaçırıyor); video yolu
+açgözlü (neredeyse hiç kaçırmıyor, yanlış alarm çok). Bu tablo
 birleştirme için ders kitabı örneği: hatalar bağımsızsa birleşim
 ikisinden de iyi olur, bağımlıysa hiçbir şey kazandırmaz.
 
-⚠ VE İKİSİ GERÇEKTEN FARKLI ŞEYE BAKIYOR
+Ve ikisi gerçekten farklı şeye bakıyor
 ----------------------------------------
     iskelet yolu : YOLO-pose'un çıkardığı 17 eklem → geometri
                    (duruş genişliği, gövde eğimi, en-boy oranı)
-                   ⚠ Poz bulunamazsa KÖRDÜR.
+                   Poz bulunamazsa kördür.
     video yolu   : ham piksellerde 3B evrişim → doku, hareket bulanıklığı,
                    sahne bağlamı
-                   ⚠ Sahne değişince (yeni kamera) genellemesi zayıftır.
+                   Sahne değişince (yeni kamera) genellemesi zayıftır.
 
 Birinin kör olduğu yerde diğeri görüyor olabilir. Bu betik onu ölçüyor.
 
-⚠ NE ÖLÇÜLMÜYOR
+NE ölçülmüyor
 ---------------
-Bu, "üçüncü YZ" (duygu/ifade) dâhil DEĞİL: ifade sinyali uzaktan
+Bu, "üçüncü YZ" (duygu/ifade) dâhil değil: ifade sinyali uzaktan
 güvenilir değil (ölçüldü: füzyon ağırlığı 0.10-0.15) ve RWF kliplerinde
-yüz çoğunlukla çözünmüyor. Dürüst kapsam: iki bağımsız kaynak.
+yüz çoğunlukla çözünmüyor. Gerçek kapsam: iki bağımsız kaynak.
 
-⚠ MALİYET DE RAPORLANIYOR: birleşim, video modelini HER KAREDE
+Maliyet de raporlanıyor: birleşim, video modelini her karede
 çalıştırmayı gerektirir. 20 kameralı gerçek zamanlı kısıt altında bu
 bedava değil ve karar ancak maliyetle birlikte verilebilir.
 
@@ -121,53 +119,53 @@ def _bootstrap_analiz(
     tekrar: int = 10_000,
     tohum: int = 20260909,
 ) -> dict[str, Any]:
-    """⭐⭐ AUC farkının güven aralığı — 96 klip için ZORUNLU.
+    """AUC farkının güven aralığı — 96 klip için zorunlu.
 
-    ⚠ NEDEN GEREKLİ
+    Neden gerekli
     ---------------
     Bildirilen sayı **96 klip** üzerinde. Birleşim 0.968, en iyi tek
     model 0.937 — fark +0.032. Bu fark gerçek bir üstünlük mü, yoksa 96
     klibin hangi klipler olduğunun bir tesadüfü mü? Tek bir sayı bunu
     söyleyemez.
 
-    ⭐ NEDEN **EŞLEŞTİRİLMİŞ** (paired) BOOTSTRAP
+    Neden **eşleştirilmiş** (paired) bootstrap
     ---------------------------------------------
     İki modelin AUC'sini ayrı ayrı bootstrap'layıp aralıklarına bakmak
-    YANLIŞ olurdu: iki model **aynı kliplerde** değerlendiriliyor, yani
+    yanlış olurdu: iki model **aynı kliplerde** değerlendiriliyor, yani
     hataları ilişkili. "Zor" klipler ikisini birden aşağı çeker.
 
     Doğrusu: her tekrarda **aynı klip örneklemesi** üzerinde iki AUC de
-    hesaplanıp FARK alınıyor. Böylece kliplerin ortak zorluğu farkta
+    hesaplanıp fark alınıyor. Böylece kliplerin ortak zorluğu farkta
     sadeleşiyor ve kalan şey modeller arası gerçek fark oluyor.
 
-    ⚠ Bu, projede iki kez yakalanan hatanın (P-41: karşılaştırma iki
+    Bu, projede iki kez yakalanan hatanın (P-41: karşılaştırma iki
     değişkeni birden değiştiriyordu) istatistiksel karşılığı: kıyas
     yapılırken değişmemesi gereken şey sabit tutulmalı.
 
-    ⚠ BOOTSTRAP NE YAPMAZ
+    Bootstrap NE yapmaz
     ---------------------
     Elimizdeki 96 klibin RWF-2000'in geri kalanını temsil ettiğini
-    VARSAYAR. Örneklem yanlıysa bootstrap onu düzeltmez — yalnızca
+    varsayar. Örneklem yanlıysa bootstrap onu düzeltmez — yalnızca
     "bu dağılımdan 96 klip daha çekseydik ne olurdu" sorusunu
     cevaplar. Yani **örnekleme belirsizliğini** ölçer, **yanlılığı**
     değil.
     """
     import random
 
-    # ⚠ S311 bastırılıyor: bu bir İSTATİSTİK örneklemesi, kriptografi
-    # değil. Tekrarlanabilirlik ZORUNLU (aynı tohum = aynı güven
+    # S311 bastırılıyor: bu bir istatistik örneklemesi, kriptografi
+    # değil. Tekrarlanabilirlik zorunlu (aynı tohum = aynı güven
     # aralığı); `secrets` burada yanlış araç olurdu.
     rng = random.Random(tohum)  # noqa: S311
     n = len(etiketler)
     adlar = list(birlesimler)
-    # Tek modeller ile birleşimleri ayır: kıyas "birleşim vs EN İYİ TEK".
+    # Tek modeller ile birleşimleri ayır: kıyas "birleşim vs en iyi tek".
     tekler = ["iskelet (LightGBM)", "video (R3D-18)"]
     en_iyi_tek = max(tekler, key=lambda a: _auc(birlesimler[a], etiketler))
 
     ornekler: list[list[int]] = []
     for _ in range(tekrar):
         idx = [rng.randrange(n) for _ in range(n)]
-        # ⚠ Tek sınıflı örnekleme AUC'yi tanımsız yapar — atlanıyor.
+        # Tek sınıflı örnekleme AUC'yi tanımsız yapar — atlanıyor.
         e = [etiketler[i] for i in idx]
         if 0 < sum(e) < n:
             ornekler.append(idx)
@@ -224,14 +222,14 @@ def _bootstrap_analiz(
             "anlamli": bool(anlamli),
         }
 
-    # ⚠⚠ KAZANANIN LANETİ (winner's curse)
-    # "0.968" dört birleşim kuralı arasından EN İYİSİ ve seçim, F1'in
-    # hesaplandığı AYNI 96 klip üzerinde yapıldı. Yani bildirilen sayı
+    # Kazananın laneti (winner's curse)
+    # "0.968" dört birleşim kuralı arasından en iyisi ve seçim, F1'in
+    # hesaplandığı aynı 96 klip üzerinde yapıldı. Yani bildirilen sayı
     # tanımı gereği iyimser: dört gürültülü tahminin maksimumu, tek bir
     # tahminden büyük çıkar — kurallar aynı derecede iyi olsa bile.
     #
     # Büyüklüğü ölçülüyor: her bootstrap tekrarında "en iyi kural"ın AUC'si
-    # ile ÖNCEDEN SEÇİLMİŞ kuralın (ortalama) AUC'si karşılaştırılıyor.
+    # ile önceden seçilmiş kuralın (ortalama) AUC'si karşılaştırılıyor.
     kural_adlari = [a for a in adlar if a not in tekler]
     if len(kural_adlari) > 1 and "ortalama" in dagilimlar:
         en_iyiler = [
@@ -260,10 +258,10 @@ def _esik_yanliligi(
     tekrar: int = 400,
     tohum: int = 20260909,
 ) -> dict[str, Any]:
-    """⭐ Bildirilen F1 ne kadar iyimser? — eşik aynı kümede seçiliyor.
+    """Bildirilen F1 ne kadar iyimser? — eşik aynı kümede seçiliyor.
 
-    ⚠ CLAUDE.md bu yanlılığı K5 için Gün 12'den beri İŞARETLİYOR ama
-    hiç SAYISALLAŞTIRMADI:
+    Proje notlarım bu yanlılığı K5 için Gün 12'den beri işaretliyor ama
+    hiç sayısallaştırmadı:
 
     > *"`en_iyi_esik`, F1'in hesaplandığı aynı 120 klip üzerinde
     > aranıyor. Yani bildirilen F1 optimistik."*
@@ -272,19 +270,19 @@ def _esik_yanliligi(
     Uyarıyı sayıya çevirmeden rapora yazmak, okuyucuya karar
     verdirmiyor.
 
-    YÖNTEM — tekrarlı yarı-yarıya bölme:
+    Yöntem — tekrarlı yarı-yarıya bölme:
       1. 96 klip rastgele iki eşit yarıya bölünür (sınıf dengesi
          korunarak — küçük kümede bu şart, yoksa bir yarı tek sınıflı
          çıkabilir)
-      2. Eşik BİRİNCİ yarıda seçilir
-      3. F1 İKİNCİ yarıda ölçülür (o eşiği hiç görmemiş klipler)
+      2. Eşik birinci yarıda seçilir
+      3. F1 ikinci yarıda ölçülür (o eşiği hiç görmemiş klipler)
       4. Yüzlerce kez tekrarlanıp ortalaması alınır
 
     Fark = **iyimserlik payı**. Bu, aynı kümede seçilen eşiğin şişirdiği
     miktardır ve raporda F1'in yanına yazılmalıdır.
 
-    ⚠ Bu yöntem F1'i AŞAĞI çeker çünkü eşik yarım veriyle seçiliyor
-    (48 klip). Yani ölçülen iyimserlik payı bir ÜST sınır: gerçek
+    Bu yöntem F1'i aşağı çeker çünkü eşik yarım veriyle seçiliyor
+    (48 klip). Yani ölçülen iyimserlik payı bir üst sınır: gerçek
     yanlılık bundan biraz küçük.
     """
     import random
@@ -350,7 +348,7 @@ def main() -> int:
     veri = json.loads(OZELLIKLER.read_text(encoding="utf-8"))
     ust = json.loads((TENSOR_DIZINI / "_ust.json").read_text(encoding="utf-8"))
 
-    # ⚠ İKİ MODELİN VAL KÜMESİ AYNI OLMALI — yoksa kıyas geçersiz.
+    # İki modelin VAL kümesi aynı olmalı — yoksa kıyas geçersiz.
     # Eşleştirme anahtarla yapılıyor ("val_<klip adı>").
     lgbm_val = {f"val_{k['klip'][:-4] if str(k['klip']).endswith('.avi') else k['klip']}": k
                 for k in veri["val"]}
@@ -398,15 +396,15 @@ def main() -> int:
     sureler = sureler[3:]  # ısınma
 
     # ─── Birleşimler ───
-    # ⚠⚠ NORMALİZASYON YOK — VE BU BİLİNÇLİ.
+    # Normalizasyon yok — ve bu bilinçli.
     #
     # İlk sürüm skorları min-max ile ölçekliyordu. Ölçek val kümesinin
-    # KENDİ min/max'ından hesaplanıyordu: yani birleşim, doğrulama
+    # kendi min/max'ından hesaplanıyordu: yani birleşim, doğrulama
     # kümesinin dağılımını görmüş oluyordu. Küçük ama gerçek bir
     # sızıntı — ve tam olarak bu projede defalarca yakalanan türden
     # (P-41: karşılaştırma iki değişkeni birden değiştiriyordu).
     #
-    # ⭐ Gerek de yoktu: LightGBM `predict` olasılık döndürüyor,
+    # Gerek de yoktu: LightGBM `predict` olasılık döndürüyor,
     # video başı `sigmoid` olasılık döndürüyor. İkisi de zaten [0,1]
     # ve aynı anlamda — "bu klip kavga olma olasılığı". Doğrudan
     # ortalanabilirler.
@@ -431,7 +429,7 @@ def main() -> int:
         sonuc[ad] = {"auc": round(auc, 4), **{k: round(v, 4) for k, v in d.items()}}
 
     # ─── Hata bağımsızlığı ───
-    # ⭐ Birleşim ancak hatalar BAĞIMSIZSA kazandırır. Ölçülmeden
+    # Birleşim ancak hatalar bağımsızsa kazandırır. Ölçülmeden
     # varsayılmaz (P-41'in dersi: füzyonun kazandığı sanılıyordu,
     # ölçülünce kazancın %91'i başka yerden geliyordu).
     e_i = _f1(s_iskelet, etiketler)["esik"]
@@ -453,7 +451,7 @@ def main() -> int:
     print(f"\n  hata örtüşmesi: %{ortusme * 100:.0f} "
           f"(düşük = bağımsız = birleşim kazandırır)")
 
-    # ─── ⭐⭐ BOOTSTRAP — "bu fark gerçek mi, yoksa 96 klipte şans mı?" ───
+    # ─── Bootstrap — "bu fark gerçek mi, yoksa 96 klipte şans mı?" ───
     bs = (_bootstrap_analiz(birlesimler, etiketler, tekrar=args.bootstrap)
           if args.bootstrap > 0 else {})
     yanlilik = (_esik_yanliligi(birlesimler, etiketler, tekrar=args.esik_tekrar)
@@ -479,7 +477,7 @@ def main() -> int:
         "sonuclar": sonuc,
         "bootstrap": bs,
         "esik_yanliligi": yanlilik,
-        # ⭐ Klip başına skorlar SAKLANIYOR: bundan sonraki her istatistiksel
+        # Klip başına skorlar saklanıyor: bundan sonraki her istatistiksel
         # analiz (yeni bootstrap, farklı birleşim kuralı, hata analizi)
         # modelleri yeniden koşturmadan yapılabilsin diye. Bu dosya
         # olmadan her soru için 96 klip yeniden çıkarılıyordu.

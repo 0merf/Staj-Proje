@@ -4,9 +4,9 @@ Cevaplanan soru:
     "20 kamerayı beslemek için kaç CPU çekirdeği gerekiyor?
      Donanımsal çözücü (NVDEC) kazandırır mı?"
 
-⚠ ÖLÇÜM DÜZENEĞİ UYARISI
+Ölçüm düzeneği uyarısı
 ------------------------
-Bu betik **yerel dosyadan** ölçer, RTSP akışından DEĞİL. Sebebi önemli:
+Bu betik **yerel dosyadan** ölçer, RTSP akışından değil. Sebebi önemli:
 MediaMTX akışı gerçek zamanlı 25 FPS hızında yayınlar, daha hızlı okumak
 mümkün değildir. RTSP'den ölçmek, decode kapasitesini değil akışın hız
 sınırını ölçer. Bu hata bir kez yapıldı — bkz. docs/report/problems.md P-07.
