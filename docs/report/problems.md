@@ -7905,3 +7905,170 @@ farklı şeylerdir; bu not birincisini belgeliyor.
 > kliplerdeki şiddet olayları fiilen 0–0.5 saniye aralığında
 > başlamaktadır. Dolayısıyla ölçütün üst sınırı, etiketlerden
 > hesaplanan 0.58 saniyelik medyandan da düşüktür."*
+
+---
+
+### P-88 · K4 nihai sürümde tekrarlandı — ve gecikmenin iki rejimi yeniden görüldü
+
+**Tarih:** 23.09.2026 · **Faz:** revizyon
+
+**Neden ölçüldü:** Dergi hakemi, iki saatlik kesintisiz çalışma testinin
+daha eski bir yazılım sürümünde yapılmış olmasına dikkat çekti ve
+mümkünse nihai sürümde tekrarlanmasını istedi. İtiraz yerindeydi: eski
+koşu 03.09 tarihliydi ve o tarihten sonra üretim modeli değişti (P-63),
+tek giriş noktası kuruldu (P-76, P-86) ve ölçüm araçları düzeltildi.
+
+**Koşu:** 120 dakika, 30 saniye aralıkla 241 örnek, panel kapalı.
+
+```
+kesinti          : 0
+kamera           : 20/20 koşu boyunca
+yuva sızıntısı   : eğim +3.70 slot/saat · seri sapması 4.3 · aralık 51–67
+olay bütünlüğü   : 423 anomali üretildi → 423 kayıt yazıldı
+kare muhasebesi  : 397 275 yayın → 396 264 analiz · izlenmeyen fark %0.3
+VRAM             : 396 MB
+```
+
+Dayanıklılık tarafında sonuç eski koşuyla aynı: sızıntı yok, kayıp yok.
+
+**Beklemediğim kısım K2 ve K3'te çıktı.** Aynı koşudan gelen değerler
+makalede yazılı olanlardan farklı:
+
+```
+              makale (10.09)      bu koşu (23.09)
+gecikme p50     378 ms              163.2 ms
+gecikme p95     652 ms              342.5 ms
+analiz FPS      2.34                2.79
+```
+
+Bu tam olarak P-82'de belgelenen durumun tekrarı. O kayıtta 09.09'da
+ölçülen 147–178 ms'lik rejim ertesi gün tekrar üretilememiş ve fark
+açıklanamamıştı. Bugün düşük rejim geri geldi. Yani sistemin iki
+gecikme rejimi var ve hangisine düşeceği koşudan koşuya değişiyor.
+
+> Ölçümün tekrarlanabilir olmaması bir sonuç değil, bir **bulgudur** —
+> ama ancak kaydedilirse bulgu olur. Bu üçüncü koşu, farkın tek
+> seferlik bir kayma değil, sistemin iki kararlı çalışma noktası
+> arasında gidip gelmesi olduğunu gösteriyor.
+
+Sebebi hâlâ ölçülmedi. Aday açıklama, arka planda hangi süreçlerin
+çalıştığına bağlı olarak çıkarım döngüsünün farklı bir çekirdek
+yerleşimine düşmesi; ama bu bir hipotez, ölçüm değil.
+
+**Raporda kullandığım ifade:**
+
+> *"İki saatlik kesintisiz çalışma testi, makalede anlatılan nihai
+> yazılım sürümünde 23.09.2026'da tekrarlanmıştır: 120 dakika, kesinti
+> yok, paylaşımlı bellek havuzunda sızıntı yok, üretilen 423 olayın
+> tamamı kalıcı olarak yazılmıştır. Aynı koşuda uçtan uca gecikme p50
+> 163 ms, p95 343 ms ölçülmüştür. Bu değerler, daha önce bildirilen
+> 378 ms / 652 ms değerlerinin yaklaşık yarısıdır; sistemin iki farklı
+> gecikme rejiminde çalışabildiği üç bağımsız koşuda gözlenmiş, farkın
+> nedeni ölçülememiştir."*
+
+---
+
+### P-89 · Duyarlılık ilk kez ölçüldü — kesinliğin bedeli sayıya döküldü
+
+**Tarih:** 23.09.2026 · **Faz:** revizyon
+
+**Neden ölçüldü:** Alarm doğruluğu bugüne kadar yalnızca kesinlik
+olarak ölçülebiliyordu (P-85: 0.895). Hakem, kaçırılan olayların da
+kestirilmesini ve yaklaşık bir duyarlılık değerinin bildirilmesini
+istedi. Bu, P-68'de kendi yazdığım sınırın kapatılması demek: "bu
+yöntem yalnızca kesinlik ölçer, duyarlılık ölçmez."
+
+**Yöntem:** cam-15 bunu mümkün kılan tek kamera. Kaynağı UBI-Fights ve
+şiddet aralıkları veri setiyle birlikte geliyor; elle üretilmedi. Video
+128 saniye, içinde iki kavga var (25–39 sn ve 48–64 sn) ve sonsuz
+döngüde yayınlanıyor. Alarmların kaynak videodaki konumu `video_pts`
+alanında taşınıyor (P-68); döngü içi konum bu değerin video süresine
+bölümünden kalan. Ölçüm, K4 koşusunun verisi üzerinden yapıldı:
+63 tamamlanmış döngü, yani 126 olay fırsatı.
+
+**Sonuç — tek sayı değil, tolerans taraması:**
+
+```
+tolerans   duyarlılık   olay 1 (25-39)   olay 2 (48-64)   pencere dışı alarm
+    0 sn      0.048         0/62             6/62              56
+    5 sn      0.202         0/62            25/62              33
+   10 sn      0.266         0/62            33/62              16
+   20 sn      0.339         2/62            40/62               0
+   30 sn      0.427        25/62            28/62               0
+```
+
+(saldırganlık ve birleşik risk alarmları; tüm türler sayıldığında
+değerler bir miktar yükseliyor, 10 saniyede 0.278)
+
+**Neden tek bir tolerans vermedim.** Sistemin tepkisi tasarımı gereği
+gecikmeli: özellikler üç saniyelik pencerede toplanıyor, karar
+histerezisle veriliyor, aynı türden alarmlar soğumayla seyreltiliyor.
+Dar bir pencere bu gecikmeyi "kaçırma" sayar, geniş bir pencere ise
+olayları birbirine karıştırır — 30 saniyede iki olayın pencereleri
+zaten üst üste biniyor ve o satırdaki "25/62" bu yüzden yanıltıcı.
+Toleransı ölçümü gördükten sonra seçmek, P-49'da yaptığım hatanın
+aynısı olurdu: ölçütü, gördüğünü haklı çıkaracak biçimde tanımlamak.
+
+**İki bulgu:**
+
+1. **Birinci kavga sistematik olarak kaçırılıyor.** 62 döngünün
+   hiçbirinde 10 saniyelik pencerede alarm üretilmedi. İkinci kavga ise
+   döngülerin yarısından fazlasında yakalandı. Aynı kamerada, aynı
+   kurallarla, iki olay arasındaki bu fark ölçülmeye değer — ama henüz
+   ölçülmedi.
+2. **Kesinlik ve duyarlılık aynı ayarın iki yüzü.** 0.895 kesinlik ile
+   0.27 duyarlılık birlikte okunmalı: eşikler, ölü bölge, etkileşim
+   kapısı ve soğuma yanlış alarmı bastırmak için kuruldu ve bunu
+   başardı. Bedeli, olayların çoğunun hiç bildirilmemesi.
+
+> Tek bir doğruluk sayısı raporlamak, sistemin hangi yönde ayarlandığını
+> gizler. Kesinlik tek başına iyi görünüyordu; ikinci sayı ölçülene
+> kadar takasın nerede yapıldığı görünmüyordu.
+
+**Sınırlar:** ölçüm tek kamerada, iki olay tipinde ve tek bir kaynak
+videoda yapıldı. Bulgu sistemin geneline genellenemez; "bu kamerada,
+bu olaylarda" geçerlidir.
+
+Ölçüm aracı: `backend/scripts/duyarlilik_olc.py`, çıktı
+`benchmarks/duyarlilik_20260923-*.json`.
+
+---
+
+### P-90 · Değerlendirme kümesini genişletme denemesi — ve yanlış varsayımı yakalayan doğrulama
+
+**Tarih:** 23.09.2026 · **Faz:** revizyon
+
+**Neden bakıldı:** Hakem, anomali tespitinin yalnızca dokuz klipte
+ölçülmesini küçük bir örneklem olarak değerlendirdi ve kapsamın
+genişletilmesini ya da genellenebilirlik sınırının ayrıntılandırılmasını
+istedi. Avenue'nun test bölümünde 21 klip var; dokuzda kalmamızın
+nedeni, kamera çiftliği kurulurken cam-19 videosunun 345 saniyeyle
+sınırlanması ve yer gerçeği dosyasının o dokuz klip için üretilmiş
+olmasıydı.
+
+**Deneme:** `testing_vol/volNN.mat` dosyalarının piksel maskeleri
+olduğunu varsaydım. Maskede en az bir pozitif piksel taşıyan kareyi
+anomali sayan bir üretim betiği yazdım ve ürettiği 01–09 etiketlerini
+eldeki etiketle karşılaştıran bir doğrulama adımı ekledim.
+
+**Doğrulama düştü:** üretilen etiket, her klip için videonun tamamını
+kaplayan tek bir anomali segmenti veriyordu. Sebep basit — `vol`
+dosyaları maske değil, videonun gri tonlamalı hâli: 120×160×1439
+boyutunda, 4 ile 253 arasında 250 farklı piksel değeri taşıyan bir
+dizi. Gerçek maskeler `ground_truth_demo/testing_label_mask` altında ve
+o paket diskte yok.
+
+> Doğrulama adımı olmasaydı bu etiket sessizce kullanılırdı ve ölçüm,
+> "her kare anomali" diyen bir yer gerçeğine göre yapılırdı. Yanlış
+> sonuç şüphe uyandırmazdı, çünkü AUC bir sayı üretmeye devam ederdi.
+
+Bu, P-39'un aynı sınıfı: orada koordinat uzayı karışmıştı, burada
+etiketin kaynağı. İkisinde de model ve kod doğruydu, ölçümün girdisi
+yanlıştı.
+
+**Karar:** maske paketini yeniden indirip 21 klibe çıkmak yerine, dokuz
+klibin sınırını ayrıntılandırmak seçildi. Gerekçe, kalan sürenin
+kısıtlı olması ve hakemin bu alternatifi kendi önerisinde sunmuş
+olması. Üretim betiği depodan kaldırıldı; yanlış varsayıma dayanan bir
+aracı "ileride lazım olur" diye bırakmak, sonraki koşuda sessizce
+kullanılma riski taşıyor.

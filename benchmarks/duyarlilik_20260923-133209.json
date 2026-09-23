@@ -1,0 +1,24 @@
+{
+  "olculdu": "2026-09-23T13:32:09.804398+00:00",
+  "kamera": "cam-15",
+  "yer_gercegi": "data\\annotations\\cam-15.truth.json",
+  "yer_gercegi_turu": "kare seviyesinde (veri setiyle birlikte gelen, ELLE ÜRETİLMEDİ)",
+  "video_sure_s": 128.0,
+  "olay_sayisi_dongu_basina": 2,
+  "tolerans_s": 3.0,
+  "sayilan_turler": "hepsi",
+  "pencere_dk": 140.9,
+  "alarm_toplam": 100,
+  "alarm_pts_siz": 0,
+  "dongu_sayisi": 66,
+  "firsat": 132,
+  "yakalanan": 21,
+  "duyarlilik": 0.1591,
+  "olay_penceresi_disi_alarm": 77,
+  "tur_dagilimi": {
+    "fall": 34,
+    "risk": 54,
+    "running": 3,
+    "aggression": 9
+  }
+}

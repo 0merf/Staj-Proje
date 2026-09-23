@@ -1,0 +1,82 @@
+{
+  "olculdu": "2026-09-23T13:34:18.161059+00:00",
+  "kamera": "cam-15",
+  "yer_gercegi": "data\\annotations\\cam-15.truth.json",
+  "yer_gercegi_turu": "kare seviyesinde (veri setiyle birlikte gelen, ELLE ÜRETİLMEDİ)",
+  "video_sure_s": 128.0,
+  "olay_sayisi_dongu_basina": 2,
+  "olay_araliklari_s": [
+    [
+      25.0,
+      39.0
+    ],
+    [
+      48.0,
+      64.0
+    ]
+  ],
+  "sayilan_turler": "hepsi",
+  "pencere_dk": 134.7,
+  "alarm_toplam": 98,
+  "alarm_pts_siz": 0,
+  "dongu_sayisi": 63,
+  "firsat": 126,
+  "tolerans_taramasi": [
+    {
+      "tolerans_s": 0.0,
+      "yakalanan": 9,
+      "duyarlilik": 0.0714,
+      "olay_penceresi_disi_alarm": 89,
+      "olay_basina_yakalama": [
+        0,
+        9
+      ]
+    },
+    {
+      "tolerans_s": 5.0,
+      "yakalanan": 28,
+      "duyarlilik": 0.2222,
+      "olay_penceresi_disi_alarm": 66,
+      "olay_basina_yakalama": [
+        0,
+        28
+      ]
+    },
+    {
+      "tolerans_s": 10.0,
+      "yakalanan": 35,
+      "duyarlilik": 0.2778,
+      "olay_penceresi_disi_alarm": 49,
+      "olay_basina_yakalama": [
+        0,
+        35
+      ]
+    },
+    {
+      "tolerans_s": 20.0,
+      "yakalanan": 50,
+      "duyarlilik": 0.3968,
+      "olay_penceresi_disi_alarm": 26,
+      "olay_basina_yakalama": [
+        5,
+        45
+      ]
+    },
+    {
+      "tolerans_s": 30.0,
+      "yakalanan": 79,
+      "duyarlilik": 0.627,
+      "olay_penceresi_disi_alarm": 2,
+      "olay_basina_yakalama": [
+        28,
+        51
+      ]
+    }
+  ],
+  "tur_dagilimi": {
+    "risk": 53,
+    "fall": 33,
+    "running": 3,
+    "aggression": 9
+  }
+}
