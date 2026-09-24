@@ -90,24 +90,24 @@ CIKTI = PROJECT_ROOT / "data" / "annotations" / "rwf_k8.json"
 TOHUM = 42
 
 
-def _mevcut() -> dict[str, Any]:
+def _mevcut(yol: Path) -> dict[str, Any]:
     """Varsa önceki etiketleri yükler — iş yarıda bırakılabilsin.
 
     25 klip etiketlemek yaklaşık bir saat. Tek oturumda bitirmeyi
     zorunlu kılmak, yorgun etiketlemeye yol açar ve etiketin kalitesi
     ölçümün tavanıdır.
     """
-    if CIKTI.is_file():
+    if yol.is_file():
         try:
-            return dict(json.loads(CIKTI.read_text(encoding="utf-8")))
+            return dict(json.loads(yol.read_text(encoding="utf-8")))
         except Exception:
             print("⚠ mevcut etiket dosyası okunamadı, yenisi yazılacak", file=sys.stderr)
     return {}
 
 
-def _kaydet(etiketler: dict[str, Any], atlananlar: list[str]) -> None:
-    CIKTI.parent.mkdir(parents=True, exist_ok=True)
-    CIKTI.write_text(
+def _kaydet(cikti: Path, etiketler: dict[str, Any], atlananlar: list[str]) -> None:
+    cikti.parent.mkdir(parents=True, exist_ok=True)
+    cikti.write_text(
         json.dumps(
             {
                 "olusturuldu": datetime.now(UTC).isoformat(),
@@ -130,6 +130,19 @@ def _kaydet(etiketler: dict[str, Any], atlananlar: list[str]) -> None:
 def main() -> int:
     ap = argparse.ArgumentParser(description="K8 — kavga başlangıcı elle etiketleme")
     ap.add_argument("--adet", type=int, default=25, help="kaç klip etiketlenecek")
+    ap.add_argument(
+        "--cikti",
+        default="",
+        help="etiketlerin yazılacağı dosya (varsayılan: data/annotations/rwf_k8.json)",
+    )
+    # Tekrar testi: aynı klipler ikinci kez etiketleniyor. Birinci turun
+    # etiketleri YÜKLENMİYOR, çünkü kendi cevabını görerek etiketlemek
+    # tekrar testini anlamsız kılar — ölçülen şey hafıza olur.
+    ap.add_argument(
+        "--tekrar",
+        default="",
+        help="bu dosyadaki kliplerin AYNISINI yeniden etiketle (tekrar testi)",
+    )
     args = ap.parse_args()
 
     import cv2
@@ -138,19 +151,41 @@ def main() -> int:
         print(f"RWF kavga klipleri yok: {RWF_FIGHT}", file=sys.stderr)
         return 1
 
-    onceki = _mevcut()
+    cikti = Path(args.cikti) if args.cikti else CIKTI
+    if not cikti.is_absolute():
+        cikti = PROJECT_ROOT / cikti
+
+    onceki = _mevcut(cikti)
     etiketler: dict[str, Any] = dict(onceki.get("etiketler", {}))
     atlananlar: list[str] = list(onceki.get("atlananlar", []))
 
     klipler = sorted(RWF_FIGHT.glob("*.avi"))
     random.Random(TOHUM).shuffle(  # noqa: S311 — kripto değil, tekrarlanabilir sıra
         klipler)
-    # Zaten karar verilmiş olanları atla — kaldığı yerden devam etsin.
-    kalan = [
-        y for y in klipler if y.name not in etiketler and y.name not in atlananlar
-    ]
-    hedef = max(0, args.adet - len(etiketler))
-    kalan = kalan[:hedef]
+
+    if args.tekrar:
+        tekrar_yol = Path(args.tekrar)
+        if not tekrar_yol.is_absolute():
+            tekrar_yol = PROJECT_ROOT / tekrar_yol
+        birinci = _mevcut(tekrar_yol).get("etiketler", {})
+        if not birinci:
+            print(f"tekrar kaynağında etiket yok: {tekrar_yol}", file=sys.stderr)
+            return 1
+        if cikti == tekrar_yol:
+            print("çıktı ile tekrar kaynağı aynı dosya olamaz", file=sys.stderr)
+            return 1
+        hedef_adlar = [a for a in birinci if a not in etiketler and a not in atlananlar]
+        ad_yol = {y.name: y for y in klipler}
+        kalan = [ad_yol[a] for a in hedef_adlar if a in ad_yol][: args.adet]
+        print(f"tekrar testi: {tekrar_yol.name} içindeki {len(birinci)} klipten "
+              f"{len(kalan)} tanesi yeniden etiketlenecek")
+    else:
+        # Zaten karar verilmiş olanları atla — kaldığı yerden devam etsin.
+        kalan = [
+            y for y in klipler if y.name not in etiketler and y.name not in atlananlar
+        ]
+        hedef = max(0, args.adet - len(etiketler))
+        kalan = kalan[:hedef]
 
     print(f"etiketli: {len(etiketler)} · atlanan: {len(atlananlar)} · "
           f"bu oturumda: {len(kalan)}")
@@ -236,13 +271,13 @@ def main() -> int:
         cv2.destroyWindow(pencere)
         # Her klipten sonra kaydediliyor. Bir saatlik elle işi
         # program çökmesine ya da yanlış tuşa emanet etmek olmaz.
-        _kaydet(etiketler, atlananlar)
+        _kaydet(cikti, etiketler, atlananlar)
         if karar == "cik":
             break
 
     cv2.destroyAllWindows()
-    _kaydet(etiketler, atlananlar)
-    print(f"\nyazıldı: {CIKTI.relative_to(PROJECT_ROOT)}")
+    _kaydet(cikti, etiketler, atlananlar)
+    print(f"\nyazıldı: {cikti.relative_to(PROJECT_ROOT)}")
     print(f"  etiketli {len(etiketler)} · atlanan {len(atlananlar)}")
     if len(etiketler) < 15:
         print(

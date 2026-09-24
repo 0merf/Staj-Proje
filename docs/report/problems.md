@@ -8160,3 +8160,62 @@ yani o koşuda sıfırlama olmamış ve makaledeki 0,266 değeri geçerli.
 > bildim. "Düzeltme eski sonucu etkilemez" cümlesi, kontrol edilmeden
 > yazıldığında P-61'in aynısı olurdu: testin kendisinin, test etmediği
 > şeyi test ettiğini söylemesi.
+
+---
+
+### P-93 · Duyarlılığı yükseltme denemesi — hipotez çürüdü, sorun yerinde kaldı
+
+**Tarih:** 24.09.2026 · **Faz:** revizyon
+
+**Neden:** P-89'da duyarlılık 0,266 çıktı ve cam-15'in birinci olayı 62
+turun hiçbirinde yakalanmadı. Bunu raporlamadan önce düzeltmeyi
+denemek istedim.
+
+**Önce kaybın yeri bulundu.** Aynı video, karar zinciri devre dışı
+bırakılarak çevrimdışı işlendi ve saldırganlık skoru eşik taramasıyla
+incelendi:
+
+```
+esik   kacan (ogrenilmis)   avans 1   avans 2
+0.05        0 / 2            +18.9      +8.8
+0.15        0 / 2             +3.0      +7.7
+0.25        0 / 2             +1.2      +5.9
+0.40        0 / 2             +0.2      +1.2
+0.70        0 / 2             -0.6      -6.0
+```
+
+Öğrenilmiş model 0,05 ile 0,70 arasındaki **her** eşikte iki olayı da
+yakalıyor. Üretim eşiği bu aralığın içinde. Yani skor olayı ayırt
+ediyor; kayıp skorun sonrasında.
+
+**Hipotez:** Kaynak video 128 saniye, kamera başına soğuma 60 saniye.
+Bir turun ikinci olayına verilen geç bir alarm, bir sonraki turun 25.
+saniyedeki birinci olayını soğuma penceresinde bırakabilir. Soğuma
+15/30 saniyeye indirildi ve ölçüm tekrarlandı.
+
+**Sonuç — hipotez tutmadı:**
+
+```
+                 tolerans 10 sn     olay 1
+temel  (60/120)  0.266  [0.196, 0.350]   0 / 62
+deney  (15/30)   0.227  [0.128, 0.370]   0 / 22
+```
+
+Aralıklar örtüşüyor; soğumayı dörtte bire indirmek ölçülebilir bir
+kazanç üretmedi. Birinci olay eklenen 22 turda da yakalanmadı — iki
+yapılandırma birlikte **84 turda 84 kaçırma.**
+
+> Kendi teşhisimi ölçtüm ve yanlış çıktı. Buradaki asıl kazanç, eğer
+> ölçmeden yazsaydım makaleye girecek olan cümledir: *"soğuma süresi
+> döngüsel yayında duyarlılığı bastırıyor."* Makul, mekanizması
+> anlatılabilir ve **yanlış** bir cümle.
+
+Ayrıca deney bir şeyi daha eliyor: soğuma müdahalesi fiilen alarm
+bariyerini aşağı çekiyordu ve sonuç değişmedi. Yani bu bir eşik ayarı
+sorunu değil. Kalan üç aday (ölü bölge, etkileşim kapısı, histerezis)
+bu çalışmada ayrıştırılmadı; makalede gelecek çalışma olarak yazıldı.
+
+**Deney hijyeni:** `rules.py` içindeki soğuma sabitleri geçici olarak
+değiştirildi, ölçüm bitince `git checkout` ile geri alındı. P-63'te bir
+deney üretim yapıtını ezmişti; bu yüzden değişiklik commit'lenmedi ve
+koşu bitiminde geri alındığı doğrulandı.
