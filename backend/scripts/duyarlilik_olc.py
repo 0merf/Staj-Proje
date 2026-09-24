@@ -56,21 +56,28 @@ TRUTH = KOK / "data" / "annotations" / "cam-15.truth.json"
 CIKTI_DIZIN = KOK / "benchmarks"
 
 
-async def _olaylar(kamera: str, saat: float) -> list[dict[str, Any]]:
+async def _olaylar(kamera: str, saat: float, bitis: datetime | None) -> list[dict[str, Any]]:
     from sqlalchemy import text
 
     from sentinel.db.engine import motor
 
+    # Geçmiş bir koşuyu yeniden ölçebilmek için pencerenin sonu dışarıdan
+    # verilebiliyor; verilmezse şimdiki zaman kullanılıyor.
     sorgu = text(
         """
         SELECT ts, tur, skor, kanit
         FROM olaylar
-        WHERE camera = :kam AND ts > now() - make_interval(secs => :sn)
+        WHERE camera = :kam
+          AND ts <= COALESCE(CAST(:bitis AS timestamptz), now())
+          AND ts > COALESCE(CAST(:bitis AS timestamptz), now())
+                   - make_interval(secs => :sn)
         ORDER BY ts
         """
     )
     async with motor().connect() as baglanti:
-        sonuc = await baglanti.execute(sorgu, {"kam": kamera, "sn": saat * 3600.0})
+        sonuc = await baglanti.execute(
+            sorgu, {"kam": kamera, "sn": saat * 3600.0, "bitis": bitis}
+        )
         return [
             {"ts": r.ts, "tur": r.tur, "skor": float(r.skor), "kanit": r.kanit}
             for r in sonuc
@@ -94,6 +101,11 @@ def main() -> int:
         default=None,
         help="yalnızca bu alarm türleri sayılsın (varsayılan: hepsi)",
     )
+    ap.add_argument(
+        "--bitis",
+        default="",
+        help="pencerenin sonu (ISO zaman damgası); geçmiş bir koşuyu ölçmek için",
+    )
     ap.add_argument("--etiket", default="")
     args = ap.parse_args()
 
@@ -101,7 +113,8 @@ def main() -> int:
     sure = float(truth["sure_s"])
     olaylar_gt = [(float(s["start_s"]), float(s["end_s"])) for s in truth["segments"]]
 
-    kayitlar = asyncio.run(_olaylar(args.kamera, args.saat))
+    bitis = datetime.fromisoformat(args.bitis) if args.bitis else None
+    kayitlar = asyncio.run(_olaylar(args.kamera, args.saat, bitis))
     if not kayitlar:
         print("bu pencerede kayıt yok")
         return 1
@@ -115,15 +128,33 @@ def main() -> int:
     ilk, son = kayitlar[0]["ts"], kayitlar[-1]["ts"]
     pencere_s = (son - ilk).total_seconds()
 
+    # Yayıncı yeniden başladığında pts sıfırlanıyor. Bu yüzden pts tek başına
+    # döngüyü adreslemiyor: iki ayrı oturumun aynı numaralı döngüsü aynı anahtara
+    # düşüyor ve farklı yakalamalar tek yakalama sayılıyor. Anahtar, pts'nin
+    # küçüldüğü yerde artan bir oturum numarasıyla birlikte kuruluyor.
+    oturum: list[int] = []
+    o, onceki = 0, None
+    for k in ptsli:
+        pts = float(k["kanit"]["video_pts"])
+        if onceki is not None and pts < onceki:
+            o += 1
+        oturum.append(o)
+        onceki = pts
+
+    # Akış gerçek zamanlı yayınlandığı için döngü sayısının fiziksel karşılığı
+    # duvar saatiyle geçen süredir. pts açıklığından türetilen değer, sıfırlama
+    # varsa bunun altında kalıyor; ikisi birden bildiriliyor.
     ptsler = [float(k["kanit"]["video_pts"]) for k in ptsli]
-    dongu_sayisi = int((max(ptsler) - min(ptsler)) // sure) if ptsler else 0
+    dongu_sayisi = int(pencere_s // sure)
+    dongu_pts_acikligi = int((max(ptsler) - min(ptsler)) // sure) if ptsler else 0
+    yayinci_yeniden_baslama = o
     firsat = dongu_sayisi * len(olaylar_gt)
 
     def tara(tolerans: float) -> dict[str, Any]:
         """Bir tolerans değeri için yakalama sayısı ve olay kırılımı."""
-        dongu_olay: set[tuple[int, int]] = set()
+        dongu_olay: set[tuple[int, int, int]] = set()
         pencere_disi = 0
-        for k in ptsli:
+        for k, oturum_no in zip(ptsli, oturum, strict=True):
             pts = float(k["kanit"]["video_pts"])
             konum = pts % sure
             eslesen = next(
@@ -133,9 +164,9 @@ def main() -> int:
             if eslesen is None:
                 pencere_disi += 1
             else:
-                dongu_olay.add((int(pts // sure), eslesen))
+                dongu_olay.add((oturum_no, int(pts // sure), eslesen))
         olay_basina = [
-            sum(1 for d, i in dongu_olay if i == idx) for idx in range(len(olaylar_gt))
+            sum(1 for _, _, i in dongu_olay if i == idx) for idx in range(len(olaylar_gt))
         ]
         return {
             "tolerans_s": tolerans,
@@ -150,6 +181,10 @@ def main() -> int:
     print(f"\nkamera {args.kamera} · pencere {pencere_s / 60:.1f} dk · alarm {len(kayitlar)}")
     print(f"video süresi {sure:.1f} sn · yer gerçeği olayı {len(olaylar_gt)} · tamamlanan döngü {dongu_sayisi}")
     print(f"her döngüde {len(olaylar_gt)} olay → toplam fırsat {firsat}")
+    print(
+        f"yayıncı yeniden başlaması {yayinci_yeniden_baslama} · "
+        f"pts açıklığından döngü {dongu_pts_acikligi}"
+    )
     if ptssiz:
         print(f"video konumu taşımayan alarm: {ptssiz} (eşleştirilemedi)")
     if args.turler:
@@ -188,9 +223,14 @@ def main() -> int:
                 "olay_araliklari_s": olaylar_gt,
                 "sayilan_turler": args.turler or "hepsi",
                 "pencere_dk": round(pencere_s / 60, 1),
+                "pencere_ilk_alarm": ilk.isoformat(),
+                "pencere_son_alarm": son.isoformat(),
                 "alarm_toplam": len(kayitlar),
                 "alarm_pts_siz": ptssiz,
                 "dongu_sayisi": dongu_sayisi,
+                "dongu_sayisi_kaynagi": "duvar saati penceresi / video süresi",
+                "dongu_pts_acikligindan": dongu_pts_acikligi,
+                "yayinci_yeniden_baslama": yayinci_yeniden_baslama,
                 "firsat": firsat,
                 "tolerans_taramasi": tarama,
                 "tur_dagilimi": tur_dagilimi,

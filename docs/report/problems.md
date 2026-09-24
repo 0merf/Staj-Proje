@@ -8072,3 +8072,91 @@ kısıtlı olması ve hakemin bu alternatifi kendi önerisinde sunmuş
 olması. Üretim betiği depodan kaldırıldı; yanlış varsayıma dayanan bir
 aracı "ileride lazım olur" diye bırakmak, sonraki koşuda sessizce
 kullanılma riski taşıyor.
+
+---
+
+### P-91 · Havuzu büyütmenin faydası ölçülünce kayboldu
+
+**Tarih:** 24.09.2026 · **Faz:** revizyon
+
+**Neden bakıldı:** Makalede, paylaşımlı bellek havuzunu 48 yuvadan 96
+yuvaya çıkarmanın belirgin bir iyileşme sağladığı yazıyordu. Bu cümlenin
+arkasında saklanmış bir çıktı yoktu; değer yalnızca geliştirme
+günlüğüne yazılmıştı. Hakem, sonuçların doğrulanabilirliğini yetersiz
+bulunca bu cümle de kapsama girdi.
+
+**Ölçüm:** Her iki yapılandırmada aynı yükle, doksan saniye ısınmanın
+ardından on dakikalık pencere ölçüldü.
+
+```
+                        48 yuva   96 yuva
+analiz (kamera başına)    2,713     2,614
+gecikme p50 (ms)          173,5     230,9
+gecikme p95 (ms)          282,9     490,0
+no_slot                     256        98
+izlenmeyen kayıp            567      1774
+```
+
+`no_slot` beklendiği gibi düşüyor — havuz gerçekten daha az tükeniyor.
+Ama analiz hızı artmıyor, gecikme yükseliyor. Yani ölçüm, iddiayı
+desteklemek bir yana ters yönü gösteriyor.
+
+> Buradan "48 daha iyi" sonucu da çıkarılamıyor. P-88'de üç bağımsız
+> koşunun gecikmede iki ayrı rejime yerleştiği ölçülmüştü; iki
+> yapılandırma arasındaki fark o değişkenliğin içinde kalıyor. Tek
+> koşuluk bir karşılaştırma bu büyüklükte bir farkı ayırt edemiyor.
+
+Kayda değer olan, iddianın yönünün değişmesi değil, **iddianın hiç
+ölçülmemiş olmasına rağmen bir gerekçe cümlesi olarak dolaşımda
+kalması.** Bölüştürme özelliğinin üretimden çıkarılma gerekçesi bile
+kısmen buna dayanıyordu.
+
+**Sonuç:** Makaledeki cümle, "havuz boyutu bu aralıkta belirleyici bir
+başarım değişkeni değildir" biçiminde değiştirildi. Çıktılar
+`benchmarks/canli_dogrulama_20260924-*` olarak saklandı.
+
+---
+
+### P-92 · Duyarlılık ölçüm aracı, döngüyü adresleyemediği yerde sessizce yanlış sayıyordu
+
+**Tarih:** 24.09.2026 · **Faz:** revizyon
+
+**Neden bakıldı:** Kısaltılmış soğuma süresiyle yapılan deneyin ara
+ölçümünde, 36 dakikalık pencerede yalnızca 5 tamamlanmış döngü
+bildirildi. Duvar saatine göre bu sayı 17 olmalıydı.
+
+**Sebep:** `duyarlilik_olc.py` döngüyü `int(pts // sure)` ile
+adresliyordu ve döngü sayısını `(max(pts) − min(pts)) // sure` olarak
+hesaplıyordu. İkisi de `pts`in koşu boyunca monoton arttığını
+varsayıyor. Oysa yayıncı yeniden başladığında `pts` sıfırlanıyor:
+
+```
+12:42:38  pts 712.8
+12:49:35  pts  82.0   ← sıfırlandı
+13:00:22  pts 728.8
+13:05:59  pts  89.3   ← yine sıfırlandı
+```
+
+Bunun iki ayrı sonucu var ve ikisi ters yönde çalışıyor:
+
+- **Payda küçülüyor:** global açıklık, oturumların toplamını değil en
+  uzun tek oturumu ölçüyor.
+- **Pay da küçülüyor:** iki ayrı oturumun aynı numaralı döngüsü aynı
+  anahtara düşüyor, yani üç farklı turda yakalanan aynı olay **tek**
+  yakalama sayılıyor.
+
+**Düzeltme:** Döngü anahtarı artık `(oturum, döngü, olay)` üçlüsü;
+oturum numarası `pts`in küçüldüğü yerde artıyor. Döngü sayısı duvar
+saatinden geliyor, `pts` açıklığından türetilen değer çapraz kontrol
+olarak ayrıca bildiriliyor. Ayrıca `--bitis` eklendi, böylece geçmiş bir
+koşu yeniden ölçülebiliyor.
+
+**Bildirilen değer etkilendi mi:** Hayır. Temel koşu (23.09, iki saatlik
+K4) `--bitis` ile yeniden ölçüldü: yayıncı yeniden başlaması **0**, pts
+açıklığından 43 döngü, duvar saatinden 44 döngü. İki kestirim uyuşuyor,
+yani o koşuda sıfırlama olmamış ve makaledeki 0,266 değeri geçerli.
+
+> Aracı düzeltmek sonucu değiştirmedi — ama bunu ancak **ölçerek**
+> bildim. "Düzeltme eski sonucu etkilemez" cümlesi, kontrol edilmeden
+> yazıldığında P-61'in aynısı olurdu: testin kendisinin, test etmediği
+> şeyi test ettiğini söylemesi.

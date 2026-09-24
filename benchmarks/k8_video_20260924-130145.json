@@ -1,0 +1,4502 @@
+{
+ "olculdu": "2026-09-24T10:01:45.771526+00:00",
+ "kriter": "K8 — erken uyarı avansı",
+ "hedef_avans_s": 2.0,
+ "azami_gorev_dongusu": 0.1,
+ "gorev_dongusu_gerekcesi": "Ayrık alarm sayısı sürekli açık bir dedektörü GİZLİYOR: skor hiç düşmezse 0→1 geçişi olmaz ve sayaç 'az alarm' der. İlk sürüm bu yüzden eşik 0.05'te '+56.9 sn avans' raporladı — oysa dedektör videonun %99'unda açıktı.",
+ "kamera": "cam-15",
+ "veri_seti": "UBI-Fights · F_45_0_0_0_0",
+ "etiket_turu": "kare seviyesinde (veri setiyle birlikte gelen, ELLE ÜRETİLMEDİ)",
+ "ornekleme_fps": 2.75,
+ "pencere_s": 5.0,
+ "sure_s": 128.0,
+ "segmentler": [
+  {
+   "bas": 25.0,
+   "bit": 39.0
+  },
+  {
+   "bas": 48.0,
+   "bit": 64.0
+  }
+ ],
+ "olay_oncesi_baglam_s": 25.0,
+ "sonuc": {
+  "kural": [
+   {
+    "esik": 0.05,
+    "segmentler": [
+     {
+      "segment": 1,
+      "olay_bas": 25.0,
+      "gecis": 8.28,
+      "avans_s": 16.72,
+      "temiz_baslangic": true
+     },
+     {
+      "segment": 2,
+      "olay_bas": 48.0,
+      "gecis": 39.24,
+      "avans_s": 8.76,
+      "temiz_baslangic": false
+     }
+    ],
+    "yanlis_alarm": {
+     "normal_ornek": 233,
+     "asan_oran": 0.8283,
+     "alarm_saatte": 760.0
+    },
+    "kacan": 0
+   },
+   {
+    "esik": 0.1,
+    "segmentler": [
+     {
+      "segment": 1,
+      "olay_bas": 25.0,
+      "gecis": null,
+      "avans_s": null,
+      "temiz_baslangic": true
+     },
+     {
+      "segment": 2,
+      "olay_bas": 48.0,
+      "gecis": 61.56,
+      "avans_s": -13.56,
+      "temiz_baslangic": false
+     }
+    ],
+    "yanlis_alarm": {
+     "normal_ornek": 233,
+     "asan_oran": 0.133,
+     "alarm_saatte": 320.0
+    },
+    "kacan": 1
+   },
+   {
+    "esik": 0.15,
+    "segmentler": [
+     {
+      "segment": 1,
+      "olay_bas": 25.0,
+      "gecis": null,
+      "avans_s": null,
+      "temiz_baslangic": true
+     },
+     {
+      "segment": 2,
+      "olay_bas": 48.0,
+      "gecis": null,
+      "avans_s": null,
+      "temiz_baslangic": false
+     }
+    ],
+    "yanlis_alarm": {
+     "normal_ornek": 233,
+     "asan_oran": 0.0343,
+     "alarm_saatte": 120.0
+    },
+    "kacan": 2
+   },
+   {
+    "esik": 0.2,
+    "segmentler": [
+     {
+      "segment": 1,
+      "olay_bas": 25.0,
+      "gecis": null,
+      "avans_s": null,
+      "temiz_baslangic": true
+     },
+     {
+      "segment": 2,
+      "olay_bas": 48.0,
+      "gecis": null,
+      "avans_s": null,
+      "temiz_baslangic": false
+     }
+    ],
+    "yanlis_alarm": {
+     "normal_ornek": 233,
+     "asan_oran": 0.0215,
+     "alarm_saatte": 120.0
+    },
+    "kacan": 2
+   },
+   {
+    "esik": 0.25,
+    "segmentler": [
+     {
+      "segment": 1,
+      "olay_bas": 25.0,
+      "gecis": null,
+      "avans_s": null,
+      "temiz_baslangic": true
+     },
+     {
+      "segment": 2,
+      "olay_bas": 48.0,
+      "gecis": null,
+      "avans_s": null,
+      "temiz_baslangic": false
+     }
+    ],
+    "yanlis_alarm": {
+     "normal_ornek": 233,
+     "asan_oran": 0.0086,
+     "alarm_saatte": 80.0
+    },
+    "kacan": 2
+   },
+   {
+    "esik": 0.3,
+    "segmentler": [
+     {
+      "segment": 1,
+      "olay_bas": 25.0,
+      "gecis": null,
+      "avans_s": null,
+      "temiz_baslangic": true
+     },
+     {
+      "segment": 2,
+      "olay_bas": 48.0,
+      "gecis": null,
+      "avans_s": null,
+      "temiz_baslangic": false
+     }
+    ],
+    "yanlis_alarm": {
+     "normal_ornek": 233,
+     "asan_oran": 0.0,
+     "alarm_saatte": 0.0
+    },
+    "kacan": 2
+   },
+   {
+    "esik": 0.4,
+    "segmentler": [
+     {
+      "segment": 1,
+      "olay_bas": 25.0,
+      "gecis": null,
+      "avans_s": null,
+      "temiz_baslangic": true
+     },
+     {
+      "segment": 2,
+      "olay_bas": 48.0,
+      "gecis": null,
+      "avans_s": null,
+      "temiz_baslangic": false
+     }
+    ],
+    "yanlis_alarm": {
+     "normal_ornek": 233,
+     "asan_oran": 0.0,
+     "alarm_saatte": 0.0
+    },
+    "kacan": 2
+   },
+   {
+    "esik": 0.5,
+    "segmentler": [
+     {
+      "segment": 1,
+      "olay_bas": 25.0,
+      "gecis": null,
+      "avans_s": null,
+      "temiz_baslangic": true
+     },
+     {
+      "segment": 2,
+      "olay_bas": 48.0,
+      "gecis": null,
+      "avans_s": null,
+      "temiz_baslangic": false
+     }
+    ],
+    "yanlis_alarm": {
+     "normal_ornek": 233,
+     "asan_oran": 0.0,
+     "alarm_saatte": 0.0
+    },
+    "kacan": 2
+   },
+   {
+    "esik": 0.6,
+    "segmentler": [
+     {
+      "segment": 1,
+      "olay_bas": 25.0,
+      "gecis": null,
+      "avans_s": null,
+      "temiz_baslangic": true
+     },
+     {
+      "segment": 2,
+      "olay_bas": 48.0,
+      "gecis": null,
+      "avans_s": null,
+      "temiz_baslangic": false
+     }
+    ],
+    "yanlis_alarm": {
+     "normal_ornek": 233,
+     "asan_oran": 0.0,
+     "alarm_saatte": 0.0
+    },
+    "kacan": 2
+   },
+   {
+    "esik": 0.7,
+    "segmentler": [
+     {
+      "segment": 1,
+      "olay_bas": 25.0,
+      "gecis": null,
+      "avans_s": null,
+      "temiz_baslangic": true
+     },
+     {
+      "segment": 2,
+      "olay_bas": 48.0,
+      "gecis": null,
+      "avans_s": null,
+      "temiz_baslangic": false
+     }
+    ],
+    "yanlis_alarm": {
+     "normal_ornek": 233,
+     "asan_oran": 0.0,
+     "alarm_saatte": 0.0
+    },
+    "kacan": 2
+   },
+   {
+    "esik": 0.8,
+    "segmentler": [
+     {
+      "segment": 1,
+      "olay_bas": 25.0,
+      "gecis": null,
+      "avans_s": null,
+      "temiz_baslangic": true
+     },
+     {
+      "segment": 2,
+      "olay_bas": 48.0,
+      "gecis": null,
+      "avans_s": null,
+      "temiz_baslangic": false
+     }
+    ],
+    "yanlis_alarm": {
+     "normal_ornek": 233,
+     "asan_oran": 0.0,
+     "alarm_saatte": 0.0
+    },
+    "kacan": 2
+   },
+   {
+    "esik": 0.85,
+    "segmentler": [
+     {
+      "segment": 1,
+      "olay_bas": 25.0,
+      "gecis": null,
+      "avans_s": null,
+      "temiz_baslangic": true
+     },
+     {
+      "segment": 2,
+      "olay_bas": 48.0,
+      "gecis": null,
+      "avans_s": null,
+      "temiz_baslangic": false
+     }
+    ],
+    "yanlis_alarm": {
+     "normal_ornek": 233,
+     "asan_oran": 0.0,
+     "alarm_saatte": 0.0
+    },
+    "kacan": 2
+   },
+   {
+    "esik": 0.9,
+    "segmentler": [
+     {
+      "segment": 1,
+      "olay_bas": 25.0,
+      "gecis": null,
+      "avans_s": null,
+      "temiz_baslangic": true
+     },
+     {
+      "segment": 2,
+      "olay_bas": 48.0,
+      "gecis": null,
+      "avans_s": null,
+      "temiz_baslangic": false
+     }
+    ],
+    "yanlis_alarm": {
+     "normal_ornek": 233,
+     "asan_oran": 0.0,
+     "alarm_saatte": 0.0
+    },
+    "kacan": 2
+   },
+   {
+    "esik": 0.95,
+    "segmentler": [
+     {
+      "segment": 1,
+      "olay_bas": 25.0,
+      "gecis": null,
+      "avans_s": null,
+      "temiz_baslangic": true
+     },
+     {
+      "segment": 2,
+      "olay_bas": 48.0,
+      "gecis": null,
+      "avans_s": null,
+      "temiz_baslangic": false
+     }
+    ],
+    "yanlis_alarm": {
+     "normal_ornek": 233,
+     "asan_oran": 0.0,
+     "alarm_saatte": 0.0
+    },
+    "kacan": 2
+   }
+  ],
+  "model": [
+   {
+    "esik": 0.05,
+    "segmentler": [
+     {
+      "segment": 1,
+      "olay_bas": 25.0,
+      "gecis": 6.12,
+      "avans_s": 18.88,
+      "temiz_baslangic": true
+     },
+     {
+      "segment": 2,
+      "olay_bas": 48.0,
+      "gecis": 39.24,
+      "avans_s": 8.76,
+      "temiz_baslangic": false
+     }
+    ],
+    "yanlis_alarm": {
+     "normal_ornek": 233,
+     "asan_oran": 1.0,
+     "alarm_saatte": 40.0
+    },
+    "kacan": 0
+   },
+   {
+    "esik": 0.1,
+    "segmentler": [
+     {
+      "segment": 1,
+      "olay_bas": 25.0,
+      "gecis": 6.12,
+      "avans_s": 18.88,
+      "temiz_baslangic": true
+     },
+     {
+      "segment": 2,
+      "olay_bas": 48.0,
+      "gecis": 39.24,
+      "avans_s": 8.76,
+      "temiz_baslangic": false
+     }
+    ],
+    "yanlis_alarm": {
+     "normal_ornek": 233,
+     "asan_oran": 0.9185,
+     "alarm_saatte": 320.0
+    },
+    "kacan": 0
+   },
+   {
+    "esik": 0.15,
+    "segmentler": [
+     {
+      "segment": 1,
+      "olay_bas": 25.0,
+      "gecis": 21.96,
+      "avans_s": 3.04,
+      "temiz_baslangic": true
+     },
+     {
+      "segment": 2,
+      "olay_bas": 48.0,
+      "gecis": 40.32,
+      "avans_s": 7.68,
+      "temiz_baslangic": false
+     }
+    ],
+    "yanlis_alarm": {
+     "normal_ornek": 233,
+     "asan_oran": 0.7296,
+     "alarm_saatte": 400.0
+    },
+    "kacan": 0
+   },
+   {
+    "esik": 0.2,
+    "segmentler": [
+     {
+      "segment": 1,
+      "olay_bas": 25.0,
+      "gecis": 22.68,
+      "avans_s": 2.32,
+      "temiz_baslangic": true
+     },
+     {
+      "segment": 2,
+      "olay_bas": 48.0,
+      "gecis": 41.04,
+      "avans_s": 6.96,
+      "temiz_baslangic": false
+     }
+    ],
+    "yanlis_alarm": {
+     "normal_ornek": 233,
+     "asan_oran": 0.6009,
+     "alarm_saatte": 440.0
+    },
+    "kacan": 0
+   },
+   {
+    "esik": 0.25,
+    "segmentler": [
+     {
+      "segment": 1,
+      "olay_bas": 25.0,
+      "gecis": 23.76,
+      "avans_s": 1.24,
+      "temiz_baslangic": true
+     },
+     {
+      "segment": 2,
+      "olay_bas": 48.0,
+      "gecis": 42.12,
+      "avans_s": 5.88,
+      "temiz_baslangic": false
+     }
+    ],
+    "yanlis_alarm": {
+     "normal_ornek": 233,
+     "asan_oran": 0.5064,
+     "alarm_saatte": 200.0
+    },
+    "kacan": 0
+   },
+   {
+    "esik": 0.3,
+    "segmentler": [
+     {
+      "segment": 1,
+      "olay_bas": 25.0,
+      "gecis": 23.76,
+      "avans_s": 1.24,
+      "temiz_baslangic": true
+     },
+     {
+      "segment": 2,
+      "olay_bas": 48.0,
+      "gecis": 42.48,
+      "avans_s": 5.52,
+      "temiz_baslangic": false
+     }
+    ],
+    "yanlis_alarm": {
+     "normal_ornek": 233,
+     "asan_oran": 0.4592,
+     "alarm_saatte": 320.0
+    },
+    "kacan": 0
+   },
+   {
+    "esik": 0.4,
+    "segmentler": [
+     {
+      "segment": 1,
+      "olay_bas": 25.0,
+      "gecis": 24.84,
+      "avans_s": 0.16,
+      "temiz_baslangic": true
+     },
+     {
+      "segment": 2,
+      "olay_bas": 48.0,
+      "gecis": 46.8,
+      "avans_s": 1.2,
+      "temiz_baslangic": false
+     }
+    ],
+    "yanlis_alarm": {
+     "normal_ornek": 233,
+     "asan_oran": 0.3305,
+     "alarm_saatte": 320.0
+    },
+    "kacan": 0
+   },
+   {
+    "esik": 0.5,
+    "segmentler": [
+     {
+      "segment": 1,
+      "olay_bas": 25.0,
+      "gecis": 25.2,
+      "avans_s": -0.2,
+      "temiz_baslangic": true
+     },
+     {
+      "segment": 2,
+      "olay_bas": 48.0,
+      "gecis": 50.76,
+      "avans_s": -2.76,
+      "temiz_baslangic": false
+     }
+    ],
+    "yanlis_alarm": {
+     "normal_ornek": 233,
+     "asan_oran": 0.2747,
+     "alarm_saatte": 200.0
+    },
+    "kacan": 0
+   },
+   {
+    "esik": 0.6,
+    "segmentler": [
+     {
+      "segment": 1,
+      "olay_bas": 25.0,
+      "gecis": 25.2,
+      "avans_s": -0.2,
+      "temiz_baslangic": true
+     },
+     {
+      "segment": 2,
+      "olay_bas": 48.0,
+      "gecis": 53.64,
+      "avans_s": -5.64,
+      "temiz_baslangic": false
+     }
+    ],
+    "yanlis_alarm": {
+     "normal_ornek": 233,
+     "asan_oran": 0.2361,
+     "alarm_saatte": 280.0
+    },
+    "kacan": 0
+   },
+   {
+    "esik": 0.7,
+    "segmentler": [
+     {
+      "segment": 1,
+      "olay_bas": 25.0,
+      "gecis": 25.56,
+      "avans_s": -0.56,
+      "temiz_baslangic": true
+     },
+     {
+      "segment": 2,
+      "olay_bas": 48.0,
+      "gecis": 54.0,
+      "avans_s": -6.0,
+      "temiz_baslangic": false
+     }
+    ],
+    "yanlis_alarm": {
+     "normal_ornek": 233,
+     "asan_oran": 0.1845,
+     "alarm_saatte": 200.0
+    },
+    "kacan": 0
+   },
+   {
+    "esik": 0.8,
+    "segmentler": [
+     {
+      "segment": 1,
+      "olay_bas": 25.0,
+      "gecis": null,
+      "avans_s": null,
+      "temiz_baslangic": true
+     },
+     {
+      "segment": 2,
+      "olay_bas": 48.0,
+      "gecis": 59.4,
+      "avans_s": -11.4,
+      "temiz_baslangic": false
+     }
+    ],
+    "yanlis_alarm": {
+     "normal_ornek": 233,
+     "asan_oran": 0.1502,
+     "alarm_saatte": 80.0
+    },
+    "kacan": 1
+   },
+   {
+    "esik": 0.85,
+    "segmentler": [
+     {
+      "segment": 1,
+      "olay_bas": 25.0,
+      "gecis": null,
+      "avans_s": null,
+      "temiz_baslangic": true
+     },
+     {
+      "segment": 2,
+      "olay_bas": 48.0,
+      "gecis": 61.2,
+      "avans_s": -13.2,
+      "temiz_baslangic": false
+     }
+    ],
+    "yanlis_alarm": {
+     "normal_ornek": 233,
+     "asan_oran": 0.133,
+     "alarm_saatte": 200.0
+    },
+    "kacan": 1
+   },
+   {
+    "esik": 0.9,
+    "segmentler": [
+     {
+      "segment": 1,
+      "olay_bas": 25.0,
+      "gecis": null,
+      "avans_s": null,
+      "temiz_baslangic": true
+     },
+     {
+      "segment": 2,
+      "olay_bas": 48.0,
+      "gecis": 61.92,
+      "avans_s": -13.92,
+      "temiz_baslangic": false
+     }
+    ],
+    "yanlis_alarm": {
+     "normal_ornek": 233,
+     "asan_oran": 0.0601,
+     "alarm_saatte": 200.0
+    },
+    "kacan": 1
+   },
+   {
+    "esik": 0.95,
+    "segmentler": [
+     {
+      "segment": 1,
+      "olay_bas": 25.0,
+      "gecis": null,
+      "avans_s": null,
+      "temiz_baslangic": true
+     },
+     {
+      "segment": 2,
+      "olay_bas": 48.0,
+      "gecis": 63.36,
+      "avans_s": -15.36,
+      "temiz_baslangic": false
+     }
+    ],
+    "yanlis_alarm": {
+     "normal_ornek": 233,
+     "asan_oran": 0.0215,
+     "alarm_saatte": 40.0
+    },
+    "kacan": 1
+   }
+  ]
+ },
+ "gecerlilik": {
+  "kural": {
+   "olay_p50": 0.0654,
+   "uzak_normal_p50": 0.0698,
+   "tirmanma_p50": 0.0626,
+   "kavga_p50": 0.0663,
+   "oran": 0.936,
+   "gecerli": false
+  },
+  "model": {
+   "olay_p50": 0.3485,
+   "uzak_normal_p50": 0.2624,
+   "tirmanma_p50": 0.3055,
+   "kavga_p50": 0.4182,
+   "oran": 1.328,
+   "gecerli": true
+  }
+ },
+ "asgari_ayirt_orani": 1.2,
+ "tirmanma_penceresi_s": 6.0,
+ "karar": {
+  "kural": {
+   "tutuyor": false,
+   "sebep": "ayırt etmiyor",
+   "ayirt": {
+    "olay_p50": 0.0654,
+    "uzak_normal_p50": 0.0698,
+    "tirmanma_p50": 0.0626,
+    "kavga_p50": 0.0663,
+    "oran": 0.936,
+    "gecerli": false
+   }
+  },
+  "model": {
+   "tutuyor": false,
+   "sebep": "erken uyarı yok, tespit var",
+   "ayirt": {
+    "olay_p50": 0.3485,
+    "uzak_normal_p50": 0.2624,
+    "tirmanma_p50": 0.3055,
+    "kavga_p50": 0.4182,
+    "oran": 1.328,
+    "gecerli": true
+   },
+   "erken": {
+    "tirmanma_p50": 0.3055,
+    "normal_p50": 0.2624,
+    "oran": 1.164
+   },
+   "tespit_gecikmesi_s": null
+  }
+ },
+ "not": "⚠ Avans YALNIZCA segment 1 için anlamlı: öncesinde 58 sn kavgasız bağlam var. Segment 2 ve 3'ten önce skor bir önceki olaydan zaten yükselmiş olabilir; oradan avans hesaplamak kendi kuyruğunu ölçmek olur.",
+ "seri": [
+  {
+   "ts": 6.12,
+   "kural": 0.0013,
+   "model": 0.1405,
+   "kisi": 1.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.3502,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.3502
+  },
+  {
+   "ts": 6.48,
+   "kural": 0.0013,
+   "model": 0.0953,
+   "kisi": 1.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.3494,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.3494
+  },
+  {
+   "ts": 6.84,
+   "kural": 0.0123,
+   "model": 0.0953,
+   "kisi": 1.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.3532,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.3532
+  },
+  {
+   "ts": 7.2,
+   "kural": 0.0198,
+   "model": 0.0987,
+   "kisi": 2.0,
+   "iz_omru": 4.5,
+   "zamansal_oran": 0.5,
+   "ham_bilek_p75": 0.3341,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.3341
+  },
+  {
+   "ts": 7.56,
+   "kural": 0.0292,
+   "model": 0.1367,
+   "kisi": 2.0,
+   "iz_omru": 5.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.3341,
+   "bilek_aykirilik": 0.0916,
+   "bilek_medyan": 0.2424
+  },
+  {
+   "ts": 7.92,
+   "kural": 0.0407,
+   "model": 0.0774,
+   "kisi": 2.0,
+   "iz_omru": 5.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.7097,
+   "bilek_aykirilik": 0.6739,
+   "bilek_medyan": 1.0359
+  },
+  {
+   "ts": 8.28,
+   "kural": 0.0521,
+   "model": 0.1225,
+   "kisi": 2.0,
+   "iz_omru": 6.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.656,
+   "bilek_aykirilik": 0.4212,
+   "bilek_medyan": 1.2348
+  },
+  {
+   "ts": 8.64,
+   "kural": 0.0567,
+   "model": 0.139,
+   "kisi": 2.0,
+   "iz_omru": 6.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.4753,
+   "bilek_aykirilik": 0.3262,
+   "bilek_medyan": 1.1492
+  },
+  {
+   "ts": 9.0,
+   "kural": 0.0587,
+   "model": 0.1411,
+   "kisi": 1.0,
+   "iz_omru": 6.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.4521,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 1.4521
+  },
+  {
+   "ts": 9.36,
+   "kural": 0.0634,
+   "model": 0.1261,
+   "kisi": 2.0,
+   "iz_omru": 7.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.8195,
+   "bilek_aykirilik": 0.1616,
+   "bilek_medyan": 0.6579
+  },
+  {
+   "ts": 9.72,
+   "kural": 0.0657,
+   "model": 0.1124,
+   "kisi": 2.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.8467,
+   "bilek_aykirilik": 0.1713,
+   "bilek_medyan": 0.6754
+  },
+  {
+   "ts": 10.08,
+   "kural": 0.0652,
+   "model": 0.1323,
+   "kisi": 2.0,
+   "iz_omru": 8.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.8869,
+   "bilek_aykirilik": 0.1878,
+   "bilek_medyan": 0.6992
+  },
+  {
+   "ts": 10.44,
+   "kural": 0.064,
+   "model": 0.1483,
+   "kisi": 1.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.9132,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.9132
+  },
+  {
+   "ts": 10.8,
+   "kural": 0.0772,
+   "model": 0.1282,
+   "kisi": 2.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.5274,
+   "bilek_aykirilik": 0.5119,
+   "bilek_medyan": 1.0156
+  },
+  {
+   "ts": 11.16,
+   "kural": 0.0748,
+   "model": 0.0962,
+   "kisi": 2.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.5274,
+   "bilek_aykirilik": 0.5644,
+   "bilek_medyan": 0.963
+  },
+  {
+   "ts": 11.52,
+   "kural": 0.0693,
+   "model": 0.1346,
+   "kisi": 2.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.54,
+   "bilek_aykirilik": 0.57,
+   "bilek_medyan": 0.97
+  },
+  {
+   "ts": 11.88,
+   "kural": 0.0612,
+   "model": 0.1329,
+   "kisi": 2.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.54,
+   "bilek_aykirilik": 0.6817,
+   "bilek_medyan": 0.8583
+  },
+  {
+   "ts": 12.24,
+   "kural": 0.0557,
+   "model": 0.1398,
+   "kisi": 2.0,
+   "iz_omru": 8.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.3233,
+   "bilek_aykirilik": 0.0728,
+   "bilek_medyan": 0.2505
+  },
+  {
+   "ts": 12.6,
+   "kural": 0.0511,
+   "model": 0.1292,
+   "kisi": 2.0,
+   "iz_omru": 8.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.3233,
+   "bilek_aykirilik": 0.0271,
+   "bilek_medyan": 0.2962
+  },
+  {
+   "ts": 12.96,
+   "kural": 0.0484,
+   "model": 0.1181,
+   "kisi": 2.0,
+   "iz_omru": 8.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.5325,
+   "bilek_aykirilik": 0.7111,
+   "bilek_medyan": 0.8214
+  },
+  {
+   "ts": 13.32,
+   "kural": 0.0488,
+   "model": 0.1147,
+   "kisi": 2.0,
+   "iz_omru": 8.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.6188,
+   "bilek_aykirilik": 0.2687,
+   "bilek_medyan": 0.3501
+  },
+  {
+   "ts": 13.68,
+   "kural": 0.0522,
+   "model": 0.0939,
+   "kisi": 2.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.3362,
+   "bilek_aykirilik": 0.0408,
+   "bilek_medyan": 0.2954
+  },
+  {
+   "ts": 14.04,
+   "kural": 0.0556,
+   "model": 0.0944,
+   "kisi": 2.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.3786,
+   "bilek_aykirilik": 0.062,
+   "bilek_medyan": 0.3166
+  },
+  {
+   "ts": 14.4,
+   "kural": 0.0617,
+   "model": 0.1221,
+   "kisi": 1.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.2654,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.2654
+  },
+  {
+   "ts": 14.76,
+   "kural": 0.0709,
+   "model": 0.1088,
+   "kisi": 2.0,
+   "iz_omru": 8.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.6062,
+   "bilek_aykirilik": 0.0825,
+   "bilek_medyan": 0.5237
+  },
+  {
+   "ts": 15.12,
+   "kural": 0.0769,
+   "model": 0.0693,
+   "kisi": 2.0,
+   "iz_omru": 8.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.6549,
+   "bilek_aykirilik": 0.1068,
+   "bilek_medyan": 0.548
+  },
+  {
+   "ts": 15.48,
+   "kural": 0.0814,
+   "model": 0.0694,
+   "kisi": 2.0,
+   "iz_omru": 8.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.6539,
+   "bilek_aykirilik": 0.1064,
+   "bilek_medyan": 0.5476
+  },
+  {
+   "ts": 15.84,
+   "kural": 0.0822,
+   "model": 0.064,
+   "kisi": 2.0,
+   "iz_omru": 8.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.5971,
+   "bilek_aykirilik": 0.043,
+   "bilek_medyan": 0.5541
+  },
+  {
+   "ts": 16.2,
+   "kural": 0.0825,
+   "model": 0.0633,
+   "kisi": 2.0,
+   "iz_omru": 8.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.5083,
+   "bilek_aykirilik": 0.0305,
+   "bilek_medyan": 0.4778
+  },
+  {
+   "ts": 16.56,
+   "kural": 0.0828,
+   "model": 0.0697,
+   "kisi": 2.0,
+   "iz_omru": 8.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.9848,
+   "bilek_aykirilik": 0.239,
+   "bilek_medyan": 0.7458
+  },
+  {
+   "ts": 16.92,
+   "kural": 0.083,
+   "model": 0.0581,
+   "kisi": 1.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.5035,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.5035
+  },
+  {
+   "ts": 17.28,
+   "kural": 0.0832,
+   "model": 0.0632,
+   "kisi": 1.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.4586,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.4586
+  },
+  {
+   "ts": 17.64,
+   "kural": 0.0834,
+   "model": 0.0816,
+   "kisi": 1.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.3214,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.3214
+  },
+  {
+   "ts": 18.0,
+   "kural": 0.0736,
+   "model": 0.0919,
+   "kisi": 1.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.2698,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.2698
+  },
+  {
+   "ts": 18.36,
+   "kural": 0.0678,
+   "model": 0.1204,
+   "kisi": 1.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.2204,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.2204
+  },
+  {
+   "ts": 18.72,
+   "kural": 0.0642,
+   "model": 0.1263,
+   "kisi": 1.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.2193,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.2193
+  },
+  {
+   "ts": 19.08,
+   "kural": 0.062,
+   "model": 0.1355,
+   "kisi": 1.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.1161,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.1161
+  },
+  {
+   "ts": 19.44,
+   "kural": 0.061,
+   "model": 0.1122,
+   "kisi": 1.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.0602,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.0602
+  },
+  {
+   "ts": 19.8,
+   "kural": 0.0368,
+   "model": 0.1154,
+   "kisi": 1.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.0602,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.0602
+  },
+  {
+   "ts": 20.16,
+   "kural": 0.0223,
+   "model": 0.101,
+   "kisi": 1.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.0428,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.0428
+  },
+  {
+   "ts": 20.52,
+   "kural": 0.0135,
+   "model": 0.0879,
+   "kisi": 1.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.1293,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.1293
+  },
+  {
+   "ts": 20.88,
+   "kural": 0.0313,
+   "model": 0.068,
+   "kisi": 1.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.13,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.13
+  },
+  {
+   "ts": 21.24,
+   "kural": 0.0421,
+   "model": 0.1313,
+   "kisi": 2.0,
+   "iz_omru": 5.0,
+   "zamansal_oran": 0.5,
+   "ham_bilek_p75": 0.2283,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.2283
+  },
+  {
+   "ts": 21.6,
+   "kural": 0.0477,
+   "model": 0.1336,
+   "kisi": 2.0,
+   "iz_omru": 5.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.7879,
+   "bilek_aykirilik": 0.2793,
+   "bilek_medyan": 0.5086
+  },
+  {
+   "ts": 21.96,
+   "kural": 0.051,
+   "model": 0.1677,
+   "kisi": 2.0,
+   "iz_omru": 6.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.7956,
+   "bilek_aykirilik": 0.2827,
+   "bilek_medyan": 0.5129
+  },
+  {
+   "ts": 22.32,
+   "kural": 0.054,
+   "model": 0.1872,
+   "kisi": 2.0,
+   "iz_omru": 6.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.7956,
+   "bilek_aykirilik": 0.2752,
+   "bilek_medyan": 0.5203
+  },
+  {
+   "ts": 22.68,
+   "kural": 0.0567,
+   "model": 0.21,
+   "kisi": 2.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.8161,
+   "bilek_aykirilik": 0.2436,
+   "bilek_medyan": 0.5725
+  },
+  {
+   "ts": 23.04,
+   "kural": 0.0587,
+   "model": 0.1499,
+   "kisi": 2.0,
+   "iz_omru": 7.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.8216,
+   "bilek_aykirilik": 0.1784,
+   "bilek_medyan": 0.6432
+  },
+  {
+   "ts": 23.4,
+   "kural": 0.0624,
+   "model": 0.2301,
+   "kisi": 2.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.8311,
+   "bilek_aykirilik": 0.0945,
+   "bilek_medyan": 0.7366
+  },
+  {
+   "ts": 23.76,
+   "kural": 0.0629,
+   "model": 0.3616,
+   "kisi": 2.0,
+   "iz_omru": 8.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.8407,
+   "bilek_aykirilik": 0.0947,
+   "bilek_medyan": 0.746
+  },
+  {
+   "ts": 24.12,
+   "kural": 0.0429,
+   "model": 0.3428,
+   "kisi": 1.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.8448,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.8448
+  },
+  {
+   "ts": 24.48,
+   "kural": 0.0407,
+   "model": 0.3425,
+   "kisi": 1.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.8552,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.8552
+  },
+  {
+   "ts": 24.84,
+   "kural": 0.0338,
+   "model": 0.4801,
+   "kisi": 2.0,
+   "iz_omru": 5.0,
+   "zamansal_oran": 0.5,
+   "ham_bilek_p75": 0.8652,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.8652
+  },
+  {
+   "ts": 25.2,
+   "kural": 0.0552,
+   "model": 0.6085,
+   "kisi": 3.0,
+   "iz_omru": 6.0,
+   "zamansal_oran": 0.6667,
+   "ham_bilek_p75": 0.8552,
+   "bilek_aykirilik": 0.0995,
+   "bilek_medyan": 0.7557
+  },
+  {
+   "ts": 25.56,
+   "kural": 0.0539,
+   "model": 0.716,
+   "kisi": 2.0,
+   "iz_omru": 4.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.655,
+   "bilek_aykirilik": 0.0777,
+   "bilek_medyan": 0.5773
+  },
+  {
+   "ts": 25.92,
+   "kural": 0.0516,
+   "model": 0.6716,
+   "kisi": 2.0,
+   "iz_omru": 5.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.149,
+   "bilek_aykirilik": 0.3012,
+   "bilek_medyan": 0.8478
+  },
+  {
+   "ts": 26.28,
+   "kural": 0.0495,
+   "model": 0.6861,
+   "kisi": 2.0,
+   "iz_omru": 5.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.1105,
+   "bilek_aykirilik": 0.2536,
+   "bilek_medyan": 0.8569
+  },
+  {
+   "ts": 26.64,
+   "kural": 0.0471,
+   "model": 0.6397,
+   "kisi": 2.0,
+   "iz_omru": 6.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.0413,
+   "bilek_aykirilik": 0.2136,
+   "bilek_medyan": 0.8278
+  },
+  {
+   "ts": 27.0,
+   "kural": 0.0465,
+   "model": 0.475,
+   "kisi": 2.0,
+   "iz_omru": 6.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.996,
+   "bilek_aykirilik": 0.1852,
+   "bilek_medyan": 0.8108
+  },
+  {
+   "ts": 27.36,
+   "kural": 0.0464,
+   "model": 0.4289,
+   "kisi": 2.0,
+   "iz_omru": 7.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.983,
+   "bilek_aykirilik": 0.177,
+   "bilek_medyan": 0.806
+  },
+  {
+   "ts": 27.72,
+   "kural": 0.0464,
+   "model": 0.4503,
+   "kisi": 2.0,
+   "iz_omru": 8.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.9778,
+   "bilek_aykirilik": 0.1691,
+   "bilek_medyan": 0.8088
+  },
+  {
+   "ts": 28.08,
+   "kural": 0.0455,
+   "model": 0.449,
+   "kisi": 2.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.9728,
+   "bilek_aykirilik": 0.1665,
+   "bilek_medyan": 0.8062
+  },
+  {
+   "ts": 28.44,
+   "kural": 0.0371,
+   "model": 0.2111,
+   "kisi": 2.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.9324,
+   "bilek_aykirilik": 0.0967,
+   "bilek_medyan": 0.8357
+  },
+  {
+   "ts": 28.8,
+   "kural": 0.0313,
+   "model": 0.2414,
+   "kisi": 2.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.7366,
+   "bilek_aykirilik": 0.1063,
+   "bilek_medyan": 0.6303
+  },
+  {
+   "ts": 29.16,
+   "kural": 0.0283,
+   "model": 0.2829,
+   "kisi": 2.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.8327,
+   "bilek_aykirilik": 0.2446,
+   "bilek_medyan": 0.5881
+  },
+  {
+   "ts": 29.52,
+   "kural": 0.0404,
+   "model": 0.2882,
+   "kisi": 2.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.5922,
+   "bilek_aykirilik": 0.0464,
+   "bilek_medyan": 0.5458
+  },
+  {
+   "ts": 29.88,
+   "kural": 0.0487,
+   "model": 0.2958,
+   "kisi": 3.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 0.6667,
+   "ham_bilek_p75": 0.5301,
+   "bilek_aykirilik": 0.0933,
+   "bilek_medyan": 0.4368
+  },
+  {
+   "ts": 30.24,
+   "kural": 0.0536,
+   "model": 0.1566,
+   "kisi": 3.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.3714,
+   "bilek_aykirilik": 0.0248,
+   "bilek_medyan": 0.3466
+  },
+  {
+   "ts": 30.6,
+   "kural": 0.0582,
+   "model": 0.1457,
+   "kisi": 2.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.3481,
+   "bilek_aykirilik": 0.0404,
+   "bilek_medyan": 0.3077
+  },
+  {
+   "ts": 30.96,
+   "kural": 0.0602,
+   "model": 0.1334,
+   "kisi": 3.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.3895,
+   "bilek_aykirilik": 0.0414,
+   "bilek_medyan": 0.3481
+  },
+  {
+   "ts": 31.32,
+   "kural": 0.0607,
+   "model": 0.1288,
+   "kisi": 3.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.451,
+   "bilek_aykirilik": 0.1021,
+   "bilek_medyan": 0.3489
+  },
+  {
+   "ts": 31.68,
+   "kural": 0.0608,
+   "model": 0.1339,
+   "kisi": 2.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.451,
+   "bilek_aykirilik": 0.0868,
+   "bilek_medyan": 0.3642
+  },
+  {
+   "ts": 32.04,
+   "kural": 0.062,
+   "model": 0.1067,
+   "kisi": 2.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.53,
+   "bilek_aykirilik": 0.1032,
+   "bilek_medyan": 0.4268
+  },
+  {
+   "ts": 32.4,
+   "kural": 0.0628,
+   "model": 0.0994,
+   "kisi": 3.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.4502,
+   "bilek_aykirilik": 0.1038,
+   "bilek_medyan": 0.3464
+  },
+  {
+   "ts": 32.76,
+   "kural": 0.0652,
+   "model": 0.0976,
+   "kisi": 3.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.4502,
+   "bilek_aykirilik": 0.0331,
+   "bilek_medyan": 0.4171
+  },
+  {
+   "ts": 33.12,
+   "kural": 0.0606,
+   "model": 0.0948,
+   "kisi": 2.0,
+   "iz_omru": 7.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.4345,
+   "bilek_aykirilik": 0.0357,
+   "bilek_medyan": 0.3988
+  },
+  {
+   "ts": 33.48,
+   "kural": 0.0624,
+   "model": 0.1042,
+   "kisi": 2.0,
+   "iz_omru": 7.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.4345,
+   "bilek_aykirilik": 0.0357,
+   "bilek_medyan": 0.3988
+  },
+  {
+   "ts": 33.84,
+   "kural": 0.0637,
+   "model": 0.1077,
+   "kisi": 3.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 0.6667,
+   "ham_bilek_p75": 0.4345,
+   "bilek_aykirilik": 0.0333,
+   "bilek_medyan": 0.4011
+  },
+  {
+   "ts": 34.2,
+   "kural": 0.0632,
+   "model": 0.1269,
+   "kisi": 3.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 0.6667,
+   "ham_bilek_p75": 0.667,
+   "bilek_aykirilik": 0.1707,
+   "bilek_medyan": 0.4964
+  },
+  {
+   "ts": 34.56,
+   "kural": 0.0641,
+   "model": 0.1352,
+   "kisi": 3.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.5338,
+   "bilek_aykirilik": 0.0169,
+   "bilek_medyan": 0.5169
+  },
+  {
+   "ts": 34.92,
+   "kural": 0.0725,
+   "model": 0.1239,
+   "kisi": 3.0,
+   "iz_omru": 5.0,
+   "zamansal_oran": 0.3333,
+   "ham_bilek_p75": 0.3238,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.3238
+  },
+  {
+   "ts": 35.28,
+   "kural": 0.0784,
+   "model": 0.1105,
+   "kisi": 3.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 0.6667,
+   "ham_bilek_p75": 0.5338,
+   "bilek_aykirilik": 0.1034,
+   "bilek_medyan": 0.4304
+  },
+  {
+   "ts": 35.64,
+   "kural": 0.0814,
+   "model": 0.1023,
+   "kisi": 2.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 0.5,
+   "ham_bilek_p75": 0.327,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.327
+  },
+  {
+   "ts": 36.0,
+   "kural": 0.0838,
+   "model": 0.1046,
+   "kisi": 3.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.5197,
+   "bilek_aykirilik": 0.2954,
+   "bilek_medyan": 0.2243
+  },
+  {
+   "ts": 36.36,
+   "kural": 0.0856,
+   "model": 0.1059,
+   "kisi": 3.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.5086,
+   "bilek_aykirilik": 0.2935,
+   "bilek_medyan": 0.215
+  },
+  {
+   "ts": 36.72,
+   "kural": 0.0854,
+   "model": 0.1414,
+   "kisi": 2.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.4478,
+   "bilek_aykirilik": 0.118,
+   "bilek_medyan": 0.3298
+  },
+  {
+   "ts": 37.08,
+   "kural": 0.0643,
+   "model": 0.3188,
+   "kisi": 3.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 0.3333,
+   "ham_bilek_p75": 0.1995,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.1995
+  },
+  {
+   "ts": 37.44,
+   "kural": 0.0839,
+   "model": 0.2573,
+   "kisi": 5.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 0.6,
+   "ham_bilek_p75": 0.2504,
+   "bilek_aykirilik": 0.0395,
+   "bilek_medyan": 0.2108
+  },
+  {
+   "ts": 37.8,
+   "kural": 0.0663,
+   "model": 0.233,
+   "kisi": 4.0,
+   "iz_omru": 5.0,
+   "zamansal_oran": 0.75,
+   "ham_bilek_p75": 0.4193,
+   "bilek_aykirilik": 0.1669,
+   "bilek_medyan": 0.2524
+  },
+  {
+   "ts": 38.16,
+   "kural": 0.0748,
+   "model": 0.1493,
+   "kisi": 5.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 0.6,
+   "ham_bilek_p75": 1.7337,
+   "bilek_aykirilik": 1.5247,
+   "bilek_medyan": 0.209
+  },
+  {
+   "ts": 38.52,
+   "kural": 0.0682,
+   "model": 0.1308,
+   "kisi": 4.0,
+   "iz_omru": 5.5,
+   "zamansal_oran": 0.75,
+   "ham_bilek_p75": 0.9542,
+   "bilek_aykirilik": 0.8348,
+   "bilek_medyan": 0.1194
+  },
+  {
+   "ts": 38.88,
+   "kural": 0.0676,
+   "model": 0.1096,
+   "kisi": 4.0,
+   "iz_omru": 6.0,
+   "zamansal_oran": 0.5,
+   "ham_bilek_p75": 0.7855,
+   "bilek_aykirilik": 0.336,
+   "bilek_medyan": 0.4496
+  },
+  {
+   "ts": 39.24,
+   "kural": 0.0685,
+   "model": 0.1019,
+   "kisi": 5.0,
+   "iz_omru": 5.0,
+   "zamansal_oran": 0.4,
+   "ham_bilek_p75": 0.6676,
+   "bilek_aykirilik": 0.1438,
+   "bilek_medyan": 0.5237
+  },
+  {
+   "ts": 39.6,
+   "kural": 0.0695,
+   "model": 0.115,
+   "kisi": 2.0,
+   "iz_omru": 3.5,
+   "zamansal_oran": 0.0,
+   "ham_bilek_p75": 0.0,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.0
+  },
+  {
+   "ts": 39.96,
+   "kural": 0.0692,
+   "model": 0.1027,
+   "kisi": 4.0,
+   "iz_omru": 6.0,
+   "zamansal_oran": 0.25,
+   "ham_bilek_p75": 0.371,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.371
+  },
+  {
+   "ts": 40.32,
+   "kural": 0.069,
+   "model": 0.1679,
+   "kisi": 4.0,
+   "iz_omru": 6.5,
+   "zamansal_oran": 0.5,
+   "ham_bilek_p75": 0.7373,
+   "bilek_aykirilik": 0.2094,
+   "bilek_medyan": 0.5279
+  },
+  {
+   "ts": 40.68,
+   "kural": 0.0684,
+   "model": 0.1667,
+   "kisi": 3.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 0.6667,
+   "ham_bilek_p75": 0.9709,
+   "bilek_aykirilik": 0.1533,
+   "bilek_medyan": 0.8175
+  },
+  {
+   "ts": 41.04,
+   "kural": 0.0177,
+   "model": 0.209,
+   "kisi": 1.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 0.0,
+   "ham_bilek_p75": 0.0,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.0
+  },
+  {
+   "ts": 41.4,
+   "kural": 0.0679,
+   "model": 0.1449,
+   "kisi": 3.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 0.6667,
+   "ham_bilek_p75": 0.9633,
+   "bilek_aykirilik": 0.1547,
+   "bilek_medyan": 0.8087
+  },
+  {
+   "ts": 41.76,
+   "kural": 0.0638,
+   "model": 0.1827,
+   "kisi": 3.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 0.3333,
+   "ham_bilek_p75": 0.9633,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.9633
+  },
+  {
+   "ts": 42.12,
+   "kural": 0.0649,
+   "model": 0.2583,
+   "kisi": 3.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 0.6667,
+   "ham_bilek_p75": 0.7177,
+   "bilek_aykirilik": 0.167,
+   "bilek_medyan": 0.5506
+  },
+  {
+   "ts": 42.48,
+   "kural": 0.0691,
+   "model": 0.3516,
+   "kisi": 3.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.7178,
+   "bilek_aykirilik": 0.3407,
+   "bilek_medyan": 0.377
+  },
+  {
+   "ts": 42.84,
+   "kural": 0.0704,
+   "model": 0.3089,
+   "kisi": 3.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.7215,
+   "bilek_aykirilik": 0.0675,
+   "bilek_medyan": 0.654
+  },
+  {
+   "ts": 43.2,
+   "kural": 0.0709,
+   "model": 0.3233,
+   "kisi": 3.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.6826,
+   "bilek_aykirilik": 0.2072,
+   "bilek_medyan": 0.4754
+  },
+  {
+   "ts": 43.56,
+   "kural": 0.0719,
+   "model": 0.3182,
+   "kisi": 4.0,
+   "iz_omru": 6.5,
+   "zamansal_oran": 0.75,
+   "ham_bilek_p75": 0.4393,
+   "bilek_aykirilik": 0.062,
+   "bilek_medyan": 0.3773
+  },
+  {
+   "ts": 43.92,
+   "kural": 0.0686,
+   "model": 0.2977,
+   "kisi": 2.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.4393,
+   "bilek_aykirilik": 0.1806,
+   "bilek_medyan": 0.2587
+  },
+  {
+   "ts": 44.28,
+   "kural": 0.0717,
+   "model": 0.3485,
+   "kisi": 3.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 2.0694,
+   "bilek_aykirilik": 1.6352,
+   "bilek_medyan": 0.4342
+  },
+  {
+   "ts": 44.64,
+   "kural": 0.0697,
+   "model": 0.2894,
+   "kisi": 3.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.9665,
+   "bilek_aykirilik": 0.5463,
+   "bilek_medyan": 0.4202
+  },
+  {
+   "ts": 45.0,
+   "kural": 0.0707,
+   "model": 0.3864,
+   "kisi": 3.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.9575,
+   "bilek_aykirilik": 0.5376,
+   "bilek_medyan": 0.4199
+  },
+  {
+   "ts": 45.36,
+   "kural": 0.0694,
+   "model": 0.3688,
+   "kisi": 3.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.9678,
+   "bilek_aykirilik": 0.5726,
+   "bilek_medyan": 0.3952
+  },
+  {
+   "ts": 45.72,
+   "kural": 0.0708,
+   "model": 0.3021,
+   "kisi": 3.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.9575,
+   "bilek_aykirilik": 0.2705,
+   "bilek_medyan": 0.687
+  },
+  {
+   "ts": 46.08,
+   "kural": 0.0707,
+   "model": 0.3387,
+   "kisi": 2.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.9784,
+   "bilek_aykirilik": 0.1457,
+   "bilek_medyan": 0.8327
+  },
+  {
+   "ts": 46.44,
+   "kural": 0.0672,
+   "model": 0.3828,
+   "kisi": 3.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.1356,
+   "bilek_aykirilik": 0.4817,
+   "bilek_medyan": 0.6539
+  },
+  {
+   "ts": 46.8,
+   "kural": 0.0639,
+   "model": 0.4173,
+   "kisi": 3.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.1356,
+   "bilek_aykirilik": 0.5141,
+   "bilek_medyan": 0.6215
+  },
+  {
+   "ts": 47.16,
+   "kural": 0.0621,
+   "model": 0.322,
+   "kisi": 3.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 0.6667,
+   "ham_bilek_p75": 1.1377,
+   "bilek_aykirilik": 0.4121,
+   "bilek_medyan": 0.7257
+  },
+  {
+   "ts": 47.52,
+   "kural": 0.064,
+   "model": 0.3632,
+   "kisi": 2.0,
+   "iz_omru": 5.5,
+   "zamansal_oran": 0.5,
+   "ham_bilek_p75": 0.2966,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.2966
+  },
+  {
+   "ts": 47.88,
+   "kural": 0.0651,
+   "model": 0.3913,
+   "kisi": 3.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 0.6667,
+   "ham_bilek_p75": 1.1706,
+   "bilek_aykirilik": 0.437,
+   "bilek_medyan": 0.7336
+  },
+  {
+   "ts": 48.24,
+   "kural": 0.065,
+   "model": 0.4691,
+   "kisi": 3.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.1998,
+   "bilek_aykirilik": 0.5575,
+   "bilek_medyan": 0.6423
+  },
+  {
+   "ts": 48.6,
+   "kural": 0.0661,
+   "model": 0.4136,
+   "kisi": 3.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.6676,
+   "bilek_aykirilik": 0.4368,
+   "bilek_medyan": 0.2308
+  },
+  {
+   "ts": 48.96,
+   "kural": 0.0662,
+   "model": 0.3756,
+   "kisi": 3.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.5487,
+   "bilek_aykirilik": 0.3302,
+   "bilek_medyan": 0.2185
+  },
+  {
+   "ts": 49.32,
+   "kural": 0.068,
+   "model": 0.3543,
+   "kisi": 3.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.4657,
+   "bilek_aykirilik": 0.0961,
+   "bilek_medyan": 0.3696
+  },
+  {
+   "ts": 49.68,
+   "kural": 0.0699,
+   "model": 0.3748,
+   "kisi": 4.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 0.75,
+   "ham_bilek_p75": 0.4134,
+   "bilek_aykirilik": 0.0754,
+   "bilek_medyan": 0.338
+  },
+  {
+   "ts": 50.04,
+   "kural": 0.0672,
+   "model": 0.3042,
+   "kisi": 4.0,
+   "iz_omru": 8.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.3935,
+   "bilek_aykirilik": 0.0247,
+   "bilek_medyan": 0.3688
+  },
+  {
+   "ts": 50.4,
+   "kural": 0.0664,
+   "model": 0.3602,
+   "kisi": 5.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 0.8,
+   "ham_bilek_p75": 1.2988,
+   "bilek_aykirilik": 0.8913,
+   "bilek_medyan": 0.4074
+  },
+  {
+   "ts": 50.76,
+   "kural": 0.0656,
+   "model": 0.5597,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 0.8,
+   "ham_bilek_p75": 1.426,
+   "bilek_aykirilik": 1.045,
+   "bilek_medyan": 0.381
+  },
+  {
+   "ts": 51.12,
+   "kural": 0.0601,
+   "model": 0.4745,
+   "kisi": 4.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.4463,
+   "bilek_aykirilik": 1.0899,
+   "bilek_medyan": 0.3563
+  },
+  {
+   "ts": 51.48,
+   "kural": 0.0606,
+   "model": 0.2582,
+   "kisi": 3.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.4463,
+   "bilek_aykirilik": 1.0627,
+   "bilek_medyan": 0.3836
+  },
+  {
+   "ts": 51.84,
+   "kural": 0.0612,
+   "model": 0.2341,
+   "kisi": 4.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 0.75,
+   "ham_bilek_p75": 1.4463,
+   "bilek_aykirilik": 0.8313,
+   "bilek_medyan": 0.615
+  },
+  {
+   "ts": 52.2,
+   "kural": 0.0621,
+   "model": 0.2958,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 0.8,
+   "ham_bilek_p75": 1.4463,
+   "bilek_aykirilik": 1.1854,
+   "bilek_medyan": 0.2608
+  },
+  {
+   "ts": 52.56,
+   "kural": 0.065,
+   "model": 0.4801,
+   "kisi": 4.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 0.75,
+   "ham_bilek_p75": 1.4073,
+   "bilek_aykirilik": 1.053,
+   "bilek_medyan": 0.3544
+  },
+  {
+   "ts": 52.92,
+   "kural": 0.0736,
+   "model": 0.5912,
+   "kisi": 4.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.4062,
+   "bilek_aykirilik": 0.9644,
+   "bilek_medyan": 0.4418
+  },
+  {
+   "ts": 53.28,
+   "kural": 0.077,
+   "model": 0.5851,
+   "kisi": 4.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.3802,
+   "bilek_aykirilik": 0.9882,
+   "bilek_medyan": 0.392
+  },
+  {
+   "ts": 53.64,
+   "kural": 0.0772,
+   "model": 0.6949,
+   "kisi": 4.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.8179,
+   "bilek_aykirilik": 1.1223,
+   "bilek_medyan": 0.6956
+  },
+  {
+   "ts": 54.0,
+   "kural": 0.0675,
+   "model": 0.7057,
+   "kisi": 4.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.432,
+   "bilek_aykirilik": 0.8449,
+   "bilek_medyan": 0.5871
+  },
+  {
+   "ts": 54.36,
+   "kural": 0.0696,
+   "model": 0.7084,
+   "kisi": 4.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.7574,
+   "bilek_aykirilik": 1.175,
+   "bilek_medyan": 0.5824
+  },
+  {
+   "ts": 54.72,
+   "kural": 0.071,
+   "model": 0.6174,
+   "kisi": 6.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 0.6667,
+   "ham_bilek_p75": 1.7166,
+   "bilek_aykirilik": 0.9458,
+   "bilek_medyan": 0.7708
+  },
+  {
+   "ts": 55.08,
+   "kural": 0.072,
+   "model": 0.594,
+   "kisi": 7.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 0.7143,
+   "ham_bilek_p75": 1.7166,
+   "bilek_aykirilik": 1.2128,
+   "bilek_medyan": 0.5038
+  },
+  {
+   "ts": 55.44,
+   "kural": 0.0709,
+   "model": 0.731,
+   "kisi": 7.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 0.8571,
+   "ham_bilek_p75": 1.6537,
+   "bilek_aykirilik": 1.1539,
+   "bilek_medyan": 0.4998
+  },
+  {
+   "ts": 55.8,
+   "kural": 0.0716,
+   "model": 0.4182,
+   "kisi": 6.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 0.8333,
+   "ham_bilek_p75": 1.6537,
+   "bilek_aykirilik": 1.1918,
+   "bilek_medyan": 0.4619
+  },
+  {
+   "ts": 56.16,
+   "kural": 0.0721,
+   "model": 0.3565,
+   "kisi": 6.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 0.8333,
+   "ham_bilek_p75": 1.6537,
+   "bilek_aykirilik": 1.1818,
+   "bilek_medyan": 0.4719
+  },
+  {
+   "ts": 56.52,
+   "kural": 0.0817,
+   "model": 0.3698,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 0.8,
+   "ham_bilek_p75": 1.6377,
+   "bilek_aykirilik": 1.1295,
+   "bilek_medyan": 0.5081
+  },
+  {
+   "ts": 56.88,
+   "kural": 0.0859,
+   "model": 0.5539,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 0.8,
+   "ham_bilek_p75": 1.4075,
+   "bilek_aykirilik": 0.8937,
+   "bilek_medyan": 0.5138
+  },
+  {
+   "ts": 57.24,
+   "kural": 0.0654,
+   "model": 0.6856,
+   "kisi": 4.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.3938,
+   "bilek_aykirilik": 0.8839,
+   "bilek_medyan": 0.5099
+  },
+  {
+   "ts": 57.6,
+   "kural": 0.0651,
+   "model": 0.7043,
+   "kisi": 4.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.4546,
+   "bilek_aykirilik": 0.9162,
+   "bilek_medyan": 0.5384
+  },
+  {
+   "ts": 57.96,
+   "kural": 0.0656,
+   "model": 0.6748,
+   "kisi": 4.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.4546,
+   "bilek_aykirilik": 0.7803,
+   "bilek_medyan": 0.6743
+  },
+  {
+   "ts": 58.32,
+   "kural": 0.0666,
+   "model": 0.7019,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 0.8,
+   "ham_bilek_p75": 1.4809,
+   "bilek_aykirilik": 0.8385,
+   "bilek_medyan": 0.6423
+  },
+  {
+   "ts": 58.68,
+   "kural": 0.0648,
+   "model": 0.7016,
+   "kisi": 3.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 0.6667,
+   "ham_bilek_p75": 1.4832,
+   "bilek_aykirilik": 0.474,
+   "bilek_medyan": 1.0092
+  },
+  {
+   "ts": 59.04,
+   "kural": 0.0728,
+   "model": 0.7498,
+   "kisi": 4.0,
+   "iz_omru": 8.5,
+   "zamansal_oran": 0.75,
+   "ham_bilek_p75": 1.5986,
+   "bilek_aykirilik": 1.0369,
+   "bilek_medyan": 0.5617
+  },
+  {
+   "ts": 59.4,
+   "kural": 0.0775,
+   "model": 0.8144,
+   "kisi": 4.0,
+   "iz_omru": 8.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.5761,
+   "bilek_aykirilik": 0.5344,
+   "bilek_medyan": 1.0417
+  },
+  {
+   "ts": 59.76,
+   "kural": 0.0803,
+   "model": 0.824,
+   "kisi": 4.0,
+   "iz_omru": 6.5,
+   "zamansal_oran": 0.75,
+   "ham_bilek_p75": 1.2287,
+   "bilek_aykirilik": 0.2215,
+   "bilek_medyan": 1.0072
+  },
+  {
+   "ts": 60.12,
+   "kural": 0.0816,
+   "model": 0.8414,
+   "kisi": 4.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.2161,
+   "bilek_aykirilik": 0.3583,
+   "bilek_medyan": 0.8578
+  },
+  {
+   "ts": 60.48,
+   "kural": 0.0885,
+   "model": 0.8358,
+   "kisi": 3.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.0883,
+   "bilek_aykirilik": 0.3418,
+   "bilek_medyan": 0.7465
+  },
+  {
+   "ts": 60.84,
+   "kural": 0.0809,
+   "model": 0.7896,
+   "kisi": 3.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.2287,
+   "bilek_aykirilik": 0.2817,
+   "bilek_medyan": 0.947
+  },
+  {
+   "ts": 61.2,
+   "kural": 0.0964,
+   "model": 0.8618,
+   "kisi": 2.0,
+   "iz_omru": 6.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 2.3812,
+   "bilek_aykirilik": 0.9819,
+   "bilek_medyan": 1.3992
+  },
+  {
+   "ts": 61.56,
+   "kural": 0.108,
+   "model": 0.888,
+   "kisi": 2.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 2.4773,
+   "bilek_aykirilik": 1.0484,
+   "bilek_medyan": 1.4289
+  },
+  {
+   "ts": 61.92,
+   "kural": 0.1125,
+   "model": 0.9117,
+   "kisi": 2.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 2.4773,
+   "bilek_aykirilik": 0.9924,
+   "bilek_medyan": 1.4849
+  },
+  {
+   "ts": 62.28,
+   "kural": 0.1089,
+   "model": 0.9071,
+   "kisi": 2.0,
+   "iz_omru": 8.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 2.2855,
+   "bilek_aykirilik": 0.8719,
+   "bilek_medyan": 1.4136
+  },
+  {
+   "ts": 62.64,
+   "kural": 0.1005,
+   "model": 0.9081,
+   "kisi": 3.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.1871,
+   "bilek_aykirilik": 0.036,
+   "bilek_medyan": 1.1511
+  },
+  {
+   "ts": 63.0,
+   "kural": 0.0885,
+   "model": 0.8996,
+   "kisi": 2.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.7218,
+   "bilek_aykirilik": 0.2636,
+   "bilek_medyan": 0.4582
+  },
+  {
+   "ts": 63.36,
+   "kural": 0.0816,
+   "model": 0.9509,
+   "kisi": 3.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 0.6667,
+   "ham_bilek_p75": 0.6732,
+   "bilek_aykirilik": 0.2221,
+   "bilek_medyan": 0.4511
+  },
+  {
+   "ts": 63.72,
+   "kural": 0.0756,
+   "model": 0.9485,
+   "kisi": 2.0,
+   "iz_omru": 6.5,
+   "zamansal_oran": 0.5,
+   "ham_bilek_p75": 0.236,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.236
+  },
+  {
+   "ts": 64.08,
+   "kural": 0.074,
+   "model": 0.9331,
+   "kisi": 2.0,
+   "iz_omru": 5.0,
+   "zamansal_oran": 0.5,
+   "ham_bilek_p75": 0.2208,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.2208
+  },
+  {
+   "ts": 64.44,
+   "kural": 0.0,
+   "model": 0.9434,
+   "kisi": 1.0,
+   "iz_omru": 2.0,
+   "zamansal_oran": 0.0,
+   "ham_bilek_p75": 0.0,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.0
+  },
+  {
+   "ts": 64.8,
+   "kural": 0.0719,
+   "model": 0.94,
+   "kisi": 2.0,
+   "iz_omru": 5.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.2374,
+   "bilek_aykirilik": 0.0462,
+   "bilek_medyan": 0.1912
+  },
+  {
+   "ts": 65.16,
+   "kural": 0.0698,
+   "model": 0.9441,
+   "kisi": 2.0,
+   "iz_omru": 6.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.177,
+   "bilek_aykirilik": 0.016,
+   "bilek_medyan": 0.161
+  },
+  {
+   "ts": 65.52,
+   "kural": 0.049,
+   "model": 0.9545,
+   "kisi": 2.0,
+   "iz_omru": 6.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.5105,
+   "bilek_aykirilik": 0.1828,
+   "bilek_medyan": 0.3277
+  },
+  {
+   "ts": 65.88,
+   "kural": 0.0402,
+   "model": 0.919,
+   "kisi": 2.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.3613,
+   "bilek_aykirilik": 0.1091,
+   "bilek_medyan": 0.2522
+  },
+  {
+   "ts": 66.24,
+   "kural": 0.0358,
+   "model": 0.9161,
+   "kisi": 1.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.1413,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.1413
+  },
+  {
+   "ts": 66.6,
+   "kural": 0.0367,
+   "model": 0.9404,
+   "kisi": 1.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.3464,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.3464
+  },
+  {
+   "ts": 66.96,
+   "kural": 0.0416,
+   "model": 0.8517,
+   "kisi": 1.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.4862,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.4862
+  },
+  {
+   "ts": 67.32,
+   "kural": 0.0565,
+   "model": 0.5912,
+   "kisi": 1.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.4886,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.4886
+  },
+  {
+   "ts": 67.68,
+   "kural": 0.0601,
+   "model": 0.3679,
+   "kisi": 1.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.4955,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.4955
+  },
+  {
+   "ts": 68.04,
+   "kural": 0.0661,
+   "model": 0.7991,
+   "kisi": 1.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.4955,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.4955
+  },
+  {
+   "ts": 68.4,
+   "kural": 0.0704,
+   "model": 0.6069,
+   "kisi": 2.0,
+   "iz_omru": 4.5,
+   "zamansal_oran": 0.5,
+   "ham_bilek_p75": 0.7779,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.7779
+  },
+  {
+   "ts": 68.76,
+   "kural": 0.0738,
+   "model": 0.8709,
+   "kisi": 2.0,
+   "iz_omru": 5.0,
+   "zamansal_oran": 0.5,
+   "ham_bilek_p75": 0.8861,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.8861
+  },
+  {
+   "ts": 69.12,
+   "kural": 0.0735,
+   "model": 0.8618,
+   "kisi": 2.0,
+   "iz_omru": 5.5,
+   "zamansal_oran": 0.5,
+   "ham_bilek_p75": 1.5978,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 1.5978
+  },
+  {
+   "ts": 69.48,
+   "kural": 0.0741,
+   "model": 0.9036,
+   "kisi": 2.0,
+   "iz_omru": 6.5,
+   "zamansal_oran": 0.5,
+   "ham_bilek_p75": 0.9892,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.9892
+  },
+  {
+   "ts": 69.84,
+   "kural": 0.0777,
+   "model": 0.9354,
+   "kisi": 1.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.9892,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.9892
+  },
+  {
+   "ts": 70.2,
+   "kural": 0.0751,
+   "model": 0.9156,
+   "kisi": 1.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.857,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.857
+  },
+  {
+   "ts": 70.56,
+   "kural": 0.0,
+   "model": 0.8952,
+   "kisi": 1.0,
+   "iz_omru": 1.0,
+   "zamansal_oran": 0.0,
+   "ham_bilek_p75": 0.0,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.0
+  },
+  {
+   "ts": 70.92,
+   "kural": 0.0774,
+   "model": 0.957,
+   "kisi": 2.0,
+   "iz_omru": 5.0,
+   "zamansal_oran": 0.5,
+   "ham_bilek_p75": 0.9156,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.9156
+  },
+  {
+   "ts": 71.28,
+   "kural": 0.0,
+   "model": 0.958
+  },
+  {
+   "ts": 71.64,
+   "kural": 0.0794,
+   "model": 0.9593,
+   "kisi": 1.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.9914,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.9914
+  },
+  {
+   "ts": 72.0,
+   "kural": 0.0782,
+   "model": 0.9559,
+   "kisi": 1.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.0062,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 1.0062
+  },
+  {
+   "ts": 72.36,
+   "kural": 0.0,
+   "model": 0.9529,
+   "kisi": 1.0,
+   "iz_omru": 2.0,
+   "zamansal_oran": 0.0,
+   "ham_bilek_p75": 0.0,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.0
+  },
+  {
+   "ts": 72.72,
+   "kural": 0.0,
+   "model": 0.9495,
+   "kisi": 1.0,
+   "iz_omru": 2.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.7009,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 1.7009
+  },
+  {
+   "ts": 73.08,
+   "kural": 0.0913,
+   "model": 0.8632,
+   "kisi": 2.0,
+   "iz_omru": 4.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.688,
+   "bilek_aykirilik": 0.4277,
+   "bilek_medyan": 1.2603
+  },
+  {
+   "ts": 73.44,
+   "kural": 0.0727,
+   "model": 0.8422,
+   "kisi": 2.0,
+   "iz_omru": 4.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.6236,
+   "bilek_aykirilik": 0.3955,
+   "bilek_medyan": 1.2281
+  },
+  {
+   "ts": 73.8,
+   "kural": 0.0699,
+   "model": 0.8669,
+   "kisi": 2.0,
+   "iz_omru": 5.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.8455,
+   "bilek_aykirilik": 0.0065,
+   "bilek_medyan": 0.839
+  },
+  {
+   "ts": 74.16,
+   "kural": 0.0728,
+   "model": 0.8597,
+   "kisi": 1.0,
+   "iz_omru": 6.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.8572,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.8572
+  },
+  {
+   "ts": 74.52,
+   "kural": 0.0691,
+   "model": 0.8644,
+   "kisi": 1.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.8572,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.8572
+  },
+  {
+   "ts": 74.88,
+   "kural": 0.0,
+   "model": 0.8737
+  },
+  {
+   "ts": 75.24,
+   "kural": 0.0,
+   "model": 0.8685,
+   "kisi": 1.0,
+   "iz_omru": 1.0,
+   "zamansal_oran": 0.0,
+   "ham_bilek_p75": 0.0,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.0
+  },
+  {
+   "ts": 75.6,
+   "kural": 0.0,
+   "model": 0.8695,
+   "kisi": 1.0,
+   "iz_omru": 2.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.1403,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 1.1403
+  },
+  {
+   "ts": 75.96,
+   "kural": 0.0,
+   "model": 0.8428,
+   "kisi": 0.0,
+   "iz_omru": 0.0,
+   "zamansal_oran": 0.0,
+   "ham_bilek_p75": 0.0,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.0
+  },
+  {
+   "ts": 76.32,
+   "kural": 0.0669,
+   "model": 0.8569,
+   "kisi": 2.0,
+   "iz_omru": 3.0,
+   "zamansal_oran": 0.5,
+   "ham_bilek_p75": 0.1222,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.1222
+  },
+  {
+   "ts": 76.68,
+   "kural": 0.0815,
+   "model": 0.8863,
+   "kisi": 2.0,
+   "iz_omru": 3.5,
+   "zamansal_oran": 0.0,
+   "ham_bilek_p75": 0.0,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.0
+  },
+  {
+   "ts": 77.04,
+   "kural": 0.2006,
+   "model": 0.9099,
+   "kisi": 4.0,
+   "iz_omru": 3.0,
+   "zamansal_oran": 0.5,
+   "ham_bilek_p75": 0.9182,
+   "bilek_aykirilik": 0.2446,
+   "bilek_medyan": 0.6735
+  },
+  {
+   "ts": 77.4,
+   "kural": 0.0,
+   "model": 0.8801,
+   "kisi": 1.0,
+   "iz_omru": 2.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.3619,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.3619
+  },
+  {
+   "ts": 77.76,
+   "kural": 0.2764,
+   "model": 0.811,
+   "kisi": 4.0,
+   "iz_omru": 2.0,
+   "zamansal_oran": 0.5,
+   "ham_bilek_p75": 0.4289,
+   "bilek_aykirilik": 0.0446,
+   "bilek_medyan": 0.3844
+  },
+  {
+   "ts": 78.12,
+   "kural": 0.208,
+   "model": 0.8274,
+   "kisi": 3.0,
+   "iz_omru": 2.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.4012,
+   "bilek_aykirilik": 0.1364,
+   "bilek_medyan": 0.2648
+  },
+  {
+   "ts": 78.48,
+   "kural": 0.1578,
+   "model": 0.8997,
+   "kisi": 4.0,
+   "iz_omru": 3.0,
+   "zamansal_oran": 0.75,
+   "ham_bilek_p75": 0.4012,
+   "bilek_aykirilik": 0.058,
+   "bilek_medyan": 0.3431
+  },
+  {
+   "ts": 78.84,
+   "kural": 0.1387,
+   "model": 0.9084,
+   "kisi": 3.0,
+   "iz_omru": 4.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.4084,
+   "bilek_aykirilik": 0.047,
+   "bilek_medyan": 0.3614
+  },
+  {
+   "ts": 79.2,
+   "kural": 0.0342,
+   "model": 0.9134,
+   "kisi": 3.0,
+   "iz_omru": 5.0,
+   "zamansal_oran": 0.6667,
+   "ham_bilek_p75": 0.3818,
+   "bilek_aykirilik": 0.007,
+   "bilek_medyan": 0.3748
+  },
+  {
+   "ts": 79.56,
+   "kural": 0.1194,
+   "model": 0.8899,
+   "kisi": 5.0,
+   "iz_omru": 6.0,
+   "zamansal_oran": 0.8,
+   "ham_bilek_p75": 0.4184,
+   "bilek_aykirilik": 0.0343,
+   "bilek_medyan": 0.3841
+  },
+  {
+   "ts": 79.92,
+   "kural": 0.0456,
+   "model": 0.8673,
+   "kisi": 4.0,
+   "iz_omru": 5.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.4198,
+   "bilek_aykirilik": 0.1452,
+   "bilek_medyan": 0.2746
+  },
+  {
+   "ts": 80.28,
+   "kural": 0.0859,
+   "model": 0.7632,
+   "kisi": 5.0,
+   "iz_omru": 6.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.3798,
+   "bilek_aykirilik": 0.2018,
+   "bilek_medyan": 0.178
+  },
+  {
+   "ts": 80.64,
+   "kural": 0.0484,
+   "model": 0.6233,
+   "kisi": 4.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.3808,
+   "bilek_aykirilik": 0.1064,
+   "bilek_medyan": 0.2744
+  },
+  {
+   "ts": 81.0,
+   "kural": 0.0503,
+   "model": 0.651,
+   "kisi": 2.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.4287,
+   "bilek_aykirilik": 0.0291,
+   "bilek_medyan": 0.3996
+  },
+  {
+   "ts": 81.36,
+   "kural": 0.0685,
+   "model": 0.6075,
+   "kisi": 4.0,
+   "iz_omru": 5.5,
+   "zamansal_oran": 0.75,
+   "ham_bilek_p75": 0.3709,
+   "bilek_aykirilik": 0.195,
+   "bilek_medyan": 0.176
+  },
+  {
+   "ts": 81.72,
+   "kural": 0.0536,
+   "model": 0.6018,
+   "kisi": 3.0,
+   "iz_omru": 5.0,
+   "zamansal_oran": 0.3333,
+   "ham_bilek_p75": 0.2031,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.2031
+  },
+  {
+   "ts": 82.08,
+   "kural": 0.0468,
+   "model": 0.5775,
+   "kisi": 4.0,
+   "iz_omru": 5.5,
+   "zamansal_oran": 0.75,
+   "ham_bilek_p75": 1.0494,
+   "bilek_aykirilik": 0.8463,
+   "bilek_medyan": 0.2031
+  },
+  {
+   "ts": 82.44,
+   "kural": 0.0454,
+   "model": 0.4952,
+   "kisi": 4.0,
+   "iz_omru": 6.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.9119,
+   "bilek_aykirilik": 1.7264,
+   "bilek_medyan": 0.1855
+  },
+  {
+   "ts": 82.8,
+   "kural": 0.0551,
+   "model": 0.422,
+   "kisi": 3.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.8243,
+   "bilek_aykirilik": 0.2181,
+   "bilek_medyan": 0.6062
+  },
+  {
+   "ts": 83.16,
+   "kural": 0.0596,
+   "model": 0.4471,
+   "kisi": 4.0,
+   "iz_omru": 6.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.9138,
+   "bilek_aykirilik": 1.1952,
+   "bilek_medyan": 0.7187
+  },
+  {
+   "ts": 83.52,
+   "kural": 0.0623,
+   "model": 0.356,
+   "kisi": 5.0,
+   "iz_omru": 6.0,
+   "zamansal_oran": 0.8,
+   "ham_bilek_p75": 1.935,
+   "bilek_aykirilik": 1.2123,
+   "bilek_medyan": 0.7228
+  },
+  {
+   "ts": 83.88,
+   "kural": 0.0643,
+   "model": 0.2954,
+   "kisi": 2.0,
+   "iz_omru": 6.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.8076,
+   "bilek_aykirilik": 0.0887,
+   "bilek_medyan": 0.7189
+  },
+  {
+   "ts": 84.24,
+   "kural": 0.0739,
+   "model": 0.2165,
+   "kisi": 4.0,
+   "iz_omru": 7.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.9013,
+   "bilek_aykirilik": 1.1897,
+   "bilek_medyan": 0.7116
+  },
+  {
+   "ts": 84.6,
+   "kural": 0.0798,
+   "model": 0.1285,
+   "kisi": 3.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.8075,
+   "bilek_aykirilik": 0.7082,
+   "bilek_medyan": 0.0994
+  },
+  {
+   "ts": 84.96,
+   "kural": 0.1159,
+   "model": 0.1652,
+   "kisi": 4.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.8092,
+   "bilek_aykirilik": 0.2869,
+   "bilek_medyan": 0.5223
+  },
+  {
+   "ts": 85.32,
+   "kural": 0.1019,
+   "model": 0.1559,
+   "kisi": 4.0,
+   "iz_omru": 8.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.803,
+   "bilek_aykirilik": 0.3307,
+   "bilek_medyan": 0.4723
+  },
+  {
+   "ts": 85.68,
+   "kural": 0.0947,
+   "model": 0.1834,
+   "kisi": 5.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 0.8,
+   "ham_bilek_p75": 0.585,
+   "bilek_aykirilik": 0.3816,
+   "bilek_medyan": 0.2034
+  },
+  {
+   "ts": 86.04,
+   "kural": 0.107,
+   "model": 0.2586,
+   "kisi": 4.0,
+   "iz_omru": 8.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.1592,
+   "bilek_aykirilik": 0.618,
+   "bilek_medyan": 0.5412
+  },
+  {
+   "ts": 86.4,
+   "kural": 0.1236,
+   "model": 0.2617,
+   "kisi": 5.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 0.8,
+   "ham_bilek_p75": 1.1568,
+   "bilek_aykirilik": 0.7661,
+   "bilek_medyan": 0.3907
+  },
+  {
+   "ts": 86.76,
+   "kural": 0.1118,
+   "model": 0.3291,
+   "kisi": 6.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 0.6667,
+   "ham_bilek_p75": 0.6197,
+   "bilek_aykirilik": 0.2223,
+   "bilek_medyan": 0.3974
+  },
+  {
+   "ts": 87.12,
+   "kural": 0.1033,
+   "model": 0.3836,
+   "kisi": 6.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 0.8333,
+   "ham_bilek_p75": 1.7812,
+   "bilek_aykirilik": 1.1756,
+   "bilek_medyan": 0.6056
+  },
+  {
+   "ts": 87.48,
+   "kural": 0.0959,
+   "model": 0.4062,
+   "kisi": 6.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 0.8333,
+   "ham_bilek_p75": 1.7011,
+   "bilek_aykirilik": 1.213,
+   "bilek_medyan": 0.4881
+  },
+  {
+   "ts": 87.84,
+   "kural": 0.0914,
+   "model": 0.4121,
+   "kisi": 7.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 0.7143,
+   "ham_bilek_p75": 1.3086,
+   "bilek_aykirilik": 0.8136,
+   "bilek_medyan": 0.495
+  },
+  {
+   "ts": 88.2,
+   "kural": 0.089,
+   "model": 0.5579,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.2705,
+   "bilek_aykirilik": 0.4974,
+   "bilek_medyan": 0.7731
+  },
+  {
+   "ts": 88.56,
+   "kural": 0.0873,
+   "model": 0.3821,
+   "kisi": 6.0,
+   "iz_omru": 8.5,
+   "zamansal_oran": 0.8333,
+   "ham_bilek_p75": 1.146,
+   "bilek_aykirilik": 0.394,
+   "bilek_medyan": 0.752
+  },
+  {
+   "ts": 88.92,
+   "kural": 0.0864,
+   "model": 0.3781,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 0.8,
+   "ham_bilek_p75": 1.2008,
+   "bilek_aykirilik": 0.5907,
+   "bilek_medyan": 0.61
+  },
+  {
+   "ts": 89.28,
+   "kural": 0.085,
+   "model": 0.446,
+   "kisi": 6.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 0.8333,
+   "ham_bilek_p75": 1.0438,
+   "bilek_aykirilik": 0.5416,
+   "bilek_medyan": 0.5021
+  },
+  {
+   "ts": 89.64,
+   "kural": 0.0862,
+   "model": 0.3782,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 0.8,
+   "ham_bilek_p75": 1.139,
+   "bilek_aykirilik": 0.4788,
+   "bilek_medyan": 0.6602
+  },
+  {
+   "ts": 90.0,
+   "kural": 0.0611,
+   "model": 0.3921,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 0.6,
+   "ham_bilek_p75": 0.7344,
+   "bilek_aykirilik": 0.1195,
+   "bilek_medyan": 0.6149
+  },
+  {
+   "ts": 90.36,
+   "kural": 0.0607,
+   "model": 0.3943,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 0.6,
+   "ham_bilek_p75": 0.7252,
+   "bilek_aykirilik": 0.1195,
+   "bilek_medyan": 0.6057
+  },
+  {
+   "ts": 90.72,
+   "kural": 0.0608,
+   "model": 0.4544,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 0.8,
+   "ham_bilek_p75": 0.2544,
+   "bilek_aykirilik": 0.0536,
+   "bilek_medyan": 0.2008
+  },
+  {
+   "ts": 91.08,
+   "kural": 0.0627,
+   "model": 0.4582,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 0.8,
+   "ham_bilek_p75": 0.6765,
+   "bilek_aykirilik": 0.4602,
+   "bilek_medyan": 0.2163
+  },
+  {
+   "ts": 91.44,
+   "kural": 0.0645,
+   "model": 0.3528,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.1198,
+   "bilek_aykirilik": 0.8901,
+   "bilek_medyan": 0.2297
+  },
+  {
+   "ts": 91.8,
+   "kural": 0.0647,
+   "model": 0.3332,
+   "kisi": 4.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.1055,
+   "bilek_aykirilik": 0.8538,
+   "bilek_medyan": 0.2518
+  },
+  {
+   "ts": 92.16,
+   "kural": 0.0549,
+   "model": 0.2631,
+   "kisi": 5.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 0.8,
+   "ham_bilek_p75": 0.8741,
+   "bilek_aykirilik": 0.5012,
+   "bilek_medyan": 0.3729
+  },
+  {
+   "ts": 92.52,
+   "kural": 0.0555,
+   "model": 0.309,
+   "kisi": 3.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.7037,
+   "bilek_aykirilik": 0.5637,
+   "bilek_medyan": 0.14
+  },
+  {
+   "ts": 92.88,
+   "kural": 0.066,
+   "model": 0.3395,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.1198,
+   "bilek_aykirilik": 0.4161,
+   "bilek_medyan": 0.7037
+  },
+  {
+   "ts": 93.24,
+   "kural": 0.0667,
+   "model": 0.2166,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 0.8,
+   "ham_bilek_p75": 1.1198,
+   "bilek_aykirilik": 0.6798,
+   "bilek_medyan": 0.4399
+  },
+  {
+   "ts": 93.6,
+   "kural": 0.0602,
+   "model": 0.1799,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 0.8,
+   "ham_bilek_p75": 0.8368,
+   "bilek_aykirilik": 0.3926,
+   "bilek_medyan": 0.4442
+  },
+  {
+   "ts": 93.96,
+   "kural": 0.0665,
+   "model": 0.1537,
+   "kisi": 6.0,
+   "iz_omru": 7.5,
+   "zamansal_oran": 0.8333,
+   "ham_bilek_p75": 1.1215,
+   "bilek_aykirilik": 0.4663,
+   "bilek_medyan": 0.6552
+  },
+  {
+   "ts": 94.32,
+   "kural": 0.0644,
+   "model": 0.2223,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.8273,
+   "bilek_aykirilik": 0.3218,
+   "bilek_medyan": 0.5056
+  },
+  {
+   "ts": 94.68,
+   "kural": 0.063,
+   "model": 0.2164,
+   "kisi": 3.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.8483,
+   "bilek_aykirilik": 0.6136,
+   "bilek_medyan": 0.2347
+  },
+  {
+   "ts": 95.04,
+   "kural": 0.044,
+   "model": 0.187,
+   "kisi": 3.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.2347,
+   "bilek_aykirilik": 0.0621,
+   "bilek_medyan": 0.1726
+  },
+  {
+   "ts": 95.4,
+   "kural": 0.0639,
+   "model": 0.1096,
+   "kisi": 4.0,
+   "iz_omru": 7.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.8564,
+   "bilek_aykirilik": 0.5485,
+   "bilek_medyan": 0.308
+  },
+  {
+   "ts": 95.76,
+   "kural": 0.0739,
+   "model": 0.1443,
+   "kisi": 4.0,
+   "iz_omru": 7.5,
+   "zamansal_oran": 0.5,
+   "ham_bilek_p75": 0.8576,
+   "bilek_aykirilik": 0.3961,
+   "bilek_medyan": 0.4615
+  },
+  {
+   "ts": 96.12,
+   "kural": 0.0805,
+   "model": 0.1726,
+   "kisi": 3.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 0.6667,
+   "ham_bilek_p75": 0.0654,
+   "bilek_aykirilik": 0.0062,
+   "bilek_medyan": 0.0592
+  },
+  {
+   "ts": 96.48,
+   "kural": 0.0834,
+   "model": 0.1883,
+   "kisi": 2.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 0.5,
+   "ham_bilek_p75": 0.0654,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.0654
+  },
+  {
+   "ts": 96.84,
+   "kural": 0.0693,
+   "model": 0.1856,
+   "kisi": 3.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 0.6667,
+   "ham_bilek_p75": 0.1041,
+   "bilek_aykirilik": 0.0196,
+   "bilek_medyan": 0.0846
+  },
+  {
+   "ts": 97.2,
+   "kural": 0.0499,
+   "model": 0.1305,
+   "kisi": 5.0,
+   "iz_omru": 4.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.324,
+   "bilek_aykirilik": 0.2225,
+   "bilek_medyan": 0.1015
+  },
+  {
+   "ts": 97.56,
+   "kural": 0.0706,
+   "model": 0.1489,
+   "kisi": 5.0,
+   "iz_omru": 6.0,
+   "zamansal_oran": 0.8,
+   "ham_bilek_p75": 2.2701,
+   "bilek_aykirilik": 1.7568,
+   "bilek_medyan": 0.5133
+  },
+  {
+   "ts": 97.92,
+   "kural": 0.0843,
+   "model": 0.177,
+   "kisi": 5.0,
+   "iz_omru": 5.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 2.1662,
+   "bilek_aykirilik": 1.7339,
+   "bilek_medyan": 0.4323
+  },
+  {
+   "ts": 98.28,
+   "kural": 0.0788,
+   "model": 0.1913,
+   "kisi": 3.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.7542,
+   "bilek_aykirilik": 1.2342,
+   "bilek_medyan": 0.52
+  },
+  {
+   "ts": 98.64,
+   "kural": 0.0801,
+   "model": 0.2076,
+   "kisi": 3.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.8042,
+   "bilek_aykirilik": 1.2878,
+   "bilek_medyan": 0.5163
+  },
+  {
+   "ts": 99.0,
+   "kural": 0.0744,
+   "model": 0.1497,
+   "kisi": 3.0,
+   "iz_omru": 6.0,
+   "zamansal_oran": 0.6667,
+   "ham_bilek_p75": 1.7608,
+   "bilek_aykirilik": 0.8688,
+   "bilek_medyan": 0.8919
+  },
+  {
+   "ts": 99.36,
+   "kural": 0.0738,
+   "model": 0.1616,
+   "kisi": 3.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.7542,
+   "bilek_aykirilik": 1.2414,
+   "bilek_medyan": 0.5127
+  },
+  {
+   "ts": 99.72,
+   "kural": 0.0637,
+   "model": 0.1605,
+   "kisi": 3.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 0.6667,
+   "ham_bilek_p75": 1.439,
+   "bilek_aykirilik": 0.7082,
+   "bilek_medyan": 0.7308
+  },
+  {
+   "ts": 100.08,
+   "kural": 0.0439,
+   "model": 0.1531,
+   "kisi": 1.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.0224,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.0224
+  },
+  {
+   "ts": 100.44,
+   "kural": 0.0451,
+   "model": 0.1522,
+   "kisi": 3.0,
+   "iz_omru": 6.0,
+   "zamansal_oran": 0.3333,
+   "ham_bilek_p75": 0.0256,
+   "bilek_aykirilik": 0.0,
+   "bilek_medyan": 0.0256
+  },
+  {
+   "ts": 100.8,
+   "kural": 0.0548,
+   "model": 0.1347,
+   "kisi": 4.0,
+   "iz_omru": 6.5,
+   "zamansal_oran": 0.75,
+   "ham_bilek_p75": 1.4625,
+   "bilek_aykirilik": 1.4011,
+   "bilek_medyan": 0.0614
+  },
+  {
+   "ts": 101.16,
+   "kural": 0.0417,
+   "model": 0.1491,
+   "kisi": 3.0,
+   "iz_omru": 6.0,
+   "zamansal_oran": 0.6667,
+   "ham_bilek_p75": 0.0612,
+   "bilek_aykirilik": 0.019,
+   "bilek_medyan": 0.0422
+  },
+  {
+   "ts": 101.52,
+   "kural": 0.0487,
+   "model": 0.1402,
+   "kisi": 5.0,
+   "iz_omru": 6.0,
+   "zamansal_oran": 0.6,
+   "ham_bilek_p75": 1.0966,
+   "bilek_aykirilik": 1.039,
+   "bilek_medyan": 0.0576
+  },
+  {
+   "ts": 101.88,
+   "kural": 0.054,
+   "model": 0.2899,
+   "kisi": 5.0,
+   "iz_omru": 6.0,
+   "zamansal_oran": 0.8,
+   "ham_bilek_p75": 0.4438,
+   "bilek_aykirilik": 0.2405,
+   "bilek_medyan": 0.2033
+  },
+  {
+   "ts": 102.24,
+   "kural": 0.0591,
+   "model": 0.5837,
+   "kisi": 5.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.0395,
+   "bilek_aykirilik": 0.7776,
+   "bilek_medyan": 0.2619
+  },
+  {
+   "ts": 102.6,
+   "kural": 0.067,
+   "model": 0.7186,
+   "kisi": 6.0,
+   "iz_omru": 6.5,
+   "zamansal_oran": 0.8333,
+   "ham_bilek_p75": 1.5264,
+   "bilek_aykirilik": 1.1222,
+   "bilek_medyan": 0.4042
+  },
+  {
+   "ts": 102.96,
+   "kural": 0.0608,
+   "model": 0.5946,
+   "kisi": 2.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.1352,
+   "bilek_aykirilik": 0.4366,
+   "bilek_medyan": 0.6986
+  },
+  {
+   "ts": 103.32,
+   "kural": 0.0729,
+   "model": 0.6931,
+   "kisi": 6.0,
+   "iz_omru": 7.5,
+   "zamansal_oran": 0.8333,
+   "ham_bilek_p75": 2.1315,
+   "bilek_aykirilik": 1.5234,
+   "bilek_medyan": 0.6081
+  },
+  {
+   "ts": 103.68,
+   "kural": 0.0714,
+   "model": 0.7096,
+   "kisi": 6.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 2.1315,
+   "bilek_aykirilik": 1.6594,
+   "bilek_medyan": 0.4721
+  },
+  {
+   "ts": 104.04,
+   "kural": 0.0696,
+   "model": 0.7853,
+   "kisi": 6.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 2.2172,
+   "bilek_aykirilik": 1.6108,
+   "bilek_medyan": 0.6064
+  },
+  {
+   "ts": 104.4,
+   "kural": 0.0792,
+   "model": 0.7836,
+   "kisi": 6.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 2.2914,
+   "bilek_aykirilik": 1.905,
+   "bilek_medyan": 0.3864
+  },
+  {
+   "ts": 104.76,
+   "kural": 0.0847,
+   "model": 0.7613,
+   "kisi": 6.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 2.2806,
+   "bilek_aykirilik": 1.8908,
+   "bilek_medyan": 0.3897
+  },
+  {
+   "ts": 105.12,
+   "kural": 0.0694,
+   "model": 0.7401,
+   "kisi": 6.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 0.8333,
+   "ham_bilek_p75": 0.688,
+   "bilek_aykirilik": 0.4444,
+   "bilek_medyan": 0.2436
+  },
+  {
+   "ts": 105.48,
+   "kural": 0.0715,
+   "model": 0.6082,
+   "kisi": 7.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.688,
+   "bilek_aykirilik": 0.4444,
+   "bilek_medyan": 0.2436
+  },
+  {
+   "ts": 105.84,
+   "kural": 0.0718,
+   "model": 0.5998,
+   "kisi": 7.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.688,
+   "bilek_aykirilik": 0.3204,
+   "bilek_medyan": 0.3676
+  },
+  {
+   "ts": 106.2,
+   "kural": 0.0717,
+   "model": 0.5998,
+   "kisi": 6.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.688,
+   "bilek_aykirilik": 0.3209,
+   "bilek_medyan": 0.3671
+  },
+  {
+   "ts": 106.56,
+   "kural": 0.0718,
+   "model": 0.6806,
+   "kisi": 6.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.695,
+   "bilek_aykirilik": 0.3278,
+   "bilek_medyan": 0.3672
+  },
+  {
+   "ts": 106.92,
+   "kural": 0.0722,
+   "model": 0.586,
+   "kisi": 6.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.7198,
+   "bilek_aykirilik": 1.3614,
+   "bilek_medyan": 0.3584
+  },
+  {
+   "ts": 107.28,
+   "kural": 0.0707,
+   "model": 0.5638,
+   "kisi": 6.0,
+   "iz_omru": 8.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.2505,
+   "bilek_aykirilik": 0.8744,
+   "bilek_medyan": 0.3761
+  },
+  {
+   "ts": 107.64,
+   "kural": 0.068,
+   "model": 0.6993,
+   "kisi": 5.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.5749,
+   "bilek_aykirilik": 0.219,
+   "bilek_medyan": 0.356
+  },
+  {
+   "ts": 108.0,
+   "kural": 0.066,
+   "model": 0.6807,
+   "kisi": 4.0,
+   "iz_omru": 8.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.4823,
+   "bilek_aykirilik": 0.0659,
+   "bilek_medyan": 0.4164
+  },
+  {
+   "ts": 108.36,
+   "kural": 0.0824,
+   "model": 0.651,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.9187,
+   "bilek_aykirilik": 1.4945,
+   "bilek_medyan": 0.4242
+  },
+  {
+   "ts": 108.72,
+   "kural": 0.076,
+   "model": 0.4209,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.5768,
+   "bilek_aykirilik": 0.2451,
+   "bilek_medyan": 0.3317
+  },
+  {
+   "ts": 109.08,
+   "kural": 0.0634,
+   "model": 0.4081,
+   "kisi": 4.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.5768,
+   "bilek_aykirilik": 0.163,
+   "bilek_medyan": 0.4138
+  },
+  {
+   "ts": 109.44,
+   "kural": 0.0661,
+   "model": 0.3711,
+   "kisi": 4.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.5786,
+   "bilek_aykirilik": 0.1607,
+   "bilek_medyan": 0.4179
+  },
+  {
+   "ts": 109.8,
+   "kural": 0.0498,
+   "model": 0.3402,
+   "kisi": 3.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.5961,
+   "bilek_aykirilik": 0.2394,
+   "bilek_medyan": 0.3567
+  },
+  {
+   "ts": 110.16,
+   "kural": 0.0464,
+   "model": 0.3706,
+   "kisi": 2.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.3352,
+   "bilek_aykirilik": 0.0982,
+   "bilek_medyan": 0.2369
+  },
+  {
+   "ts": 110.52,
+   "kural": 0.1501,
+   "model": 0.3242,
+   "kisi": 3.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.3126,
+   "bilek_aykirilik": 0.9774,
+   "bilek_medyan": 0.3352
+  },
+  {
+   "ts": 110.88,
+   "kural": 0.2129,
+   "model": 0.2838,
+   "kisi": 4.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.3186,
+   "bilek_aykirilik": 0.9694,
+   "bilek_medyan": 0.3493
+  },
+  {
+   "ts": 111.24,
+   "kural": 0.25,
+   "model": 0.2674,
+   "kisi": 4.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.3247,
+   "bilek_aykirilik": 0.9949,
+   "bilek_medyan": 0.3298
+  },
+  {
+   "ts": 111.6,
+   "kural": 0.1673,
+   "model": 0.2341,
+   "kisi": 3.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.2388,
+   "bilek_aykirilik": 0.0187,
+   "bilek_medyan": 0.2201
+  },
+  {
+   "ts": 111.96,
+   "kural": 0.1171,
+   "model": 0.1775,
+   "kisi": 3.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 2.2852,
+   "bilek_aykirilik": 1.7514,
+   "bilek_medyan": 0.5337
+  },
+  {
+   "ts": 112.32,
+   "kural": 0.0899,
+   "model": 0.1214,
+   "kisi": 5.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 0.6,
+   "ham_bilek_p75": 2.2828,
+   "bilek_aykirilik": 1.7554,
+   "bilek_medyan": 0.5274
+  },
+  {
+   "ts": 112.68,
+   "kural": 0.0902,
+   "model": 0.1632,
+   "kisi": 5.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 2.1063,
+   "bilek_aykirilik": 1.3684,
+   "bilek_medyan": 0.7379
+  },
+  {
+   "ts": 113.04,
+   "kural": 0.0983,
+   "model": 0.1356,
+   "kisi": 5.0,
+   "iz_omru": 7.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 2.1315,
+   "bilek_aykirilik": 1.3934,
+   "bilek_medyan": 0.738
+  },
+  {
+   "ts": 113.4,
+   "kural": 0.1048,
+   "model": 0.112,
+   "kisi": 5.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 2.1337,
+   "bilek_aykirilik": 1.3979,
+   "bilek_medyan": 0.7358
+  },
+  {
+   "ts": 113.76,
+   "kural": 0.108,
+   "model": 0.102,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 2.2852,
+   "bilek_aykirilik": 1.5437,
+   "bilek_medyan": 0.7415
+  },
+  {
+   "ts": 114.12,
+   "kural": 0.1159,
+   "model": 0.0893,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 2.3451,
+   "bilek_aykirilik": 1.5984,
+   "bilek_medyan": 0.7467
+  },
+  {
+   "ts": 114.48,
+   "kural": 0.1208,
+   "model": 0.1179,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 2.3451,
+   "bilek_aykirilik": 1.5903,
+   "bilek_medyan": 0.7548
+  },
+  {
+   "ts": 114.84,
+   "kural": 0.1189,
+   "model": 0.14,
+   "kisi": 4.0,
+   "iz_omru": 8.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 2.3239,
+   "bilek_aykirilik": 1.8838,
+   "bilek_medyan": 0.44
+  },
+  {
+   "ts": 115.2,
+   "kural": 0.1217,
+   "model": 0.1811,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 2.3239,
+   "bilek_aykirilik": 1.5949,
+   "bilek_medyan": 0.729
+  },
+  {
+   "ts": 115.56,
+   "kural": 0.1222,
+   "model": 0.175,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 2.3239,
+   "bilek_aykirilik": 1.8217,
+   "bilek_medyan": 0.5022
+  },
+  {
+   "ts": 115.92,
+   "kural": 0.1256,
+   "model": 0.2477,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 2.3239,
+   "bilek_aykirilik": 1.8639,
+   "bilek_medyan": 0.46
+  },
+  {
+   "ts": 116.28,
+   "kural": 0.1302,
+   "model": 0.2441,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 2.3163,
+   "bilek_aykirilik": 2.1355,
+   "bilek_medyan": 0.1808
+  },
+  {
+   "ts": 116.64,
+   "kural": 0.126,
+   "model": 0.2482,
+   "kisi": 4.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 2.2245,
+   "bilek_aykirilik": 1.8819,
+   "bilek_medyan": 0.3426
+  },
+  {
+   "ts": 117.0,
+   "kural": 0.1203,
+   "model": 0.2463,
+   "kisi": 3.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 2.243,
+   "bilek_aykirilik": 1.7633,
+   "bilek_medyan": 0.4797
+  },
+  {
+   "ts": 117.36,
+   "kural": 0.1178,
+   "model": 0.2468,
+   "kisi": 5.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 2.243,
+   "bilek_aykirilik": 2.0218,
+   "bilek_medyan": 0.2211
+  },
+  {
+   "ts": 117.72,
+   "kural": 0.1122,
+   "model": 0.2082,
+   "kisi": 4.0,
+   "iz_omru": 8.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 2.2602,
+   "bilek_aykirilik": 1.9675,
+   "bilek_medyan": 0.2926
+  },
+  {
+   "ts": 118.08,
+   "kural": 0.0914,
+   "model": 0.2154,
+   "kisi": 4.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.7405,
+   "bilek_aykirilik": 0.4551,
+   "bilek_medyan": 0.2854
+  },
+  {
+   "ts": 118.44,
+   "kural": 0.0843,
+   "model": 0.1937,
+   "kisi": 5.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.7601,
+   "bilek_aykirilik": 0.4118,
+   "bilek_medyan": 0.3482
+  },
+  {
+   "ts": 118.8,
+   "kural": 0.0877,
+   "model": 0.211,
+   "kisi": 5.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.6621,
+   "bilek_aykirilik": 0.0748,
+   "bilek_medyan": 0.5873
+  },
+  {
+   "ts": 119.16,
+   "kural": 0.089,
+   "model": 0.1759,
+   "kisi": 5.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.7504,
+   "bilek_aykirilik": 0.1891,
+   "bilek_medyan": 0.5613
+  },
+  {
+   "ts": 119.52,
+   "kural": 0.0902,
+   "model": 0.1949,
+   "kisi": 5.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.7504,
+   "bilek_aykirilik": 0.4418,
+   "bilek_medyan": 0.3086
+  },
+  {
+   "ts": 119.88,
+   "kural": 0.0918,
+   "model": 0.2218,
+   "kisi": 5.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.7733,
+   "bilek_aykirilik": 0.5438,
+   "bilek_medyan": 0.2295
+  },
+  {
+   "ts": 120.24,
+   "kural": 0.091,
+   "model": 0.3097,
+   "kisi": 4.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.7646,
+   "bilek_aykirilik": 0.3864,
+   "bilek_medyan": 0.3782
+  },
+  {
+   "ts": 120.6,
+   "kural": 0.0918,
+   "model": 0.3114,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.7733,
+   "bilek_aykirilik": 0.2044,
+   "bilek_medyan": 0.5689
+  },
+  {
+   "ts": 120.96,
+   "kural": 0.0989,
+   "model": 0.3457,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.7661,
+   "bilek_aykirilik": 0.4988,
+   "bilek_medyan": 0.2673
+  },
+  {
+   "ts": 121.32,
+   "kural": 0.1014,
+   "model": 0.3339,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.7756,
+   "bilek_aykirilik": 0.2807,
+   "bilek_medyan": 0.4949
+  },
+  {
+   "ts": 121.68,
+   "kural": 0.0977,
+   "model": 0.4134,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.1854,
+   "bilek_aykirilik": 0.9179,
+   "bilek_medyan": 0.2676
+  },
+  {
+   "ts": 122.04,
+   "kural": 0.0686,
+   "model": 0.3627,
+   "kisi": 4.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.1872,
+   "bilek_aykirilik": 0.6144,
+   "bilek_medyan": 0.5727
+  },
+  {
+   "ts": 122.4,
+   "kural": 0.0964,
+   "model": 0.2761,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.2138,
+   "bilek_aykirilik": 0.7693,
+   "bilek_medyan": 0.4445
+  },
+  {
+   "ts": 122.76,
+   "kural": 0.0727,
+   "model": 0.1831,
+   "kisi": 4.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 0.8445,
+   "bilek_aykirilik": 0.3808,
+   "bilek_medyan": 0.4636
+  },
+  {
+   "ts": 123.12,
+   "kural": 0.0642,
+   "model": 0.2417,
+   "kisi": 4.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 0.75,
+   "ham_bilek_p75": 1.1303,
+   "bilek_aykirilik": 0.3581,
+   "bilek_medyan": 0.7723
+  },
+  {
+   "ts": 123.48,
+   "kural": 0.065,
+   "model": 0.2376,
+   "kisi": 3.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 0.6667,
+   "ham_bilek_p75": 1.2062,
+   "bilek_aykirilik": 0.5389,
+   "bilek_medyan": 0.6674
+  },
+  {
+   "ts": 123.84,
+   "kural": 0.0654,
+   "model": 0.1678,
+   "kisi": 3.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.2062,
+   "bilek_aykirilik": 0.9156,
+   "bilek_medyan": 0.2906
+  },
+  {
+   "ts": 124.2,
+   "kural": 0.0714,
+   "model": 0.1749,
+   "kisi": 4.0,
+   "iz_omru": 8.5,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.2062,
+   "bilek_aykirilik": 0.8278,
+   "bilek_medyan": 0.3784
+  },
+  {
+   "ts": 124.56,
+   "kural": 0.0691,
+   "model": 0.131,
+   "kisi": 3.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.2062,
+   "bilek_aykirilik": 0.7565,
+   "bilek_medyan": 0.4498
+  },
+  {
+   "ts": 124.92,
+   "kural": 0.07,
+   "model": 0.1403,
+   "kisi": 5.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.2664,
+   "bilek_aykirilik": 0.2438,
+   "bilek_medyan": 1.0226
+  },
+  {
+   "ts": 125.28,
+   "kural": 0.0677,
+   "model": 0.1695,
+   "kisi": 5.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.2595,
+   "bilek_aykirilik": 0.8002,
+   "bilek_medyan": 0.4593
+  },
+  {
+   "ts": 125.64,
+   "kural": 0.0672,
+   "model": 0.1876,
+   "kisi": 5.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.2813,
+   "bilek_aykirilik": 0.9489,
+   "bilek_medyan": 0.3324
+  },
+  {
+   "ts": 126.0,
+   "kural": 0.0693,
+   "model": 0.2315,
+   "kisi": 5.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.2842,
+   "bilek_aykirilik": 0.7017,
+   "bilek_medyan": 0.5825
+  },
+  {
+   "ts": 126.36,
+   "kural": 0.0678,
+   "model": 0.237,
+   "kisi": 5.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.4605,
+   "bilek_aykirilik": 0.3998,
+   "bilek_medyan": 1.0607
+  },
+  {
+   "ts": 126.72,
+   "kural": 0.0675,
+   "model": 0.2272,
+   "kisi": 5.0,
+   "iz_omru": 8.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.615,
+   "bilek_aykirilik": 0.3854,
+   "bilek_medyan": 1.2296
+  },
+  {
+   "ts": 127.08,
+   "kural": 0.0762,
+   "model": 0.4114,
+   "kisi": 6.0,
+   "iz_omru": 8.5,
+   "zamansal_oran": 0.8333,
+   "ham_bilek_p75": 1.5762,
+   "bilek_aykirilik": 0.3453,
+   "bilek_medyan": 1.2309
+  },
+  {
+   "ts": 127.44,
+   "kural": 0.0831,
+   "model": 0.4565,
+   "kisi": 5.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.5762,
+   "bilek_aykirilik": 0.3439,
+   "bilek_medyan": 1.2323
+  },
+  {
+   "ts": 127.8,
+   "kural": 0.0879,
+   "model": 0.6206,
+   "kisi": 3.0,
+   "iz_omru": 9.0,
+   "zamansal_oran": 1.0,
+   "ham_bilek_p75": 1.9636,
+   "bilek_aykirilik": 0.5271,
+   "bilek_medyan": 1.4364
+  }
+ ]
+}
