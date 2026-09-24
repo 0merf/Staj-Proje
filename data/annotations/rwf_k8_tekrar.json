@@ -1,0 +1,59 @@
+{
+ "olusturuldu": "2026-09-24T16:53:16.271486+00:00",
+ "kaynak": "RWF-2000 val/fight",
+ "yontem": "elle, tek etiketleyici, boru hattı skorları görülmeden",
+ "bilinen_sinir": "tek etiketleyici; bağımsız ikinci etiketleyici ve uyum katsayısı yok — raporda böyle yazılacak",
+ "etiketler": {
+  "fight_0067.avi": {
+   "baslangic_s": 0.233,
+   "kare": 7,
+   "kaynak_fps": 30.0
+  },
+  "fight_0188.avi": {
+   "baslangic_s": 0.167,
+   "kare": 5,
+   "kaynak_fps": 30.0
+  },
+  "fight_0102.avi": {
+   "baslangic_s": 0.233,
+   "kare": 7,
+   "kaynak_fps": 30.0
+  },
+  "fight_0194.avi": {
+   "baslangic_s": 0.133,
+   "kare": 4,
+   "kaynak_fps": 30.0
+  },
+  "fight_0112.avi": {
+   "baslangic_s": 0.133,
+   "kare": 4,
+   "kaynak_fps": 30.0
+  },
+  "fight_0122.avi": {
+   "baslangic_s": 0.567,
+   "kare": 17,
+   "kaynak_fps": 30.0
+  },
+  "fight_0014.avi": {
+   "baslangic_s": 0.467,
+   "kare": 14,
+   "kaynak_fps": 30.0
+  },
+  "fight_0003.avi": {
+   "baslangic_s": 0.3,
+   "kare": 9,
+   "kaynak_fps": 30.0
+  },
+  "fight_0065.avi": {
+   "baslangic_s": 0.633,
+   "kare": 19,
+   "kaynak_fps": 30.0
+  },
+  "fight_0045.avi": {
+   "baslangic_s": 0.467,
+   "kare": 14,
+   "kaynak_fps": 30.0
+  }
+ },
+ "atlananlar": []
+}
