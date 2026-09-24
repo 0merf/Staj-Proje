@@ -8219,3 +8219,71 @@ bu çalışmada ayrıştırılmadı; makalede gelecek çalışma olarak yazıld�
 değiştirildi, ölçüm bitince `git checkout` ile geri alındı. P-63'te bir
 deney üretim yapıtını ezmişti; bu yüzden değişiklik commit'lenmedi ve
 koşu bitiminde geri alındığı doğrulandı.
+
+---
+
+### P-94 · "Aynı kod, aynı donanım" dediğim şeyin aynı olduğunu hiç kontrol etmemiştim
+
+**Tarih:** 24.09.2026 · **Faz:** revizyon
+
+**Neden bakıldı:** Kullanıcının sorusu: *"bu sonuçların öncekinden
+farklı çıkması normal değil, ölçüm betiğini bir kontrol eder misin?
+Çünkü ya projede bir şeyler değişmiş ya da projenin tekrarlanabilirliği
+baya düşüktür demek."*
+
+Haklıydı. P-82 ve P-88'de gecikmenin iki rejime yerleştiğini yazmıştım
+ve makaleye **"aynı kod, aynı donanım ve aynı yük altında"** diye
+geçmiştim. Bu cümleyi hiç doğrulamamıştım; iki koşu arasında on üç gün
+ve yirmi yedi commit vardı.
+
+**Eleme.** Sırayla ölçüldü:
+
+| Aday | Yöntem | Sonuç |
+|---|---|---|
+| Kod | AST karşılaştırması (docstring boşaltılmış) | Boru hattı **aynı**; fark bulunan üç dosyada fark yalnızca metin sabiti |
+| Bağımlılıklar | `uv.lock` farkı | Hiçbir sürüm değişmemiş, yalnızca kullanılmayan paketler silinmiş |
+| Ölçüm aracı | `metrics.py` + betikler AST'de | Aynı |
+| Yük | Örnekleme hızı | 2,79-2,84 ile 2,77-2,79 — aynı |
+
+Yani "aynı kod" iddiası **doğruymuş** — ama doğru olduğunu ancak şimdi
+biliyorum, önce yazmıştım.
+
+**Fark nerede:** Eleme sonunda geriye kuyruk kaldı.
+
+```
+                        yüksek rejim     düşük rejim
+tüketici gecikmesi       26-27 kayıt        6 kayıt
+izlenmeyen kayıp         %17,5-19,9       %2,0-6,3
+gecikme p50                377-379 ms     174-231 ms
+```
+
+İki rejim, çıkarım hızının değil **kuyruğun yerleştiği kararlı
+noktanın** iki değeri. Bu, "işletim sistemi çekirdek yerleşimi"
+hipotezimden çok daha somut ve zaten ölçülmüş bir açıklama.
+
+> ⭐ Bu veriyi bulmak için yeni bir ölçüm yapmadım. `tuketici_lag` ve
+> `izlenmeyen_kayip` **her koşunun çıktısında zaten vardı**; iki dosyayı
+> yan yana koymak yetti. P-60'ın dersi dördüncü kez: alet doğru
+> ölçüyordu, kimse bakmıyordu.
+
+**Kapatılamayan kısım ve asıl kusur:** Kuyruğun neden farklı bir noktaya
+yerleştiği gösterilemedi, çünkü **hiçbir koşu kendi yapılandırmasını
+kaydetmemişti.** Kodun aynı olduğunu git'ten gösterebiliyorum; ayarların
+aynı olduğunu gösteremiyorum, çünkü `.env` parola taşıdığı için sürüm
+kontrolü dışında ve ölçüm çıktısına da yazılmıyordu. Havuz boyutu, akış
+üst sınırları, örnekleme hedefi — kuyruğu doğrudan belirleyen değerlerin
+hiçbiri kayıtlı değil.
+
+> ⭐⭐ **Ölçtüğüm şeyi kaydettim, ölçtüğüm koşulları kaydetmedim.**
+> Bir sayı, onu üreten bağlam olmadan sonradan hiçbir karşılaştırmaya
+> girmiyor. Tekrarlanabilirlik bir erdem değil, çıktının bir alanı.
+
+**Düzeltme:** `scripts/_ortam.py` — her ölçüm çıktısına `ortam` bloğu
+gömülüyor: git commit, ağaç kirli mi, başarımı etkileyen on iki ayar,
+kütüphane sürümleri, GPU adı, model ağırlıklarının SHA-256 özetleri.
+`measure_canli.py` ve `measure_k4.py` bağlandı.
+
+Düzeltmenin *çoğul* olması gerektiği (P-60/P-62) burada da geçerli:
+blok tek bir betiğe değil ortak bir modüle konuldu, böylece sonraki
+ölçüm betiği aynı hatayı sıfırdan yapamayacak.
+

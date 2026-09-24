@@ -63,6 +63,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from _ortam import ortam_ozeti
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
 
@@ -650,6 +652,7 @@ def main() -> int:
 
     cikti = {
         "olculdu": datetime.now(UTC).isoformat(),
+        "ortam": ortam_ozeti(),
         "kriterler": ["K4", "K2", "K3"],
         "kosulllar": {
             "panel": "kapalı (P-24)",

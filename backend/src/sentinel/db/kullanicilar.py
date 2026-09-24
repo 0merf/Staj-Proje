@@ -1,6 +1,6 @@
 """Kullanıcı tablosu ve denetim izi (G01, G05, G11).
 
-Neden denetim izi (audıt log) ayrı bir tablo
+Neden denetim izi (audit log) ayrı bir tablo
 Bir gözetim sistemi insanları izliyor. "Kim, ne zaman, hangi kamerayı
 izledi" sorusunun cevabı olmadan sistemin kendisi denetlenemez hâle
 gelir — ve denetlenemeyen bir gözetim sistemi, izlediği kişilerden çok

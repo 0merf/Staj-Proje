@@ -1,0 +1,66 @@
+{
+ "olculdu": "2026-09-24T16:58:33.166503+00:00",
+ "yontem": "aynı etiketleyici, aynı klipler, ikinci tur; birinci turun etiketleri görülmeden",
+ "bilinen_sinir": "değerlendirici içi uyum — değerlendiriciler arası uyumun yerini tutmaz, gerçek belirsizliğin alt sınırını verir",
+ "birinci_tur": "rwf_k8.json",
+ "ikinci_tur": "rwf_k8_tekrar.json",
+ "klip_basina": {
+  "fight_0003.avi": {
+   "birinci_s": 0.267,
+   "ikinci_s": 0.3,
+   "fark_s": 0.033
+  },
+  "fight_0014.avi": {
+   "birinci_s": 0.333,
+   "ikinci_s": 0.467,
+   "fark_s": 0.134
+  },
+  "fight_0045.avi": {
+   "birinci_s": 0.267,
+   "ikinci_s": 0.467,
+   "fark_s": 0.2
+  },
+  "fight_0065.avi": {
+   "birinci_s": 0.233,
+   "ikinci_s": 0.633,
+   "fark_s": 0.4
+  },
+  "fight_0067.avi": {
+   "birinci_s": 0.233,
+   "ikinci_s": 0.233,
+   "fark_s": 0.0
+  },
+  "fight_0102.avi": {
+   "birinci_s": 0.233,
+   "ikinci_s": 0.233,
+   "fark_s": 0.0
+  },
+  "fight_0112.avi": {
+   "birinci_s": 0.267,
+   "ikinci_s": 0.133,
+   "fark_s": -0.134
+  },
+  "fight_0122.avi": {
+   "birinci_s": 0.3,
+   "ikinci_s": 0.567,
+   "fark_s": 0.267
+  },
+  "fight_0188.avi": {
+   "birinci_s": 1.267,
+   "ikinci_s": 0.167,
+   "fark_s": -1.1
+  },
+  "fight_0194.avi": {
+   "birinci_s": 0.267,
+   "ikinci_s": 0.133,
+   "fark_s": -0.134
+  }
+ },
+ "ortak_klip": 10,
+ "ortalama_isaretli_fark_s": -0.033,
+ "ortalama_mutlak_fark_s": 0.24,
+ "medyan_mutlak_fark_s": 0.134,
+ "en_buyuk_mutlak_fark_s": 1.1,
+ "bir_saniyenin_altinda": 9,
+ "mutlak_fark_std_s": 0.326
+}

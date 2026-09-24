@@ -59,6 +59,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from _ortam import ortam_ozeti
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
 
@@ -576,6 +578,7 @@ def main() -> int:
     hedef = BENCHMARKS / f"canli_dogrulama_{damga}.json"
     hedef.write_text(json.dumps({
         "olculdu": datetime.now(UTC).isoformat(),
+        "ortam": ortam_ozeti(),
         "sure_s": round(sure, 1), "ornek": len(ornekler),
         "isinma_s": args.isinma,
         "gpu": gpu,
