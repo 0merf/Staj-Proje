@@ -8287,3 +8287,59 @@ Düzeltmenin *çoğul* olması gerektiği (P-60/P-62) burada da geçerli:
 blok tek bir betiğe değil ortak bir modüle konuldu, böylece sonraki
 ölçüm betiği aynı hatayı sıfırdan yapamayacak.
 
+---
+
+### P-95 · Aynı tabloda iki oran, iki farklı payda
+
+**Tarih:** 14.10.2026 · **Faz:** revizyon
+
+**Neden bakıldı:** Kullanıcı makaleyi okurken takıldı: tabloda on
+saniyelik toleransta duyarlılık 0,266 yazıyor, hemen altındaki cümlede
+"tüm alarm türleri sayıldığında 0,278 olmaktadır" deniyor. *"Bu doğru mu
+yoksa ben mi yanlış anladım?"*
+
+**Sayı doğruydu, karşılaştırma değildi.** İki değer farklı paydadan
+geliyordu:
+
+```
+saldırganlık + risk : 33 / 124  = 0,266   (62 tur)
+tüm türler          : 35 / 126  = 0,278   (63 tur)
+```
+
+Aynı koşu, aynı 134,7 dakikalık pencere — ama tur sayısı farklı.
+
+**Mekanizma:** Betik tur sayısını `(max(pts) − min(pts)) // süre` ile,
+yani **filtrelenmiş** alarm kümesinin pts açıklığından hesaplıyordu.
+Filtreyi daraltınca ilk ve son alarm değişiyor, açıklık kısalıyor ve
+payda küçülüyor. Yani filtre yalnızca payı değil paydayı da
+oynatıyordu.
+
+> ⭐ Sonuç ince: filtreyi daraltmak duyarlılığı **yapay olarak
+> yükseltebiliyordu**, çünkü payda payla birlikte küçülüyordu. İki
+> oranı yan yana koyan okur, aradaki farkı alarm türlerinin katkısı
+> sanıyor; oysa farkın bir kısmı paydadan geliyor.
+
+**Zaten düzeltilmişti, ama rapora taşınmamıştı.** P-92'de bu hesabın
+duvar saatine çevrildiğini yazmıştım; o düzeltme Eylül sonunda yapıldı,
+fakat makaledeki tablo düzeltme **öncesi** koşturulan çıktıdan
+alınmıştı. P-60/P-62'nin dersi bir kez daha: düzeltmenin kendisi
+yapılmış olması yetmiyor, düzeltmeden **önce üretilmiş çıktıların**
+yeniden üretilmesi gerekiyor.
+
+**Düzeltme:** Eylül koşusunun verisi veritabanında duruyordu (30 günlük
+saklama penceresi henüz dolmamıştı). İki filtre de düzeltilmiş betikle,
+aynı pencere üzerinde yeniden ölçüldü. Yayıncı yeniden başlaması 0
+çıktı, yani yakalama sayıları değişmedi; değişen yalnızca payda:
+
+```
+                     ÖNCE            SONRA
+saldırganlık + risk  33/124 = 0,266  33/126 = 0,262
+tüm türler           35/126 = 0,278  35/126 = 0,278
+```
+
+Makaledeki tablo, metin ve hakem cevabı güncellendi; iki oranın aynı
+paydaya dayanması gerektiği metinde ayrıca belirtildi.
+
+**Bulan:** kullanıcı, makaleyi okurken. Üç haftadır kimsenin
+bakmadığı bir tabloda, iki satır arası tutarsızlık.
+
